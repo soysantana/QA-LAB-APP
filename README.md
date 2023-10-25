@@ -62,7 +62,7 @@ $ yarn dev
 
 ## :memo: License ##
 
-This project is licensed under the MIT License. For more details, please refer to the [LICENSE](LICENSE.md) file.
+This project is licensed under the MIT License. For more details, please refer to the <a href="https://github.com/soysantana/QA-LAB-APP/blob/main/LICENSE" target="_blank">LICENSE</a> file.
 
 
 Made with :heart: by <a href="https://github.com/soysantana" target="_blank">Arturo Santana</a>
