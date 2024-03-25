@@ -15,4 +15,4 @@ To report a vulnerability, please visit our website here.
 
 We guarantee that we will receive and review all vulnerability reports submitted. We will provide you with regular updates on the status of your report. If the vulnerability is confirmed, we will work diligently to provide a fix and will keep you informed of the progress.
 
-We greatly appreciate your contribution to the security of our project. If you have any additional questions or need further assistance, please do not hesitate to contact us through our support channels.
+We greatly appreciate your contribution to the security of our project. If you have any additional questions or need further assistance, please do not hesitate to contact us through our support channels. ass
