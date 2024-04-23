@@ -20,10 +20,16 @@
   </nav>
 </div><!-- End Page Title -->
 <section class="section">
-  <div class="row">
+  <div class="row" oninput="LLyPL()">
+
+  <form class="row" action="../database/atterberg-limit.php" method="post">
 
   <div id="product_info"></div>
 
+  <div class="col-md-4">
+  <?php echo display_msg($msg); ?>
+  </div>
+  
     <div class="col-lg-12">
 
       <div class="card">
@@ -31,49 +37,53 @@
           <h5 class="card-title">Trial Information</h5>
 
           <!-- Multi Columns Form -->
-          <form class="row g-3">
+          <div class="row g-3">
             <div class="col-md-6">
               <label for="Standard" class="form-label">Standard</label>
-              <select id="Standard" class="form-select">
+              <select id="Standard" class="form-select" name="Standard">
                 <option selected>Choose...</option>
-                <option>ASTM</option>
+                <option value="ASTM-D4318">ASTM-D4318</option>
               </select>
             </div>
             <div class="col-md-6">
               <label for="PMethods" class="form-label">Preparation Methods</label>
-              <select id="PMethods" class="form-select">
+              <select id="PMethods" class="form-select" name="PMethods">
                 <option selected>Choose...</option>
-                <option>Oven Dried</option>
-                <option>Air Dried</option>
-                <option>Microwave Dried</option>
-                <option>Wet</option>
+                <option value="Oven Dried">Oven Dried</option>
+                <option value="Air Dried">Air Dried</option>
+                <option value="Microwave Dried">Microwave Dried</option>
+                <option value="Wet">Wet</option>
               </select>
             </div>
             <div class="col-md-6">
               <label for="SMethods" class="form-label">Split Methods</label>
-              <select id="SMethods" class="form-select">
+              <select id="SMethods" class="form-select" name="SMethods">
                 <option selected>Choose...</option>
-                <option>Manual</option>
-                <option>Mechanical</option>
+                <option value="Manual">Manual</option>
+                <option value="Mechanical">Mechanical</option>
               </select>
             </div>
             <div class="col-md-6">
               <label for="NatMc" class="form-label">Natural Mc %</label>
-              <input type="text" class="form-control" id="NatMc" oninput="LLyPL()">
+              <input type="text" class="form-control" name="NatMc" id="NatMc">
             </div>
             <div class="col-md-6">
               <label for="Technician" class="form-label">Technician</label>
-              <input type="text" class="form-control" id="Technician">
+              <input type="text" class="form-control" name="Technician" id="Technician">
             </div>
             <div class="col-md-6">
               <label for="DateTesting" class="form-label">Date of Testing</label>
-              <input type="date" class="form-control" id="DateTesting">
+              <input type="date" class="form-control" name="DateTesting" id="DateTesting">
             </div>
             <div class="col-12">
               <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" id="Comments" style="height: 100px;"></textarea>
+              <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"></textarea>
             </div>
-          </form><!-- End Multi Columns Form -->
+            <div class="col-12">
+              <textarea hidden class="form-control" name="PlotLimit" id="PlotLimit" style="height: 100px;"></textarea>
+              <textarea hidden class="form-control" name="PlotPlasticity" id="PlotPlasticity" style="height: 100px;"></textarea>
+            </div>
+          </div><!-- End Multi Columns Form -->
 
         </div>
       </div>
@@ -97,51 +107,51 @@
                 <tbody>
                   <tr>
                     <th scope="row">No. of Blows</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="Blows1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="Blows2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="Blows3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Blows1" id="Blows1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Blows2" id="Blows2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Blows3" id="Blows3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Container</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLContainer1"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLContainer2"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLContainer3"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLContainer1" id="LLContainer1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLContainer2" id="LLContainer2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLContainer3" id="LLContainer3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Wet Soil + Tare (gr)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLWetSoil1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLWetSoil2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLWetSoil3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWetSoil1" id="LLWetSoil1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWetSoil2" id="LLWetSoil2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWetSoil3" id="LLWetSoil3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Dry Soil + Tare (gr)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLDrySoilTare1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLDrySoilTare2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLDrySoilTare3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLDrySoilTare1" id="LLDrySoilTare1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLDrySoilTare2" id="LLDrySoilTare2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLDrySoilTare3" id="LLDrySoilTare3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Water (gr)</th>
-                    <td><p style="border: none;" class="form-control" id="LLWater1"></p></td>
-                    <td><p style="border: none;" class="form-control" id="LLWater2"></p></td>
-                    <td><p style="border: none;" class="form-control" id="LLWater3"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWater1" id="LLWater1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWater2" id="LLWater2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWater3" id="LLWater3" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Tare (gr)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLTare1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLTare2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="LLTare3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLTare1" id="LLTare1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLTare2" id="LLTare2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLTare3" id="LLTare3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Dry Soil (gr)</th>
-                    <td><p style="border: none;" class="form-control" id="LLWtDrySoil1"></p></td>
-                    <td><p style="border: none;" class="form-control" id="LLWtDrySoil2"></p></td>
-                    <td><p style="border: none;" class="form-control" id="LLWtDrySoil3"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWtDrySoil1" id="LLWtDrySoil1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWtDrySoil2" id="LLWtDrySoil2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLWtDrySoil3" id="LLWtDrySoil3" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Moisture Content (%)</th>
-                    <td><p style="border: none;" class="form-control" id="LLMCPorce1"></p></td>
-                    <td><p style="border: none;" class="form-control" id="LLMCPorce2"></p></td>
-                    <td><p style="border: none;" class="form-control" id="LLMCPorce3"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLMCPorce1" id="LLMCPorce1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLMCPorce2" id="LLMCPorce2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLMCPorce3" id="LLMCPorce3" readonly tabindex="-1"></td>
                   </tr>
                 </tbody>
               </table>
@@ -160,49 +170,49 @@
                 <tbody>
                   <tr>
                     <th scope="row">Container</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLContainer1"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLContainer2"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLContainer3"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLContainer1" id="PLContainer1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLContainer2" id="PLContainer2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLContainer3" id="PLContainer3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Wet Soil + Tare (gr)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLWetSoil1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLWetSoil2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLWetSoil3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWetSoil1" id="PLWetSoil1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWetSoil2" id="PLWetSoil2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWetSoil3" id="PLWetSoil3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Dry Soil + Tare (gr)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLDrySoilTare1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLDrySoilTare2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLDrySoilTare3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLDrySoilTare1" id="PLDrySoilTare1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLDrySoilTare2" id="PLDrySoilTare2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLDrySoilTare3" id="PLDrySoilTare3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Water (gr)</th>
-                    <td><p style="border: none;" class="form-control" id="PLWater1"></p></td>
-                    <td><p style="border: none;" class="form-control" id="PLWater2"></p></td>
-                    <td><p style="border: none;" class="form-control" id="PLWater3"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWater1" id="PLWater1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWater2" id="PLWater2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWater3" id="PLWater3" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Tare (gr)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLTare1" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLTare2" oninput="LLyPL()"></td>
-                    <td><input type="text" style="border: none;" class="form-control" id="PLTare3" oninput="LLyPL()"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLTare1" id="PLTare1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLTare2" id="PLTare2"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLTare3" id="PLTare3"></td>
                   </tr>
                   <tr>
                     <th scope="row">Wt Dry Soil (gr)</th>
-                    <td><p style="border: none;" class="form-control" id="PLWtDrySoil1"></p></td>
-                    <td><p style="border: none;" class="form-control" id="PLWtDrySoil2"></p></td>
-                    <td><p style="border: none;" class="form-control" id="PLWtDrySoil3"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWtDrySoil1" id="PLWtDrySoil1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWtDrySoil2" id="PLWtDrySoil2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLWtDrySoil3" id="PLWtDrySoil3" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Moisture Content (%)</th>
-                    <td><p style="border: none;" class="form-control" id="PLMCPorce1"></p></td>
-                    <td><p style="border: none;" class="form-control" id="PLMCPorce2"></p></td>
-                    <td><p style="border: none;" class="form-control" id="PLMCPorce3"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLMCPorce1" id="PLMCPorce1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLMCPorce2" id="PLMCPorce2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLMCPorce3" id="PLMCPorce3" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Avg. Moisture Content (%)</th>
-                    <td colspan="3"><p style="border: none;" class="form-control" id="PLAvgMcPorce"></p></td>
+                    <td colspan="3"><input type="text" style="border: none;" class="form-control" name="PLAvgMcPorce" id="PLAvgMcPorce" readonly tabindex="-1"></td>
                   </tr>
                 </tbody>
               </table>
@@ -247,19 +257,20 @@
           <tbody>
             <tr>
               <th scope="row" style="width: 175px;">Liquid Limit (%):</th>
-              <td><p style="border: none;" class="form-control" id="LLPorce"></p></td>
+              <td><input type="text" style="border: none;" class="form-control" name="LLPorce" id="LLPorce" readonly tabindex="-1"></td>
             </tr>
             <tr>
               <th scope="row">Plastic Limit (%):</th>
-              <td><p style="border: none;" class="form-control" id="PLPorce"></p></td>
+              <td><input type="text" style="border: none;" class="form-control" name="PLPorce" id="PLPorce" readonly tabindex="-1"></td>
             </tr>
             <tr>
               <th scope="row">Plasticity Index (%):</th>
-              <td><p style="border: none;" class="form-control" id="PLIndexPorce"></p></td>
+              <td><input type="text" style="border: none;" class="form-control" name="PLIndexPorce" id="PLIndexPorce" readonly tabindex="-1"></td>
             </tr>
             <tr>
               <th scope="row">Liquidity Index (%):</th>
-              <td><p style="border: none;" class="form-control" id="LLIndexPorce"></p></td>
+              <td><input type="text" style="border: none;" class="form-control" name="LLIndexPorce" id="LLIndexPorce" readonly tabindex="-1"></td>
+              <input hidden style="border: none;" class="form-control" name="Rsquared" id="Rsquared" readonly tabindex="-1">
             </tr>
           </tbody>
         </table>
@@ -269,7 +280,7 @@
           <tbody>
             <tr>
               <th scope="row" style="width: 160px;">Soil Classification as per Unified Soil Classification System, ASTM designation D2487-06</th>
-              <td ><p style="border: none;" class="form-control" id="classifysoil"></p></td>
+              <td><input type="text" style="border: none;" class="form-control" name="classifysoil" id="classifysoil" readonly tabindex="-1"></td>
             </tr>
           </tbody>
         </table>
@@ -282,8 +293,9 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="button" class="btn btn-success">Save Essay</button>
-          <button type="button" class="btn btn-primary disabled">Search Moisture</button>
+          <button type="submit" class="btn btn-success" name="atterberg-limit">Save Essay</button>
+          <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
+          <div id="mensaje-container"></div>
         </div>
 
       </div>
@@ -291,39 +303,15 @@
   
   </div>
 
+  </form><!-- End Form -->
+
   </div>
 </section>
 
 </main><!-- End #main -->
 
-
-<script>
-  $("input").on("blur", function(event) {
-    event.preventDefault();
-    enviarData();
-  });
-
-  function enviarData() {
-    $.ajax({
-      url: "../libs/graph/Liquid-Limit-Plot.js",
-      type: "POST",
-      data: $("#nopasonada").serialize(),
-      success: function(data) {}
-    });
-    $.ajax({
-      url: "../libs/graph/Plasticity-Chart.js",
-      type: "POST",
-      data: $("#nopasonada").serialize(),
-      success: function(data) {}
-    });
-  }
-</script>
-
-
-
 <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
 <script src="../js/Atterberg-Limit.js"></script>
 <script src="../libs/graph/Liquid-Limit-Plot.js"></script>
 <script src="../libs/graph/Plasticity-Chart.js"></script>
-
 <?php include_once('../components/footer.php');  ?>

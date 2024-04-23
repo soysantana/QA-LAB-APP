@@ -1,5 +1,5 @@
 <?php
-   $page_title = 'User - Register';
+   $page_title = 'Registro de usuarios';
    require_once('../config/load.php');
   $groups = find_all('user_groups');
 ?>
@@ -25,75 +25,81 @@
                 <div class="card-body">
 
                   <div class="pt-4 pb-2">
-                    <h5 class="card-title text-center pb-0 fs-4">Create an Account</h5>
-                    <p class="text-center small">Enter your personal details to create account</p>
+                    <h5 class="card-title text-center pb-0 fs-4">Crea una cuenta</h5>
+                    <p class="text-center small">Ingrese sus datos personales para crear una cuenta</p>
                   </div>
 
                   <?php echo display_msg($msg); ?>
 
-                  <form class="row g-3 needs-validation" method="post" action="users-register.php" novalidate>
+                  <form class="row g-3 needs-validation" method="post" action="../user/new-account.php" novalidate>
                     <div class="col-6">
-                      <label for="yourName" class="form-label">Your Name</label>
+                      <label for="yourName" class="form-label">Su nombre</label>
                       <input type="text" name="full-name" class="form-control" id="yourName" required>
-                      <div class="invalid-feedback">Please, enter your name!</div>
+                      <div class="invalid-feedback">¡Por favor, escriba su nombre!</div>
                     </div>
 
                     <div class="col-6">
-                      <label for="yourUsername" class="form-label">Username</label>
+                      <label for="username" class="form-label">Nombre de usuario</label>
                       <div class="input-group has-validation">
                         <span class="input-group-text" id="inputGroupPrepend">@</span>
-                        <input type="text" name="username" class="form-control" id="yourUsername" required>
-                        <div class="invalid-feedback">Please choose a username.</div>
+                        <input type="text" name="username" class="form-control" id="username" required>
+                        <div class="invalid-feedback">Por favor, elija un nombre de usuario.</div>
                       </div>
                     </div>
 
                     <div class="col-12">
-                      <label for="yourEmail" class="form-label">Your Email</label>
-                      <input type="email" name="email" class="form-control" id="yourEmail">
-                      <div class="invalid-feedback">Please enter a valid Email adddress!</div>
+                      <label for="email" class="form-label">Tu correo electrónico</label>
+                      <input type="email" name="email" class="form-control" id="email">
+                      <div class="invalid-feedback">Ingrese una dirección de correo electrónico válida.</div>
                     </div>
 
                     <div class="col-6">
-                      <label for="yourPhone" class="form-label">Your Phone</label>
-                      <input type="tel" name="phone" class="form-control" id="yourPhone" pattern="[0-9]{10}">
-                      <div class="invalid-feedback">Please enter a valid phone number!</div>
+                      <label for="phone" class="form-label">Su teléfono</label>
+                      <input type="tel" name="phone" class="form-control" id="phone" pattern="[0-9]{10}">
+                      <div class="invalid-feedback">Por favor ingrese un número de teléfono válido.</div>
                     </div>
 
                     <div class="col-6">
-                      <label for="yourJob" class="form-label">Your Job</label>
-                      <input type="text" name="Job" class="form-control" id="yourJob">
-                      <div class="invalid-feedback">Please, enter your job!</div>
+                      <label for="job" class="form-label">Tu posición</label>
+                      <select id="job" class="form-select" name="job" required>
+                        <option></option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Document Control">Control de documentos</option>
+                        <option value="Technical">Tecnico</option>
+                        <option value="Visitor">Visitante</option>
+                      </select>
+                      <div class="invalid-feedback">Por favor seleccione su puesto.</div>
                     </div>
 
                     <div class="col-12">
-                      <label for="yourPassword" class="form-label">Password</label>
-                      <input type="password" name="password" class="form-control" id="yourPassword" required>
-                      <div class="invalid-feedback">Please enter your password!</div>
+                      <label for="password" class="form-label">Contraseña</label>
+                      <input type="password" name="password" class="form-control" id="password" required>
+                      <div class="invalid-feedback">Por favor, introduzca su contraseña.</div>
                     </div>
 
                     <div class="col-12">
-                      <label for="accessLevel" class="form-label">Access Level</label>
+                      <label for="accessLevel" class="form-label">Nivel de acceso</label>
                       <select id="accessLevel" class="form-select" name="accesslevel" required>
                         <option></option>
                         <?php foreach ($groups as $group ):?>
                             <option value="<?php echo $group['group_level'];?>"><?php echo ucwords($group['group_name']);?></option>
                         <?php endforeach;?>
                       </select>
-                      <div class="invalid-feedback">Please select a level!</div>
+                      <div class="invalid-feedback">Por favor seleccione un nivel.</div>
                     </div>
 
                     <div class="col-12">
                       <div class="form-check">
                         <input class="form-check-input" name="terms" type="checkbox" value="" id="acceptTerms" required>
-                        <label class="form-check-label" for="acceptTerms">I agree and accept the <a href="#">terms and conditions</a></label>
-                        <div class="invalid-feedback">You must agree before submitting.</div>
+                        <label class="form-check-label" for="acceptTerms">Estoy de acuerdo y acepto los <a href="#">términos y condiciones.</a></label>
+                        <div class="invalid-feedback">Debes aceptar antes de enviar.</div>
                       </div>
                     </div>
                     <div class="col-12">
-                      <button class="btn btn-primary w-100" name="add_user" type="submit">Create Account</button>
+                      <button class="btn btn-primary w-100" name="add_user" type="submit">Crear una cuenta</button>
                     </div>
                     <div class="col-12">
-                      <p class="small mb-0">Already have an account? <a href="../index.php">Log in</a></p>
+                      <p class="small mb-0">¿Ya tienes una cuenta? <a href="../index.php">Iniciar sesión</a></p>
                     </div>
                   </form>
 
