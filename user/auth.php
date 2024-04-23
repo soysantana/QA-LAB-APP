@@ -12,7 +12,7 @@ if(empty($errors)){
      $session->login($user_id);
     //Update Sign in time
      updateLastLogIn($user_id);
-     $session->msg("s", "Bienvenido a QA Lab Soil Test Index.");
+     $session->msg("s", "Bienvenido a Laboratorio Mecanica de suelo.");
      redirect('../pages/home.php',false);
 
   } else {
