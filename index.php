@@ -23,37 +23,37 @@
                 <div class="card-body">
                 
                   <div class="pt-4 pb-2">
-                    <h5 class="card-title text-center pb-0 fs-4">Login to Your Account</h5>
-                    <p class="text-center small">Enter your username & password to login</p>
+                    <h5 class="card-title text-center pb-0 fs-4">Ingrese a su cuenta</h5>
+                    <p class="text-center small">Ingrese su nombre de usuario y contraseña para iniciar sesión</p>
                   </div>
                   <?php echo display_msg($msg); ?>
                   <form method="post" action="user/auth.php" class="row g-3 needs-validation" novalidate>
 
                     <div class="col-12">
-                      <label for="yourUsername" class="form-label">Username</label>
+                      <label for="username" class="form-label">Nombre de usuario</label>
                       <div class="input-group has-validation">
-                        <input type="text" name="username" class="form-control" id="yourUsername" autocomplete="off" required>
-                        <div class="invalid-feedback">Please enter your username.</div>
+                        <input type="text" name="username" class="form-control" id="username" autocomplete="off" required>
+                        <div class="invalid-feedback">¡Por favor, ingrese su nombre de usuario!</div>
                       </div>
                     </div>
 
                     <div class="col-12">
-                      <label for="yourPassword" class="form-label">Password</label>
-                      <input type="password" name="password" class="form-control" id="yourPassword" required>
-                      <div class="invalid-feedback">Please enter your password!</div>
+                      <label for="password" class="form-label">Contraseña</label>
+                      <input type="password" name="password" class="form-control" id="password" required>
+                      <div class="invalid-feedback">¡Por favor, introduzca su contraseña!</div>
                     </div>
 
                     <div class="col-12">
                       <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="remember" value="true" id="rememberMe">
-                        <label class="form-check-label" for="rememberMe">Remember me</label>
+                        <input class="form-check-input" type="checkbox" name="remember" value="true" id="remember">
+                        <label class="form-check-label" for="remember">Acuérdate de mí</label>
                       </div>
                     </div>
                     <div class="col-12">
-                      <button class="btn btn-primary w-100" type="submit">Login</button>
+                      <button class="btn btn-primary w-100" type="submit">Iniciar sesión</button>
                     </div>
                     <div class="col-12">
-                      <p class="small mb-0">Don't have account? <a href="pages/users-register.php">Create an account</a></p>
+                      <p class="small mb-0">¿No tienes cuenta? <a href="pages/users-register.php">Crea una cuenta</a></p>
                     </div>
                   </form>
 
@@ -61,7 +61,7 @@
               </div>
 
               <div class="credits">
-                copyright <a href="">2023</a>
+                copyright <a href="#">2024</a>
               </div>
 
             </div>
