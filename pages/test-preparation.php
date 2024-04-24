@@ -35,11 +35,11 @@
         <form class="row g-3" method="post" action="../database/sample-tracking.php">
           <div class="col-md-12">
             <label for="Sname" class="form-label">Nombre de la muestra</label>
-            <input type="text" class="form-control" name="Sname" id="Sname">
+            <input type="text" class="form-control" name="Sname" id="Sname" autocomplete="off">
           </div>
           <div class="col-md-12">
             <label for="Snumber" class="form-label">Numero de muestra</label>
-            <input type="text" class="form-control" name="Snumber" id="Snumber">
+            <input type="text" class="form-control" name="Snumber" id="Snumber" autocomplete="off">
           </div>
           <div class="col-md-12">
             <label for="Ttype" class="form-label">Tipo de prueba</label>
@@ -64,7 +64,7 @@
           </div>
           <div class="col-md-12">
             <label for="Technician" class="form-label">Técnico/a</label>
-            <input type="text" class="form-control" name="Technician" id="Technician">
+            <input type="text" class="form-control" name="Technician" id="Technician" autocomplete="off">
           </div>
           <div>
             <button type="submit" class="btn btn-success" name="test-preparation"><i class="bi bi-save me-1"></i> Guardar preparación</button>
