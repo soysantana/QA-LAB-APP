@@ -1,7 +1,6 @@
 <?php
   $page_title = 'Brazilian';
-  $class_form = ' ';
-  $form_show = 'show';
+  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('brazilian', (int)$_GET['id']);
 ?>

@@ -93,15 +93,15 @@
               $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type']);
 
               if ($status == 'Preparation') {
-                echo '<td><span class="badge bg-success">Preparation</span></td>';
+                echo '<td><span class="badge bg-success">Preparación</span></td>';
               } elseif ($status == 'Realization') {
-                echo '<td><span class="badge bg-success">Realization</span></td>';
+                echo '<td><span class="badge bg-success">Realización</span></td>';
               } elseif ($status == 'Delivery') {
-                echo '<td><span class="badge bg-success">Delivery</span></td>';
+                echo '<td><span class="badge bg-success">Entrega</span></td>';
               } elseif ($status == 'Review') {
-                echo '<td><span class="badge bg-success">Review</span></td>';
+                echo '<td><span class="badge bg-success">Revisar</span></td>';
               } elseif ($status == 'Repeat') {
-                echo '<td><span class="badge bg-warning">Repeat</span></td>';
+                echo '<td><span class="badge bg-warning">Repetir</span></td>';
               } else {
                 echo '<td><span class="badge bg-danger">----</span></td>';
               }
