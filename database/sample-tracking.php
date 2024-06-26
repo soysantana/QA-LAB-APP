@@ -323,17 +323,17 @@
     $session = new Session();
     $tables = [
         "Atterberg_Limit",
-        "Grain_Size_Coarse",
-        "Grain_Size_CoarseThan",
-        "Grain_Size_Fine",
+        //"Grain_Size_Coarse",
+        //"Grain_Size_CoarseThan",
+        //"Grain_Size_Fine",
         "Grain_Size_General",
         "Moisture_Constant_Mass",
         "Moisture_Microwave",
         "Moisture_Oven",
-        "Specific_Gravity",
-        "Specific_Gravity_Coarse",
-        "Specific_Gravity_Fine",
-        "Standard_Proctor",
+        //"Specific_Gravity",
+        //"Specific_Gravity_Coarse",
+        //"Specific_Gravity_Fine",
+        //"Standard_Proctor",
     ];
 
     foreach ($tables as $table) {

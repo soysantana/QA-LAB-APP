@@ -94,7 +94,7 @@
             Technician,
             Extraction_Equipment,
             Cutter_Equipment,
-            Method,
+            Methods,
             Comments,
             Test_Start_Date,
             Registed_Date,

@@ -47,7 +47,7 @@
             </div>
             <div class="col-md-6">
               <label for="TestMethod" class="form-label">Test Method</label>
-              <input type="text" class="form-control" id="TestMethod" name="TestMethod"value="<?php echo ($Search['Method']); ?>">
+              <input type="text" class="form-control" id="TestMethod" name="TestMethod"value="<?php echo ($Search['Methods']); ?>">
             </div>
             <div class="col-md-6">
               <label for="ExEquip" class="form-label">Extraction Equipment:</label>

@@ -1,7 +1,7 @@
 <?php
    $page_title = 'Registro de usuarios';
    require_once('../config/load.php');
-  $groups = find_all('user_groups');
+   $groups = find_all('user_groups');
 ?>
 
 <?php page_require_level(1); ?>
