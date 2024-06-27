@@ -1,9 +1,11 @@
 var Blows1 = parseFloat(document.getElementById("Blows1").value);
 var Blows2 = parseFloat(document.getElementById("Blows2").value); 
 var Blows3 = parseFloat(document.getElementById("Blows3").value);
-var LLMCPorce1 = parseFloat(document.getElementById("LLMCPorce1").textContent);
-var LLMCPorce2 = parseFloat(document.getElementById("LLMCPorce2").textContent);
-var LLMCPorce3 = parseFloat(document.getElementById("LLMCPorce3").textContent);
+var LLMCPorce1 = parseFloat(document.getElementById("LLMCPorce1").value);
+var LLMCPorce2 = parseFloat(document.getElementById("LLMCPorce2").value);
+var LLMCPorce3 = parseFloat(document.getElementById("LLMCPorce3").value);
+
+var Rsquared = document.getElementById("Rsquared").value;
 
 var maxLLMCPorce3 = Math.ceil(LLMCPorce3);
 var minLLMCPorce1 = Math.floor(LLMCPorce1);
@@ -71,5 +73,20 @@ if (minLLMCPorce1 % 2 !== 0) {
         labelLayout: { dx: -20 },
         encode: { label: 2, tooltip: 1 },
       },
+      {
+        type: "line",
+        color: 'orange',
+        smooth: true,
+        symbolSize: 0.1,
+        data: [ [Blows1, LLMCPorce1], ],
+        label: {
+            show: true,
+            position: 'bottom',
+            formatter: 'R²= ' + Rsquared,
+            fontSize: 16,
+        },
+        labelLayout: { dx: -10 },
+    }
+
     ],
   });
