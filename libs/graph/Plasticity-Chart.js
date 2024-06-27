@@ -85,7 +85,7 @@
         },
         {
           data: [
-            [document.getElementById("LLPorce").value, document.getElementById("PLIndexPorce").value]
+            [document.getElementById("LLPorce").textContent, document.getElementById("PLIndexPorce").textContent]
           ],
           type: 'scatter',
           color: 'orange',

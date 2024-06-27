@@ -195,13 +195,13 @@ function tableExists($table){
       //if Group status Deactive
       elseif(is_array($login_level) && isset($login_level['group_status']) && $login_level['group_status'] === '0'):
             $session->msg('d', 'Este nivel de usuario está inactivo!');
-            redirect('/app/pages/home.php', false);
+            redirect('home.php', false);
       //cheackin log in User level and Require level is Less than or equal to
      elseif($current_user['user_level'] <= (int)$require_level):
               return true;
       else:
             $session->msg("d", "¡Lo siento!  no tienes permiso para ver la página.");
-            redirect('/app/pages/home.php', false);
+            redirect('home.php', false);
         endif;
 
      }
@@ -228,7 +228,7 @@ function tableExists($table){
    function find_product_by_title($product_name){
      global $db;
      $p_name = remove_junk($db->escape($product_name));
-     $sql = "SELECT Sample_ID, Sample_Number FROM lab_test_requisition_form WHERE Sample_ID LIKE '%$p_name%' OR Sample_Number LIKE '%$p_name%' LIMIT 5";
+     $sql = "SELECT Sample_ID FROM lab_test_requisition_form WHERE Sample_ID like '%$p_name%' LIMIT 5";
      $result = find_by_sql($sql);
      return $result;
    }
@@ -240,7 +240,7 @@ function tableExists($table){
   function find_all_product_info_by_title($title){
     global $db;
     $sql  = "SELECT * FROM lab_test_requisition_form ";
-    $sql .= " WHERE CONCAT(Sample_ID, '-', Sample_Number) ='{$title}'";
+    $sql .= " WHERE Sample_ID ='{$title}'";
     $sql .=" LIMIT 1";
     return find_by_sql($sql);
   }

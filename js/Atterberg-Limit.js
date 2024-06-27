@@ -105,15 +105,15 @@ function LLyPL() {
     let classify = "error";
     if (!isNaN(LLPorce) && !isNaN(PLIndexPorce)) {
       if (LLPorce < 50) {
-        if (PLIndexPorce > 7 && (0.73 * (LLPorce - 30)) <= PLIndexPorce) {
+        if (PLIndexPorce > 7 && (0.73 * (LLPorce - 20)) <= PLIndexPorce) {
           classify = "CL OR OL";
-        } else if (PLIndexPorce >= 4 && (0.73 * (LLPorce - 30)) <= PLIndexPorce) {
+        } else if (PLIndexPorce >= 4 && (0.73 * (LLPorce - 20)) <= PLIndexPorce) {
           classify = "CL OR ML";
-        } else if (PLIndexPorce < 4 || (0.73 * (LLPorce - 30)) > PLIndexPorce) {
+        } else if (PLIndexPorce < 4 || (0.73 * (LLPorce - 20)) > PLIndexPorce) {
           classify = "ML OR OL";
         }
       } else {
-        if ((0.73 * (LLPorce - 30)) <= PLIndexPorce) {
+        if ((0.73 * (LLPorce - 20)) <= PLIndexPorce) {
           classify = "CH OR OH";
         } else {
           classify = "MH OR OH";
@@ -123,154 +123,36 @@ function LLyPL() {
     return classify;
   }
 
-  var xValues = [Blows1, Blows2, Blows3];
-  var yValues = [LLMCPorce1, LLMCPorce2, LLMCPorce3];
- 
-  var lnXValues = xValues.map(Math.log);
-  var sumlnX2 = lnXValues.reduce((acc, val) => acc + Math.pow(val, 2), 0);
-  var sumYlnX = yValues.reduce((acc, val, i) => acc + val * lnXValues[i], 0);
-  var m = (xValues.length * sumYlnX - lnXValues.reduce((acc, val) => acc + val, 0) * yValues.reduce((acc, val) => acc + val, 0)) /
-         (xValues.length * sumlnX2 - Math.pow(lnXValues.reduce((acc, val) => acc + val, 0), 2));
-  var n = (yValues.reduce((acc, val) => acc + val, 0) - m * lnXValues.reduce((acc, val) => acc + val, 0)) / xValues.length;
- 
-  var SSE = 0;
-  var SST = 0;
- 
-  for (var i = 0; i < xValues.length; i++) {
-   var yPredicted = m * Math.log(xValues[i]) + n;
-   SSE += Math.pow(yValues[i] - yPredicted, 2);
-   SST += Math.pow(yValues[i] - yValues.reduce((acc, val) => acc + val, 0) / xValues.length, 2);
-  }
-  var rSquare = 1 - SSE / SST;
-
   // Pasar el resultado al input
-  document.getElementById("LLWater1").value = LLWater1.toFixed(2);
-  document.getElementById("LLWater2").value = LLWater2.toFixed(2);
-  document.getElementById("LLWater3").value = LLWater3.toFixed(2);
+  document.getElementById("LLWater1").textContent = LLWater1.toFixed(2);
+  document.getElementById("LLWater2").textContent = LLWater2.toFixed(2);
+  document.getElementById("LLWater3").textContent = LLWater3.toFixed(2);
 
-  document.getElementById("LLWtDrySoil1").value = LLWtDrySoil1.toFixed(2);
-  document.getElementById("LLWtDrySoil2").value = LLWtDrySoil2.toFixed(2);
-  document.getElementById("LLWtDrySoil3").value = LLWtDrySoil3.toFixed(2);
+  document.getElementById("LLWtDrySoil1").textContent = LLWtDrySoil1.toFixed(2);
+  document.getElementById("LLWtDrySoil2").textContent = LLWtDrySoil2.toFixed(2);
+  document.getElementById("LLWtDrySoil3").textContent = LLWtDrySoil3.toFixed(2);
 
-  document.getElementById("LLMCPorce1").value = LLMCPorce1.toFixed(2);
-  document.getElementById("LLMCPorce2").value = LLMCPorce2.toFixed(2);
-  document.getElementById("LLMCPorce3").value = LLMCPorce3.toFixed(2);
+  document.getElementById("LLMCPorce1").textContent = LLMCPorce1.toFixed(2);
+  document.getElementById("LLMCPorce2").textContent = LLMCPorce2.toFixed(2);
+  document.getElementById("LLMCPorce3").textContent = LLMCPorce3.toFixed(2);
 
-  document.getElementById("PLWater1").value = PLWater1.toFixed(2);
-  document.getElementById("PLWater2").value = PLWater2.toFixed(2);
-  document.getElementById("PLWater3").value = PLWater3.toFixed(2);
+  document.getElementById("PLWater1").textContent = PLWater1.toFixed(2);
+  document.getElementById("PLWater2").textContent = PLWater2.toFixed(2);
+  document.getElementById("PLWater3").textContent = PLWater3.toFixed(2);
 
-  document.getElementById("PLWtDrySoil1").value = PLWtDrySoil1.toFixed(2);
-  document.getElementById("PLWtDrySoil2").value = PLWtDrySoil2.toFixed(2);
-  document.getElementById("PLWtDrySoil3").value = PLWtDrySoil3.toFixed(2);
+  document.getElementById("PLWtDrySoil1").textContent = PLWtDrySoil1.toFixed(2);
+  document.getElementById("PLWtDrySoil2").textContent = PLWtDrySoil2.toFixed(2);
+  document.getElementById("PLWtDrySoil3").textContent = PLWtDrySoil3.toFixed(2);
 
-  document.getElementById("PLMCPorce1").value = PLMCPorce1.toFixed(2);
-  document.getElementById("PLMCPorce2").value = PLMCPorce2.toFixed(2);
-  document.getElementById("PLMCPorce3").value = PLMCPorce3.toFixed(2);
+  document.getElementById("PLMCPorce1").textContent = PLMCPorce1.toFixed(2);
+  document.getElementById("PLMCPorce2").textContent = PLMCPorce2.toFixed(2);
+  document.getElementById("PLMCPorce3").textContent = PLMCPorce3.toFixed(2);
 
-  document.getElementById("PLAvgMcPorce").value = PLAvgMcPorce.toFixed(2);
+  document.getElementById("PLAvgMcPorce").textContent = PLAvgMcPorce.toFixed(2);
 
-  document.getElementById("LLPorce").value = LLPorce.toFixed(0);
-  document.getElementById("PLPorce").value = PLPorce.toFixed(0);
-  document.getElementById("PLIndexPorce").value = PLIndexPorce.toFixed(0);
-  document.getElementById("LLIndexPorce").value = LLIndexPorce.toFixed(4);
-  document.getElementById("classifysoil").value = classifysoil();
-  document.getElementById("Rsquared").value = rSquare.toFixed(4);
+  document.getElementById("LLPorce").textContent = LLPorce.toFixed(0);
+  document.getElementById("PLPorce").textContent = PLPorce.toFixed(0);
+  document.getElementById("PLIndexPorce").textContent = PLIndexPorce.toFixed(0);
+  document.getElementById("LLIndexPorce").textContent = LLIndexPorce.toFixed(4);
+  document.getElementById("classifysoil").textContent = classifysoil();
 }
-
-  $("input").on("blur", function(event) {
-    event.preventDefault();
-    enviarData();
-  });
-
-  function enviarData() {
-    $.ajax({
-      url: "../libs/graph/Liquid-Limit-Plot.js",
-      type: "POST",
-      data: $("#nopasonada").serialize(),
-      success: function(data) {}
-    });
-    $.ajax({
-      url: "../libs/graph/Plasticity-Chart.js",
-      type: "POST",
-      data: $("#nopasonada").serialize(),
-      success: function(data) {}
-    });
-  }
-
-  function search() {
-    var ID = $('#SampleName').val();
-    var Number = $('#SampleNumber').val();
-
-    console.log("ID:", ID); // Imprime el valor de ID en la consola
-    console.log("Number:", Number); 
-
-    $.ajax({
-      type: 'POST',
-      url: '../php/ajax-search.php',
-      data: { ID: ID, Number: Number },
-      dataType: 'json',
-      success: function(response) {
-        if (response.success) {
-          $('#mensaje-container').html(response.message).fadeIn();
-          
-          setTimeout(function() {
-            $('#mensaje-container').fadeOut();
-          }, 2000);
-          
-          $('#NatMc').val(response.mc_value);
-        } else {
-          $('#mensaje-container').html(response.message).fadeIn();
-
-          setTimeout(function() {
-            $('#mensaje-container').fadeOut();
-          }, 2000);
-        }
-      }
-    });
-  }
-
-
-  function actualizarImagen() {
-    var liquidLimit = echarts.getInstanceByDom(document.getElementById('liquid-limit'));
-    var plasticityChart = echarts.getInstanceByDom(document.getElementById('PlasticityChart'));
-  
-    var liquidLimitImageURL = liquidLimit.getDataURL({
-      pixelRatio: 1,
-      backgroundColor: '#fff'
-    });
-  
-    var plasticityChartImageURL = plasticityChart.getDataURL({
-      pixelRatio: 1,
-      backgroundColor: '#fff'
-    });
-  
-    Promise.all([
-        fetch(liquidLimitImageURL).then(response => response.blob()),
-        fetch(plasticityChartImageURL).then(response => response.blob())
-      ])
-      .then(([liquidLimitBlob, plasticityChartBlob]) => {
-        return Promise.all([
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(liquidLimitBlob);
-          }),
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(plasticityChartBlob);
-          })
-        ]);
-      })
-      .then(([liquidLimitBase64, plasticityChartBase64]) => {
-        document.getElementById('PlotLimit').value = liquidLimitBase64;
-        document.getElementById('PlotPlasticity').value = plasticityChartBase64;
-      })
-      .catch(error => console.error('Error al convertir la imagen a Base64:', error));
-  }
-  document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('blur', actualizarImagen);
-  });

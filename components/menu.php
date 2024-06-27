@@ -4,19 +4,6 @@ $class_form = !empty($class_form) ? $class_form : "collapsed";
 $form_show = !empty($form_show) ? $form_show : " ";
 $profile_show = !empty($profile_show) ? $profile_show : "collapsed";
 $requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
-$Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
-$wepln = !empty($wepln) ? $wepln : "collapsed";
-$GrainSize = !empty($GrainSize) ? $GrainSize : " ";
-$Moisture = !empty($Moisture) ? $Moisture : " ";
-$SG = !empty($SG) ? $SG : " ";
-$tracking_show = !empty($tracking_show) ? $tracking_show : " ";
-$class_tracking = !empty($class_tracking) ? $class_tracking : "collapsed";
-$preparation = !empty($preparation) ? $preparation : " ";
-$realization = !empty($realization) ? $realization : " ";
-$delivery = !empty($delivery) ? $delivery : " ";
-$reviews = !empty($reviews) ? $reviews : " ";
-$repeat = !empty($repeat) ? $repeat : " ";
-$review = !empty($review) ? $review : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
   <aside id="sidebar" class="sidebar">
@@ -24,78 +11,48 @@ $review = !empty($review) ? $review : "collapsed";
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $class_home; ?> " href="/app/pages/home.php">
+        <a class="nav-link <?php echo $class_home; ?> " href="../pages/home.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
       </li><!-- End Dashboard Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $class_tracking; ?>" data-bs-target="#Tracking-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-eye"></i><span>Seguimiento de muestras</span><i class="bi bi-chevron-down ms-auto"></i>
+        <a class="nav-link collapsed" data-bs-target="#components-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-menu-button-wide"></i><span>Components</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="Tracking-nav" class="nav-content collapse <?php echo $tracking_show; ?>" data-bs-parent="#sidebar-nav">
+        <ul id="components-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="/app/pages/test-preparation.php" class="<?php echo $preparation; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en preparacion</span>
+            <a href="components-alerts.html">
+              <i class="bi bi-circle"></i><span>Alerts</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/test-realization.php" class="<?php echo $realization; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en realizacion</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app/pages/test-delivery.php" class="<?php echo $delivery; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en entrega</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app/pages/test-repeat.php" class="<?php echo $repeat; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en repeticion</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app/pages/test-review.php" class="<?php echo $reviews; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en revision</span>
+            <a href="components-accordion.html">
+              <i class="bi bi-circle"></i><span>Accordion</span>
             </a>
           </li>
         </ul>
-      </li><!-- End Tracking Nav -->
+      </li><!-- End Components Nav -->
 
       <li class="nav-item">
         <a class="nav-link <?php echo $class_form; ?>" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-journal-text"></i><span>Formularios de registro</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-journal-text"></i><span>Register Forms</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="forms-nav" class="nav-content collapse <?php echo $form_show; ?> " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="/app/pages/moisture-oven.php" class="<?php echo $Moisture; ?>">
-              <i class="bi bi-circle"></i><span>Moisture Content</span>
-            </a>
-          </li>
           <li>
             <a href="/app/pages/atterberg-limit.php">
               <i class="bi bi-circle"></i><span>Atterberg Limit</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/grain-size.php" class="<?php echo $GrainSize; ?>">
+            <a href="forms-layouts.html">
               <i class="bi bi-circle"></i><span>Grain Size</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/specific-gravity.php" class="<?php echo $SG; ?>">
-              <i class="bi bi-circle"></i><span>Specific Gravity</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app/pages/standard-proctor.php">
-              <i class="bi bi-circle"></i><span>Standard Proctor</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app/pages/LAA-Small.php">
-              <i class="bi bi-circle"></i><span>Los Angeles Abrasion</span>
+            <a href="forms-editors.html">
+              <i class="bi bi-circle"></i><span>SG</span>
             </a>
           </li>
           <li>
@@ -106,47 +63,26 @@ $review = !empty($review) ? $review : "collapsed";
         </ul>
       </li><!-- End Forms Nav -->
 
-      <li class="nav-item">
-        <a class="nav-link <?php echo $Pending_List; ?>" href="/app/pages/pendings-list.php">
-          <i class="bi bi-question-circle"></i>
-          <span>Lista de Pendientes</span>
-        </a>
-      </li><!-- End Register Page Nav -->
+      <li class="nav-heading">Pages</li>
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $wepln; ?>" href="/app/pages/weekly-planning.php">
-          <i class="bi bi-calendar3"></i>
-          <span>Planificación Semanal</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-heading">paginas</li>
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $profile_show; ?>" href="/app/pages/users-profile.php">
+        <a class="nav-link <?php echo $profile_show; ?>" href="users-profile.php">
           <i class="bi bi-person"></i>
-          <span>Perfil</span>
+          <span>Profile</span>
         </a>
       </li><!-- End Profile Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $review; ?>" href="/app/pages/essay-review.php">
-          <i class="bi bi-card-checklist"></i>
-          <span>Revisión de ensayo</span>
-        </a>
-      </li><!-- End Review Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="/app/pages/users-register.php">
+        <a class="nav-link collapsed" href="users-register.php">
           <i class="bi bi-card-list"></i>
-          <span>Nueva cuenta</span>
+          <span>New Account</span>
         </a>
       </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $requisition_form; ?>" href="/app/pages/requisition-form.php">
+        <a class="nav-link <?php echo $requisition_form; ?>" href="requisition-form.php">
           <i class="bi bi-file-earmark"></i>
-          <span>Formulario de solicitud</span>
+          <span>Requisition Form</span>
         </a>
       </li><!-- End Register Page Nav -->
 
