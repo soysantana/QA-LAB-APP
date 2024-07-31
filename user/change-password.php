@@ -18,7 +18,7 @@ if (isset($_POST['update'])) {
             redirect('../pages/users-profile.php', false);
         }
 
-        $id = (int)$_POST['id'];
+        $id = $_POST['id'];
         $new_password = remove_junk($db->escape(sha1($_POST['New-Password'])));
         $sql = "UPDATE users SET password = '{$new_password}' WHERE id = '{$db->escape($id)}'";
         $result = $db->query($sql);

@@ -5,7 +5,7 @@
     $req_fields = array('fullName','username', 'company', 'job', 'country', 'phone', 'email' );
     validate_fields($req_fields);
     if(empty($errors)){
-             $id = (int)$_SESSION['user_id'];
+             $id = $_SESSION['user_id'];
            $name = remove_junk($db->escape($_POST['fullName']));
            $username = remove_junk($db->escape($_POST['username']));
            $company = remove_junk($db->escape($_POST['company']));
@@ -37,7 +37,7 @@ if (isset($_POST['upload'])) {
     validate_fields($req_fields);
 
     if (empty($errors)) {
-        $id = (int)$_SESSION['user_id'];
+        $id = $_SESSION['user_id'];
         // Manejo de la carga de la imagen
         if ($_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
             $imagen_tmp = $_FILES['file_upload']['tmp_name']; // Usar 'tmp_name' en lugar de 'file_upload'
@@ -66,10 +66,10 @@ if (isset($_POST['upload'])) {
 
 <?php
 if (isset($_POST['delete'])) {
-    $id = (int)$_SESSION['user_id'];
+    $id = $_SESSION['user_id'];
 
     // Consulta para obtener la imagen actual del usuario
-    $sql = "SELECT image FROM users WHERE id='{$id}'";
+    $sql = "SELECT image FROM users WHERE id = '{$id}'";
     $result = $db->query($sql);
 
     if ($result) {
@@ -81,9 +81,6 @@ if (isset($_POST['delete'])) {
             // Eliminar la imagen de la base de datos
             $sql = "UPDATE users SET image = NULL WHERE id='{$id}'";
             if ($db->query($sql)) {
-                // Eliminar el archivo de imagen del sistema de archivos (si es necesario)
-                // Aquí debes agregar el código para eliminar el archivo, si lo estás almacenando en el sistema de archivos
-                // Por ejemplo: unlink('ruta/del/archivo.jpg');
                 $session->msg('s', 'Imagen eliminada correctamente.');
             } else {
                 $session->msg('d', 'Error al eliminar la imagen.');
