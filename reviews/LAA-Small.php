@@ -1,8 +1,9 @@
 <?php
-  $page_title = 'Specific Gravity Fine';
-  $review = 'show';
+  $page_title = 'Los Angeles Abrasion';
+  $class_form = ' ';
+  $form_show = 'show';
   require_once('../config/load.php');
-  $Search = find_by_id('specific_gravity_fine', $_GET['id']);
+  $Search = find_by_id('los_angeles_abrasion_coarse_filter', $_GET['id']);
 ?>
 
 <?php page_require_level(1); ?>
@@ -10,21 +11,21 @@
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Specific Gravity Fine Aggregate</h1>
+  <h1>Los Angeles Abrasion For Small Size Coarse</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Specific Gravity Fine</li>
+      <li class="breadcrumb-item active">Los Angeles Abrasion</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/specific-gravity.php?id=<?php echo $Search['id']; ?>" method="post">
+  <form action="../database/los-angeles-abrasion-coarse-filter.php?id=<?php echo $Search['id']; ?>" method="post" class="row">
 
-  <div class="col-md-4">
+  <div class="col-md-7">
   <?php echo display_msg($msg); ?>
   </div>
 
@@ -119,128 +120,116 @@
             <div class="col-md-6">
               <label for="Standard" class="form-label">Standard</label>
               <select id="Standard" class="form-select" name="Standard">
-                <option selected>Choose...</option>
-                <option <?php if ($Search['Standard'] == 'ASTM-D854') echo 'selected'; ?>>ASTM-D854</option>
+                <option value="ASTM-C131">ASTM-C131</option>
               </select>
             </div>
             <div class="col-md-6">
               <label for="TestMethod" class="form-label">Test Method</label>
-              <input type="text" class="form-control" name="TestMethod" id="TestMethod" value="<?php echo ($Search['Methods']); ?>">
+              <input type="text" class="form-control" id="TestMethod" name="TestMethod" value="<?php echo ($Search['Methods']); ?>">
             </div>
             <div class="col-md-6">
               <label for="Technician" class="form-label">Technician</label>
-              <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
+              <input type="text" class="form-control" id="Technician" name="Technician" value="<?php echo ($Search['Technician']); ?>">
             </div>
             <div class="col-md-6">
               <label for="DateTesting" class="form-label">Date of Testing</label>
-              <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
+              <input type="date" class="form-control" id="DateTesting" name="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
             </div>
             <div class="col-12">
               <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
+              <textarea class="form-control" id="Comments" style="height: 100px;" name="Comments"><?php echo ($Search['Comments']); ?></textarea>
             </div>
-          </div><!-- End Multi Columns Form -->
+          </div>
 
         </div>
       </div>
 
+    </div>
+
+    <div class="col-lg-5">
+
+    <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Testing Information</h5>
+              <!-- Bordered Table -->
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row">Selected Grading</th>
+                    <td>
+                        <select class="form-control" id="SelectGrading" name="SelectGrading">
+                            <option selected>Choose...</option>
+                            <option <?php if ($Search['Grading'] == 'A') echo 'selected'; ?>>A</option>
+                            <option <?php if ($Search['Grading'] == 'B') echo 'selected'; ?>>B</option>
+                            <option <?php if ($Search['Grading'] == 'C') echo 'selected'; ?>>C</option>
+                            <option <?php if ($Search['Grading'] == 'D') echo 'selected'; ?>>D</option>
+                        </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Weight of the Spheres (g)</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigSpheres" name="WeigSpheres" value="<?php echo ($Search['Weight_Spheres']); ?>"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Revolutions</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="Revolution" name="Revolution" value="<?php echo ($Search['Revolutions']); ?>"></td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- End Bordered Table -->
+
+            </div>
+          </div>
     </div>
 
     <div class="col-lg-7">
 
     <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Testing Information</h5>
+              <h5 class="card-title">Results</h5>
               <!-- Bordered Table -->
-              <table class="table table-bordered" oninput="SGFINE()">
+              <table class="table table-bordered" oninput="laaLarge()">
                 <tbody>
-
-                <?php
-                $datos = array(
-                  "A)Pycnometer Number :",
-                  "B)Weight of Pycnometer(g): ",
-                  "C)Weight of Dry Soil + Tare (g):",
-                  "D)Weight of Dry Soil (g):",
-                  "E)Weight of Saturated Surface Dry Soil in Air (g):",
-                  "F)Temperature of Sample (°C) :",
-                  "G)Weight of Pycnometer + Soil + Water (g):",
-                  "H)Calibration Weight of Pycnometer at Desired Temperature (g):"
-                );
-                
-                $id = array("PycnoNumber", "WeightPycno", "WeightDryTare", "WeightDry", "WeightSurfaceAir", "TempSample", "WeightPycnoWater", "CalibrationPycno");
-                $DBid = array("Pycnometer_Number", "Weight_Pycnometer", "Weight_Dry_Soil_Tare", "Weight_Dry_Soil", "Weight_Saturated_Surface_Dry_Soil_Air", "Temperature_Sample", "Weight_Pycnometer_Soil_Water", "Calibration_Weight_Pycnometer_Desired_Temperature");
-
-                foreach ($datos as $indice => $dato) {
-                  echo "<tr>";
-                  echo "<th scope='row'>$dato</th>";
-                  echo "<td><input type='text' style='border: none;' class='form-control' name='{$id[$indice]}' id='{$id[$indice]}' value='" . $Search[$DBid[$indice]] . "'></td>";
-                  echo "</tr>";
-                }
-                ?>
-
+                  <tr>
+                    <th scope="row">Initial Weight (g)</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="InitWeig" name="InitWeig" value="<?php echo ($Search['Initial_Weight']); ?>"></td>
+                    <th scope="row">Final Weight (g)</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="FinalWeig" name="FinalWeig" value="<?php echo ($Search['Final_Weight']); ?>"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Weight Loss (g)</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigLoss" name="WeigLoss" value="<?php echo ($Search['Weight_Loss']); ?>" readonly tabindex="-1"></td>
+                    <th scope="row">Weight Loss (%)</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigLossPorce" name="WeigLossPorce" value="<?php echo ($Search['Weight_Loss_Porce']); ?>" readonly tabindex="-1"></td>
+                  </tr>
                 </tbody>
               </table>
               <!-- End Bordered Table -->
+
             </div>
           </div>
     </div>
 
     
-    <div class="col-lg-5">
-      
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Results</h5>
-        <!-- Bordered Table -->
-        <table class="table table-bordered">
-          <tbody>
-            <tr>
-              <th scope="col">Specific Gravity D/(H+E-G)=</th>
-              <td><input type="text" style="border: none;" class="form-control" name="SpecificGravityOD" id="SpecificGravityOD" readonly tabindex="-1" value="<?php echo ($Search['Specific_Gravity_OD']); ?>"></td>
-              <th scope="col">Specific Gravity (SSD) (E/(H+E-G)=</th>
-              <td><input type="text" style="border: none;" class="form-control" name="SpecificGravitySSD" id="SpecificGravitySSD" readonly tabindex="-1" value="<?php echo ($Search['Specific_Gravity_SSD']); ?>"></td>
-            </tr>
-            <tr>
-              <th scope="col">Apparent Specific Gravity D/(H+E-G) =</th>
-              <td><input type="text" style="border: none;" class="form-control" name="ApparentSpecificGravity" id="ApparentSpecificGravity" readonly tabindex="-1" value="<?php echo ($Search['Apparent_Specific_Gravity']); ?>"></td>
-              <th scope="col">Percent of Absortion (E-D)/D*100</th>
-              <td><input type="text" style="border: none;" class="form-control" name="PercentAbsortion" id="PercentAbsortion" readonly tabindex="-1" value="<?php echo ($Search['Percent_Absortion']); ?>"></td>
-            </tr>
-          </tbody>
-        </table>
-        <!-- End Bordered Table -->
-      </div>
-    </div>
+    <div class="col-lg-3">
 
-    <div class="col-lg-6">
-      
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="update-sg-fine">Update Essay</button>
-          <a href="../pdf/sg-fine.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-success" name="Update_LAA_Coarse_Filter">Update Essay</button>
         </div>
 
-        <div class="btn-group mt-2" role="group">
-          <button type="submit" class="btn btn-primary" name="repeat-sg-fine">Repeat</button>
-          <button type="submit" class="btn btn-primary" name="reviewed-sg-fine">Reviewed</button>
-        </div>
-      
       </div>
     </div>
   
   </div>
-
-  </div>
-
-  </form>
-
+  </form><!-- End Multi Columns Form -->
   </div>
 </section>
 
 </main><!-- End #main -->
 
-<script src="../js/Specific-Gravity.js"></script>
+<script src="../js/Los-Angeles-Abrasion.js"></script>
 <?php include_once('../components/footer.php');  ?>
