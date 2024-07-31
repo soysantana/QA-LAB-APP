@@ -158,7 +158,7 @@
             </div>
             <div class="modal-body">
                 <li>
-                    <a href="#" onclick="loadContent('LAA-Large.php')"> <!-- Modificado -->
+                    <a href="LAA-Large.php">
                         <span>Los Angeles Abrasion For Large Size Coarse</span>
                     </a>
                 </li>
@@ -170,27 +170,5 @@
         </div>
     </div>
 </div>
-
-<script>
-function loadContent(page) {
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState == 4 && xhr.status == 200) {
-      // Reemplazar solo el contenido dentro de la etiqueta main
-      document.getElementById("main").innerHTML = xhr.responseText;
-
-      // Cerrar y volver a abrir el modal
-      $('#disablebackdrop').modal('hide');
-      $('#disablebackdrop').modal('show');
-    }
-  };
-
-  xhr.open("GET", page, true);
-  xhr.send();
-}
-
-</script>
-
-
 
 <?php include_once('../components/footer.php');  ?>

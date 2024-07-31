@@ -2,7 +2,7 @@
   $page_title = 'Formulario de solicitud';
   $requisition_form = 'show';
   require_once('../config/load.php');
-  $Search = find_by_id('lab_test_requisition_form', (int)$_GET['id']);
+  $Search = find_by_id('lab_test_requisition_form', $_GET['id']);
 ?>
 
 <?php page_require_level(3); ?>

@@ -122,7 +122,7 @@
             
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</button>
-        <button type="submit" class="btn btn-success" name="send-delivery"><i class="bi bi-save me-1"></i> Guardar entrega</button>
+        <button type="submit" class="btn btn-success" name="send-delivery"><i class="bi bi-save me-1"></i> Enviar a entrega</button>
       </div>
     
     </form><!-- End Multi Columns Form -->

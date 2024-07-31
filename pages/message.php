@@ -79,9 +79,9 @@ if (isset($_POST['update-signed'])) {
         <?php
            $urls = array(
             'AL' => '../reviews/atterberg-limit.php',
-            'MC' => '../reviews/moisture-oven.php',
-            'MC-Microwave' => '../reviews/moisture-microwave.php',
-            'MC-Constant-Mass' => '../reviews/moisture-constant-mass.php',
+            'MC_Oven' => '../reviews/moisture-oven.php',
+            'MC_Microwave' => '../reviews/moisture-microwave.php',
+            'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
             'GS' => '../reviews/grain-size.php',
             'GS-Fine' => '../reviews/grain-size-fine-agg.php',
             'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
@@ -124,9 +124,9 @@ if (isset($_POST['update-signed'])) {
         <?php
            $urls = array(
             'AL' => '../reviews/atterberg-limit.php',
-            'MC' => '../reviews/moisture-oven.php',
-            'MC-Microwave' => '../reviews/moisture-microwave.php',
-            'MC-Constant-Mass' => '../reviews/moisture-constant-mass.php',
+            'MC_Oven' => '../reviews/moisture-oven.php',
+            'MC_Microwave' => '../reviews/moisture-microwave.php',
+            'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
             'GS' => '../reviews/grain-size.php',
             'GS-Fine' => '../reviews/grain-size-fine-agg.php',
             'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
@@ -168,20 +168,20 @@ if (isset($_POST['update-signed'])) {
             <tr>
               <th scope="col">#</th>
               <th scope="col">Sample ID</th>
-              <th scope="col">Collection</th>
-              <th scope="col">Sample Type</th>
               <th scope="col">Sample Number</th>
+              <th scope="col">Material Type</th>
+              <th scope="col">Collection</th>
               <th scope="col">Action</th>
             </tr>
           </thead>
           <tbody>
           <?php foreach ($Requisitions as $req): ?>
             <tr>
-              <td><?php echo $req['id']; ?></td>
+              <td><?php echo count_id(); ?></td>
               <td><?php echo $req['Sample_ID']; ?></td>
-              <td><?php echo $req['Sample_Date']; ?></td>
-              <td><?php echo $req['Sample_Type']; ?></td>
               <td><?php echo $req['Sample_Number']; ?></td>
+              <td><?php echo $req['Material_Type']; ?></td>
+              <td><?php echo $req['Sample_Date']; ?></td>
               <td><button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $req['id']; ?>"><i class="bi bi-eye"></i></button></td>
             </tr>
           <?php endforeach; ?>
@@ -193,65 +193,86 @@ if (isset($_POST['update-signed'])) {
   </div>
   
   <?php $Reviewed = find_all('test_reviewed'); ?>
-  <?php foreach ($Requisitions as $req): ?>
-  <form method="post" action="">
+<?php foreach ($Requisitions as $req): ?>
+<form method="post" action="">
   <div class="modal" id="requisitionview<?php echo $req['id']; ?>" tabindex="-1">
-  
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Essay detail</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="container">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Essay detail</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="container">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Signed essays</h5>
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th scope="col">Signed ✅</th>
+                      <th scope="col">Essays</th> <!-- Corregido typo: "Esays" a "Essays" -->
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php
+                    $testTypeMappings = [
+                      'MC' => [
+                          'MC_Oven',
+                          'MC_Microwave'
+                      ],
+                      'GS' => 'GS_General'
+                    ];
 
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Signed essays</h5>
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th scope="col">Signed ✅</th>
-                    <th scope="col">Esays</th>
-                  </tr>
-                </thead>
-                <tbody>
-                <?php for ($i = 1; $i <= 19; $i++): $testTypeValue = $req['Test_Type' . $i];  if ($testTypeValue !== null && $testTypeValue !== ''): ?>
-                <?php $signed = false; 
-                  foreach ($Reviewed as $review) {
-                    if ($review['Sample_Name'] == $req['Sample_ID'] && $review['Sample_Number'] == $req['Sample_Number'] && $review['Test_Type'] == $testTypeValue && $review['Signed'] == 1) {
-                      $signed = true;
-                        break;
+                    for ($i = 1; $i <= 19; $i++) {
+                      $testTypeKey = 'Test_Type' . $i;
+                      if (isset($req[$testTypeKey]) && $req[$testTypeKey] !== '') {
+                        $testTypeValue = $req[$testTypeKey];
+
+                        // Check if there's a mapping for this test type
+                        if (isset($testTypeMappings[$testTypeValue])) {
+                          if (is_array($testTypeMappings[$testTypeValue])) {
+                            $testTypeValue = $testTypeMappings[$testTypeValue][0];
+                          } else {
+                            $testTypeValue = $testTypeMappings[$testTypeValue];
+                          }
+                        }
+
+                        $signed = false;
+                        foreach ($Reviewed as $review) {
+                          if ($review['Sample_Name'] == $req['Sample_ID'] && $review['Sample_Number'] == $req['Sample_Number'] && $review['Test_Type'] == $testTypeValue && $review['Signed'] == 1) {
+                            $signed = true;
+                            break;
+                          }
+                        }
+                        ?>
+                        <tr>
+                          <td><input class="form-check-input me-1" type="checkbox" name="Test_Type<?php echo $i; ?>" id="testType<?php echo $i; ?>" value="<?php echo $testTypeValue; ?>" <?php echo $signed ? 'checked' : ''; ?>></td>
+                          <td><?php echo $testTypeValue; ?></td>
+                        </tr>
+                        <?php
                       }
                     }
-                ?>
-                  <tr>
-                    <td><input class="form-check-input me-1" type="checkbox" name="Test_Type<?php echo $i; ?>" id="testType<?php echo $i; ?>" value="<?php echo $testTypeValue; ?>" <?php echo $signed ? 'checked' : ''; ?>></td>
-                    <td><?php echo $testTypeValue; ?></td>
-                  </tr>
-                <?php endif; endfor; ?>
-                </tbody>
-              </table>
-            </div> <!-- End Signed essays -->
+                    ?>
+                  </tbody>
+                </table>
+              </div> <!-- End Signed essays -->
+            </div>
           </div>
-
         </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-success" name="update-signed">Update</button>
-      </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-success" name="update-signed">Update</button>
+        </div>
 
+      </div>
     </div>
-  </div>
-
   </div><!-- End Modal-->
-  </form>
+</form>
+<?php endforeach; ?>
 
-  <?php endforeach; ?>
 
   </div>
 </section>

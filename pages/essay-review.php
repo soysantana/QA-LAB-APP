@@ -88,13 +88,13 @@ require_once('../config/load.php');
                     case 'AL':
                       $link = '../reviews/atterberg-limit.php?id=' . $entry['id'];
                       break;
-                    case 'MC':
+                    case 'MC_Oven':
                       $link = '../reviews/moisture-oven.php?id=' . $entry['id'];
                       break;
-                    case 'MC-Microwave':
+                    case 'MC_Microwave':
                       $link = '../reviews/moisture-microwave.php?id=' . $entry['id'];
                       break;
-                    case 'MC-Constant-Mass':
+                    case 'MC_Constant_Mass':
                       $link = '../reviews/moisture-constant-mass.php?id=' . $entry['id'];
                       break;
                     case 'GS':
@@ -163,6 +163,7 @@ require_once('../config/load.php');
                 'point_load' => 'Point Load',
                 'unixial_compressive' => 'Unixial Compressive',
                 'brazilian' => 'Brazilian',
+                'los_angeles_abrasion_coarse_filter' => 'LAA Small',
                ];
     
                foreach ($tables as $tableName => $displayName) {
@@ -196,6 +197,9 @@ require_once('../config/load.php');
                       break;
                     case 'BTT':
                       $link = '../reviews/brazilian.php?id=' . $entry['id'];
+                      break;
+                    case 'LAA_Coarse_Filter':
+                      $link = '../reviews/LAA-Small.php?id=' . $entry['id'];
                       break;
             
                       default:
