@@ -41,6 +41,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "PLT";
+        $id = uuid();
 
         $JackPiston = $db->escape($_POST['JackPiston']);
         $K1assumed = $db->escape($_POST['K1assumed']);
@@ -74,6 +75,7 @@
         } else {}
         
         $sql = "INSERT INTO point_load (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -124,6 +126,7 @@
             $sql .= ") 
             
             VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',

@@ -42,6 +42,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "AL";
+        $id = uuid();
         // Liquid
         $Blows1 = $db->escape($_POST['Blows1']);
         $Blows2 = $db->escape($_POST['Blows2']);
@@ -104,6 +105,7 @@
         
 
         $sql = "INSERT INTO atterberg_limit (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -187,6 +189,7 @@
             Rsquared
             )
         VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -286,7 +289,7 @@
 
 <!-- Update -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-atterberg-limit'])) {
     $req_fields = array(
         'SampleName',
@@ -492,7 +495,7 @@
 <!-- Repeat -->
 <?php
  if (isset($_POST["repeat-atterberg-limit"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -511,10 +514,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -524,6 +529,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -552,7 +558,7 @@
 <!-- Reviewed -->
 <?php
  if (isset($_POST["reviewed-atterberg-limit"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -572,10 +578,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -586,6 +594,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',

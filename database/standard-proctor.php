@@ -42,6 +42,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "SP";
+        $id = uuid();
 
         $NatMc = $db->escape($_POST['NatMc']);
         $SpecGravity = $db->escape($_POST['SpecGravity']);
@@ -79,6 +80,7 @@
         }
         
         $sql = "INSERT INTO standard_proctor (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -130,6 +132,7 @@
         }
         
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -197,7 +200,7 @@
 
 <!-- Update -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-sp'])) {
     $req_fields = array(
         'SampleName',
@@ -339,7 +342,7 @@
 <!-- Repeat -->
 <?php
  if (isset($_POST["repeat-sp"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -399,7 +402,7 @@
 <!-- Reviewed -->
 <?php
  if (isset($_POST["reviewed-sp"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(

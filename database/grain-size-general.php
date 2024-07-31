@@ -42,6 +42,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "GS";
+        $id = uuid();
 
         $Container = $db->escape($_POST['Container']);
         $WetSoil = $db->escape($_POST['WetSoil']);
@@ -81,6 +82,7 @@
         }
         
         $sql = "INSERT INTO grain_size_general (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -140,6 +142,7 @@
         }
         
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -216,7 +219,7 @@
 
 <!-- Update GS General -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-gs-general'])) {
     $req_fields = array(
         'SampleName',
@@ -371,7 +374,7 @@
 <!-- Repeat GS General -->
 <?php
  if (isset($_POST["repeat-gs-general"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -390,10 +393,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -403,6 +408,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -431,7 +437,7 @@
 <!-- Reviewed GS General -->
 <?php
  if (isset($_POST["reviewed-gs-general"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -451,10 +457,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -465,6 +473,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -535,6 +544,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "GS-Fine";
+        $id = uuid();
 
         $Container = $db->escape($_POST['Container']);
         $WetSoil = $db->escape($_POST['WetSoil']);
@@ -585,6 +595,7 @@
         }
         
         $sql = "INSERT INTO grain_size_fine (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -653,6 +664,7 @@
         }
         
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -738,7 +750,7 @@
 
 <!-- Update GS Fine Aggregate -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-gs-fine'])) {
     $req_fields = array(
         'SampleName',
@@ -913,7 +925,7 @@
 <!-- Repeat GS Fine Aggregate -->
 <?php
  if (isset($_POST["repeat-gs-fine"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -932,10 +944,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -945,6 +959,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -973,7 +988,7 @@
 <!-- Reviewed GS Fine Aggregate -->
 <?php
  if (isset($_POST["reviewed-gs-fine"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -993,10 +1008,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -1007,6 +1024,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -1077,6 +1095,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "GS-Coarse";
+        $id = uuid();
 
         $Container = $db->escape($_POST['Container']);
         $WetSoil = $db->escape($_POST['WetSoil']);
@@ -1128,6 +1147,7 @@
         }
         
         $sql = "INSERT INTO grain_size_coarse (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -1198,6 +1218,7 @@
         }
         
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -1285,7 +1306,7 @@
 
 <!-- Update GS Coarse Aggregate -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-gs-coarse'])) {
     $req_fields = array(
         'SampleName',
@@ -1464,7 +1485,7 @@
 <!-- Repeat GS Coarse Aggregate -->
 <?php
  if (isset($_POST["repeat-gs-coarse"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -1483,10 +1504,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -1496,6 +1519,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -1524,7 +1548,7 @@
 <!-- Reviewed GS Coarse Aggregate -->
 <?php
  if (isset($_POST["reviewed-gs-coarse"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -1544,10 +1568,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -1558,6 +1584,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -1628,6 +1655,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "GS-CoarseThan";
+        $id = uuid();
 
         $Container = $db->escape($_POST['Container']);
         $WetSoil = $db->escape($_POST['WetSoil']);
@@ -1679,6 +1707,7 @@
         }
         
         $sql = "INSERT INTO grain_size_coarsethan (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -1749,6 +1778,7 @@
         }
         
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -1836,7 +1866,7 @@
 
 <!-- Update GS Coarse Than Aggregate -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-gs-coarsethan'])) {
     $req_fields = array(
         'SampleName',
@@ -2014,7 +2044,7 @@
 <!-- Repeat GS Coarse Than Aggregate -->
 <?php
  if (isset($_POST["repeat-gs-coarsethan"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -2033,10 +2063,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -2046,6 +2078,7 @@
                     Status
                 )
                 VALUES (
+                    '$id'
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -2074,7 +2107,7 @@
 <!-- Reviewed GS Coarse Than Aggregate -->
 <?php
  if (isset($_POST["reviewed-gs-coarsethan"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -2094,10 +2127,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -2108,6 +2143,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',

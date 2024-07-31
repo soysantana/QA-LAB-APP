@@ -14,6 +14,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $ProjectName = $db->escape($_POST['ProjectName']);
         $Client = $db->escape($_POST['Client']);
         $ProjectNumber = $db->escape($_POST['ProjectNumber']);
@@ -40,7 +41,7 @@
         $Comments = $db->escape($_POST['Comments']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
-        $TestType = "MC";
+        $TestType = "MC_Oven";
 
         $TareName = $db->escape($_POST['TareName']);
         $WetSoil = $db->escape($_POST['WetSoil']);
@@ -52,6 +53,7 @@
         
 
         $sql = "INSERT INTO moisture_oven (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -87,6 +89,7 @@
             Moisture_Content_Porce
         )
         VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -138,7 +141,7 @@
 
 <!-- Update MC Oven -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-mc-oven'])) {
     $req_fields = array(
         'SampleName',
@@ -173,9 +176,9 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
-        $TestType = "Mc_Oven";
+        $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
+        $TestType = "MC_Oven";
 
         $TareName = $db->escape($_POST['TareName']);
         $WetSoil = $db->escape($_POST['WetSoil']);
@@ -209,8 +212,8 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Tare_Name = '{$TareName}', ";
         $query .= "Tare_Plus_Wet_Soil = '{$WetSoil}', ";
@@ -240,7 +243,7 @@
 <!-- Repeat MC Oven -->
 <?php
  if (isset($_POST["repeat-mc-oven"])) {
-    $Search = (int) $_GET["id"];
+    $Search =  $_GET["id"];
     $Rcomment = $db->escape($_POST['Rcomment']);
 
     if (!empty($Search)) {
@@ -258,11 +261,13 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
-                $TestType = "MC";
+                $TestType = "MC_Oven";
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -273,6 +278,7 @@
                     Comment
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -302,7 +308,7 @@
 <!-- Reviewed MC Oven -->
 <?php
  if (isset($_POST["reviewed-mc-oven"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -310,6 +316,7 @@
         );
 
         if ($search_data) {
+            $id = uuid();
             $ID = $search_data[0]["id"];
             $SampleID = $search_data[0]["Sample_ID"];
             $SampleNumber = $search_data[0]["Sample_Number"];
@@ -326,6 +333,7 @@
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -336,6 +344,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -375,6 +384,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $ProjectName = $db->escape($_POST['ProjectName']);
         $Client = $db->escape($_POST['Client']);
         $ProjectNumber = $db->escape($_POST['ProjectNumber']);
@@ -400,7 +410,7 @@
         $Comments = $db->escape($_POST['Comments']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
-        $TestType = "MC-Microwave";
+        $TestType = "MC_Microwave";
 
         $TareName = $db->escape($_POST['TareName']);
         $MicrowaveModel = $db->escape($_POST['MicrowaveModel']);
@@ -413,6 +423,7 @@
         }
 
         $sql = "INSERT INTO moisture_microwave (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -452,6 +463,7 @@
             Moisture_Content_Porce
         )
         VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -507,7 +519,7 @@
 
 <!-- Update Microwave -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-microwave'])) {
     $req_fields = array(
         'SampleName',
@@ -541,9 +553,9 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
-        $TestType = "MC-Microwave";
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
+        $TestType = "MC_Microwave";
 
         $TareName = $db->escape($_POST['TareName']);
         $MicrowaveModel = $db->escape($_POST['MicrowaveModel']);
@@ -578,8 +590,8 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Tare_Name = '{$TareName}', ";
         $query .= "Microwave_Model = '{$MicrowaveModel}', ";
@@ -614,7 +626,7 @@
 <!-- Repeat MC Microwave -->
 <?php
  if (isset($_POST["repeat-mc-microwave"])) {
-    $Search = (int) $_GET["id"];
+    $Search =  $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -674,7 +686,7 @@
 <!-- Reviewed MC Microwave -->
 <?php
  if (isset($_POST["reviewed-mc-microwave"])) {
-    $Search = (int) $_GET["id"];
+    $Search =  $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -694,10 +706,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -708,6 +722,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -720,12 +735,12 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/moisture-constant-mass.php?id=" . $Search, false);
+                    redirect("../reviews/moisture-microwave.php?id=" . $Search, false);
                 } else {
                 }
             } else {
                 $session->msg("w", "A record already exists");
-                redirect("../reviews/moisture-constant-mass.php?id=" . $Search, false);
+                redirect("../reviews/moisture-microwave.php?id=" . $Search, false);
             }
         } else {
         }
@@ -747,6 +762,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $ProjectName = $db->escape($_POST['ProjectName']);
         $Client = $db->escape($_POST['Client']);
         $ProjectNumber = $db->escape($_POST['ProjectNumber']);
@@ -772,7 +788,7 @@
         $Comments = $db->escape($_POST['Comments']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
-        $TestType = "MC-Constant-Mass";
+        $TestType = "MC_Constant_Mass";
 
         $TareName = $db->escape($_POST['TareName']);
         $OvenTemp = $db->escape($_POST['OvenTemp']);
@@ -785,6 +801,7 @@
         }
 
         $sql = "INSERT INTO moisture_constant_mass (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -824,6 +841,7 @@
             Moisture_Content_Porce
         )
         VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -879,7 +897,7 @@
 
 <!-- Update MC Constant Mass -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-mc-constant-mass'])) {
     $req_fields = array(
         'SampleName',
@@ -913,9 +931,9 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
-        $TestType = "MC-Constant-Mass";
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
+        $TestType = "MC_Constant_Mass";
 
         $TareName = $db->escape($_POST['TareName']);
         $OvenTemp = $db->escape($_POST['OvenTemp']);
@@ -950,8 +968,8 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Tare_Name = '{$TareName}', ";
         $query .= "Temperature = '{$OvenTemp}', ";
@@ -986,7 +1004,7 @@
 <!-- Repeat MC Constant Mass -->
 <?php
  if (isset($_POST["repeat-mc-constant-mass"])) {
-    $Search = (int) $_GET["id"];
+    $Search =  $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -1046,7 +1064,7 @@
 <!-- Reviewed MC Constant Mass -->
 <?php
  if (isset($_POST["reviewed-mc-constant-mass"])) {
-    $Search = (int) $_GET["id"];
+    $Search =  $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -1066,10 +1084,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -1080,6 +1100,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
