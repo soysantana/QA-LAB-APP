@@ -23,7 +23,7 @@
                 <div class="card-body">
                 
                   <div class="pt-4 pb-2">
-                    <h5 class="card-title text-center pb-0 fs-4">Ingrese a su cuenta</h5>
+                    <h5 class="card-title text-center pb-0 fs-5">Laboratorio mecanica de suelo</h5>
                     <p class="text-center small">Ingrese su nombre de usuario y contraseña para iniciar sesión</p>
                   </div>
                   <?php echo display_msg($msg); ?>
