@@ -6,6 +6,7 @@ $formPresa = !empty($formPresa) ? $formPresa : "collapsed";
 $formPresaShow = !empty($formPresaShow) ? $formPresaShow : " ";
 $profile_show = !empty($profile_show) ? $profile_show : "collapsed";
 $requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
+$Sumarios = !empty($Sumarios) ? $Sumarios : "collapsed";
 $Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
 $wepln = !empty($wepln) ? $wepln : "collapsed";
 $GrainSize = !empty($GrainSize) ? $GrainSize : " ";
@@ -169,6 +170,15 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </ul>
       </li><!-- End Forms Nav -->
 
+      <li class="nav-heading">paginas</li>
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $Sumarios; ?>" href="/app/pages/sumary.php">
+          <i class="bi bi-database"></i>
+          <span>Sumarios</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
       <li class="nav-item">
         <a class="nav-link <?php echo $Pending_List; ?>" href="/app/pages/pendings-list.php">
           <i class="bi bi-question-circle"></i>
@@ -182,15 +192,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           <span>Planificación Semanal</span>
         </a>
       </li><!-- End Register Page Nav -->
-
-      <li class="nav-heading">paginas</li>
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $profile_show; ?>" href="/app/pages/users-profile.php">
-          <i class="bi bi-person"></i>
-          <span>Perfil</span>
-        </a>
-      </li><!-- End Profile Page Nav -->
 
       <li class="nav-item">
         <a class="nav-link <?php echo $review; ?>" href="/app/pages/essay-review.php">
@@ -207,18 +208,31 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       </li><!-- End Review Essay Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="/app/pages/users-register.php">
-          <i class="bi bi-card-list"></i>
-          <span>Nueva cuenta</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
         <a class="nav-link <?php echo $requisition_form; ?>" href="/app/pages/requisition-form.php">
           <i class="bi bi-file-earmark"></i>
           <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
+
+      <li class="nav-heading">Configuracion</li>
+
+      <!-- User Profile -->
+      <li class="nav-item">
+        <a class="nav-link <?php echo $profile_show; ?>" href="/app/pages/users-profile.php">
+          <i class="bi bi-person"></i>
+          <span>Perfil</span>
+        </a>
+      </li>
+      <!-- End User Profile -->
+
+      <!-- New Account -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="/app/pages/users-register.php">
+          <i class="bi bi-card-list"></i>
+          <span>Nueva cuenta</span>
+        </a>
+      </li>
+      <!-- End New Account -->
 
     </ul>
 
