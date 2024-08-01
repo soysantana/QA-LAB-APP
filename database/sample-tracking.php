@@ -13,6 +13,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $Sname = $db->escape($_POST['Sname']);
         $Snumber = $db->escape($_POST['Snumber']);
         $Ttype = $db->escape($_POST['Ttype']);
@@ -24,6 +25,7 @@
 
         if (!$existingP) {
             $sql = "INSERT INTO test_preparation (
+                id,
                 Sample_Name,
                 Sample_Number,
                 Test_Type,
@@ -31,6 +33,7 @@
                 Start_Date,
                 Status
             ) VALUES (
+                '$id',
                 '$Sname',
                 '$Snumber',
                 '$Ttype',
@@ -99,6 +102,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $Sname = $db->escape($_POST['Sname']);
         $Snumber = $db->escape($_POST['Snumber']);
         $Ttype = $db->escape($_POST['Ttype']);
@@ -110,6 +114,7 @@
 
         if (!$ExistingRealization) {
             $sql = "INSERT INTO test_realization (
+                id,
                 Sample_Name,
                 Sample_Number,
                 Test_Type,
@@ -117,6 +122,7 @@
                 Start_Date,
                 Status
             ) VALUES (
+                '$id',
                 '$Sname',
                 '$Snumber',
                 '$Ttype',
@@ -185,6 +191,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $Sname = $db->escape($_POST['Sname']);
         $Snumber = $db->escape($_POST['Snumber']);
         $Ttype = $db->escape($_POST['Ttype']);
@@ -196,6 +203,7 @@
 
         if (!$ExistingDelivery) {
             $sql = "INSERT INTO test_delivery (
+                id,
                 Sample_Name,
                 Sample_Number,
                 Test_Type,
@@ -203,6 +211,7 @@
                 Start_Date,
                 Status
             ) VALUES (
+                '$id',
                 '$Sname',
                 '$Snumber',
                 '$Ttype',
@@ -267,6 +276,7 @@
 
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            $id = uuid();
             $Sname = $row["Sample_ID"];
             $Snumber = $row["Sample_Number"];
             $Reby = $row["Register_By"];
@@ -303,8 +313,8 @@
                 }
             } else {
                 // No existe la entrada, insertar una nueva
-                $insertQuery = "INSERT INTO test_review (Sample_Name, Sample_Number, Register_By, Test_Type, Start_Date, Status, Tracking)
-                                VALUES ('$Sname', '$Snumber', '$Reby', '$mappedType', '$Redate', 'Review', '$Tracking')";
+                $insertQuery = "INSERT INTO test_review (id, Sample_Name, Sample_Number, Register_By, Test_Type, Start_Date, Status, Tracking)
+                                VALUES ('$id', '$Sname', '$Snumber', '$Reby', '$mappedType', '$Redate', 'Review', '$Tracking')";
 
                 if ($db->query($insertQuery) === true) {
                     $session->msg("s", "Insertado exitosamente");

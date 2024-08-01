@@ -1,0 +1,17 @@
+{
+    "name": "codespace/qa-lab-app",
+    "autoload": {
+        "psr-4": {
+            "Codespace\\QaLabApp\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Arturo Santana",
+            "email": "santana.inffo@gmail.com"
+        }
+    ],
+    "require": {
+        "tecnickcom/tcpdf": "^6.7"
+    }
+}

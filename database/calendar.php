@@ -13,6 +13,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $Tec = $db->escape($_POST['Tec']);
         $Act = $db->escape($_POST['Act']);
         $FecIni = $db->escape($_POST['FecIni']);
@@ -20,6 +21,7 @@
         $ColPic = $db->escape($_POST['ColPic']);
 
         $sql = "INSERT INTO calendar (
+            id,
             Technician,
             Activity,
             Color,
@@ -27,6 +29,7 @@
             End_Date
             )
         VALUES (
+            '$id',
             '$Tec',
             '$Act',
             '$ColPic',
@@ -50,7 +53,7 @@
 
 <!-- Update Calendar -->
 <?php
- $Search = (int)$_POST['event-id'];
+ $Search = $_POST['event-id'];
  if (isset($_POST['update-calendar'])) {
     $req_fields = array(
         'Tecnico',
@@ -93,7 +96,7 @@
 
 <!-- Delete Requisiton -->
 <?php
- $Search = (int)$_POST['event-id'];
+ $Search = $_POST['event-id'];
  
  $ID = delete_by_id('calendar', $Search);
 

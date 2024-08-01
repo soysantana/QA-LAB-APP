@@ -2,11 +2,16 @@
 $class_home = !empty($class_home) ? $class_home : "collapsed";
 $class_form = !empty($class_form) ? $class_form : "collapsed";
 $form_show = !empty($form_show) ? $form_show : " ";
+$formPresa = !empty($formPresa) ? $formPresa : "collapsed";
+$formPresaShow = !empty($formPresaShow) ? $formPresaShow : " ";
 $profile_show = !empty($profile_show) ? $profile_show : "collapsed";
 $requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
+$Sumarios = !empty($Sumarios) ? $Sumarios : "collapsed";
 $Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
 $wepln = !empty($wepln) ? $wepln : "collapsed";
 $GrainSize = !empty($GrainSize) ? $GrainSize : " ";
+$gsPresa = !empty($gsPresa) ? $gsPresa : " ";
+$sgPresa = !empty($sgPresa) ? $sgPresa : " ";
 $Moisture = !empty($Moisture) ? $Moisture : " ";
 $SG = !empty($SG) ? $SG : " ";
 $tracking_show = !empty($tracking_show) ? $tracking_show : " ";
@@ -17,6 +22,7 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
+$review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
   <aside id="sidebar" class="sidebar">
@@ -99,12 +105,79 @@ $review = !empty($review) ? $review : "collapsed";
             </a>
           </li>
           <li>
+            <a href="/app/pages/unixial-compressive.php">
+              <i class="bi bi-circle"></i><span>UCS</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/point-load.php">
+              <i class="bi bi-circle"></i><span>PLT</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/brazilian.php">
+              <i class="bi bi-circle"></i><span>BTS</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/leeb.php">
+              <i class="bi bi-circle"></i><span>Leeb Hardness</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/grout.php">
+              <i class="bi bi-circle"></i><span>Grout</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/pinhole-test.php">
+              <i class="bi bi-circle"></i><span>Pinhole</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/soundness.php">
+              <i class="bi bi-circle"></i><span>Soundness</span>
+            </a>
+          </li>
+          <li>
             <a href="forms-validation.html">
               <i class="bi bi-circle"></i><span>Density</span>
             </a>
           </li>
         </ul>
       </li><!-- End Forms Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $formPresa; ?>" data-bs-target="#forms-presa" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-file-text"></i><span>Construccion</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="forms-presa" class="nav-content collapse <?php echo $formPresaShow; ?> " data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="/app/pages/grain-size-lpf.php" class="<?php echo $gsPresa; ?>">
+              <i class="bi bi-circle"></i><span>Grain Size</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/atterberg-limit-tsf.php">
+              <i class="bi bi-circle"></i><span>Atterberg Limit</span>
+            </a>
+          </li>
+          <li>
+            <a href="/app/pages/specific-gravity-fine-filter.php" class="<?php echo $sgPresa; ?>">
+              <i class="bi bi-circle"></i><span>Specific Gravity</span>
+            </a>
+          </li>
+        </ul>
+      </li><!-- End Forms Nav -->
+
+      <li class="nav-heading">paginas</li>
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $Sumarios; ?>" href="/app/pages/sumary.php">
+          <i class="bi bi-database"></i>
+          <span>Sumarios</span>
+        </a>
+      </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
         <a class="nav-link <?php echo $Pending_List; ?>" href="/app/pages/pendings-list.php">
@@ -120,15 +193,6 @@ $review = !empty($review) ? $review : "collapsed";
         </a>
       </li><!-- End Register Page Nav -->
 
-      <li class="nav-heading">paginas</li>
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $profile_show; ?>" href="/app/pages/users-profile.php">
-          <i class="bi bi-person"></i>
-          <span>Perfil</span>
-        </a>
-      </li><!-- End Profile Page Nav -->
-
       <li class="nav-item">
         <a class="nav-link <?php echo $review; ?>" href="/app/pages/essay-review.php">
           <i class="bi bi-card-checklist"></i>
@@ -137,18 +201,38 @@ $review = !empty($review) ? $review : "collapsed";
       </li><!-- End Review Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="/app/pages/users-register.php">
-          <i class="bi bi-card-list"></i>
-          <span>Nueva cuenta</span>
+        <a class="nav-link <?php echo $review_essay; ?>" href="/app/pages/essay.php">
+          <i class="bi bi-database"></i>
+          <span>Ensayos Registrados</span>
         </a>
-      </li><!-- End Register Page Nav -->
+      </li><!-- End Review Essay Page Nav -->
 
       <li class="nav-item">
         <a class="nav-link <?php echo $requisition_form; ?>" href="/app/pages/requisition-form.php">
           <i class="bi bi-file-earmark"></i>
-          <span>Formulario de solicitud</span>
+          <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
+
+      <li class="nav-heading">Configuracion</li>
+
+      <!-- User Profile -->
+      <li class="nav-item">
+        <a class="nav-link <?php echo $profile_show; ?>" href="/app/pages/users-profile.php">
+          <i class="bi bi-person"></i>
+          <span>Perfil</span>
+        </a>
+      </li>
+      <!-- End User Profile -->
+
+      <!-- New Account -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="/app/pages/users-register.php">
+          <i class="bi bi-card-list"></i>
+          <span>Nueva cuenta</span>
+        </a>
+      </li>
+      <!-- End New Account -->
 
     </ul>
 

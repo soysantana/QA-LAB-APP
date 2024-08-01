@@ -41,6 +41,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "BTT";
+        $id = uuid();
 
         if ($_FILES['SpecimenBefore']['error'] === UPLOAD_ERR_OK && $_FILES['SpecimenAfter']['error'] === UPLOAD_ERR_OK) {
             // Manejar SpecimenBefore
@@ -75,6 +76,7 @@
         }
         
         $sql = "INSERT INTO brazilian (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -121,6 +123,7 @@
             $sql .= ") 
             
             VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',

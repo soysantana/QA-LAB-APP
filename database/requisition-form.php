@@ -12,6 +12,7 @@
     validate_fields($req_fields);
 
     if (empty($errors)) {
+        $id = uuid();
         $ProjectName = $db->escape($_POST['ProjectName']);
         $Client = $db->escape($_POST['Client']);
         $ProjectNumber = $db->escape($_POST['ProjectNumber']);
@@ -40,6 +41,7 @@
         
 
         $sql = "INSERT INTO lab_test_requisition_form (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -82,6 +84,7 @@
             Test_Type19
         )
         VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -140,7 +143,7 @@
 
 <!-- Update Requisiton -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-requisition'])) {
     $req_fields = array(
         'SampleName',
@@ -233,7 +236,7 @@
 
 <!-- Delete Requisiton -->
 <?php
- $delete = (int)$_GET['id'];
+ $delete = $_GET['id'];
  
  $ID = delete_by_id('lab_test_requisition_form', $delete);
 

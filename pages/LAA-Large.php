@@ -6,6 +6,8 @@
 ?>
 
 <?php page_require_level(1); ?>
+<?php include_once('../components/header.php');  ?>
+<main id="main" class="main">
 
 <div class="pagetitle">
   <h1>Los Angeles Abrasion For Large Size Coarse</h1>
@@ -20,6 +22,12 @@
 <section class="section">
   <div class="row">
 
+  <form action="../database/los-angeles-abrasion-coarse-filter.php" method="post" class="row">
+
+  <div class="col-md-7">
+  <?php echo display_msg($msg); ?>
+  </div>
+
   <div id="product_info"></div>
 
     <div class="col-lg-12">
@@ -29,31 +37,30 @@
           <h5 class="card-title">Trial Information</h5>
 
           <!-- Multi Columns Form -->
-          <form class="row g-3">
+          <div class="row g-3">
             <div class="col-md-6">
               <label for="Standard" class="form-label">Standard</label>
-              <select id="Standard" class="form-select">
-                <option selected>Choose...</option>
-                <option>ASTM</option>
+              <select id="Standard" class="form-select" name="Standard">
+                <option value="ASTM-C535">ASTM-C535</option>
               </select>
             </div>
             <div class="col-md-6">
               <label for="TestMethod" class="form-label">Test Method</label>
-              <input type="text" class="form-control" id="TestMethod">
+              <input type="text" class="form-control" id="TestMethod" name="TestMethod">
             </div>
             <div class="col-md-6">
               <label for="Technician" class="form-label">Technician</label>
-              <input type="text" class="form-control" id="Technician">
+              <input type="text" class="form-control" id="Technician" name="Technician">
             </div>
             <div class="col-md-6">
               <label for="DateTesting" class="form-label">Date of Testing</label>
-              <input type="date" class="form-control" id="DateTesting">
+              <input type="date" class="form-control" id="DateTesting" name="DateTesting">
             </div>
             <div class="col-12">
               <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" id="Comments" style="height: 100px;"></textarea>
+              <textarea class="form-control" id="Comments" name="Comments" style="height: 100px;"></textarea>
             </div>
-          </form><!-- End Multi Columns Form -->
+          </div><!-- End Multi Columns Form -->
 
         </div>
       </div>
@@ -71,21 +78,13 @@
                   <tr>
                     <th scope="row">Selected Grading</th>
                     <td>
-                        <select class="form-control" id="SelectGrading">
+                        <select class="form-control" id="SelectGrading" name="SelectGrading">
                             <option selected>Choose...</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
                         </select>
                     </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Weight of the Spheres (g)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="WeigSpheres"></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Revolutions</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="Revolution"></td>
                   </tr>
                 </tbody>
               </table>
@@ -101,19 +100,19 @@
             <div class="card-body">
               <h5 class="card-title">Results</h5>
               <!-- Bordered Table -->
-              <table class="table table-bordered">
+              <table class="table table-bordered" oninput="laaLarge()">
                 <tbody>
                   <tr>
                     <th scope="row">Initial Weight (g)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="InitWeig"></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="InitWeig" name="InitWeig"></td>
                     <th scope="row">Final Weight (g)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="FinalWeig"></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="FinalWeig" name="FinalWeig"></td>
                   </tr>
                   <tr>
                     <th scope="row">Weight Loss (g)</th>
-                    <td><p style="border: none;" class="form-control" id="WeigLoss"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigLoss" name="WeigLoss" readonly tabindex="-1"></td>
                     <th scope="row">Weight Loss (%)</th>
-                    <td><p style="border: none;" class="form-control" id="WeigLossPorce"></p></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigLossPorce" name="WeigLossPorce" readonly tabindex="-1"></td>
                   </tr>
                 </tbody>
               </table>
@@ -131,8 +130,7 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="button" class="btn btn-success">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
+          <button type="submit" name="LAA_Coarse_Aggregate" class="btn btn-success">Save Essay</button>
         </div>
 
       </div>
@@ -142,3 +140,10 @@
 
   </div>
 </section>
+
+</form>
+
+</main><!-- End #main -->
+
+<script src="../js/Los-Angeles-Abrasion.js"></script>
+<?php include_once('../components/footer.php');  ?>

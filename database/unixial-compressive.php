@@ -41,6 +41,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "UCS";
+        $id = uuid();
 
         $DimensionD = $db->escape($_POST['DimensionD']);
         $DimensionH = $db->escape($_POST['DimensionH']);
@@ -74,6 +75,7 @@
         } else {}
         
         $sql = "INSERT INTO unixial_compressive (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -120,6 +122,7 @@
             $sql .= ") 
             
             VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',

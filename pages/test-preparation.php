@@ -171,7 +171,7 @@
             
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</button>
-        <button type="submit" class="btn btn-success" name="send-realization"><i class="bi bi-save me-1"></i> Guardar realización</button>
+        <button type="submit" class="btn btn-success" name="send-realization"><i class="bi bi-save me-1"></i> Enviar a realización</button>
       </div>
     
     </form><!-- End Multi Columns Form -->

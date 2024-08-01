@@ -40,6 +40,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "SG";
+        $id = uuid();
 
         $PycnUsed = $db->escape($_POST['PycnUsed']);
         $PycnNumber = $db->escape($_POST['PycnNumber']);
@@ -60,6 +61,7 @@
 
         
         $sql = "INSERT INTO specific_gravity (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -103,6 +105,7 @@
             Specific_Gravity_Soil_Solid";
 
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -163,7 +166,7 @@
 
 <!-- Update SG -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-sg'])) {
     $req_fields = array(
         'SampleName',
@@ -281,7 +284,7 @@
 <!-- Repeat SG -->
 <?php
  if (isset($_POST["repeat-sg"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -300,10 +303,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -313,6 +318,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -341,7 +347,7 @@
 <!-- Reviewed SG -->
 <?php
  if (isset($_POST["reviewed-sg"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -361,10 +367,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -375,6 +383,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -440,6 +449,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "SG-Coarse";
+        $id = uuid();
 
         $SpecificGravityOD = $db->escape($_POST['SpecificGravityOD']);
         $SpecificGravitySSD = $db->escape($_POST['SpecificGravitySSD']);
@@ -455,6 +465,7 @@
 
         
         $sql = "INSERT INTO specific_gravity_coarse (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -491,6 +502,7 @@
             }
 
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -544,7 +556,7 @@
 
 <!-- Update SG Coarse -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-sg-coarse'])) {
     $req_fields = array(
         'SampleName',
@@ -648,7 +660,7 @@
 <!-- Repeat SG Coarse -->
 <?php
  if (isset($_POST["repeat-sg-coarse"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -667,10 +679,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -680,6 +694,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -708,7 +723,7 @@
 <!-- Reviewed SG Coarse -->
 <?php
  if (isset($_POST["reviewed-sg-coarse"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -728,10 +743,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -742,6 +759,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -807,6 +825,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "SG-Fine";
+        $id = uuid();
 
         $SpecificGravityOD = $db->escape($_POST['SpecificGravityOD']);
         $SpecificGravitySSD = $db->escape($_POST['SpecificGravitySSD']);
@@ -825,6 +844,7 @@
 
         
         $sql = "INSERT INTO specific_gravity_fine (
+            id,
             Project_Name,
             Client,
             Project_Number,
@@ -864,6 +884,7 @@
             Calibration_Weight_Pycnometer_Desired_Temperature";
 
         $sql .= ") VALUES (
+            '$id',
             '$ProjectName',
             '$Client',
             '$ProjectNumber',
@@ -920,7 +941,7 @@
 
 <!-- Update SG Fine -->
 <?php
- $Search = (int)$_GET['id'];
+ $Search = $_GET['id'];
  if (isset($_POST['update-sg-fine'])) {
     $req_fields = array(
         'SampleName',
@@ -1031,7 +1052,7 @@
 <!-- Repeat SG Fine -->
 <?php
  if (isset($_POST["repeat-sg-fine"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -1050,10 +1071,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -1063,6 +1086,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
@@ -1091,7 +1115,7 @@
 <!-- Reviewed SG Fine -->
 <?php
  if (isset($_POST["reviewed-sg-fine"])) {
-    $Search = (int) $_GET["id"];
+    $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
@@ -1111,10 +1135,12 @@
             );
 
             if (!$existing_record) {
+                $id = uuid();
                 $RegistedDate = make_date();
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
+                    id,
                     Sample_Name,
                     Sample_Number,
                     Start_Date,
@@ -1125,6 +1151,7 @@
                     Status
                 )
                 VALUES (
+                    '$id',
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',

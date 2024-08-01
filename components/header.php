@@ -58,9 +58,9 @@
         <?php
           $urls = array(
           'AL' => '../reviews/atterberg-limit.php',
-          'MC' => '../reviews/moisture-oven.php',
-          'MC-Microwave' => '../reviews/moisture-microwave.php',
-          'MC-Constant-Mass' => '../reviews/moisture-constant-mass.php',
+          'MC_Oven' => '../reviews/moisture-oven.php',
+          'MC_Microwave' => '../reviews/moisture-microwave.php',
+          'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
           'GS' => '../reviews/grain-size.php',
           'GS-Fine' => '../reviews/grain-size-fine-agg.php',
           'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
@@ -115,9 +115,9 @@
         <?php
            $urls = array(
             'AL' => '../reviews/atterberg-limit.php',
-            'MC' => '../reviews/moisture-oven.php',
-            'MC-Microwave' => '../reviews/moisture-microwave.php',
-            'MC-Constant-Mass' => '../reviews/moisture-constant-mass.php',
+            'MC_Oven' => '../reviews/moisture-oven.php',
+            'MC_Microwave' => '../reviews/moisture-microwave.php',
+            'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
             'GS' => '../reviews/grain-size.php',
             'GS-Fine' => '../reviews/grain-size-fine-agg.php',
             'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
