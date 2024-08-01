@@ -1,7 +1,0 @@
-{
-    "name": "PHP Development",
-    "image": "mcr.microsoft.com/vscode/devcontainers/php:8.1",
-    "features": {
-        "github-cli": "latest"
-    }
-}
