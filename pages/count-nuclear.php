@@ -2,6 +2,7 @@
   $page_title = 'Count For Nuclear Gauche';
   $class_form = ' ';
   $form_show = 'show';
+  $Density = 'active';
   require_once('../config/load.php');
 ?>
 

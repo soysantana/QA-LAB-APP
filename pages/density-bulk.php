@@ -177,18 +177,18 @@
             </div>
             <div class="modal-body">
                 <li>
-                    <a href="#" onclick="loadContent('grain-size-fine-agg.php')"> <!-- Modificado -->
-                        <span>Grain Size Fine Aggregate</span>
+                    <a href="count-nuclear.php">
+                        <span>Count Nuclear</span>
                     </a>
                 </li>
                 <li>
-                    <a href="#" onclick="loadContent('grain-size-coarse-agg.php')"> <!-- Modificado -->
-                        <span>Grain Size Coarse Aggregate</span>
+                    <a href="density-sand.php">
+                        <span>Density Sand</span>
                     </a>
                 </li>
                 <li>
-                    <a href="#" onclick="loadContent('grain-size-coarsethan-agg.php')"> <!-- Modificado -->
-                        <span>Grain Size Coarse Than Aggregate</span>
+                    <a href="density-weight.php">
+                        <span>Density Weight</span>
                     </a>
                 </li>
             </div>
@@ -200,28 +200,5 @@
     </div>
 </div>
 
-<script>
-function loadContent(page) {
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState == 4 && xhr.status == 200) {
-      // Reemplazar solo el contenido dentro de la etiqueta main
-      document.getElementById("main").innerHTML = xhr.responseText;
-
-      // Cerrar y volver a abrir el modal
-      $('#disablebackdrop').modal('hide');
-      $('#disablebackdrop').modal('show');
-    }
-  };
-
-  xhr.open("GET", page, true);
-  xhr.send();
-}
-
-</script>
-
 <script src="../js/Grain-Size.js"></script>
-
-
-
 <?php include_once('../components/footer.php');  ?>

@@ -7,37 +7,32 @@
   $tables = ['atterberg_limit', 'brazilian', 'grain_size_coarse', 'grain_size_coarsethan', 'grain_size_fine', 'grain_size_general', 'los_angeles_abrasion_coarse_aggregate', 
   'los_angeles_abrasion_coarse_filter', 'moisture_constant_mass', 'moisture_microwave', 'moisture_oven', 'point_load', 'specific_gravity', 'specific_gravity_coarse', 
   'specific_gravity_fine', 'standard_proctor', 'unixial_compressive' ];
+
   $data = [];
 
+  // Recuperar y combinar los datos de todas las tablas
   foreach ($tables as $table) {
-      $data[$table] = find_all($table);
+      $table_data = find_all($table);
+      $data = array_merge($data, $table_data);
   }
-
-  // Combinar los datos en un solo array
-  $combined_data = [];
-  foreach ($data as $table_data) {
-      foreach ($table_data as $row) {
-          $combined_data[] = $row;
+  
+  // Función para eliminar duplicados basados en una clave específica
+  function remove_duplicates($data, $key) {
+      $result = [];
+      $seen = [];
+  
+      foreach ($data as $row) {
+          if (!isset($seen[$row[$key]])) {
+              $seen[$row[$key]] = true;
+              $result[] = $row;
+          }
       }
+  
+      return $result;
   }
-
-    // Función para eliminar duplicados
-    function remove_duplicates($data, $key) {
-        $result = [];
-        $seen = [];
   
-        foreach ($data as $row) {
-            if (!in_array($row[$key], $seen)) {
-                $seen[] = $row[$key];
-                $result[] = $row;
-            }
-        }
-  
-        return $result;
-    }
-  
-    // Eliminar duplicados basados en 'Material_Type'
-    $unique_data = remove_duplicates($combined_data, 'Material_Type');
+  // Eliminar duplicados basados en 'Material_Type'
+  $unique_data = remove_duplicates($data, 'Material_Type');
 ?>
 
 <?php page_require_level(3); ?>
@@ -76,7 +71,11 @@
               <?php foreach ($unique_data as $row): ?>
                 <tr>
                   <td><?php echo $row['Material_Type']; ?></td>
-                  <td><a class="btn btn-primary" href="#"><i class="bi bi-eye"></i></a></td>
+                  <td>
+                    <a class="btn btn-primary" href="sumary/excel.php?Material_Type=<?php echo urlencode($row['Material_Type']); ?>">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                  </td>
                 </tr>
               <?php endforeach; ?>
               </tbody>

@@ -120,7 +120,7 @@
             <div class="col-md-6">
               <label for="Standard" class="form-label">Standard</label>
               <select id="Standard" class="form-select" name="Standard">
-                <option value="ASTM-C131">ASTM-C131</option>
+                <option <?php if ($Search['Standard'] == 'ASTM-C131') echo 'selected'; ?>>ASTM-C131</option>
               </select>
             </div>
             <div class="col-md-6">
@@ -172,7 +172,7 @@
                   </tr>
                   <tr>
                     <th scope="row">Revolutions</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="Revolution" name="Revolution" value="<?php echo ($Search['Revolutions']); ?>"></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="Revolutions" name="Revolutions" value="<?php echo ($Search['Revolutions']); ?>"></td>
                   </tr>
                 </tbody>
               </table>
