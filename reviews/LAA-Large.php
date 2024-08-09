@@ -2,7 +2,7 @@
   $page_title = 'Los Angeles Abrasion';
   $review = 'show';
   require_once('../config/load.php');
-  $Search = find_by_id('los_angeles_abrasion_coarse_filter', $_GET['id']);
+  $Search = find_by_id('los_angeles_abrasion_coarse_aggregate', $_GET['id']);
 ?>
 
 <?php page_require_level(1); ?>
@@ -10,7 +10,7 @@
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Los Angeles Abrasion For Small Size Coarse</h1>
+  <h1>Los Angeles Abrasion For Large Size Coarse</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
@@ -119,7 +119,7 @@
             <div class="col-md-6">
               <label for="Standard" class="form-label">Standard</label>
               <select id="Standard" class="form-select" name="Standard">
-                <option <?php if ($Search['Standard'] == 'ASTM-C131') echo 'selected'; ?>>ASTM-C131</option>
+                <option <?php if ($Search['Standard'] == 'ASTM-C535') echo 'selected'; ?>>ASTM-C535</option>
               </select>
             </div>
             <div class="col-md-6">
@@ -136,9 +136,9 @@
             </div>
             <div class="col-12">
               <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" id="Comments" style="height: 100px;" name="Comments"><?php echo ($Search['Comments']); ?></textarea>
+              <textarea class="form-control" id="Comments" name="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
             </div>
-          </div>
+          </div><!-- End Multi Columns Form -->
 
         </div>
       </div>
@@ -158,20 +158,11 @@
                     <td>
                         <select class="form-control" id="SelectGrading" name="SelectGrading">
                             <option selected>Choose...</option>
-                            <option <?php if ($Search['Grading'] == 'A') echo 'selected'; ?>>A</option>
-                            <option <?php if ($Search['Grading'] == 'B') echo 'selected'; ?>>B</option>
-                            <option <?php if ($Search['Grading'] == 'C') echo 'selected'; ?>>C</option>
-                            <option <?php if ($Search['Grading'] == 'D') echo 'selected'; ?>>D</option>
+                            <option <?php if ($Search['Grading'] == '1') echo 'selected'; ?>>1</option>
+                            <option <?php if ($Search['Grading'] == '2') echo 'selected'; ?>>2</option>
+                            <option <?php if ($Search['Grading'] == '3') echo 'selected'; ?>>3</option>
                         </select>
                     </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Weight of the Spheres (g)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="WeigSpheres" name="WeigSpheres" value="<?php echo ($Search['Weight_Spheres']); ?>"></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Revolutions</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="Revolutions" name="Revolutions" value="<?php echo ($Search['Revolutions']); ?>"></td>
                   </tr>
                 </tbody>
               </table>
@@ -197,9 +188,9 @@
                   </tr>
                   <tr>
                     <th scope="row">Weight Loss (g)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="WeigLoss" name="WeigLoss" value="<?php echo ($Search['Weight_Loss']); ?>" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigLoss" name="WeigLoss" readonly tabindex="-1" value="<?php echo ($Search['Weight_Loss']); ?>"></td>
                     <th scope="row">Weight Loss (%)</th>
-                    <td><input type="text" style="border: none;" class="form-control" id="WeigLossPorce" name="WeigLossPorce" value="<?php echo ($Search['Weight_Loss_Porce']); ?>" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigLossPorce" name="WeigLossPorce" readonly tabindex="-1" value="<?php echo ($Search['Weight_Loss_Porce']); ?>"></td>
                   </tr>
                 </tbody>
               </table>
@@ -217,18 +208,20 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="Update_LAA_Coarse_Filter">Update Essay</button>
-          <button type="submit" class="btn btn-primary" name="Repeat_LAA_Coarse_Filter">Repeat</button>
-          <button type="submit" class="btn btn-primary" name="Reviewed_LAA_Coarse_Filter">Reviewed</button>
+          <button type="submit" class="btn btn-success" name="Update_LAA_Coarse_Aggregate">Update Essay</button>
+          <button type="submit" class="btn btn-primary" name="Repeat_LAA_Coarse_Aggregate">Repeat</button>
+          <button type="submit" class="btn btn-primary" name="Reviewed_LAA_Coarse_Aggregate">Reviewed</button>
         </div>
 
       </div>
     </div>
   
   </div>
-  </form><!-- End Multi Columns Form -->
+
   </div>
 </section>
+
+</form>
 
 </main><!-- End #main -->
 

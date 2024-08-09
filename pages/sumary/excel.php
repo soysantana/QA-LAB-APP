@@ -184,6 +184,44 @@ $tables = [
         'Pass13' => 'No. 200',
         'Comments' => 'Comments',
     ],
+    'los_angeles_abrasion_coarse_aggregate' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Grading' => 'Grading',
+        'Initial_Weight' => 'Initial Weight',
+        'Final_Weight' => 'Final Weight',
+        'Weight_Loss' => 'Weight Loss',
+        'Weight_Loss_Porce' => 'Weight Loss Porce',
+        'Comments' => 'Comments',
+    ],
+    'los_angeles_abrasion_coarse_filter' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Grading' => 'Grading',
+        'Weight_Spheres' => 'Weight Spheres',
+        'Revolutions' => 'Revolutions',
+        'Initial_Weight' => 'Initial Weight',
+        'Final_Weight' => 'Final Weight',
+        'Weight_Loss' => 'Weight Loss',
+        'Weight_Loss_Porce' => 'Weight Loss Porce',
+        'Comments' => 'Comments',
+    ],
     'moisture_oven' => [
         'Structure' => 'Structure',
         'Area' => 'Work Area',
@@ -330,6 +368,26 @@ $tables = [
     ],
 ];
 
+// Definir un array de mapeo para los títulos de las hojas
+$titles = [
+    'atterberg_limit' => 'AL',
+    'standard_proctor' => 'SP',
+    'grain_size_general' => 'GS',
+    'grain_size_fine' => 'GS_Fine',
+    'grain_size_coarse' => 'GS_Coarse',
+    'grain_size_coarsethan' => 'GS_Coarsethan',
+    'los_angeles_abrasion_coarse_aggregate' => 'LAA_Coarse_Aggregate',
+    'los_angeles_abrasion_coarse_filter' => 'LAA_Coarse_Filter',
+    'moisture_oven' => 'MC',
+    'moisture_microwave' => 'MC_Microwave',
+    'moisture_constant_mass' => 'MC_Constant_Mass',
+    'point_load' => 'PLT',
+    'unixial_compressive' => 'UCS',
+    'specific_gravity' => 'SG',
+    'specific_gravity_coarse' => 'SG_Coarse',
+    'specific_gravity_fine' => 'SG_Fine',
+];
+
 // Crear un nuevo archivo Excel
 $spreadsheet = new Spreadsheet();
 $spreadsheet->removeSheetByIndex(0); // Eliminar la hoja inicial que crea por defecto
@@ -339,54 +397,9 @@ foreach ($tables as $table => $columns) {
     // Crear una nueva hoja
     $sheet = $spreadsheet->createSheet();
     
-    // Personalizar el título de la hoja
-    switch ($table) {
-        case 'atterberg_limit':
-            $sheet->setTitle('AL');
-            break;
-        case 'standard_proctor':
-            $sheet->setTitle('SP');
-            break;
-        case 'grain_size_general':
-            $sheet->setTitle('GS');
-            break;
-        case 'grain_size_fine':
-            $sheet->setTitle('GS_Fine');
-            break;
-        case 'grain_size_coarse':
-            $sheet->setTitle('GS_Coarse');
-            break;
-        case 'grain_size_coarsethan':
-            $sheet->setTitle('GS_Coarsethan');
-            break;
-        case 'moisture_oven':
-            $sheet->setTitle('MC');
-            break;
-        case 'moisture_microwave':
-            $sheet->setTitle('MC_Microwave');
-            break;
-        case 'moisture_constant_mass':
-            $sheet->setTitle('MC_Constant_Mass');
-            break;
-        case 'point_load':
-            $sheet->setTitle('PLT');
-            break;
-        case 'unixial_compressive':
-            $sheet->setTitle('UCS');
-            break;
-        case 'specific_gravity':
-            $sheet->setTitle('SG');
-            break;
-        case 'specific_gravity_coarse':
-            $sheet->setTitle('SG_Coarse');
-            break;
-        case 'specific_gravity_fine':
-            $sheet->setTitle('SG_Fine');
-            break;
-        default:
-        $sheet->setTitle($table);
-        break;
-    }
+    // Asignar el título de la hoja usando el array de mapeo
+    $sheetTitle = $titles[$table] ?? $table;
+    $sheet->setTitle($sheetTitle);
 
     // Escribir encabezados personalizados
     $headers = array_values($columns); // Obtener los valores (encabezados personalizados)
@@ -419,5 +432,4 @@ $excelFilePath = 'resultados_' . $Material_Type . '.xlsx';
 $writer->save($excelFilePath);
 
 echo "Archivo Excel creado con éxito: <a href='$excelFilePath'>$excelFilePath</a>";
-
 ?>

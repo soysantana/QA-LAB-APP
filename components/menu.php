@@ -14,6 +14,7 @@ $gsPresa = !empty($gsPresa) ? $gsPresa : " ";
 $sgPresa = !empty($sgPresa) ? $sgPresa : " ";
 $Moisture = !empty($Moisture) ? $Moisture : " ";
 $SG = !empty($SG) ? $SG : " ";
+$Density = !empty($Density) ? $Density : " ";
 $tracking_show = !empty($tracking_show) ? $tracking_show : " ";
 $class_tracking = !empty($class_tracking) ? $class_tracking : "collapsed";
 $preparation = !empty($preparation) ? $preparation : " ";
@@ -130,6 +131,11 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
+            <a href="/app/pages/concrete.php">
+              <i class="bi bi-circle"></i><span>Concrete</span>
+            </a>
+          </li>
+          <li>
             <a href="/app/pages/pinhole-test.php">
               <i class="bi bi-circle"></i><span>Pinhole</span>
             </a>
@@ -140,7 +146,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
-            <a href="forms-validation.html">
+            <a href="/app/pages/density-bulk.php" class="<?php echo $Density; ?>">
               <i class="bi bi-circle"></i><span>Density</span>
             </a>
           </li>

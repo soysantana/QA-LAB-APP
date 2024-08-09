@@ -236,7 +236,9 @@
       <h5 class="card-title">Actions</h5>
       <!-- Actions Buttons -->
       <div class="d-grid gap-2 mt-3">
-        <button type="submit" name="update-brazilian" class="btn btn-success">Save Essay</button>
+        <button type="submit" class="btn btn-success" name="Update_Brazilian">Update Essay</button>
+        <button type="submit" class="btn btn-primary" name="Repeat_Brazilian">Repeat</button>
+        <button type="submit" class="btn btn-primary" name="Reviewed_Brazilian">Reviewed</button>
       </div>
     </div>
   </div>

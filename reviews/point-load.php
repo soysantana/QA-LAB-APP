@@ -24,7 +24,7 @@
   <section class="section">
     <div class="row" oninput="PLT()">
 
-    <form class="row" action="../database/point-load.php" method="post" enctype="multipart/form-data">
+    <form class="row" action="../database/point-load.php?id=<?php echo $Search['id']; ?>" method="post" enctype="multipart/form-data">
 
     <div class="col-md-4">
     <?php echo display_msg($msg); ?>
@@ -251,7 +251,9 @@
             <h5 class="card-title">Actions</h5>
             <!-- Actions Buttons -->
             <div class="d-grid gap-2 mt-3">
-              <button type="submit" name="update-point-load" class="btn btn-success">Update Essay</button>
+              <button type="submit" class="btn btn-success" name="Update_PLT">Update Essay</button>
+              <button type="submit" class="btn btn-primary" name="Repeat_PLT">Repeat</button>
+              <button type="submit" class="btn btn-primary" name="Reviewed_PLT">Reviewed</button>
             </div>
           </div>
         </div>
