@@ -237,6 +237,7 @@
       <!-- Actions Buttons -->
       <div class="d-grid gap-2 mt-3">
         <button type="submit" class="btn btn-success" name="Update_Brazilian">Update Essay</button>
+        <a href="../pdf/bts.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
         <button type="submit" class="btn btn-primary" name="Repeat_Brazilian">Repeat</button>
         <button type="submit" class="btn btn-primary" name="Reviewed_Brazilian">Reviewed</button>
       </div>

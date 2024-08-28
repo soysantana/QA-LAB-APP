@@ -207,8 +207,8 @@
                   <td>
                     <select id="LoadDirection" class="form-select" name="LoadDirection">
                       <option selected>Choose...</option>
-                      <option <?php if ($Search['LoadDirection'] == 'Perpendicular') echo 'selected'; ?>>⊥</option>
-                      <option <?php if ($Search['LoadDirection'] == 'Parallel') echo 'selected'; ?>>//</option>
+                      <option <?php if ($Search['LoadDirection'] == '⊥') echo 'selected'; ?>>⊥</option>
+                      <option <?php if ($Search['LoadDirection'] == '//') echo 'selected'; ?>>//</option>
                     </select>
                   </td>
                 </tr>
@@ -252,6 +252,7 @@
             <!-- Actions Buttons -->
             <div class="d-grid gap-2 mt-3">
               <button type="submit" class="btn btn-success" name="Update_PLT">Update Essay</button>
+              <a href="../pdf/plt.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
               <button type="submit" class="btn btn-primary" name="Repeat_PLT">Repeat</button>
               <button type="submit" class="btn btn-primary" name="Reviewed_PLT">Reviewed</button>
             </div>

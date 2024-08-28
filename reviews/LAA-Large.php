@@ -209,6 +209,7 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="Update_LAA_Coarse_Aggregate">Update Essay</button>
+          <a href="../pdf/laa-ff.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
           <button type="submit" class="btn btn-primary" name="Repeat_LAA_Coarse_Aggregate">Repeat</button>
           <button type="submit" class="btn btn-primary" name="Reviewed_LAA_Coarse_Aggregate">Reviewed</button>
         </div>

@@ -32,6 +32,7 @@ include_once('../components/header.php');
             'grain_size_coarse' => 'Grain Size Coarse',
             'grain_size_fine' => 'Grain Size Fine',
             'grain_size_coarsethan' => 'Grain Size Coarsethan',
+            'soundness' => 'Soundness',
             'specific_gravity' => 'Specific Gravity',
             'specific_gravity_coarse' => 'Specific Gravity Coarse',
             'specific_gravity_fine' => 'Specific Gravity Fine',
@@ -46,6 +47,7 @@ include_once('../components/header.php');
             'brazilian' => 'BTS',
             'los_angeles_abrasion_coarse_filter' => 'LAA Small',
             'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
+            'pinhole_test' => 'Pinhole',
           ]); ?>
         </div>
 
@@ -81,11 +83,13 @@ function getTestLink($testType, $id) {
         'MC_Microwave' => '../reviews/moisture-microwave.php?id=',
         'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php?id=',
         'PLT' => '../reviews/point-Load.php?id=',
+        'SND' => '../reviews/soundness.php?id=',
         'SG' => '../reviews/specific-gravity.php?id=',
         'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php?id=',
         'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php?id=',
         'SP' => '../reviews/standard-proctor.php?id=',
         'UCS' => '../reviews/unixial-compressive.php?id=',
+        'PH' => '../reviews/pinhole-test.php?id=',
     ];
     
     return isset($links[$testType]) ? $links[$testType] . $id : '#';

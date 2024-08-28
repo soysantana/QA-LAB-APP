@@ -3,7 +3,7 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$Search = find_by_id('grain_size_coarsethan', (int)$_GET['id']);
+$Search = find_by_id('grain_size_coarsethan', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 

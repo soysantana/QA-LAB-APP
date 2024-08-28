@@ -3,7 +3,7 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$Search = find_by_id('moisture_constant_mass', (int)$_GET['id']);
+$Search = find_by_id('moisture_constant_mass', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 

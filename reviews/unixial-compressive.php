@@ -234,6 +234,7 @@
             <!-- Actions Buttons -->
             <div class="d-grid gap-2 mt-3">
               <button type="submit" class="btn btn-success" name="Update_UCS">Update Essay</button>
+              <a href="../pdf/ucs.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
               <button type="submit" class="btn btn-primary" name="Repeat_UCS">Repeat</button>
               <button type="submit" class="btn btn-primary" name="Reviewed_UCS">Reviewed</button>
             </div>
@@ -245,7 +246,7 @@
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Graphic Failure Load versus Time</h5>
-            <input class="form-control" type="file" name="Graphic" onchange="showImage(this, 'graphic')" />
+            <input class="form-control" type="file" name="Graphic" onchange="showImage(this, 'graphic')"  />
             <div id="imageContainerGraphic" class="image-container mt-3">
             <img src="data:image/jpeg;base64,<?php echo base64_encode($Search['Graphic']); ?>" alt="Graphic Failure" class="img-fluid" width="300px">
             </div>

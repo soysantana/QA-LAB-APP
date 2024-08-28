@@ -130,8 +130,8 @@
                   <td>
                     <select id="LoadDirection" class="form-select" name="LoadDirection">
                       <option selected>Choose...</option>
-                      <option value="Perpendicular">⊥</option>
-                      <option value="Parallel">//</option>
+                      <option value="⊥">⊥</option>
+                      <option value="//">//</option>
                     </select>
                   </td>
                 </tr>

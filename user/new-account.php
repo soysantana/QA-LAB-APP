@@ -6,6 +6,7 @@
    validate_fields($req_fields);
 
    if(empty($errors)){
+       $id = uuid();
        $name   = remove_junk($db->escape($_POST['full-name']));
        $username   = remove_junk($db->escape($_POST['username']));
        $password   = remove_junk($db->escape($_POST['password']));
@@ -15,9 +16,9 @@
        $job   = remove_junk($db->escape($_POST['job']));
        $password = sha1($password);
         $query = "INSERT INTO users (";
-        $query .="name,username,password,user_level,email,phone,job,status";
+        $query .="id,name,username,password,user_level,email,phone,job,status";
         $query .=") VALUES (";
-        $query .=" '{$name}', '{$username}', '{$password}', '{$user_level}','{$email}','{$phone}','{$job}','1'";
+        $query .=" '{$id}', '{$name}', '{$username}', '{$password}', '{$user_level}','{$email}','{$phone}','{$job}','1'";
         $query .=")";
         if($db->query($query)){
           //sucess
