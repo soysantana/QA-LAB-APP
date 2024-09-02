@@ -1,10 +1,17 @@
 # Ignorar la carpeta 'err'
 err/
 
+# Ignorar la carpeta '.github'
+.github/
+
+# Ignorar la carpeta '.vscode'
+.vscode/
+
 # Ignorar archivos JSON
 *.json
 
 # Ignorar archivos LOCK
 *.lock
 
-/composer.phar/
+# Ignorar el archivo 'composer.phar'
+composer.phar
