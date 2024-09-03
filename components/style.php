@@ -15,8 +15,8 @@
   <meta content="" name="keywords">
 
   <!-- Favicons -->
-  <link href="https://pvj-app.azurewebsites.net/assets/img/favicon.ico" rel="icon">
-  <link href="https://pvj-app.azurewebsites.net/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+  <link href="/app/assets/img/favicon.ico" rel="icon">
+  <link href="/app/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
   <!-- Google Fonts -->
   <link href="https://fonts.gstatic.com" rel="preconnect">
@@ -24,20 +24,20 @@
 
   <!-- Recursos Variados -->
   <script src="https://cdn.jsdelivr.net/npm/echarts-stat@1.2.0/dist/ecStat.min.js"></script>
-  <script src="https://pvj-app.azurewebsites.net/assets/vendor/echarts/echarts.min.js"></script>
+  <script src="/app/assets/vendor/echarts/echarts.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
   <!-- Vendor CSS Files -->
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/quill/quill.snow.css" rel="stylesheet">
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
-  <link href="https://pvj-app.azurewebsites.net/assets/vendor/simple-datatables/style.css" rel="stylesheet">
+  <link href="/app/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/app/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="/app/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+  <link href="/app/assets/vendor/quill/quill.snow.css" rel="stylesheet">
+  <link href="/app/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
+  <link href="/app/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  <link href="/app/assets/vendor/simple-datatables/style.css" rel="stylesheet">
 
   <!-- Template Main CSS File -->
-  <link href="https://pvj-app.azurewebsites.net/assets/css/style.css" rel="stylesheet">
+  <link href="/app/assets/css/style.css" rel="stylesheet">
 </head>
 <body>
 
