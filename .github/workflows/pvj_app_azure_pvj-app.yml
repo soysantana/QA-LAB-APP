@@ -63,4 +63,4 @@ jobs:
           app-name: 'pvj-app'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A8218110BF3B42D783544F44F5A28044 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F38C369C133948C9B1D566598F0014B9 }}
