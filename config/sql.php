@@ -190,7 +190,7 @@ function tableExists($table){
      //if user not login
      if (!$session->isUserLoggedIn(true)):
             $session->msg('d','Por favor Iniciar sesión...');
-            redirect('/app/index.php', false);
+            redirect('/index.php', false);
       //if Group status Deactive
       elseif(is_array($login_level) && isset($login_level['group_status']) && $login_level['group_status'] === '0'):
             $session->msg('d', 'Este nivel de usuario está inactivo!');

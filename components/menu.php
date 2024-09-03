@@ -31,7 +31,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $class_home; ?> " href="/app/pages/home.php">
+        <a class="nav-link <?php echo $class_home; ?> " href="/pages/home.php">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
@@ -43,27 +43,27 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
         <ul id="Tracking-nav" class="nav-content collapse <?php echo $tracking_show; ?>" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="/app/pages/test-preparation.php" class="<?php echo $preparation; ?>">
+            <a href="/pages/test-preparation.php" class="<?php echo $preparation; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en preparacion</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/test-realization.php" class="<?php echo $realization; ?>">
+            <a href="/pages/test-realization.php" class="<?php echo $realization; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en realizacion</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/test-delivery.php" class="<?php echo $delivery; ?>">
+            <a href="/pages/test-delivery.php" class="<?php echo $delivery; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en entrega</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/test-repeat.php" class="<?php echo $repeat; ?>">
+            <a href="/pages/test-repeat.php" class="<?php echo $repeat; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en repeticion</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/test-review.php" class="<?php echo $reviews; ?>">
+            <a href="/pages/test-review.php" class="<?php echo $reviews; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en revision</span>
             </a>
           </li>
@@ -76,77 +76,77 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
         <ul id="forms-nav" class="nav-content collapse <?php echo $form_show; ?> " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="/app/pages/moisture-oven.php" class="<?php echo $Moisture; ?>">
+            <a href="/pages/moisture-oven.php" class="<?php echo $Moisture; ?>">
               <i class="bi bi-circle"></i><span>Moisture Content</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/atterberg-limit.php">
+            <a href="/pages/atterberg-limit.php">
               <i class="bi bi-circle"></i><span>Atterberg Limit</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/grain-size.php" class="<?php echo $GrainSize; ?>">
+            <a href="/pages/grain-size.php" class="<?php echo $GrainSize; ?>">
               <i class="bi bi-circle"></i><span>Grain Size</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/specific-gravity.php" class="<?php echo $SG; ?>">
+            <a href="/pages/specific-gravity.php" class="<?php echo $SG; ?>">
               <i class="bi bi-circle"></i><span>Specific Gravity</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/standard-proctor.php">
+            <a href="/pages/standard-proctor.php">
               <i class="bi bi-circle"></i><span>Standard Proctor</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/LAA-Small.php">
+            <a href="/pages/LAA-Small.php">
               <i class="bi bi-circle"></i><span>Los Angeles Abrasion</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/unixial-compressive.php">
+            <a href="/pages/unixial-compressive.php">
               <i class="bi bi-circle"></i><span>UCS</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/point-load.php">
+            <a href="/pages/point-load.php">
               <i class="bi bi-circle"></i><span>PLT</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/brazilian.php">
+            <a href="/pages/brazilian.php">
               <i class="bi bi-circle"></i><span>BTS</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/leeb.php">
+            <a href="/pages/leeb.php">
               <i class="bi bi-circle"></i><span>Leeb Hardness</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/grout.php">
+            <a href="/pages/grout.php">
               <i class="bi bi-circle"></i><span>Grout</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/concrete.php">
+            <a href="/pages/concrete.php">
               <i class="bi bi-circle"></i><span>Concrete</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/pinhole-test.php">
+            <a href="/pages/pinhole-test.php">
               <i class="bi bi-circle"></i><span>Pinhole</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/soundness.php">
+            <a href="/pages/soundness.php">
               <i class="bi bi-circle"></i><span>Soundness</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/density-bulk.php" class="<?php echo $Density; ?>">
+            <a href="/pages/density-bulk.php" class="<?php echo $Density; ?>">
               <i class="bi bi-circle"></i><span>Density</span>
             </a>
           </li>
@@ -159,17 +159,17 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
         <ul id="forms-presa" class="nav-content collapse <?php echo $formPresaShow; ?> " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="/app/pages/grain-size-lpf.php" class="<?php echo $gsPresa; ?>">
+            <a href="/pages/grain-size-lpf.php" class="<?php echo $gsPresa; ?>">
               <i class="bi bi-circle"></i><span>Grain Size</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/atterberg-limit-tsf.php">
+            <a href="/pages/atterberg-limit-tsf.php">
               <i class="bi bi-circle"></i><span>Atterberg Limit</span>
             </a>
           </li>
           <li>
-            <a href="/app/pages/specific-gravity-fine-filter.php" class="<?php echo $sgPresa; ?>">
+            <a href="/pages/specific-gravity-fine-filter.php" class="<?php echo $sgPresa; ?>">
               <i class="bi bi-circle"></i><span>Specific Gravity</span>
             </a>
           </li>
@@ -179,42 +179,42 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-heading">paginas</li>
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $Sumarios; ?>" href="/app/pages/sumary.php">
+        <a class="nav-link <?php echo $Sumarios; ?>" href="/pages/sumary.php">
           <i class="bi bi-database"></i>
           <span>Sumarios</span>
         </a>
       </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $Pending_List; ?>" href="/app/pages/pendings-list.php">
+        <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
           <i class="bi bi-question-circle"></i>
           <span>Lista de Pendientes</span>
         </a>
       </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $wepln; ?>" href="/app/pages/weekly-planning.php">
+        <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
           <i class="bi bi-calendar3"></i>
           <span>Planificación Semanal</span>
         </a>
       </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $review; ?>" href="/app/pages/essay-review.php">
+        <a class="nav-link <?php echo $review; ?>" href="/pages/essay-review.php">
           <i class="bi bi-card-checklist"></i>
           <span>Revisión de ensayo</span>
         </a>
       </li><!-- End Review Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $review_essay; ?>" href="/app/pages/essay.php">
+        <a class="nav-link <?php echo $review_essay; ?>" href="/pages/essay.php">
           <i class="bi bi-database"></i>
           <span>Ensayos Registrados</span>
         </a>
       </li><!-- End Review Essay Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $requisition_form; ?>" href="/app/pages/requisition-form.php">
+        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
           <i class="bi bi-file-earmark"></i>
           <span>Formulario de requisicion</span>
         </a>
@@ -224,7 +224,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 
       <!-- User Profile -->
       <li class="nav-item">
-        <a class="nav-link <?php echo $profile_show; ?>" href="/app/pages/users-profile.php">
+        <a class="nav-link <?php echo $profile_show; ?>" href="/pages/users-profile.php">
           <i class="bi bi-person"></i>
           <span>Perfil</span>
         </a>
@@ -233,7 +233,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 
       <!-- New Account -->
       <li class="nav-item">
-        <a class="nav-link collapsed" href="/app/pages/users-register.php">
+        <a class="nav-link collapsed" href="/pages/users-register.php">
           <i class="bi bi-card-list"></i>
           <span>Nueva cuenta</span>
         </a>
