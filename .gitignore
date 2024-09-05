@@ -1,6 +1,12 @@
 # Ignorar la carpeta 'err'
 err/
 
+# Ignorar la carpeta 'proyects'
+proyects/
+
+# Ignorar la carpeta 'app'
+app/
+
 # Ignorar la carpeta '.github'
 .github/
 

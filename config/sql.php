@@ -39,17 +39,24 @@ function find_by_id($table,$id)
 /*--------------------------------------------------------------*/
 /* Function for Delete data from table by id
 /*--------------------------------------------------------------*/
-function delete_by_id($table,$id)
+function delete_by_id($table, $id)
 {
-  global $db;
-  if(tableExists($table))
-   {
-    $sql = "DELETE FROM ".$db->escape($table);
-    $sql .= " WHERE id=". $db->escape($id);
-    $sql .= " LIMIT 1";
-    $db->query($sql);
-    return ($db->affected_rows() === 1) ? true : false;
-   }
+    global $db;
+    if (tableExists($table)) {
+        // Escapa tanto el nombre de la tabla como el ID
+        $table = $db->escape($table);
+        $id = $db->escape($id);
+        
+        // Construye la consulta SQL, asegurando que el ID esté entre comillas simples
+        $sql = "DELETE FROM {$table} WHERE id = '{$id}' LIMIT 1";
+        
+        // Ejecuta la consulta
+        $db->query($sql);
+        
+        // Retorna true si una fila fue afectada (es decir, eliminada)
+        return ($db->affected_rows() === 1) ? true : false;
+    }
+    return false; // Retorna false si la tabla no existe
 }
 /*--------------------------------------------------------------*/
 /* Function for Count id  By table name

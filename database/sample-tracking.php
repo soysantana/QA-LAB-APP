@@ -1,7 +1,6 @@
 <!-- Preparation -->
 <?php
  require_once('../config/load.php');
- $user = current_user();
  
  if (isset($_POST['test-preparation'])) {
     $req_fields = array(
@@ -43,14 +42,14 @@
             )";
 
             if ($db->query($sql)) {
-                $session->msg('s', "Muestra enviada para preparación.");
+                $session->msg("s", "Muestra enviada para preparación.");
                 redirect('../pages/test-preparation.php', false);
             } else {
-                $session->msg('d', 'Lo sentimos, no se pudo agregar la muestra enviada para preparación.');
+                $session->msg("d", "Lo sentimos, no se pudo agregar la muestra enviada para preparación.");
                 redirect('../pages/test-preparation.php', false);
             }
         } else {
-            $session->msg('w', 'Lo sentimos, la muestra existe.');
+            $session->msg("w", "Lo sentimos, la muestra existe.");
             redirect('../pages/test-preparation.php', false);
         }
     } else {
@@ -76,7 +75,7 @@
 <!-- Delete Preparation -->
 <?php
  if (isset($_POST['delete-preparation']) && isset($_GET['id'])) {
-    $delete = (int)$_GET['id'];
+    $delete = $_GET['id'];
 
     $ID = delete_by_id('test_preparation', $delete);
 
@@ -86,7 +85,7 @@
         $session->msg("d", "No encontrado");
     }
 
-    redirect('/pages/test-preparation.php');
+    redirect('../pages/test-preparation.php');
  }
 ?>
 
@@ -165,7 +164,7 @@
 <!-- Delete Realization -->
 <?php
  if (isset($_POST['delete-realization']) && isset($_GET['id'])) {
-    $delete = (int)$_GET['id'];
+    $delete = $_GET['id'];
 
     $ID = delete_by_id('test_realization', $delete);
 
