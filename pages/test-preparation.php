@@ -107,7 +107,7 @@
                 <td>
                   <div class="btn-group" role="group" aria-label="Basic example">
                   <a class="btn btn-primary open-modal-btn" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true" data-sample-name="<?php echo $Seach['Sample_Name']; ?>"data-sample-number="<?php echo $Seach['Sample_Number']; ?>"data-test-type="<?php echo $Seach['Test_Type']; ?>"data-technician="<?php echo $Seach['Technician']; ?>"data-start-date="<?php echo $Seach['Start_Date']; ?>"><i class="bi bi-send me-1"></i></a>
-                  <button type="button" class="btn btn-danger" onclick="modaldelete(<?php echo $Seach['id']; ?>)"><i class="bi bi-trash"></i></button>
+                  <button type="button" class="btn btn-danger" onclick="modaldelete('<?php echo $Seach['id']; ?>')"><i class="bi bi-trash"></i></button>
                   </div>
                 </td>
               </tr>

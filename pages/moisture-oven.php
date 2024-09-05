@@ -1,8 +1,8 @@
 <?php
+  require_once('../config/load.php');
   $page_title = 'Moisture Content';
   $class_form = ' ';
   $form_show = 'show';
-  require_once('../config/load.php');
 ?>
 
 <?php page_require_level(1); ?>
@@ -24,9 +24,9 @@
 
   <form class="row" action="../database/moisture-content.php" method="post">
 
-  <div id="product_info"></div>
-
   <?php echo display_msg($msg); ?>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 

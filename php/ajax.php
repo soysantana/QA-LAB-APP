@@ -1,6 +1,5 @@
 <?php
   require_once('../config/load.php');
-  if (!$session->isUserLoggedIn(true)) { redirect('index.php', false);}
 ?>
 
 <?php
@@ -17,23 +16,25 @@
          endforeach;
       } else {
 
-        $html .= '<li onClick="fill(\''.addslashes($product['Sample_ID']).'\')" class="list-group-item">';
+        $html .= '<li class="list-group-item">';
         $html .= 'No encontrado';
-        $html .= "</li>";
+        $html .= "</li>";        
 
       }
 
       echo json_encode($html);
    }
  ?>
+
  <?php
  // find all product
-  if(isset($_POST['p_name']) && strlen($_POST['p_name']))
-  {
+ $html = '';
+if (isset($_POST['p_name']) && strlen($_POST['p_name'])) {
     $product_title = remove_junk($db->escape($_POST['p_name']));
-    if($results = find_all_product_info_by_title($product_title)){
+    $results = find_all_product_info_by_title($product_title);
+    
+    if ($results) {
         foreach ($results as $result) {
-
           $html .= '<div class="col-lg-12">';
 
           $html .= '<div class="card">';
@@ -133,7 +134,6 @@
           $html .= '</div>';
 
           $html .= '</div>';
-
         }
     } else {
         $html .= '<div class="col-md-4">';
@@ -143,11 +143,10 @@
         $html .= '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
         $html .= '</div>';
         $html .= '</div>';
-        
     }
-
+    
     echo json_encode($html);
-  }
+}
  ?>
 
 

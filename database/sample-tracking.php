@@ -86,7 +86,7 @@
         $session->msg("d", "No encontrado");
     }
 
-    redirect('../pages/test-preparation.php');
+    redirect('/pages/test-preparation.php');
  }
 ?>
 

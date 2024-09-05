@@ -52,7 +52,7 @@
                       <div class="btn-group" role="group">
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $Requisition['id']; ?>"><i class="bi bi-eye"></i></button>
                         <a href="requisition-form-edit.php?id=<?php echo $Requisition['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
-                        <button type="button" class="btn btn-danger" onclick="modaldelete(<?php echo $Requisition['id']; ?>)"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-danger" onclick="modaldelete('<?php echo $Requisition['id']; ?>')"><i class="bi bi-trash"></i></button>
                       </div>
                     </td>
                   </tr>
