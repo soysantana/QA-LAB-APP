@@ -25,6 +25,8 @@ $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
 $pdf->SetFont('Arial', 'B', 10);
+$pdf->SetXY(38, 34);
+$pdf->Cell(30, 5, 'PVDJ SOIL LAB', 0, 1, 'C');
 $pdf->SetXY(38, 43);
 $pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
 $pdf->SetXY(38, 51);
@@ -118,10 +120,30 @@ $pdf->Cell(28, 12, $Search['Classification'], 0, 1, 'C');
 $pdf->SetXY(9, 287);
 $pdf->Cell(215, 25, $Search['Comments'], 0, 1, 'C');
 
-// PIC PLT 
+// Función para obtener la extensión del tipo MIME de la imagen
+function getImageExtension($imageData) {
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->buffer($imageData);
+
+    // Determinar la extensión según el tipo MIME
+    switch ($mimeType) {
+        case 'image/jpeg':
+            return 'jpg';
+        case 'image/png':
+            return 'png';
+        case 'image/gif':
+            return 'gif';
+        case 'image/bmp':
+            return 'bmp';
+        default:
+            return 'png'; // Extensión por defecto si no se reconoce
+    }
+}
+
+// Procesar la primera imagen
 $imageData = $Search['SpecimenBefore'];
-$imageFileName1 = 'temp_image1.jpg'; // Cambiar el nombre del archivo temporal
-// Guardar los datos de la imagen en un archivo temporal
+$extension1 = getImageExtension($imageData);
+$imageFileName1 = "temp_image1.$extension1"; // Cambiar el nombre del archivo temporal según la extensión
 file_put_contents($imageFileName1, $imageData);
 $pdf->SetXY(10, 200);
 $cellWidth = 110;
@@ -132,24 +154,24 @@ $imagePath1 = "$imageFileName1";
 $pdf->Image($imagePath1, $pdf->GetX(), $pdf->GetY(), $Width, $Height);
 $pdf->SetXY(5, 197);
 $pdf->Cell($cellWidth, $cellHeight, "", 1, 1, 'C');
-// Eliminar el archivo temporal de la primera imagen
-unlink($imageFileName1);
+unlink($imageFileName1); // Eliminar archivo temporal
 
+// Procesar la segunda imagen
 $imageData = $Search['SpecimenAfter'];
-$imageFileName2 = 'temp_image2.jpg'; // Cambiar el nombre del archivo temporal
-// Guardar los datos de la imagen en un archivo temporal
+$extension2 = getImageExtension($imageData);
+$imageFileName2 = "temp_image2.$extension2"; // Cambiar el nombre del archivo temporal según la extensión
 file_put_contents($imageFileName2, $imageData);
 $pdf->SetXY(125, 200);
 $cellWidth = 110;
 $cellHeight = 85;
 $Width = 100;
 $Height = 80;
-$imagePath1 = "$imageFileName2";
-$pdf->Image($imagePath1, $pdf->GetX(), $pdf->GetY(), $Width, $Height);
+$imagePath2 = "$imageFileName2";
+$pdf->Image($imagePath2, $pdf->GetX(), $pdf->GetY(), $Width, $Height);
 $pdf->SetXY(120, 197);
 $pdf->Cell($cellWidth, $cellHeight, "", 1, 1, 'C');
-// Eliminar el archivo temporal de la primera imagen
-unlink($imageFileName2);
+unlink($imageFileName2); // Eliminar archivo temporal
+
 
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
