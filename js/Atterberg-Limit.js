@@ -186,13 +186,13 @@ function LLyPL() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Liquid-Limit-Plot.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
     $.ajax({
       url: "../libs/graph/Plasticity-Chart.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });

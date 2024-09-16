@@ -181,16 +181,16 @@
   </header><!-- End Header -->
 
   <?php if($user['user_level'] === '1'): ?>
-        <!-- admin menu -->
+        <!-- Supervisor menu -->
       <?php include_once('menu.php');?>
 
       <?php elseif($user['user_level'] === '2'): ?>
-        <!-- Special user -->
+        <!-- Document Control user -->
       <?php include_once('menu.php');?>
 
       <?php elseif($user['user_level'] === '3'): ?>
-        <!-- User menu -->
-      <?php include_once('menu.php');?>
+        <!-- Tecnico menu -->
+      <?php include_once('menu-tecnico.php');?>
 
   <?php endif;?>
 

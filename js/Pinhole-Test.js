@@ -80,7 +80,7 @@ $("input").on("blur", function(event) {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Pinhole-Test.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });

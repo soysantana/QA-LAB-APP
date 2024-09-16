@@ -82,7 +82,7 @@ $("input").on("blur", function(event) {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Standard-Proctor.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });

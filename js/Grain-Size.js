@@ -216,7 +216,7 @@ function GrainSize() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Grain-Size-General.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
@@ -531,7 +531,7 @@ function FineAgg() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Grain-Size-Fine.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
@@ -844,7 +844,7 @@ function CoarseAgg() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Grain-Size-Coarse.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
@@ -1142,7 +1142,7 @@ document.querySelectorAll('input').forEach(input => {
     function enviarData() {
       $.ajax({
         url: "../libs/graph/Grain-Size-Coarsethan.js",
-        type: "POST",
+        type: "GET",
         data: $("#nopasonada").serialize(),
         success: function(data) {}
       });
@@ -1401,7 +1401,7 @@ function LPF() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Grain-Size-LPF.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
@@ -1710,7 +1710,7 @@ function CF() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Grain-Size-CF.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
@@ -2019,7 +2019,7 @@ document.querySelectorAll('input').forEach(input => {
     function enviarData() {
       $.ajax({
         url: "../libs/graph/Grain-Size-FF.js",
-        type: "POST",
+        type: "GET",
         data: $("#nopasonada").serialize(),
         success: function(data) {}
       });
@@ -2315,7 +2315,7 @@ function UTF() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Grain-Size-UTF.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });

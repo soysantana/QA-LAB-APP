@@ -107,17 +107,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           </li>
           <li>
             <a href="/pages/unixial-compressive.php">
-              <i class="bi bi-circle"></i><span>UCS</span>
-            </a>
-          </li>
-          <li>
-            <a href="/pages/point-load.php">
-              <i class="bi bi-circle"></i><span>PLT</span>
-            </a>
-          </li>
-          <li>
-            <a href="/pages/brazilian.php">
-              <i class="bi bi-circle"></i><span>BTS</span>
+              <i class="bi bi-circle"></i><span>Compresion</span>
             </a>
           </li>
           <li>
