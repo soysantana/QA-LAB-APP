@@ -80,7 +80,7 @@
       <h5 class="card-title">Acciones</h5>
       <!-- Actions Buttons -->
       <form class="d-grid gap-2 mt-3" method="post" action="test-review.php">
-        <button type="submit" class="btn btn-success" name="test-review">Actualizar</button>
+        <button type="submit" class="btn btn-success" name="test-review">Enviar a Revision</button>
       </form>
     </div>
   </div>

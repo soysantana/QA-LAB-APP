@@ -301,8 +301,8 @@
         'test_preparation' => 'Preparación',
         'test_realization' => 'Realización',
         'test_delivery' => 'Entrega',
-        'test_review' => 'Revisar',
-        'test_repeat' => 'Repetir',
+        'test_review' => 'Revision',
+        'test_repeat' => 'Repeticion',
       ];
     
       $numRowsArray = []; 
