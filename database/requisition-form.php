@@ -1,6 +1,5 @@
 <!-- Save Requisiton -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['requisition-form'])) {
@@ -35,7 +34,7 @@
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
 
-        for ($i = 1; $i <= 19; $i++) {
+        for ($i = 1; $i <= 20; $i++) {
             ${"TestType" . $i} = $db->escape($_POST["TestType$i"]);
         }
         
@@ -81,7 +80,8 @@
             Test_Type16,
             Test_Type17,
             Test_Type18,
-            Test_Type19
+            Test_Type19,
+            Test_Type20
         )
         VALUES (
             '$id',
@@ -124,19 +124,20 @@
             '$TestType16',
             '$TestType17',
             '$TestType18',
-            '$TestType19'
+            '$TestType19',
+            '$TestType20'
         )";
 
         if ($db->query($sql)) {
-            $session->msg('s', "Ensayo agregado exitosamente.");
-            redirect('../pages/requisition-form.php', false);
+            $session->msg('s', 'Ensayo agregado exitosamente.');
+            redirect('/pages/requisition-form.php', false);
         } else {
             $session->msg('d', 'Lo siento, no se pudo agregar el ensayo.');
-            redirect('../pages/requisition-form.php', false);
+            redirect('/pages/requisition-form.php', false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('../pages/requisition-form.php', false);
+        redirect('/pages/requisition-form.php', false);
     }
  }
 ?>
@@ -172,7 +173,7 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         $Comments = $db->escape($_POST['Comments']);
 
-        for ($i = 1; $i <= 19; $i++) {
+        for ($i = 1; $i <= 20; $i++) {
             ${"TestType" . $i} = $db->escape($_POST["TestType$i"]);
         }
 
@@ -214,7 +215,8 @@
         $query .= "Test_Type16 = '{$TestType16}', ";
         $query .= "Test_Type17 = '{$TestType17}', ";
         $query .= "Test_Type18 = '{$TestType18}', ";
-        $query .= "Test_Type19 = '{$TestType19}' ";
+        $query .= "Test_Type19 = '{$TestType19}', ";
+        $query .= "Test_Type20 = '{$TestType20}' ";
 
         $query .= "WHERE id = '{$Search}'";
 
@@ -222,28 +224,34 @@
 
         if ($result && $db->affected_rows() === 1) {
             $session->msg('s', 'La muestra ha sido actualizada.');
-            redirect('../pages/requisition-form-edit.php?id=' . $Search, false);
+            redirect('/pages/requisition-form-view.php', false);
         } else {
             $session->msg('w', 'No se hicieron cambios');
-            redirect('../pages/requisition-form-edit.php?id=' . $Search, false);
+            redirect('/pages/requisition-form-view.php', false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('../pages/requisition-form-edit.php?id=' . $Search, false);
+        redirect('/pages/requisition-form-view.php', false);
     }
  }
 ?>
 
 <!-- Delete Requisiton -->
-<?php
- $delete = $_GET['id'];
- 
- $ID = delete_by_id('lab_test_requisition_form', $delete);
+<?php 
+ page_require_level(2);
+ if (isset($_POST['delete-requisition'])) { 
+    $Search = $_GET['id'];
 
- if ($ID) {
-    $session->msg("s", "Borrado exitosamente");
- } else {
-    $session->msg("d", "No encontrado");
+    // Asume que tienes una función delete_by_id definida que elimina registros de la tabla 'calendar'
+    $ID = delete_by_id('lab_test_requisition_form', $Search);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    // Redirige a la página de planificación semanal después de la operación
+    redirect('/pages/requisition-form-view.php');
  }
- redirect('../pages/requisition-form-view.php');
 ?>

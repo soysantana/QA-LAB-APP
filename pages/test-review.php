@@ -6,6 +6,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['test-review'])) {
+        include('../database/sample-tracking.php');
+    }
+  }
+?>
+
 <?php page_require_level(3); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -70,7 +79,7 @@
     <div class="card-body">
       <h5 class="card-title">Acciones</h5>
       <!-- Actions Buttons -->
-      <form class="d-grid gap-2 mt-3" method="post" action="../database/sample-tracking.php">
+      <form class="d-grid gap-2 mt-3" method="post" action="test-review.php">
         <button type="submit" class="btn btn-success" name="test-review">Actualizar</button>
       </form>
     </div>

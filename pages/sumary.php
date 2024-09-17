@@ -35,7 +35,7 @@
   $unique_data = remove_duplicates($data, 'Material_Type');
 ?>
 
-<?php page_require_level(3); ?>
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
   <div class="pagetitle">

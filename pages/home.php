@@ -3,7 +3,7 @@
  $class_home = " ";
  require_once "../config/load.php";
  if (!$session->isUserLoggedIn(true)) {
-    redirect("../index.php", false);
+    redirect("/index.php", false);
  }
 ?>
 
@@ -157,6 +157,119 @@
     </div>
   </div><!-- End Process Database Requision -->
 
+      <!-- Method Proctor -->
+      <div class="col-12">
+       <div class="card recent-sales overflow-auto">
+
+       <div class="filter">
+        <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+          <li class="dropdown-header text-start">
+            <h6>Filtrar</h6>
+          </li>
+        
+          <li><a class="dropdown-item" href="#">Hoy</a></li>
+          <li><a class="dropdown-item" href="#">Este mes</a></li>
+          <li><a class="dropdown-item" href="#">Este año</a></li>
+        </ul>
+      </div>
+
+      <div class="card-body">
+        <h5 class="card-title">Metodo Para Proctor <span>| Hoy</span></h5>
+
+        <table class="table table-borderless datatable">
+          <thead>
+            <tr>
+              <th scope="col">Muestra</th>
+              <th scope="col">Metodo</th>
+              <th scope="col">Comentario</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+              $Requisition = find_all("lab_test_requisition_form");
+              $Preparation = find_all("test_preparation");
+              $Review = find_all("test_review");
+              $testTypes = [];
+
+                foreach ($Requisition as $requisition) {
+                  for ($i = 1; $i <= 19; $i++) {
+                    $testTypeKey = "Test_Type" . $i;
+
+                    if (
+                      isset($requisition[$testTypeKey]) &&
+                      $requisition[$testTypeKey] !== null &&
+                      $requisition[$testTypeKey] !== ""
+                      ) {
+                        $matchingPreparations = array_filter($Preparation, function ($preparation) use ($requisition, $testTypeKey) {
+                        
+                          return $preparation["Sample_Name"] === $requisition["Sample_ID"] &&
+                          $preparation["Sample_Number"] === $requisition["Sample_Number"] &&
+                          $preparation["Test_Type"] === $requisition[$testTypeKey];
+                        });
+                        
+                        $matchingReviews = array_filter($Review, function ($review) use ($requisition, $testTypeKey) {
+                          return $review["Sample_Name"] === $requisition["Sample_ID"] &&
+                          $review["Sample_Number"] === $requisition["Sample_Number"] &&
+                          $review["Test_Type"] === $requisition[$testTypeKey];
+                        });
+
+                        if (empty($matchingPreparations) && empty($matchingReviews)) {
+                          $testTypes[] = [
+                            "Sample_ID" => $requisition["Sample_ID"],
+                            "Sample_Number" => $requisition["Sample_Number"],
+                            "Sample_Date" => $requisition["Sample_Date"],
+                            "Test_Type" => $requisition[$testTypeKey],
+                          ];
+                        }
+                      }
+                    }
+                  }
+                  
+                  usort($testTypes, function ($a, $b) {
+                    return strcmp($a["Test_Type"], $b["Test_Type"]);
+                  });
+                  
+                  foreach ($testTypes as $index => $sample) :
+                    if ($sample['Test_Type'] === 'SP') :
+                      $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                      foreach ($GrainResults as $Grain) :
+                        if ($Grain) :
+                          $T3p4 = (float)$Grain['CumRet11'];
+                          $T3p8 = (float)$Grain['CumRet13'];
+                          $TNo4 = (float)$Grain['CumRet14'];
+                          $resultado = '';
+                          $CorrecionPorTamano = '';
+
+                          if ($T3p4 > 0) {
+                            $resultado = "C";
+                          } elseif ($T3p8 > 0 && $T3p4 == 0) {
+                            $resultado = "B";
+                          } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
+                            $resultado = "A";
+                          } else {
+                            $resultado = "No se puede determinar el método";
+                          }
+
+                          if ($T3p4 > 5) {
+                            $CorrecionPorTamano = "Correcion Por Sobre Tamaño, realizar SG Particulas Finas y Gruesas";
+                          }
+            ?>
+            <tr>
+              <td><?php echo $sample['Sample_ID'] . "-" . $sample['Sample_Number'] . "-" . $sample['Test_Type']; ?></td>
+              <td><?php echo $resultado; ?></td>
+              <td><?php echo $CorrecionPorTamano; ?></td>
+            </tr>
+            <?php endif; endforeach; endif; endforeach; ?>
+          </tbody>
+        </table>
+
+
+      </div>
+
+    </div>
+  </div><!-- End Method Proctor -->
+
     </div>
   </div><!-- End Left side columns -->
 
@@ -165,7 +278,7 @@
 
   <div class="card">
   <div class="card-body">
-    <h5 class="card-title">Proceso</h5>
+    <h5 class="card-title">Cantidades en Proceso</h5>
     
     <?php 
     
@@ -235,111 +348,54 @@
   </div>
 </div>
 
-    <!-- Method Proctor -->
+    <!-- CANTIDAD DE ENSAYOS PENDIENTES -->
     <div class="col-12">
-      <div class="card recent-sales overflow-auto">
-
-      <div class="filter">
-        <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-          <li class="dropdown-header text-start">
-            <h6>Filtrar</h6>
-          </li>
+    <div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
+        <ul class="list-group">
+        <?php
+         $columnas_tipo_prueba = array();
+         for ($i = 1; $i <= 19; $i++) {
+          $columnas_tipo_prueba[] = "Test_Type" . $i;
+         }
         
-          <li><a class="dropdown-item" href="#">Hoy</a></li>
-          <li><a class="dropdown-item" href="#">Este mes</a></li>
-          <li><a class="dropdown-item" href="#">Este año</a></li>
+         $columnas_por_tipo = array();
+         foreach ($Requisition as $requisition) {
+           foreach ($columnas_tipo_prueba as $columna) {
+             $testTypeValue = $requisition[$columna];
+             if ($testTypeValue !== null && $testTypeValue !== "") {
+               $columnas_por_tipo[$testTypeValue] = $columna;
+             }
+           }
+         }
+
+         $typeCount = [];
+         foreach ($testTypes as $sample) {
+            $testType = $sample['Test_Type'];
+            if (isset($typeCount[$testType])) {
+                $typeCount[$testType]++;
+            } else {
+                $typeCount[$testType] = 1;
+            }
+         }
+         foreach ($typeCount as $testType => $count) :
+        ?>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <h5><code><?php echo $testType; ?></code></h5>
+            <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
+            <?php if (isset($columnas_por_tipo[$testType])) : ?>
+            <?php else : ?>
+            <span class="badge bg-danger rounded-pill">Opps</span>
+            <?php endif; ?>
+        </li>
+        <?php endforeach; ?>
         </ul>
-      </div>
-
-      <div class="card-body">
-        <h5 class="card-title">Metodo Para Proctor <span>| Hoy</span></h5>
-
-        <table class="table table-borderless datatable">
-          <thead>
-            <tr>
-              <th scope="col">Muestra</th>
-              <th scope="col">Metodo</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-              $Requisition = find_all("lab_test_requisition_form");
-              $Preparation = find_all("test_preparation");
-              $Review = find_all("test_review");
-              $testTypes = [];
-
-                foreach ($Requisition as $requisition) {
-                  for ($i = 1; $i <= 19; $i++) {
-                    $testTypeKey = "Test_Type" . $i;
-
-                    if (
-                      isset($requisition[$testTypeKey]) &&
-                      $requisition[$testTypeKey] !== null &&
-                      $requisition[$testTypeKey] !== ""
-                      ) {
-                        $matchingPreparations = array_filter($Preparation, function ($preparation) use ($requisition, $testTypeKey) {
-                        
-                          return $preparation["Sample_Name"] === $requisition["Sample_ID"] &&
-                          $preparation["Sample_Number"] === $requisition["Sample_Number"] &&
-                          $preparation["Test_Type"] === $requisition[$testTypeKey];
-                        });
-                        
-                        $matchingReviews = array_filter($Review, function ($review) use ($requisition, $testTypeKey) {
-                          return $review["Sample_Name"] === $requisition["Sample_ID"] &&
-                          $review["Sample_Number"] === $requisition["Sample_Number"] &&
-                          $review["Test_Type"] === $requisition[$testTypeKey];
-                        });
-
-                        if (empty($matchingPreparations) && empty($matchingReviews)) {
-                          $testTypes[] = [
-                            "Sample_ID" => $requisition["Sample_ID"],
-                            "Sample_Number" => $requisition["Sample_Number"],
-                            "Sample_Date" => $requisition["Sample_Date"],
-                            "Test_Type" => $requisition[$testTypeKey],
-                          ];
-                        }
-                      }
-                    }
-                  }
-                  
-                  usort($testTypes, function ($a, $b) {
-                    return strcmp($a["Test_Type"], $b["Test_Type"]);
-                  });
-                  
-                  foreach ($testTypes as $index => $sample) :
-                    if ($sample['Test_Type'] === 'SP') :
-                      $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                      foreach ($GrainResults as $Grain) :
-                        if ($Grain) :
-                          $T3p4 = (float)$Grain['CumRet11'];
-                          $T3p8 = (float)$Grain['CumRet13'];
-                          $TNo4 = (float)$Grain['CumRet14'];
-                          $resultado = '';
-
-                          if ($T3p4 > 0) {
-                            $resultado = "C";
-                          } elseif ($T3p8 > 0 && $T3p4 == 0) {
-                            $resultado = "B";
-                          } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
-                            $resultado = "A";
-                          } else {
-                            $resultado = "No se puede determinar el método";
-                          }
-            ?>
-            <tr>
-              <td><?php echo $sample['Sample_ID'] . "-" . $sample['Sample_Number'] . "-" . $sample['Test_Type']; ?></td>
-              <td><?php echo $resultado; ?></td>
-            </tr>
-            <?php endif; endforeach; endif; endforeach; ?>
-          </tbody>
-        </table>
-
-
-      </div>
-
+     </div>
     </div>
-  </div><!-- End Method Proctor -->
+
+   </div>
+  </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
 
   </div><!-- End Right side columns -->
 

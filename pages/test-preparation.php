@@ -6,6 +6,19 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['test-preparation'])) {
+        include('../database/sample-tracking.php');
+    } elseif (isset($_POST['delete-preparation'])) {
+        include('../database/sample-tracking.php');
+    } elseif (isset($_POST['send-realization'])) {
+        include('../database/sample-tracking.php');
+    }
+  }
+?>
+
 <?php page_require_level(3); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -32,7 +45,7 @@
         <h5 class="card-title">AÑADIR MUESTRA A LA PREPARACIÓN</h5>
 
         <!-- Multi Columns Form -->
-        <form class="row g-3" method="post" action="../database/sample-tracking.php">
+        <form class="row g-3" method="post" action="test-preparation.php">
           <div class="col-md-12">
             <label for="Sname" class="form-label">Nombre de la muestra</label>
             <input type="text" class="form-control" name="Sname" id="Sname" autocomplete="off">
@@ -46,20 +59,25 @@
             <select id="Ttype" class="form-select" name="Ttype">
               <option selected disabled>Elegir...</option>
               <option value="MC">MC</option>
-              <option value="GS">GS</option>
               <option value="AL">AL</option>
+              <option value="GS">GS</option>
               <option value="SP">SP</option>
               <option value="SG">SG</option>
+              <option value="UCS">UCS</option>
+              <option value="BTS">BTS</option>
+              <option value="PLT">PLT</option>
               <option value="HY">HY</option>
               <option value="DHY">DHY</option>
               <option value="AR">AR</option>
-              <option value="SND">SND</option>
               <option value="SCT">SCT</option>
-              <option value="PH">PH</option>
-              <option value="UCS">UCS</option>
-              <option value="BTT">BTT</option>
-              <option value="PLT">PLT</option>
               <option value="LAA">LAA</option>
+              <option value="SND">SND</option>
+              <option value="Consolidation">Consolidacion</option>
+              <option value="PH">PH</option>
+              <option value="Permeability">Permeabilidad</option>
+              <option value="SHAPE">Formas de Particulas</option>
+              <option value="DENSITY">Densidad</option>
+              <option value="CRUMBS">CRUMBS</option>
             </select>
           </div>
           <div class="col-md-12">
@@ -67,7 +85,7 @@
             <input type="text" class="form-control" name="Technician" id="Technician" autocomplete="off">
           </div>
           <div>
-            <button type="submit" class="btn btn-success" name="test-preparation"><i class="bi bi-save me-1"></i> Guardar preparación</button>
+            <button type="submit" class="btn btn-success" name="test-preparation"><i class="bi bi-save me-1"></i> Enviar a Preparación</button>
           </div>
         </form><!-- End Multi Columns Form -->
 
@@ -125,7 +143,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
 
-      <form method="post" action="../database/sample-tracking.php"><!-- Multi Columns Form -->
+      <form method="post" action="test-preparation.php"><!-- Multi Columns Form -->
       
       <div class="modal-header">
         <h5 class="modal-title">¡Ey! Envia la muestra a realización</h5>
@@ -146,20 +164,25 @@
             <select id="Ttype" class="form-select" name="Ttype">
               <option selected disabled>Elegir...</option>
               <option value="MC">MC</option>
-              <option value="GS">GS</option>
               <option value="AL">AL</option>
+              <option value="GS">GS</option>
               <option value="SP">SP</option>
               <option value="SG">SG</option>
+              <option value="UCS">UCS</option>
+              <option value="BTS">BTS</option>
+              <option value="PLT">PLT</option>
               <option value="HY">HY</option>
               <option value="DHY">DHY</option>
               <option value="AR">AR</option>
-              <option value="SND">SND</option>
               <option value="SCT">SCT</option>
-              <option value="PH">PH</option>
-              <option value="UCS">UCS</option>
-              <option value="BTT">BTT</option>
-              <option value="PLT">PLT</option>
               <option value="LAA">LAA</option>
+              <option value="SND">SND</option>
+              <option value="Consolidation">Consolidacion</option>
+              <option value="PH">PH</option>
+              <option value="Permeability">Permeabilidad</option>
+              <option value="SHAPE">Formas de Particulas</option>
+              <option value="DENSITY">Densidad</option>
+              <option value="CRUMBS">CRUMBS</option>
             </select>
           </div>
           <div class="col-md-12">
@@ -246,7 +269,7 @@
       // Verifica si se ha guardado un ID
       if (selectedId !== undefined) {
         // Concatena el ID al final de la URL en el atributo 'action' del formulario
-        document.getElementById("deleteForm").action = "../database/sample-tracking.php?id=" + selectedId;
+        document.getElementById("deleteForm").action = "test-preparation.php?id=" + selectedId;
 
         // Envía el formulario
         document.getElementById("deleteForm").submit();

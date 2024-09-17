@@ -1,7 +1,16 @@
 <?php
-  $page_title = 'Formulario de solicitud';
+  $page_title = 'Muestras Registradas';
   $requisition_form = 'show';
   require_once('../config/load.php');
+?>
+
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['delete-requisition'])) {
+        include('../database/requisition-form.php');
+    } 
+  }
 ?>
 
 <?php page_require_level(3); ?>
@@ -9,12 +18,12 @@
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Formulario de solicitud</h1>
+  <h1>Muestras Registradas</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Páginas</li>
-      <li class="breadcrumb-item active">Formulario de solicitud</li>
+      <li class="breadcrumb-item active">Formulario de requisicion</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->
@@ -26,7 +35,7 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/requisition-form.php" method="post">
+  <form class="row" action="requisition-form-view.php" method="post">
    <div class="col-lg-12">
       <div class="card">
          <div class="card-body">
@@ -82,7 +91,7 @@
                         <!-- Requested Essays -->
                         <h5 class="card-title">Ensayos solicitados</h5>
                         <ul class="list-group">
-                          <?php for ($i = 1; $i <= 19; $i++) { $testTypeValue = $Requisition['Test_Type' . $i]; if ($testTypeValue !== null && $testTypeValue !== '') { ?>
+                          <?php for ($i = 1; $i <= 20; $i++) { $testTypeValue = $Requisition['Test_Type' . $i]; if ($testTypeValue !== null && $testTypeValue !== '') { ?>
                           <li class="list-group-item"><?php echo $testTypeValue; ?></li>
                           <?php } } ?>
                         </ul>
@@ -138,7 +147,7 @@
           <h5>¿Está seguro?</h5>
         </div>
         <div class="modal-body">
-          <form id="deleteForm" method="post" action="../database/requisition-form.php">
+          <form id="deleteForm" method="post" action="requisition-form-view.php">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
           <button type="submit" class="btn btn-outline-danger" name="delete-requisition" onclick="Delete()">Si</button>
           </form>
@@ -167,7 +176,7 @@
     // Verifica si se ha guardado un ID
     if (selectedId !== undefined) {
       // Concatena el ID al final de la URL en el atributo 'action' del formulario
-      document.getElementById("deleteForm").action = "../database/requisition-form.php?id=" + selectedId;
+      document.getElementById("deleteForm").action = "requisition-form-view.php?id=" + selectedId;
 
       // Envía el formulario
       document.getElementById("deleteForm").submit();

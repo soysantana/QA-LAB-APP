@@ -197,17 +197,17 @@ function tableExists($table){
      //if user not login
      if (!$session->isUserLoggedIn(true)):
             $session->msg('d','Por favor Iniciar sesión...');
-            redirect('index.php', false);
+            redirect('/index.php', false);
       //if Group status Deactive
       elseif(is_array($login_level) && isset($login_level['group_status']) && $login_level['group_status'] === '0'):
             $session->msg('d', 'Este nivel de usuario está inactivo!');
-            redirect('../index.php', false);
+            redirect('/index.php', false);
       //cheackin log in User level and Require level is Less than or equal to
      elseif($current_user['user_level'] <= (int)$require_level):
               return true;
       else:
             $session->msg("d", "¡Lo siento!  no tienes permiso para ver la página.");
-            redirect('../pages/home.php', false);
+            redirect('/pages/home.php', false);
         endif;
 
      }

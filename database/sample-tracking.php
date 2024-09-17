@@ -1,7 +1,5 @@
 <!-- Preparation -->
 <?php
- require_once('../config/load.php');
- 
  if (isset($_POST['test-preparation'])) {
     $req_fields = array(
         'Sname',
@@ -43,18 +41,18 @@
 
             if ($db->query($sql)) {
                 $session->msg("s", "Muestra enviada para preparación.");
-                redirect('../pages/test-preparation.php', false);
+                redirect('/pages/test-preparation.php', false);
             } else {
                 $session->msg("d", "Lo sentimos, no se pudo agregar la muestra enviada para preparación.");
-                redirect('../pages/test-preparation.php', false);
+                redirect('/pages/test-preparation.php', false);
             }
         } else {
             $session->msg("w", "Lo sentimos, la muestra existe.");
-            redirect('../pages/test-preparation.php', false);
+            redirect('/pages/test-preparation.php', false);
         }
     } else {
         $session->msg("w", $errors);
-        redirect('../pages/test-preparation.php', false);
+        redirect('/pages/test-preparation.php', false);
     }
  }
 
@@ -85,7 +83,7 @@
         $session->msg("d", "No encontrado");
     }
 
-    redirect('../pages/test-preparation.php');
+    redirect('/pages/test-preparation.php');
  }
 ?>
 
@@ -132,18 +130,18 @@
 
             if ($db->query($sql)) {
                 $session->msg('s', "Muestra enviada para su realización.");
-                redirect('../pages/test-realization.php', false);
+                redirect('/pages/test-realization.php', false);
             } else {
                 $session->msg('d', 'Lo sentimos, no se ha podido añadir la Muestra enviada para su realización.');
-                redirect('../pages/test-preparation.php', false);
+                redirect('/pages/test-preparation.php', false);
             }
         } else {
             $session->msg('w', 'Lo sentimos, la muestra existe.');
-            redirect('../pages/test-preparation.php', false);
+            redirect('/pages/test-preparation.php', false);
         }
     } else {
         $session->msg("w", $errors);
-        redirect('../pages/test-preparation.php', false);
+        redirect('/pages/test-preparation.php', false);
     }
  }
 
@@ -174,7 +172,7 @@
         $session->msg("d", "No encontrado");
     }
 
-    redirect('../pages/test-realization.php');
+    redirect('/pages/test-realization.php');
  }
 ?>
 
@@ -221,18 +219,18 @@
 
             if ($db->query($sql)) {
                 $session->msg('s', "Muestra enviada para su entrega.");
-                redirect('../pages/test-delivery.php', false);
+                redirect('/pages/test-delivery.php', false);
             } else {
                 $session->msg('d', 'Lo sentimos, no se pudo agregar la muestra enviada para entrega.');
-                redirect('../pages/test-realization.php', false);
+                redirect('/pages/test-realization.php', false);
             }
         } else {
             $session->msg('w', 'Lo sentimos, la muestra existe.');
-            redirect('../pages/test-realization.php', false);
+            redirect('/pages/test-realization.php', false);
         }
     } else {
         $session->msg("w", $errors);
-        redirect('../pages/test-realization.php', false);
+        redirect('/pages/test-realization.php', false);
     }
  }
 
@@ -349,7 +347,7 @@
         insertDataFromTable($table, $db, $session);
     }
 
-    redirect("../pages/test-review.php", false);
+    redirect("/pages/test-review.php", false);
  }
 
  $db->db_disconnect();
