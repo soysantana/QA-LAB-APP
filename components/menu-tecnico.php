@@ -73,6 +73,13 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-heading">paginas</li>
 
       <li class="nav-item">
+        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
+          <i class="bi bi-file-earmark"></i>
+          <span>Formulario de requisicion</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
+      <li class="nav-item">
         <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
           <i class="bi bi-question-circle"></i>
           <span>Lista de Pendientes</span>
@@ -83,13 +90,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
           <i class="bi bi-calendar3"></i>
           <span>Planificación Semanal</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
-          <i class="bi bi-file-earmark"></i>
-          <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
 

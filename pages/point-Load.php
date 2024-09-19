@@ -5,6 +5,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['point-load'])) {
+        include('../database/point-load.php');
+    } 
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -24,7 +33,7 @@
   <section class="section">
     <div class="row" oninput="PLT()">
 
-    <form class="row" action="../database/point-load.php" method="post" enctype="multipart/form-data">
+    <form class="row" action="point-Load.php" method="post" enctype="multipart/form-data">
 
     <div class="col-md-4">
     <?php echo display_msg($msg); ?>

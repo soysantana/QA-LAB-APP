@@ -64,7 +64,7 @@
           $testTypes = [];
 
           foreach ($Requisitions as $requisition) {
-            for ($i = 1; $i <= 19; $i++) {
+            for ($i = 1; $i <= 20; $i++) {
               $testTypeKey = 'Test_Type' . $i;
               
               if (isset($requisition[$testTypeKey]) && $requisition[$testTypeKey] !== null && $requisition[$testTypeKey] !== '') {
@@ -193,7 +193,7 @@
               $testTypes = [];
 
                 foreach ($Requisition as $requisition) {
-                  for ($i = 1; $i <= 19; $i++) {
+                  for ($i = 1; $i <= 20; $i++) {
                     $testTypeKey = "Test_Type" . $i;
 
                     if (
@@ -269,6 +269,41 @@
 
     </div>
   </div><!-- End Method Proctor -->
+
+  <div class="col-lg-12">
+      <div class="card">
+         <div class="card-body">
+            <h5 class="card-title">Muestras Registradas</h5>
+            <?php $ReqViews = find_all('lab_test_requisition_form') ?>
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+               <thead>
+                  <tr>
+                     <th scope="col">#</th>
+                     <th scope="col">Muestra</th>
+                     <th scope="col">Numero de muestra</th>
+                     <th scope="col">Acciones</th>
+                  </tr>
+               </thead>
+               <tbody>
+               <?php foreach ($ReqViews as $ReqViews):?>
+                  <tr>
+                     <th scope="row"><?php echo count_id();?></th>
+                     <td><?php echo $ReqViews['Sample_ID']; ?></td>
+                     <td><?php echo $ReqViews['Sample_Number']; ?></td>
+                     <td>
+                      <div class="btn-group" role="group">
+                        <a href="requisition-form-edit.php?id=<?php echo $ReqViews['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+               </tbody>
+            </table>
+            <!-- End Table with stripped rows -->
+         </div>
+      </div>
+   </div>
 
     </div>
   </div><!-- End Left side columns -->

@@ -5,6 +5,15 @@
   $form_show = 'show';
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['moisture-oven'])) {
+        include('../database/moisture-content.php');
+    } 
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +31,7 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/moisture-content.php" method="post">
+  <form class="row" action="moisture-oven.php" method="post">
 
   <?php echo display_msg($msg); ?>
 

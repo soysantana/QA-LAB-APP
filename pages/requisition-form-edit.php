@@ -103,6 +103,7 @@
                 <option <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
                 <option <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
                 <option <?php if ($Search['Material_Type'] == 'FRF') echo 'selected'; ?>>FRF</option>
+                <option <?php if ($Search['Material_Type'] == 'UTF') echo 'selected'; ?>>UTF</option>
                 <option <?php if ($Search['Material_Type'] == 'TRF') echo 'selected'; ?>>TRF</option>
                 <option <?php if ($Search['Material_Type'] == 'FF') echo 'selected'; ?>>FF</option>
                 <option <?php if ($Search['Material_Type'] == 'CF') echo 'selected'; ?>>CF</option>

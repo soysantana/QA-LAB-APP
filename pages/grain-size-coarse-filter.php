@@ -23,13 +23,13 @@
 <section class="section">
   <div class="row" oninput="CF()">
 
-  <form class="row" action="../database/grain-size-general.php" method="post">
-
-  <div id="product_info"></div>
+  <form class="row" action="grain-size-coarse-filter.php" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 

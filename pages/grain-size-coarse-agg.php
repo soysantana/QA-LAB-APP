@@ -6,6 +6,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['grain-size-coarse'])) {
+        include('../database/grain-size-general.php');
+    } 
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -23,13 +32,13 @@
 <section class="section">
   <div class="row" oninput="CoarseAgg()">
 
-  <form class="row" action="../database/grain-size-general.php" method="post">
-
-  <div id="product_info"></div>
+  <form class="row" action="grain-size-coarse-agg.php" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 
@@ -354,7 +363,6 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="grain-size-coarse">Save Essay</button>
-          <button type="button" class="btn btn-primary disabled">Search Moisture</button>
         </div>
 
       </div>

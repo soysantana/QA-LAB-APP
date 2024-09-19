@@ -50,7 +50,7 @@
                 $testTypes = [];
                 
                 foreach ($Requisition as $requisition) {
-                    for ($i = 1; $i <= 19; $i++) {
+                    for ($i = 1; $i <= 20; $i++) {
                         $testTypeKey = "Test_Type" . $i;
                         
                         if (

@@ -98,6 +98,19 @@
                         <!-- End Requested Essays -->
                         </div>
                       </div>
+
+                      <div class="card">
+                        <div class="card-body">
+                        <!-- Requested Essays -->
+                        <h5 class="card-title">Comentario</h5>
+                        <ul class="list-group">
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <h5><code><?php echo $Requisition['Comment']; ?></code></h5>
+                          </li>
+                        </ul>
+                        <!-- End Requested Essays -->
+                        </div>
+                      </div>
                         
                       <div class="card">
                         <div class="card-body">

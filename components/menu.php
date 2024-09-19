@@ -169,9 +169,9 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-heading">paginas</li>
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $Sumarios; ?>" href="/pages/sumary.php">
-          <i class="bi bi-database"></i>
-          <span>Sumarios</span>
+        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
+          <i class="bi bi-file-earmark"></i>
+          <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
 
@@ -189,6 +189,8 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
       </li><!-- End Register Page Nav -->
 
+      <li class="nav-heading">Supervision</li>
+
       <li class="nav-item">
         <a class="nav-link <?php echo $review; ?>" href="/pages/essay-review.php">
           <i class="bi bi-card-checklist"></i>
@@ -204,9 +206,9 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       </li><!-- End Review Essay Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
-          <i class="bi bi-file-earmark"></i>
-          <span>Formulario de requisicion</span>
+        <a class="nav-link <?php echo $Sumarios; ?>" href="/pages/sumary.php">
+          <i class="bi bi-database"></i>
+          <span>Sumarios</span>
         </a>
       </li><!-- End Register Page Nav -->
 

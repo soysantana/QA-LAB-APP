@@ -5,6 +5,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['Soundness'])) {
+        include('../database/soundness.php');
+    } 
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -21,7 +30,7 @@
   <!-- End Page Title -->
   <section class="section">
     <div class="row" oninput="Soundness()">
-      <form class="row" action="../database/soundness.php" method="post">
+      <form class="row" action="soundness.php" method="post">
 
         <div id="product_info"></div>
 

@@ -102,6 +102,7 @@
                 <option value="RF">RF</option>
                 <option value="IRF">IRF</option>
                 <option value="FRF">FRF</option>
+                <option value="UTF">UTF</option>
                 <option value="TRF">TRF</option>
                 <option value="FF">FF</option>
                 <option value="CF">CF</option>

@@ -5,6 +5,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['grain-size-general'])) {
+        include('../database/grain-size-general.php');
+    } 
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -24,11 +33,11 @@
 
   <form class="row" action="../database/grain-size-general.php" method="post">
 
-  <div id="product_info"></div>
-
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 
