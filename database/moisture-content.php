@@ -1,6 +1,5 @@
 <!-- Moisture Oven -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['moisture-oven'])) {

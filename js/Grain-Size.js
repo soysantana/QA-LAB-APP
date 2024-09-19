@@ -37,20 +37,20 @@ function GrainSize() {
     const Fines =  PassArray[PassArray.length - 1];   
 
     // Result
-    document.getElementById("DrySoil").value = DrySoil.toFixed(2);
-    document.getElementById("WashPan").value = WashPan.toFixed(2);
-    document.getElementById("Ret" + i).value = Ret.toFixed(2);
-    document.getElementById("CumRet" + i).value = CumRet.toFixed(2);
-    document.getElementById("Pass" + i).value = Pass.toFixed(2);
-    document.getElementById("PanRet").value = PanRet.toFixed(2);
-    document.getElementById("TotalWtRet").value = TotalWtRet.toFixed(2);
-    document.getElementById("TotalRet").value = TotalRet.toFixed(2);
-    document.getElementById("TotalCumRet").value = TotalCumRet.toFixed(2);
-    document.getElementById("TotalPass").value = TotalPass.toFixed(2);
-    document.getElementById("CoarserGravel").value = CoarserGravel.toFixed(2);
-    document.getElementById("Gravel").value = Gravel.toFixed(2);
-    document.getElementById("Sand").value = Sand.toFixed(2);
-    document.getElementById("Fines").value = Fines.toFixed(2);
+    document.getElementById("DrySoil").value = isNaN(DrySoil) || DrySoil === 0 ? "" : DrySoil.toFixed(2);
+    document.getElementById("WashPan").value = isNaN(WashPan) || WashPan === 0 ? "" : WashPan.toFixed(2);
+    document.getElementById("Ret" + i).value = isNaN(Ret) || Ret === 0 ? "" : Ret.toFixed(2);
+    document.getElementById("CumRet" + i).value = isNaN(CumRet) || CumRet === 0 ? "" : CumRet.toFixed(2);
+    document.getElementById("Pass" + i).value = isNaN(Pass) || Pass === 0 ? "" : Pass.toFixed(2);
+    document.getElementById("PanRet").value = isNaN(PanRet) || PanRet === 0 ? "" : PanRet.toFixed(2);
+    document.getElementById("TotalWtRet").value = isNaN(TotalWtRet) || TotalWtRet === 0 ? "" : TotalWtRet.toFixed(2);
+    document.getElementById("TotalRet").value = isNaN(TotalRet) || TotalRet === 0 ? "" : TotalRet.toFixed(2);
+    document.getElementById("TotalCumRet").value = isNaN(TotalCumRet) || TotalCumRet === 0 ? "" : TotalCumRet.toFixed(2);
+    document.getElementById("TotalPass").value = isNaN(TotalPass) || TotalPass === 0 ? "" : TotalPass.toFixed(2);
+    document.getElementById("CoarserGravel").value = isNaN(CoarserGravel) || CoarserGravel === 0 ? "" : CoarserGravel.toFixed(2);
+    document.getElementById("Gravel").value = isNaN(Gravel) || Gravel === 0 ? "" : Gravel.toFixed(2);
+    document.getElementById("Sand").value = isNaN(Sand) || Sand === 0 ? "" : Sand.toFixed(2);
+    document.getElementById("Fines").value = isNaN(Fines) || Fines === 0 ? "" : Fines.toFixed(2);
   }
   // Sumary Parameter
  const datos = [

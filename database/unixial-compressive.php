@@ -1,6 +1,5 @@
 <!-- UCS -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['unixial-compressive'])) {

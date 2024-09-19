@@ -5,6 +5,19 @@
   $Search = find_by_id('pinhole_test', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['Update_PH'])) {
+        include('../database/pinhole-test.php');
+    } elseif (isset($_POST['Repeat_PH'])) {
+        include('../database/pinhole-test.php');
+    } elseif (isset($_POST['Reviewed_PH'])) {
+        include('../database/pinhole-test.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +35,7 @@
 <section class="section">
   <div class="row" oninput="Pinhole()">
 
-  <form class="row" action="../database/pinhole-test.php?id=<?php echo $Search['id']; ?>" method="post">
+  <form class="row" action="pinhole-test.php?id=<?php echo $Search['id']; ?>" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>

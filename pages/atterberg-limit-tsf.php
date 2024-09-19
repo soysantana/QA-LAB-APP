@@ -5,7 +5,16 @@
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['atterberg-limit'])) {
+        include('../database/atterberg-limit.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -22,7 +31,7 @@
 <section class="section">
   <div class="row" oninput="LLyPL()">
 
-  <form class="row" action="../database/atterberg-limit.php" method="post">
+  <form class="row" action="atterberg-limit-tsf.php" method="post">
 
   <div id="product_info"></div>
 

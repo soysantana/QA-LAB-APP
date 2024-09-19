@@ -5,6 +5,19 @@
   $Search = find_by_id('brazilian', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['Update_Brazilian'])) {
+        include('../database/brazilian.php');
+    } elseif (isset($_POST['Repeat_Brazilian'])) {
+        include('../database/brazilian.php');
+    } elseif (isset($_POST['Reviewed_Brazilian'])) {
+        include('../database/brazilian.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +35,7 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/brazilian.php?id=<?php echo $Search['id']; ?>" method="post" enctype="multipart/form-data">
+  <form class="row" action="brazilian.php?id=<?php echo $Search['id']; ?>" method="post" enctype="multipart/form-data">
   
   <div class="col-md-4">
     <?php echo display_msg($msg); ?>

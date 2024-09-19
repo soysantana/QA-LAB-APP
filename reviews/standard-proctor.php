@@ -5,6 +5,19 @@
   $Search = find_by_id('standard_proctor', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update-sp'])) {
+        include('../database/standard-proctor.php');
+    } elseif (isset($_POST['repeat-sp'])) {
+        include('../database/standard-proctor.php');
+    } elseif (isset($_POST['reviewed-sp'])) {
+        include('../database/standard-proctor.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +35,7 @@
 <section class="section">
   <div class="row" oninput="SProctor()">
 
-  <form class="row" action="../database/standard-proctor.php?id=<?php echo $Search['id']; ?>" method="post">
+  <form class="row" action="standard-proctor.php?id=<?php echo $Search['id']; ?>" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>

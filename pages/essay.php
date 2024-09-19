@@ -4,6 +4,7 @@
  require_once "../config/load.php";
 ?>
 
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php'); ?>
 <main id="main" class="main">
 
@@ -29,20 +30,25 @@
     <?php
 // Array of tables and their display names
 $tables = [
+    'atterberg_limit' => 'Atterberg Limit',
+    'brazilian' => 'BTS',
+    'grain_size_general' => 'Grain Size General',
+    'grain_size_coarse' => 'Grain Size Coarse',
+    'grain_size_fine' => 'Grain Size Fine',
+    'grain_size_coarsethan' => 'Grain Size Coarsethan',
+    'los_angeles_abrasion_coarse_filter' => 'LAA Small',
+    'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
     'moisture_oven' => 'Moisture Oven',
     'moisture_constant_mass' => 'Moisture Constant Mass',
     'moisture_microwave' => 'Moisture Microwave',
-    'atterberg_limit' => 'Atterberg Limit',
-    'grain_size_general' => 'Grain Size General',
-    'grain_size_fine' => 'Grain Size Fine',
-    'grain_size_coarse' => 'Grain Size Coarse',
-    'grain_size_coarsethan' => 'Grain Size Coarsethan',
+    'pinhole_test' => 'PH',
+    'point_load' => 'PLT',
+    'soundness' => 'Soundness',
     'specific_gravity' => 'Specific Gravity',
     'specific_gravity_coarse' => 'Specific Gravity Coarse',
     'specific_gravity_fine' => 'Specific Gravity Fine',
-    'los_angeles_abrasion_coarse_filter' => 'Los Angeles Abrasion Coarse Filter',
-    'los_angeles_abrasion_coarse_aggregate' => 'Los Angeles Abrasion Coarse Aggregate',
-    // Add more tables as needed
+    'standard_proctor' => 'Standard Proctor',
+    'unixial_compressive' => 'UCS',
 ];
 
 // Array to hold all data
@@ -98,14 +104,8 @@ foreach ($tables as $tableName => $displayName) {
                                     case 'AL':
                                         $link = '../reviews/atterberg-limit.php?id=' . $entry['id'];
                                         break;
-                                    case 'MC_Oven':
-                                        $link = '../reviews/moisture-oven.php?id=' . $entry['id'];
-                                        break;
-                                    case 'MC_Microwave':
-                                        $link = '../reviews/moisture-microwave.php?id=' . $entry['id'];
-                                        break;
-                                    case 'MC_Constant_Mass':
-                                        $link = '../reviews/moisture-constant-mass.php?id=' . $entry['id'];
+                                    case 'BTS':
+                                        $link = '../reviews/brazilian.php?id=' . $entry['id'];
                                         break;
                                     case 'GS':
                                         $link = '../reviews/grain-size.php?id=' . $entry['id'];
@@ -118,6 +118,15 @@ foreach ($tables as $tableName => $displayName) {
                                         break;
                                     case 'GS-CoarseThan':
                                         $link = '../reviews/grain-size-coarsethan-agg.php?id=' . $entry['id'];
+                                        break;
+                                    case 'MC_Oven':
+                                        $link = '../reviews/moisture-oven.php?id=' . $entry['id'];
+                                        break;
+                                    case 'MC_Microwave':
+                                        $link = '../reviews/moisture-microwave.php?id=' . $entry['id'];
+                                        break;
+                                    case 'MC_Constant_Mass':
+                                        $link = '../reviews/moisture-constant-mass.php?id=' . $entry['id'];
                                         break;
                                     case 'SG':
                                         $link = '../reviews/specific-gravity.php?id=' . $entry['id'];

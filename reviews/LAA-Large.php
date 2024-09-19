@@ -5,6 +5,19 @@
   $Search = find_by_id('los_angeles_abrasion_coarse_aggregate', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['Update_LAA_Coarse_Aggregate'])) {
+        include('../database/los-angeles-abrasion-coarse-filter.php');
+    } elseif (isset($_POST['Repeat_LAA_Coarse_Aggregate'])) {
+        include('../database/los-angeles-abrasion-coarse-filter.php');
+    } elseif (isset($_POST['Reviewed_LAA_Coarse_Aggregate'])) {
+        include('../database/los-angeles-abrasion-coarse-filter.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +35,7 @@
 <section class="section">
   <div class="row">
 
-  <form action="../database/los-angeles-abrasion-coarse-filter.php?id=<?php echo $Search['id']; ?>" method="post" class="row">
+  <form action="LAA-Large.php?id=<?php echo $Search['id']; ?>" method="post" class="row">
 
   <div class="col-md-7">
   <?php echo display_msg($msg); ?>

@@ -5,6 +5,19 @@
   $Search = find_by_id('soundness', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['Update_SND'])) {
+        include('../database/soundness.php');
+    } elseif (isset($_POST['Repeat_SND'])) {
+        include('../database/soundness.php');
+    } elseif (isset($_POST['Reviewed_SND'])) {
+        include('../database/soundness.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -21,7 +34,7 @@
   <!-- End Page Title -->
   <section class="section">
     <div class="row" oninput="Soundness()">
-      <form class="row" action="../database/soundness.php?id=<?php echo $Search['id']; ?>" method="post">
+      <form class="row" action="soundness.php?id=<?php echo $Search['id']; ?>" method="post">
 
       <div class="col-md-4"><?php echo display_msg($msg); ?></div>
 

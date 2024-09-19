@@ -5,6 +5,19 @@
   $Search = find_by_id('moisture_constant_mass', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update-mc-constant-mass'])) {
+        include('../database/moisture-content.php');
+    } elseif (isset($_POST['repeat-mc-constant-mass'])) {
+        include('../database/moisture-content.php');
+    } elseif (isset($_POST['reviewed-mc-constant-mass'])) {
+        include('../database/moisture-content.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +35,7 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/moisture-content.php?id=<?php echo $Search['id']; ?>" method="post">
+  <form class="row" action="moisture-constant-mass.php?id=<?php echo $Search['id']; ?>" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>

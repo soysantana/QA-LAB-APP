@@ -5,6 +5,19 @@
   $Search = find_by_id('specific_gravity_fine', $_GET['id']);
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update-sg-fine'])) {
+        include('../database/specific-gravity.php');
+    } elseif (isset($_POST['repeat-sg-fine'])) {
+        include('../database/specific-gravity.php');
+    } elseif (isset($_POST['reviewed-sg-fine'])) {
+        include('../database/specific-gravity.php');
+    }
+  }
+?>
+
 <?php page_require_level(1); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -22,7 +35,7 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/specific-gravity.php?id=<?php echo $Search['id']; ?>" method="post">
+  <form class="row" action="specific-gravity-fine-aggregate.php?id=<?php echo $Search['id']; ?>" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>

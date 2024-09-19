@@ -1,6 +1,5 @@
 <!-- LAA Coarse Filter -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['LAA_Coarse_Filter'])) {

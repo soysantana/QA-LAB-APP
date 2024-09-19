@@ -139,6 +139,10 @@
               <input type="text" class="form-control" name="Elev" id="Elev">
             </div>
             <div class="col-md-3">
+              <label for="Cviaje" class="form-label">Cantidad de Viajes</label>
+              <input type="text" class="form-control" name="Cviaje" id="Cviaje">
+            </div>
+            <div class="col-md-3">
               <label for="SampleBy" class="form-label">Muestreado por</label>
               <input type="text" class="form-control" name="SampleBy" id="SampleBy">
             </div>

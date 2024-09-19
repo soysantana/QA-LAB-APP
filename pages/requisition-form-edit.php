@@ -140,6 +140,10 @@
               <input type="text" class="form-control" name="Elev" id="Elev" value="<?php echo ($Search['Elev']); ?>">
             </div>
             <div class="col-md-3">
+              <label for="Cviaje" class="form-label">Cantidad de Viajes</label>
+              <input type="text" class="form-control" name="Cviaje" id="Cviaje" value="<?php echo ($Search['Truck_Count']); ?>">
+            </div>
+            <div class="col-md-3">
               <label for="SampleBy" class="form-label">Muestreado por</label>
               <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo ($Search['Sample_By']); ?>">
             </div>

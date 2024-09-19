@@ -55,21 +55,21 @@ function SProctor() {
         
 
         // Pasar el resultado
-        document.getElementById("WtSoil" + i).value = WtSoil.toFixed(1);
-        document.getElementById("WetDensity" + i).value = WetDensity.toFixed(1);
-        document.getElementById("DryDensity" + i).value = DryDensity.toFixed(1);
-        document.getElementById("WtWater" + i).value = WtWater.toFixed(2);
-        document.getElementById("DrySoil" + i).value = DrySoil.toFixed(2);
-        document.getElementById("MoisturePorce" + i).value = MoisturePorce.toFixed(2) + "%";
+        document.getElementById("WtSoil" + i).value = isNaN(WtSoil) || WtSoil === 0 ? "" : WtSoil.toFixed(1);
+        document.getElementById("WetDensity" + i).value = isNaN(WetDensity) || WetDensity === 0 ? "" : WetDensity.toFixed(1);
+        document.getElementById("DryDensity" + i).value = isNaN(DryDensity) || DryDensity === 0 ? "" : DryDensity.toFixed(1);
+        document.getElementById("WtWater" + i).value = isNaN(WtWater) || WtWater === 0 ? "" : WtWater.toFixed(2);
+        document.getElementById("DrySoil" + i).value = isNaN(DrySoil) || DrySoil === 0 ? "" : DrySoil.toFixed(2);
+        document.getElementById("MoisturePorce" + i).value = isNaN(MoisturePorce) || MoisturePorce === 0 ? "" : MoisturePorce.toFixed(2) + "%";
 
-        document.getElementById("DensyCorrected"  + i).value = DensyCorrected.toFixed(2);
-        document.getElementById("MCcorrected"  + i).value = MCcorrected.toFixed(2) + "%";
+        document.getElementById("DensyCorrected"  + i).value = isNaN(DensyCorrected) || DensyCorrected === 0 ? "" : DensyCorrected.toFixed(2);
+        document.getElementById("MCcorrected"  + i).value = isNaN(MCcorrected) || MCcorrected === 0 ? "" : MCcorrected.toFixed(2) + "%";
         
-        document.getElementById("MaxDryDensity").value = MaxDryDensity.toFixed(0);
-        document.getElementById("CorrectedDryUnitWeigt").value = CorrectedDryUnitWeigt.toFixed(0);
+        document.getElementById("MaxDryDensity").value = isNaN(MaxDryDensity) || MaxDryDensity === 0 ? "" : MaxDryDensity.toFixed(0);
+        document.getElementById("CorrectedDryUnitWeigt").value = isNaN(CorrectedDryUnitWeigt) || CorrectedDryUnitWeigt === 0 ? "" : CorrectedDryUnitWeigt.toFixed(0);
         if (OptimumMoisture !== undefined) {
-            document.getElementById("OptimumMoisture").value = OptimumMoisture.toFixed(2) + "%";
-            document.getElementById("CorrectedWaterContentFiner").value = CorrectedWaterContentFiner.toFixed(2) + "%";
+            document.getElementById("OptimumMoisture").value = isNaN(OptimumMoisture) || OptimumMoisture === 0 ? "" : OptimumMoisture.toFixed(2) + "%";
+            document.getElementById("CorrectedWaterContentFiner").value = isNaN(CorrectedWaterContentFiner) || CorrectedWaterContentFiner === 0 ? "" : CorrectedWaterContentFiner.toFixed(2) + "%";
         }
     }
 }

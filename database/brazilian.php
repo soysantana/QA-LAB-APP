@@ -1,6 +1,5 @@
 <!-- Brazilian -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['brazilian'])) {
@@ -222,8 +221,8 @@
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CutterEquip = $db->escape($_POST['CutterEquip']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $ModifiedDate = make_date();
         $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
         $TestType = "BTS";
 
         if ($_FILES['SpecimenBefore']['error'] === UPLOAD_ERR_OK && $_FILES['SpecimenAfter']['error'] === UPLOAD_ERR_OK) {

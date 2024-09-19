@@ -93,13 +93,13 @@
               $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type']);
 
               if ($status == 'Preparation') {
-                echo '<td><span class="badge bg-success">Preparación</span></td>';
+                echo '<td><span class="badge bg-primary">Preparación</span></td>';
               } elseif ($status == 'Realization') {
-                echo '<td><span class="badge bg-success">Realización</span></td>';
+                echo '<td><span class="badge bg-secondary">Realización</span></td>';
               } elseif ($status == 'Delivery') {
                 echo '<td><span class="badge bg-success">Entrega</span></td>';
               } elseif ($status == 'Review') {
-                echo '<td><span class="badge bg-success">Revisar</span></td>';
+                echo '<td><span class="badge bg-dark">Revisar</span></td>';
               } elseif ($status == 'Repeat') {
                 echo '<td><span class="badge bg-warning">Repetir</span></td>';
               } else {
@@ -293,10 +293,89 @@
                      <td><?php echo $ReqViews['Sample_Number']; ?></td>
                      <td>
                       <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $ReqViews['id']; ?>"><i class="bi bi-eye"></i></button>
                         <a href="requisition-form-edit.php?id=<?php echo $ReqViews['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
                       </div>
                     </td>
                   </tr>
+
+                  <div class="modal" id="requisitionview<?php echo $ReqViews['id']; ?>" tabindex="-1">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Detalle del ensayo </h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+
+                        <div class="container">
+                      
+                      <div class="card">
+                        <div class="card-body">
+                        <!-- Requested Essays -->
+                        <h5 class="card-title">Muestra</h5> 
+                        <h5><?php echo $ReqViews['Sample_ID'] . "-" . $ReqViews['Sample_Number']; ?></h5>
+
+                        </div>
+                      </div>
+                         
+                      <div class="card">
+                        <div class="card-body">
+                        <!-- Requested Essays -->
+                        <h5 class="card-title">Ensayos solicitados</h5>
+                        <ul class="list-group">
+                          <?php for ($i = 1; $i <= 20; $i++) { $testTypeValue = $ReqViews['Test_Type' . $i]; if ($testTypeValue !== null && $testTypeValue !== '') { ?>
+                          <li class="list-group-item"><?php echo $testTypeValue; ?></li>
+                          <?php } } ?>
+                        </ul>
+                        <!-- End Requested Essays -->
+                        </div>
+                      </div>
+
+                      <div class="card">
+                        <div class="card-body">
+                        <!-- Requested Essays -->
+                        <h5 class="card-title">Comentario</h5>
+                        <ul class="list-group">
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <h5><code><?php echo $ReqViews['Comment']; ?></code></h5>
+                          </li>
+                        </ul>
+                        <!-- End Requested Essays -->
+                        </div>
+                      </div>
+                        
+                      <div class="card">
+                        <div class="card-body">
+                        <!-- Requested Essays -->
+                        <h5 class="card-title">Otros datos</h5>
+                        <ul class="list-group">
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <h5><code>Fecha de la muestra</code></h5>
+                            <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Sample_Date']; ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <h5><code>Fecha de Registro</code></h5>
+                            <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Registed_Date']; ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <h5><code>Muestra por</code></h5>
+                            <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Sample_By']; ?></span>
+                          </li>
+                        </ul><!-- End Requested Essays -->
+
+                        </div>
+                      </div>
+
+
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div><!-- End Modal-->
+
                 <?php endforeach; ?>
                </tbody>
             </table>

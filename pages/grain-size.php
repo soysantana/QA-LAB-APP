@@ -14,7 +14,7 @@
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -31,7 +31,7 @@
 <section class="section">
   <div class="row" oninput="GrainSize()">
 
-  <form class="row" action="../database/grain-size-general.php" method="post">
+  <form class="row" action="grain-size.php" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>

@@ -1,6 +1,5 @@
 <!-- Specific Gravity -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['specific-gravity'])) {
@@ -200,8 +199,8 @@
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SG";
 
         $PycnUsed = $db->escape($_POST['PycnUsed']);
@@ -244,8 +243,8 @@
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Pycnometer_Used = '{$PycnUsed}', ";
         $query .= "Pycnometer_Number = '{$PycnNumber}', ";
@@ -590,8 +589,8 @@
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SG-Coarse";
 
         $SpecificGravityOD = $db->escape($_POST['SpecificGravityOD']);
@@ -632,8 +631,8 @@
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Specific_Gravity_OD = '{$SpecificGravityOD}', ";
         $query .= "Specific_Gravity_SSD = '{$SpecificGravitySSD}', ";
@@ -975,8 +974,8 @@
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SG-Fine";
 
         $SpecificGravityOD = $db->escape($_POST['SpecificGravityOD']);
@@ -1016,8 +1015,8 @@
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Specific_Gravity_OD = '{$SpecificGravityOD}', ";
         $query .= "Specific_Gravity_SSD = '{$SpecificGravitySSD}', ";

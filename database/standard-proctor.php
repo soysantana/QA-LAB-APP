@@ -1,6 +1,5 @@
 <!-- Standard Proctor -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['standard-proctor'])) {
@@ -236,8 +235,8 @@
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SP";
 
         $NatMc = $db->escape($_POST['NatMc']);
@@ -304,8 +303,8 @@
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Nat_Mc = '{$NatMc}', ";
         $query .= "Spec_Gravity = '{$SpecGravity}', ";

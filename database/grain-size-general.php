@@ -1,6 +1,5 @@
 <!-- Grain Size General -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['grain-size-general'])) {
@@ -255,8 +254,8 @@
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
         $TestType = "GS";
 
         $Container = $db->escape($_POST['Container']);
@@ -325,8 +324,8 @@
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Container = '{$Container}', ";
         $query .= "Wet_Soil_Tare = '{$WetSoil}', ";
@@ -786,8 +785,8 @@
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
         $TestType = "GS-Fine";
 
         $Container = $db->escape($_POST['Container']);
@@ -867,8 +866,8 @@
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Container = '{$Container}', ";
         $query .= "Wet_Soil_Tare = '{$WetSoil}', ";
@@ -1342,8 +1341,8 @@
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
         $TestType = "GS-Coarse";
 
         $Container = $db->escape($_POST['Container']);
@@ -1425,8 +1424,8 @@
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Container = '{$Container}', ";
         $query .= "Wet_Soil_Tare = '{$WetSoil}', ";
@@ -1902,8 +1901,8 @@
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
         $TestType = "GS-CoarseThan";
 
         $Container = $db->escape($_POST['Container']);
@@ -1984,8 +1983,8 @@
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Container = '{$Container}', ";
         $query .= "Wet_Soil_Tare = '{$WetSoil}', ";

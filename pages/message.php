@@ -79,7 +79,7 @@ if (isset($_POST['update-signed'])) {
 }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 

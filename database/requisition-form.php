@@ -29,6 +29,7 @@
         $North = $db->escape($_POST['North']);
         $East = $db->escape($_POST['East']);
         $Elev = $db->escape($_POST['Elev']);
+        $Cviaje = $db->escape($_POST['Cviaje']);
         $SampleBy = $db->escape($_POST['SampleBy']);
         $Comments = $db->escape($_POST['Comments']);
         $RegistedDate = make_date();
@@ -59,6 +60,7 @@
             Elev,
             Comment,
             Sample_Date,
+            Truck_Count,
             Sample_By,
             Registed_Date,
             Register_By,
@@ -103,6 +105,7 @@
             '$Elev',
             '$Comments',
             '$CollectionDate',
+            '$Cviaje',
             '$SampleBy',
             '$RegistedDate',
             '$RegisterBy',
@@ -129,10 +132,10 @@
         )";
 
         if ($db->query($sql)) {
-            $session->msg('s', 'Ensayo agregado exitosamente.');
+            $session->msg('s', 'Formulario de requesicion se guardo correctamente.');
             redirect('/pages/requisition-form.php', false);
         } else {
-            $session->msg('d', 'Lo siento, no se pudo agregar el ensayo.');
+            $session->msg('d', 'Lo siento, no se pudo agregar el Formulario de requesicion.');
             redirect('/pages/requisition-form.php', false);
         }
     } else {
@@ -170,6 +173,7 @@
         $North = $db->escape($_POST['North']);
         $East = $db->escape($_POST['East']);
         $Elev = $db->escape($_POST['Elev']);
+        $Cviaje = $db->escape($_POST['Cviaje']);
         $SampleBy = $db->escape($_POST['SampleBy']);
         $Comments = $db->escape($_POST['Comments']);
 
@@ -195,6 +199,7 @@
         $query .= "North = '{$North}', ";
         $query .= "East = '{$East}', ";
         $query .= "Elev = '{$Elev}', ";
+        $query .= "Truck_Count = '{$Cviaje}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Comment = '{$Comments}', ";
         $query .= "Test_Type1 = '{$TestType1}', ";
@@ -223,10 +228,10 @@
         $result = $db->query($query);
 
         if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'La muestra ha sido actualizada.');
+            $session->msg('s', 'El Formulario de requisicion ha sido actualizada.');
             redirect('/pages/requisition-form-view.php', false);
         } else {
-            $session->msg('w', 'No se hicieron cambios');
+            $session->msg('w', 'No se hicieron cambios en el Formulario de requisicion');
             redirect('/pages/requisition-form-view.php', false);
         }
     } else {

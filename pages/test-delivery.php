@@ -34,7 +34,7 @@
         <?php $week = date('Y-m-d', strtotime('-7 days'));?>
         <?php $Seach = find_by_sql("SELECT * FROM test_delivery WHERE Start_Date >= '{$week}'");?>
         <!-- Bordered Table -->
-        <table class="table table-bordered">
+        <table class="table datatable">
           <thead>
             <tr>
               <th scope="col">#</th>

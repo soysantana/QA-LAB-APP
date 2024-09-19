@@ -72,7 +72,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 
       <li class="nav-item">
         <a class="nav-link <?php echo $class_form; ?>" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-journal-text"></i><span>Formularios de registro</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-journal-text"></i><span>Registro de ensayos</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="forms-nav" class="nav-content collapse <?php echo $form_show; ?> " data-bs-parent="#sidebar-nav">
           <li>
