@@ -99,42 +99,47 @@ $pdf->Cell(45, 10, 'Metodo', 1, 1, 'C', true);
 $pdf->SetFont('Arial', '', 10);
 
 foreach ($testTypes as $index => $sample) {
-    
-    if ($sample['Test_Type'] === 'SP') { 
+
+    if ($sample['Test_Type'] === 'SP') {
+        // Verificamos si hay resultados para el tamaño de grano
         $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
 
-        foreach ($GrainResults as $Grain) {
-            if ($Grain) {
-                $T3p4 = (float)$Grain['CumRet11'];
-                $T3p8 = (float)$Grain['CumRet13'];
-                $TNo4 = (float)$Grain['CumRet14'];
-                $resultado = '';
+        if (!empty($GrainResults)) {
+            foreach ($GrainResults as $Grain) {
+                if ($Grain) {
+                    $T3p4 = (float)$Grain['CumRet11'];
+                    $T3p8 = (float)$Grain['CumRet13'];
+                    $TNo4 = (float)$Grain['CumRet14'];
+                    $resultado = '';
 
-                if ($T3p4 > 0) {
-                    $resultado = "C";
-                } elseif ($T3p8 > 0 && $T3p4 == 0) {
-                    $resultado = "B";
-                } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
-                    $resultado = "A";
-                } else {
-                    $resultado = "No se puede determinar el método";
+                    if ($T3p4 > 0) {
+                        $resultado = "C";
+                    } elseif ($T3p8 > 0 && $T3p4 == 0) {
+                        $resultado = "B";
+                    } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
+                        $resultado = "A";
+                    } else {
+                        $resultado = "No se puede determinar el metodo";
+                    }
+
+                    $pdf->SetX($tableX); 
+                    $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
+                    $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
+                    $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
+                    $pdf->Cell(45, 10, $resultado, 1, 1, 'C');
                 }
-
-                $pdf->SetX($tableX); 
-                $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
-                $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-                $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
-                $pdf->Cell(45, 10, $resultado, 1, 1, 'C');
             }
+        } else {
+            // Si no hay resultados de Grain Size
+            $pdf->SetX($tableX); 
+            $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
+            $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
+            $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
+            $pdf->Cell(45, 10, 'No data', 1, 1, 'C');
         }
-    } else {
-        $pdf->SetX($tableX); 
-        $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
-        $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-        $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
-        $pdf->Cell(45, 10, '', 1, 1, 'C'); // Método en blanco
     }
 }
+
 
 $pdf->Output();
 ?>

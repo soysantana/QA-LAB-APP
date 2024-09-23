@@ -99,9 +99,9 @@
               } elseif ($status == 'Delivery') {
                 echo '<td><span class="badge bg-success">Entrega</span></td>';
               } elseif ($status == 'Review') {
-                echo '<td><span class="badge bg-dark">Revisar</span></td>';
+                echo '<td><span class="badge bg-dark">Revision</span></td>';
               } elseif ($status == 'Repeat') {
-                echo '<td><span class="badge bg-warning">Repetir</span></td>';
+                echo '<td><span class="badge bg-warning">Repeticion</span></td>';
               } else {
                 echo '<td><span class="badge bg-danger">----</span></td>';
               }

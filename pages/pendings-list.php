@@ -120,7 +120,7 @@
         <ul class="list-group">
         <?php
          $columnas_tipo_prueba = array();
-         for ($i = 1; $i <= 19; $i++) {
+         for ($i = 1; $i <= 20; $i++) {
           $columnas_tipo_prueba[] = "Test_Type" . $i;
          }
         
