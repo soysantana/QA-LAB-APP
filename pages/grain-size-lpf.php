@@ -1,8 +1,17 @@
 <?php
-  $page_title = 'Grain Size Analysis';
+  $page_title = 'Grain Size LPF';
   $formPresa = ' ';
   $formPresaShow = 'show';
   require_once('../config/load.php');
+?>
+
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['gs_lpf'])) {
+        include('../database/grain-size/gs-lpf/save.php');
+    } 
+  }
 ?>
 
 <?php page_require_level(2); ?>
@@ -22,7 +31,7 @@
 <section class="section">
   <div class="row" oninput="LPF()">
 
-  <form class="row" action="../database/grain-size-general.php" method="post">
+  <form class="row" action="grain-size-lpf.php" method="post">
 
   <div id="product_info"></div>
 
@@ -282,7 +291,7 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="grain-size-general">Save Essay</button>
+          <button type="submit" class="btn btn-success" name="gs_lpf">Save Essay</button>
           <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
         </div>
 

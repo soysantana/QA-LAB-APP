@@ -6,6 +6,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['gs_cf'])) {
+        include('../database/grain-size/gs-cf/save.php');
+    } 
+  }
+?>
+
 <?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -347,8 +356,7 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="grain-size-coarse">Save Essay</button>
-          <button type="button" class="btn btn-primary disabled">Search Moisture</button>
+          <button type="submit" class="btn btn-success" name="gs_cf">Save Essay</button>
         </div>
 
       </div>

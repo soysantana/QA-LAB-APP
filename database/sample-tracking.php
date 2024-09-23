@@ -1,5 +1,6 @@
 <!-- Preparation -->
 <?php
+ $user = current_user();
  if (isset($_POST['test-preparation'])) {
     $req_fields = array(
         'Sname',
@@ -16,6 +17,8 @@
         $Ttype = $db->escape($_POST['Ttype']);
         $Technician = $db->escape($_POST['Technician']);
         $RegistedDate = make_date();
+        $Register_By = $user['name'];
+        $Register_Date = make_date();
         // Sirve para localizar el usuario   $RegisterBy = $user['name'];
         $Status = "Preparation";
         $existingP = check_p($Sname, $Snumber, $Ttype);
@@ -28,6 +31,8 @@
                 Test_Type,
                 Technician,
                 Start_Date,
+                Register_By,
+                Register_Date,
                 Status
             ) VALUES (
                 '$id',
@@ -36,6 +41,8 @@
                 '$Ttype',
                 '$Technician',
                 '$RegistedDate',
+                '$Register_By',
+                '$Register_Date',
                 '$Status'
             )";
 
@@ -254,19 +261,49 @@
  function insertDataFromTable($tableName, $db, $session)
  {
     $typeMappings = [
-        'Atterberg-Limit' => 'AL',
-        'Grain_Size' => 'GS',
-        'Grain_Size_Coarse' => 'GS-Coarse',
-        'Grain_Size_CoarseThan' => 'GS-CoarseThan',
-        'Grain_Size_Fine' => 'GS-Fine',
-        'Mc_Constant_Mass' => 'MC-Mass',
-        'Mc_Microwave' => 'MC-Microwave',
-        'Mc_Oven' => 'MC',
-        'Specific_Gravity' => 'SG',
-        'Specific_Gravity_Coarse' => 'SG-Coarse',
-        'Specific_Gravity_Fine' => 'SG-Fine',
-        'Standard-Proctor' => 'SP',
+        'AL' => 'AL',
+        'BTS' => 'BTS',
+        'GS' => [
+            'GS-Coarse',
+            'GS-Fine',
+            'GS-CoarseThan',
+            'GS_CF',
+            'GS_FF',
+            'GS_LPF',
+            'GS_UTF'
+        ],
+        'LAA' => [
+            'LAA_Coarse_Filter',
+            'LAA_Coarse_Aggregate'
+        ],
+        'MC' => [
+            'MC_Oven',
+            'MC_Constant_Mass',
+            'MC_Microwave'
+        ],
+        'PH' => 'PH',
+        'PLT' => 'PLT',
+        'SND' => 'SND',
+        'SG' => [
+            'SG-Coarse',
+            'SG-Fine'
+        ],
+        'SP' => 'SP',
+        'UCS' => 'UCS',
     ];
+    
+    // Aplanar el array para los mapeos
+    foreach ($typeMappings as $key => $values) {
+        if (is_array($values)) {
+            foreach ($values as $value) {
+                $typeMappings[$value] = $key;
+            }
+            unset($typeMappings[$key]); // Elimina la entrada original
+        } else {
+            $typeMappings[$values] = $key; // Mapea directamente
+        }
+    }
+    
 
     $query = "SELECT Sample_ID, Sample_Number, Register_By, Test_Type, Registed_Date, id FROM $tableName";
     $result = $db->query($query);
@@ -297,7 +334,7 @@
                 $existingData['Start_Date'] != $Redate || $existingData['Register_By'] != $Reby || $existingData['Status'] != 'Review') {
                     // Hay cambios, actualiza la entrada
                     $updateQuery = "UPDATE test_review 
-                    SET Sample_Name = '$Sname', Sample_Number = '$Snumber', Start_Date = '$Redate', Register_By = '$Reby', Status = 'Review' 
+                    SET Sample_Name = '$Sname', Sample_Number = '$Snumber', Test_Type = '$mappedType', Start_Date = '$Redate', Register_By = '$Reby', Status = 'Review' 
                     WHERE Tracking = '$Tracking'";
 
                     if ($db->query($updateQuery) === true) {
@@ -329,18 +366,25 @@
  if (isset($_POST["test-review"])) {
     $session = new Session();
     $tables = [
-        "Atterberg_Limit",
-        //"Grain_Size_Coarse",
-        //"Grain_Size_CoarseThan",
-        //"Grain_Size_Fine",
-        "Grain_Size_General",
-        "Moisture_Constant_Mass",
-        "Moisture_Microwave",
-        "Moisture_Oven",
-        //"Specific_Gravity",
-        //"Specific_Gravity_Coarse",
-        //"Specific_Gravity_Fine",
-        //"Standard_Proctor",
+        "atterberg_limit",
+        "brazilian",
+        "grain_size_coarse",
+        "grain_size_coarsethan",
+        "grain_size_fine",
+        "grain_size_general",
+        "los_angeles_abrasion_coarse_aggregate",
+        "los_angeles_abrasion_coarse_filter",
+        "moisture_constant_mass",
+        "moisture_microwave",
+        "moisture_oven",
+        "pinhole_test",
+        "point_load",
+        "soundness",
+        "specific_gravity",
+        "specific_gravity_coarse",
+        "Specific_gravity_fine",
+        "standard_proctor",
+        "unixial_compressive",
     ];
 
     foreach ($tables as $table) {

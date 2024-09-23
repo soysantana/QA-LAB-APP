@@ -6,6 +6,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['gs_ff'])) {
+        include('../database/grain-size/gs-ff/save.php');
+    } 
+  }
+?>
+
 <?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -23,7 +32,7 @@
 <section class="section">
   <div class="row" oninput="FF()">
 
-  <form class="row" action="../database/grain-size-general.php" method="post">
+  <form class="row" action="grain-size-fine-filter.php" method="post">
 
   <div id="product_info"></div>
 
@@ -339,7 +348,7 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="grain-size-fine">Save Essay</button>
+          <button type="submit" class="btn btn-success" name="gs_ff">Save Essay</button>
         </div>
 
       </div>

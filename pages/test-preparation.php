@@ -99,7 +99,7 @@
         <h5 class="card-title">LISTA DE MUESTRAS EN PREPARACIÓN</h5>
 
         <?php $week = date('Y-m-d', strtotime('-7 days'));?>
-        <?php $Seach = find_by_sql("SELECT * FROM test_preparation WHERE Start_Date >= '{$week}'");?>
+        <?php $Seach = find_by_sql("SELECT * FROM test_preparation WHERE Start_Date >= '{$week}' ORDER BY Register_Date DESC");?>
         <!-- Preparation -->
          <table class="table datatable">
           <thead>

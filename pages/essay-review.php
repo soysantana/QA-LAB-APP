@@ -42,6 +42,10 @@ include_once('../components/header.php');
 
         <div class="col-lg-6">
           <?php displayAccordion([
+            'grain_size_upstream_transition_fill' => 'Grain Size UTF',
+            'grain_size_lpf' => 'Grain Size LPF',
+            'grain_size_fine_filter' => 'Grain Size FF',
+            'grain_size_coarse_filter' => 'Grain Size CF',
             'point_load' => 'PLT',
             'unixial_compressive' => 'UCS',
             'brazilian' => 'BTS',
@@ -90,6 +94,10 @@ function getTestLink($testType, $id) {
         'SP' => '../reviews/standard-proctor.php?id=',
         'UCS' => '../reviews/unixial-compressive.php?id=',
         'PH' => '../reviews/pinhole-test.php?id=',
+        'GS_CF' => '../reviews/grain-size-coarse-filter.php?id=',
+        'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
+        'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
+        'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
     ];
     
     return isset($links[$testType]) ? $links[$testType] . $id : '#';
