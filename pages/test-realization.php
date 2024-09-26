@@ -42,8 +42,9 @@
       <div class="card-body">
         <h5 class="card-title">LISTA DE MUESTRAS EN REALIZACIÓN</h5>
 
-        <?php $week = date('Y-m-d', strtotime('-7 days'));?>
-        <?php $Seach = find_by_sql("SELECT * FROM test_realization WHERE Start_Date >= '{$week}'");?>
+        <?php $week = date('Y-m-d', strtotime('-7 days')); ?>
+        <?php $delivery = "(SELECT 1 FROM test_delivery WHERE sample_name = p.sample_name AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
+        <?php $Seach = find_by_sql("SELECT * FROM test_realization p WHERE Start_Date >= '{$week}' AND NOT EXISTS $delivery"); ?>
         <!-- Bordered Table -->
         <table class="table datatable">
           <thead>
