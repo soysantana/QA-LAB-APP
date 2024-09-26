@@ -11,7 +11,7 @@ function GrainSize() {
     const DrySoilTare = parseFloat(document.getElementById("DrySoilTare").value);
     const Tare = parseFloat(document.getElementById("Tare").value);
     const Washed = parseFloat(document.getElementById("Washed").value);
-    const WtRet = parseFloat(document.getElementById("WtRet" + i).value) || 0;
+    const WtRet = parseFloat(document.getElementById("WtRet" + i).value);
     const PanWtRen = parseFloat(document.getElementById("PanWtRen").value);
 
     // Calculation

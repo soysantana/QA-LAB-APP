@@ -165,7 +165,7 @@
             <!-- Actions Buttons -->
             <div class="d-grid gap-2 mt-3">
               <button type="submit" name="unixial-compressive" class="btn btn-success">Save Essay</button>
-              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Compresion Options</button>
             </div>
           </div>
         </div>
@@ -213,13 +213,13 @@
             </div>
             <div class="modal-body">
                 <li>
-                    <a href="point-Load.php">
-                        <span>PLT</span>
+                    <a href="grout.php">
+                        <span>Grout</span>
                     </a>
                 </li>
                 <li>
-                    <a href="brazilian.php">
-                        <span>BTS</span>
+                    <a href="concrete.php">
+                        <span>Concrete</span>
                     </a>
                 </li>
             </div>

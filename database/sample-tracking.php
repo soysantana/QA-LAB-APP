@@ -279,7 +279,8 @@
         'MC' => [
             'MC_Oven',
             'MC_Constant_Mass',
-            'MC_Microwave'
+            'MC_Microwave',
+            'MC_Scale'
         ],
         'PH' => 'PH',
         'PLT' => 'PLT',
@@ -372,11 +373,16 @@
         "grain_size_coarsethan",
         "grain_size_fine",
         "grain_size_general",
+        "grain_size_coarse_filter",
+        "grain_size_fine_filter",
+        "grain_size_lpf",
+        "grain_size_upstream_transition_fill",
         "los_angeles_abrasion_coarse_aggregate",
         "los_angeles_abrasion_coarse_filter",
         "moisture_constant_mass",
         "moisture_microwave",
         "moisture_oven",
+        "moisture_scale",
         "pinhole_test",
         "point_load",
         "soundness",

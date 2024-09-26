@@ -18,11 +18,13 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(300, 250));
 
-$pdf->setSourceFile('mc-microwave.pdf');
+$pdf->setSourceFile('PV-F-83834_Laboratory Moisture Content by Microwave_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
 $pdf->SetFont('Arial', '', 11);
+$pdf->SetXY(67, 33);
+$pdf->Cell(30, 5, 'PVDJ SOIL LAB', 0, 1, 'C');
 $pdf->SetXY(67, 37);
 $pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
 $pdf->SetXY(67, 42);

@@ -16,9 +16,9 @@ class PDF extends Fpdi {
 $pdf = new PDF();
 $pdf->SetMargins(0, 0, 0);
 
-$pdf->AddPage('L', array(360, 290));
+$pdf->AddPage('L', array(360, 300));
 
-$pdf->setSourceFile('al.pdf');
+$pdf->setSourceFile('PV-F-80769_Laboratory Atteberg Limits_Rev. 5.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

@@ -329,7 +329,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/specific-gravity.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -395,7 +395,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/specific-gravity.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -705,7 +705,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/specific-gravity-coarse-aggregates.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -771,7 +771,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/specific-gravity-coarse-aggregates.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -1097,7 +1097,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/specific-gravity-fine-aggregate.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -1163,7 +1163,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/specific-gravity-fine-aggregate.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {

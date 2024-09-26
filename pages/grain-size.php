@@ -302,7 +302,7 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="grain-size-general">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">GS Options</button>
         </div>
 
       </div>
@@ -339,6 +339,26 @@
                 <li>
                     <a href="grain-size-coarsethan-agg.php">
                         <span>Grain Size Coarse Than Aggregate</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="grain-size-coarse-filter.php">
+                        <span>Grain Size Coarse Filter</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="grain-size-fine-filter.php">
+                        <span>Grain Size Fine Filter</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="grain-size-lpf.php">
+                        <span>Grain Size Low Permeability Fill</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="grain-size-upstream-transition-fill.php">
+                        <span>Grain Size Upstream Transition Fill</span>
                     </a>
                 </li>
             </div>

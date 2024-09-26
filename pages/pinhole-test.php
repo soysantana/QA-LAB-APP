@@ -470,7 +470,7 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="Pinhole">Save Essay</button>
-          <div id="mensaje-container"></div>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Dispercion Options</button>
         </div>
 
       </div>

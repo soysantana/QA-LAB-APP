@@ -9,7 +9,7 @@
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['standard-proctor'])) {
-        include('../database/standard-proctor.php');
+        include('../database/standard-proctor/save.php');
     } 
   }
 ?>
@@ -33,11 +33,11 @@
 
   <form class="row" action="standard-proctor.php" method="post">
 
-  <div id="product_info"></div>
-
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 

@@ -1,8 +1,8 @@
 <?php
   $page_title = 'Grain Size Fine Filter';
-  $formPresa = ' ';
-  $formPresaShow = 'show';
-  $gsPresa = 'active';
+  $class_form = ' ';
+  $form_show = 'show';
+  $GrainSize = 'active';
   require_once('../config/load.php');
 ?>
 
@@ -34,11 +34,11 @@
 
   <form class="row" action="grain-size-fine-filter.php" method="post">
 
-  <div id="product_info"></div>
-
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 

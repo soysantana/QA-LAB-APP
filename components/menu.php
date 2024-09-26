@@ -2,16 +2,12 @@
 $class_home = !empty($class_home) ? $class_home : "collapsed";
 $class_form = !empty($class_form) ? $class_form : "collapsed";
 $form_show = !empty($form_show) ? $form_show : " ";
-$formPresa = !empty($formPresa) ? $formPresa : "collapsed";
-$formPresaShow = !empty($formPresaShow) ? $formPresaShow : " ";
 $profile_show = !empty($profile_show) ? $profile_show : "collapsed";
 $requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
 $Sumarios = !empty($Sumarios) ? $Sumarios : "collapsed";
 $Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
 $wepln = !empty($wepln) ? $wepln : "collapsed";
 $GrainSize = !empty($GrainSize) ? $GrainSize : " ";
-$gsPresa = !empty($gsPresa) ? $gsPresa : " ";
-$sgPresa = !empty($sgPresa) ? $sgPresa : " ";
 $Moisture = !empty($Moisture) ? $Moisture : " ";
 $SG = !empty($SG) ? $SG : " ";
 $Density = !empty($Density) ? $Density : " ";
@@ -23,6 +19,7 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
+$unkow = !empty($unkow) ? $unkow : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
@@ -111,23 +108,23 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
+            <a href="/pages/pinhole-test.php">
+              <i class="bi bi-circle"></i><span>Dispercion</span>
+            </a>
+          </li>
+          <li>
             <a href="/pages/leeb.php">
               <i class="bi bi-circle"></i><span>Leeb Hardness</span>
             </a>
           </li>
           <li>
-            <a href="/pages/grout.php">
-              <i class="bi bi-circle"></i><span>Grout</span>
+            <a href="/pages/point-Load.php">
+              <i class="bi bi-circle"></i><span>Point Load</span>
             </a>
           </li>
           <li>
-            <a href="/pages/concrete.php">
-              <i class="bi bi-circle"></i><span>Concrete</span>
-            </a>
-          </li>
-          <li>
-            <a href="/pages/pinhole-test.php">
-              <i class="bi bi-circle"></i><span>Pinhole</span>
+            <a href="/pages/brazilian.php">
+              <i class="bi bi-circle"></i><span>Brazilian</span>
             </a>
           </li>
           <li>
@@ -138,29 +135,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           <li>
             <a href="/pages/density-bulk.php" class="<?php echo $Density; ?>">
               <i class="bi bi-circle"></i><span>Density</span>
-            </a>
-          </li>
-        </ul>
-      </li><!-- End Forms Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $formPresa; ?>" data-bs-target="#forms-presa" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-file-text"></i><span>Construccion</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="forms-presa" class="nav-content collapse <?php echo $formPresaShow; ?> " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="/pages/grain-size-lpf.php" class="<?php echo $gsPresa; ?>">
-              <i class="bi bi-circle"></i><span>Grain Size</span>
-            </a>
-          </li>
-          <li>
-            <a href="/pages/atterberg-limit-tsf.php">
-              <i class="bi bi-circle"></i><span>Atterberg Limit</span>
-            </a>
-          </li>
-          <li>
-            <a href="/pages/specific-gravity-fine-filter.php" class="<?php echo $sgPresa; ?>">
-              <i class="bi bi-circle"></i><span>Specific Gravity</span>
             </a>
           </li>
         </ul>

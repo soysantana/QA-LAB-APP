@@ -20,7 +20,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(330, 380));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('bts.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
+$pdf->setSourceFile('PV-F-80982_Laboratory Splitting Tensile Strength of Instact Rock Core Specime- Brazilian_Rev 3.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

@@ -516,7 +516,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/soundness.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -582,7 +582,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/soundness.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {

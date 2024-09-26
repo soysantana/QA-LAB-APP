@@ -20,7 +20,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(360, 270));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('PV-F-01712_PLT_Rev. 2.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
+$pdf->setSourceFile('PV-F-01712_Laboratory Point Load Test_Rev. 2.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

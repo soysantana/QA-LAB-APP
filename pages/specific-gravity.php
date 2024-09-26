@@ -33,11 +33,11 @@
 
   <form class="row" action="specific-gravity.php" method="post">
 
-  <div id="product_info"></div>
-
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 
@@ -165,7 +165,7 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="specific-gravity">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">SG Options</button>
         </div>
 
       </div>
@@ -191,12 +191,12 @@
             <div class="modal-body">
                 <li>
                     <a href="specific-gravity-coarse-aggregates.php"
-                        <span>Specific Gravity Coarse Aggregates</span>
+                        <span>Specific Gravity Coarse Filter</span>
                     </a>
                 </li>
                 <li>
                     <a href="specific-gravity-fine-aggregate.php"
-                        <span>Specific Gravity Fine Aggregate</span>
+                        <span>Specific Gravity Fine Filter</span>
                     </a>
                 </li>
             </div>

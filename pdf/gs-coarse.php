@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(550, 440));
 
-$pdf->setSourceFile('gs-coarse.pdf');
+$pdf->setSourceFile('PV-F-83828_Laboratory sieved Grain size Coarse Aggregate_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -341,7 +341,7 @@ $pdf->SetXY(339, 383);
 $pdf->Cell(73, 6, "", 0, 1, 'C');
 
 $pdf->SetXY(52, 408);
-$pdf->Cell(360, 70, $Search['Comments'], 0, 1, 'C');
+$pdf->MultiCell(360, 70, $Search['Comments'], 0, 1, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

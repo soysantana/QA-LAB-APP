@@ -1,5 +1,5 @@
 <?php
-  $page_title = 'Specific Gravity';
+  $page_title = 'Specific Gravity Fine Filter';
   $class_form = ' ';
   $form_show = 'show';
   $SG = 'active';
@@ -20,12 +20,12 @@
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Specific Gravity Fine Aggregate</h1>
+  <h1>Specific Gravity</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Specific Gravity</li>
+      <li class="breadcrumb-item active">Specific Gravity Fine Filter</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->
@@ -34,11 +34,11 @@
 
   <form class="row" action="specific-gravity-fine-aggregate.php" method="post">
 
-  <div id="product_info"></div>
-
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 

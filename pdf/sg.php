@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('L', array(285, 280));
 
-$pdf->setSourceFile('sg.pdf'); 
+$pdf->setSourceFile('PV-F-83462_Laboratory Specific Gravity of Soil Solids by Water Pycnometer_Rev. 2.pdf'); 
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

@@ -1,7 +1,8 @@
 <?php
-  $page_title = 'Grain Size LPF';
-  $formPresa = ' ';
-  $formPresaShow = 'show';
+  $page_title = 'Grain Size Low Permeability Fill';
+  $class_form = ' ';
+  $form_show = 'show';
+  $GrainSize = 'active';
   require_once('../config/load.php');
 ?>
 
@@ -24,7 +25,7 @@
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Grain Size - LPF</li>
+      <li class="breadcrumb-item active">Grain Size Low Permeability Fill</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->
@@ -33,11 +34,11 @@
 
   <form class="row" action="grain-size-lpf.php" method="post">
 
-  <div id="product_info"></div>
-
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 
@@ -292,7 +293,6 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="gs_lpf">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
         </div>
 
       </div>
@@ -306,39 +306,6 @@
 </section>
 
 </main><!-- End #main -->
-
-
-<div class="modal fade" id="disablebackdrop" tabindex="-1" data-bs-backdrop="false">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Hey! select an option</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <li>
-                    <a href="grain-size-coarse-filter.php">
-                        <span>Grain Size Coarse Filter (CF)</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="grain-size-fine-filter.php">
-                        <span>Grain Size Fine Filter (FF)</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="grain-size-upstream-transition-fill.php">
-                        <span>Grain Size Upstream Transition Fill (UTF)</span>
-                    </a>
-                </li>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script src="../js/Grain-Size.js"></script>
 <script src="../libs/graph/Grain-Size-LPF.js"></script>

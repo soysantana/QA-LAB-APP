@@ -1,8 +1,8 @@
 <?php
   $page_title = 'Grain Size Coarse Filter';
-  $formPresa = ' ';
-  $formPresaShow = 'show';
-  $gsPresa = 'active';
+  $class_form = ' ';
+  $form_show = 'show';
+  $GrainSize = 'active';
   require_once('../config/load.php');
 ?>
 

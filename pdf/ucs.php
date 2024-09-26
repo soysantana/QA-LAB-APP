@@ -20,7 +20,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(470, 430));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('ucs.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
+$pdf->setSourceFile('PV-F-83440_Laboratory Compressive Strength Test - Core Specimens_Rev. 3.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

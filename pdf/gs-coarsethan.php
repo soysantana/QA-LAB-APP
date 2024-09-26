@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(550, 440));
 
-$pdf->setSourceFile('gs-coarsethan.pdf');
+$pdf->setSourceFile('PV-F-83829_Laboratory Sieve Grain Size for Coarse Than Aggregate_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -283,7 +283,7 @@ $pdf->Cell(42, 6, $Search['TotalPass'], 0, 1, 'C');
 // Summary Grain Size Distribution Parameter
 
 $pdf->SetXY(295, 248);
-$pdf->Cell(27, 6, $Search['Coarser_than_Gravel'], 1, 1, 'C');
+$pdf->Cell(27, 6, $Search['Coarser_than_Gravel'], 0, 1, 'C');
 $pdf->SetXY(295, 255);
 $pdf->Cell(27, 6, $Search['Gravel'], 0, 1, 'C');
 $pdf->SetXY(295, 261);
@@ -311,8 +311,10 @@ $pdf->SetXY(250, 327);
 $pdf->Cell(138, 6, "", 0, 1, 'C');
 $pdf->SetXY(322, 350);
 $pdf->Cell(67, 6, "", 0, 1, 'C');
-$pdf->SetXY(53, 394);
-$pdf->Cell(336, 73, $Search['Comments'], 0, 1, 'C');
+
+$pdf->SetXY(53, 406);
+$pdf->MultiCell(108, 5, $Search['Comments'], 0, 'L');
+
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

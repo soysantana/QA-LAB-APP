@@ -13,9 +13,9 @@ if (isset($_POST['update-signed'])) {
     $testTypeMappings = [
       'AL' => ['AL'],
       'BTS' => ['BTS'],
-      'GS' => ['GS_Fine', 'GS_Coarse', 'GS_CoarseThan'],
+      'GS' => ['GS_Fine', 'GS_Coarse', 'GS_CoarseThan', 'GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'],
       'LAA' => ['LAA_Coarse_Filter', 'LAA_Coarse_Aggregate'],
-      'MC' => ['MC_Oven', 'MC_Microwave', 'MC_Constant_Mass'],
+      'MC' => ['MC_Oven', 'MC_Microwave', 'MC_Constant_Mass', 'MC_Scale'],
       'PLT' => ['PLT'],
       'SG' => ['SG_Coarse', 'SG_Fine'],
       'SP' => ['SP'],
@@ -24,7 +24,7 @@ if (isset($_POST['update-signed'])) {
 
     $update_count = 0; // Contador para saber cuántas filas se actualizan
 
-    for ($i = 1; $i <= 19; $i++) {
+    for ($i = 1; $i <= 20; $i++) {
         $testTypeKey = 'Test_Type' . $i;
         $testTypeValueKey = 'Test_Type' . $i . '_value';
 
@@ -118,11 +118,16 @@ if (isset($_POST['update-signed'])) {
             'GS-Fine' => '../reviews/grain-size-fine-agg.php',
             'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
             'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
+            'GS_FF' => '../reviews/grain-size-fine-filter.php',
+            'GS_CF' => '../reviews/grain-size-coarse-filter.php',
+            'GS_LPF' => '../reviews/grain-size-lpf.php',
+            'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php',
             'LAA_Coarse_Aggregate' => '../reviews/LAA-Large.php',
             'LAA_Coarse_Filter' => '../reviews/LAA-Small.php',
             'MC_Oven' => '../reviews/moisture-oven.php',
             'MC_Microwave' => '../reviews/moisture-microwave.php',
             'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
+            'MC_Scale' => '../reviews/moisture-scale.php',
             'PLT' => '../reviews/point-Load.php',
             'SG' => '../reviews/specific-gravity.php',
             'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
@@ -168,11 +173,16 @@ if (isset($_POST['update-signed'])) {
             'GS-Fine' => '../reviews/grain-size-fine-agg.php',
             'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
             'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
+            'GS_FF' => '../reviews/grain-size-fine-filter.php',
+            'GS_CF' => '../reviews/grain-size-coarse-filter.php',
+            'GS_LPF' => '../reviews/grain-size-lpf.php',
+            'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php',
             'LAA_Coarse_Aggregate' => '../reviews/LAA-Large.php',
             'LAA_Coarse_Filter' => '../reviews/LAA-Small.php',
             'MC_Oven' => '../reviews/moisture-oven.php',
             'MC_Microwave' => '../reviews/moisture-microwave.php',
             'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
+            'MC_Scale' => '../reviews/moisture-scale.php',
             'PLT' => '../reviews/point-Load.php',
             'SG' => '../reviews/specific-gravity.php',
             'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',

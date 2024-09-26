@@ -22,12 +22,15 @@ include_once('../components/header.php');
     <section class="section">
         <div class="row">
 
+        <?php echo display_msg($msg); ?>
+
         <div class="col-lg-6">
           <?php displayAccordion([
             'atterberg_limit' => 'Atterberg Limit',
             'moisture_oven' => 'Moisture Oven',
             'moisture_constant_mass' => 'Moisture Constant Mass',
             'moisture_microwave' => 'Moisture Microwave',
+            'moisture_scale' => 'Moisture Scale',
             'grain_size_general' => 'Grain Size General',
             'grain_size_coarse' => 'Grain Size Coarse',
             'grain_size_fine' => 'Grain Size Fine',
@@ -86,6 +89,7 @@ function getTestLink($testType, $id) {
         'MC_Oven' => '../reviews/moisture-oven.php?id=',
         'MC_Microwave' => '../reviews/moisture-microwave.php?id=',
         'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php?id=',
+        'MC_Scale' => '../reviews/moisture-scale.php?id=',
         'PLT' => '../reviews/point-Load.php?id=',
         'SND' => '../reviews/soundness.php?id=',
         'SG' => '../reviews/specific-gravity.php?id=',

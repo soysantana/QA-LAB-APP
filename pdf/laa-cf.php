@@ -20,7 +20,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(480, 380));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('LAA-CF.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
+$pdf->setSourceFile('PV-F-01715_Laboratory Los Angeles Abrasion for Small Size_Rev 1.pdf'); // Reemplaza 'ruta/al/archivo.pdf' con la ruta al PDF que deseas importar.
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

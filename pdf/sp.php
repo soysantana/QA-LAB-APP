@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(380, 310));
 
-$pdf->setSourceFile('sp.pdf');
+$pdf->setSourceFile('PV-F-83538_Laboratory Standard Proctor Test_Rev. 3.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

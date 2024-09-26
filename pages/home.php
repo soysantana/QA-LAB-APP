@@ -59,96 +59,104 @@
             </tr>
           </thead>
           <tbody>
-        <?php
-          $Requisitions = find_all('lab_test_requisition_form');
-          $testTypes = [];
+          <?php
+$Requisitions = find_all('lab_test_requisition_form');
+$testTypes = [];
+$statusCounts = [
+    'Preparation' => 0,
+    'Realization' => 0,
+    'Delivery' => 0,
+    'Review' => 0,
+    'Repeat' => 0,
+];
 
-          foreach ($Requisitions as $requisition) {
-            for ($i = 1; $i <= 20; $i++) {
-              $testTypeKey = 'Test_Type' . $i;
-              
-              if (isset($requisition[$testTypeKey]) && $requisition[$testTypeKey] !== null && $requisition[$testTypeKey] !== '') {
-                $testTypes[$requisition[$testTypeKey]][] = [
-                  'Sample_ID' => $requisition['Sample_ID'],
-                  'Sample_Number' => $requisition['Sample_Number'],
-                  'Test_Type' => $requisition[$testTypeKey],
-                ];
-              }
-            }
-          }
+foreach ($Requisitions as $requisition) {
+    for ($i = 1; $i <= 20; $i++) {
+        $testTypeKey = 'Test_Type' . $i;
 
-          foreach ($testTypes as $testType => $data) {
-            foreach ($data as $item) {
+        if (isset($requisition[$testTypeKey]) && $requisition[$testTypeKey] !== null && $requisition[$testTypeKey] !== '') {
+            $testTypes[$requisition[$testTypeKey]][] = [
+                'Sample_ID' => $requisition['Sample_ID'],
+                'Sample_Number' => $requisition['Sample_Number'],
+                'Test_Type' => $requisition[$testTypeKey],
+            ];
+        }
+    }
+}
 
-              $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type']);
-              $allowedStatuses = ['Preparation', 'Realization', 'Delivery', 'Review', 'Repeat'];
-              
-              if (in_array($status, $allowedStatuses)) {
-              echo '<tr>';
-              echo '<td>' . $item['Sample_ID'] . '</td>';
-              echo '<td>' . $item['Sample_Number'] . '</td>';
-              echo '<td>' . $item['Test_Type'] . '</td>';
-              
+foreach ($testTypes as $testType => $data) {
+    foreach ($data as $item) {
+        $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type']);
+        $allowedStatuses = ['Preparation', 'Realization', 'Delivery', 'Review', 'Repeat'];
 
-              $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type']);
-
-              if ($status == 'Preparation') {
-                echo '<td><span class="badge bg-primary">Preparación</span></td>';
-              } elseif ($status == 'Realization') {
-                echo '<td><span class="badge bg-secondary">Realización</span></td>';
-              } elseif ($status == 'Delivery') {
-                echo '<td><span class="badge bg-success">Entrega</span></td>';
-              } elseif ($status == 'Review') {
-                echo '<td><span class="badge bg-dark">Revision</span></td>';
-              } elseif ($status == 'Repeat') {
-                echo '<td><span class="badge bg-warning">Repeticion</span></td>';
-              } else {
-                echo '<td><span class="badge bg-danger">----</span></td>';
-              }
-    
-              echo '</tr>';
-            }
-          }
-         }
-          
-          function getStatus($sampleID, $sampleNumber, $testType) {
-            $statusFromPreparation = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_preparation');
-            $statusFromRealization = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_realization');
-            $statusFromDelivery = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_delivery');
-            $statusFromReview = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_review');
-            $statusFromRepeat = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_repeat');
+        if (in_array($status, $allowedStatuses)) {
+            $statusCounts[$status]++; // Incrementa el contador del estado correspondiente
             
-            if ($statusFromRepeat != 'NoStatusFound') {
-              return $statusFromRepeat;
-            } elseif ($statusFromReview != 'NoStatusFound') {
-              return $statusFromReview;
-            } elseif ($statusFromDelivery != 'NoStatusFound') {
-              return $statusFromDelivery;
-            } elseif ($statusFromRealization != 'NoStatusFound') {
-              return $statusFromRealization;
-            } elseif ($statusFromPreparation != 'NoStatusFound') {
-              return $statusFromPreparation;
-            } else {
-              return 'NoStatusFound';
-            }
-          }
-          
-           function getStatusFromTestTable($sampleID, $sampleNumber, $testType, $tableName) {
-            $testData = find_all($tableName);
-            
-            $matchingResults = array_filter($testData, function ($row) use ($sampleID, $sampleNumber, $testType) {
-              return $row['Sample_Name'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType;
-            });
-            
-            if (!empty($matchingResults)) {
-              $lastResult = end($matchingResults);
-              return $lastResult['Status'];
-            }
-            return 'NoStatusFound';
-          }
+            echo '<tr>';
+            echo '<td>' . $item['Sample_ID'] . '</td>';
+            echo '<td>' . $item['Sample_Number'] . '</td>';
+            echo '<td>' . $item['Test_Type'] . '</td>';
+            echo '<td><span class="badge bg-' . getBadgeClass($status) . '">' . $status . '</span></td>';
+            echo '</tr>';
+        }
+        // No se cuenta "NoStatusFound" ni se muestra
+    }
+}
 
-        ?>
+function getStatus($sampleID, $sampleNumber, $testType) {
+    $statusFromPreparation = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_preparation');
+    $statusFromRealization = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_realization');
+    $statusFromDelivery = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_delivery');
+    $statusFromReview = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_review');
+    $statusFromRepeat = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_repeat');
 
+    // Verificar en orden para devolver el primer estado encontrado
+    if ($statusFromRepeat != 'NoStatusFound') {
+        return $statusFromRepeat;
+    } elseif ($statusFromReview != 'NoStatusFound') {
+        return $statusFromReview;
+    } elseif ($statusFromDelivery != 'NoStatusFound') {
+        return $statusFromDelivery;
+    } elseif ($statusFromRealization != 'NoStatusFound') {
+        return $statusFromRealization;
+    } elseif ($statusFromPreparation != 'NoStatusFound') {
+        return $statusFromPreparation;
+    } else {
+        return 'NoStatusFound'; // Esto ya no se cuenta
+    }
+}
+
+function getStatusFromTestTable($sampleID, $sampleNumber, $testType, $tableName) {
+    $testData = find_all($tableName);
+
+    $matchingResults = array_filter($testData, function ($row) use ($sampleID, $sampleNumber, $testType) {
+        return $row['Sample_Name'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType;
+    });
+
+    if (!empty($matchingResults)) {
+        $lastResult = end($matchingResults);
+        return $lastResult['Status'];
+    }
+    return 'NoStatusFound'; // Esto ya no se cuenta
+}
+
+function getBadgeClass($status) {
+    switch ($status) {
+        case 'Preparation':
+            return 'primary';
+        case 'Realization':
+            return 'secondary';
+        case 'Delivery':
+            return 'success';
+        case 'Review':
+            return 'dark';
+        case 'Repeat':
+            return 'warning';
+        default:
+            return 'danger'; // Para NoStatusFound, pero no se mostrará
+    }
+}
+?>
           </tbody>
         </table>
 
@@ -393,69 +401,13 @@
   <div class="card">
   <div class="card-body">
     <h5 class="card-title">Cantidades en Proceso</h5>
-    
-    <?php 
-    
-      function isSampleInPreviousTables($sampleName, $sampleNumber, $testType, $currentTableName, $previousTables) {
-        foreach ($previousTables as $table) {
-          if ($table === $currentTableName) {
-           
-            break;
-          }
-
-          $count = find_by_sql("SELECT COUNT(*) as count FROM $table WHERE Sample_Name = '$sampleName' AND Sample_Number = '$sampleNumber' AND Test_Type = '$testType'")[0]['count'];
-          if ($count > 0) {
-            return true; 
-          }
-        }
-        return false; 
-      }
-
-      $tablas = [
-        'test_preparation' => 'Preparación',
-        'test_realization' => 'Realización',
-        'test_delivery' => 'Entrega',
-        'test_review' => 'Revision',
-        'test_repeat' => 'Repeticion',
-      ];
-    
-      $numRowsArray = []; 
-
-
-      $reversedTables = array_reverse($tablas);
-
-      foreach ($reversedTables as $table => $personalizedName) {
-
-        $previousTables = array_keys(array_slice($tablas, array_search($table, array_keys($tablas)) + 1));
-
-        $samples = find_by_sql("SELECT * FROM $table"); 
-
-        $uniqueSamples = [];
-
-        foreach ($samples as $sample) {
-          $sampleName = $sample['Sample_Name'];
-          $sampleNumber = $sample['Sample_Number'];
-          $testType = $sample['Test_Type'];
-
-          if (!isSampleInPreviousTables($sampleName, $sampleNumber, $testType, $table, $previousTables)) {
-
-            $uniqueSamples["$sampleName|$sampleNumber|$testType"] = $sample;
-          }
-        }
-        
-        $numRows = count($uniqueSamples);
-
-        $numRowsArray[$table] = ['name' => $personalizedName, 'count' => $numRows];
-      }
-    ?>
-    
     <!-- List group With badges -->
     <ul class="list-group">
-    <?php foreach ($tablas as $table => $personalizedName):?>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <?php echo $personalizedName; ?>
-        <span class="badge bg-primary rounded-pill"><?php echo $numRowsArray[$table]['count']; ?></span>
-      </li>
+    <?php foreach ($statusCounts as $status => $count): ?>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <?php echo $status; ?>
+            <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
+        </li>
     <?php endforeach; ?>
     </ul><!-- End List With badges -->
 
@@ -470,7 +422,7 @@
         <ul class="list-group">
         <?php
          $columnas_tipo_prueba = array();
-         for ($i = 1; $i <= 19; $i++) {
+         for ($i = 1; $i <= 20; $i++) {
           $columnas_tipo_prueba[] = "Test_Type" . $i;
          }
         

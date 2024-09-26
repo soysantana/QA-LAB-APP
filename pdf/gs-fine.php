@@ -20,7 +20,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(550, 440));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('gs-fine.pdf');
+$pdf->setSourceFile('PV-F-83830_Laboratory sieve Grain size for Fine Aggregates_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -344,7 +344,7 @@ $pdf->SetXY(346, 392);
 $pdf->Cell(37, 6, "", 0, 1, 'C');
 
 $pdf->SetXY(44, 438);
-$pdf->Cell(360, 70, $Search['Comments'], 0, 1, 'C');
+$pdf->MultiCell(360, 70, $Search['Comments'], 0, 1, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

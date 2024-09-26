@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(270, 360));
 
-$pdf->setSourceFile('sg-coarse.pdf'); 
+$pdf->setSourceFile('PV-F-83832_Laboratory  Specific Gravity and Absortion in Coarse Aggregates_Rev 1.pdf'); 
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

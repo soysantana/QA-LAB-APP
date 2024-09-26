@@ -96,59 +96,44 @@ foreach ($tables as $tableName => $displayName) {
                             <td><?php echo $entry['Register_By']; ?></td>
                             <td><?php echo $entry['Registed_Date']; ?></td>
                             <td>
-                                <?php
-                                $testType = $entry['Test_Type'];
-                                $link = '';
+                        <?php
+                            $testType = $entry['Test_Type'];
+                            $id = $entry['id'];
 
-                                switch ($testType) {
-                                    case 'AL':
-                                        $link = '../reviews/atterberg-limit.php?id=' . $entry['id'];
-                                        break;
-                                    case 'BTS':
-                                        $link = '../reviews/brazilian.php?id=' . $entry['id'];
-                                        break;
-                                    case 'GS':
-                                        $link = '../reviews/grain-size.php?id=' . $entry['id'];
-                                        break;
-                                    case 'GS-Fine':
-                                        $link = '../reviews/grain-size-fine-agg.php?id=' . $entry['id'];
-                                        break;
-                                    case 'GS-Coarse':
-                                        $link = '../reviews/grain-size-coarse-agg.php?id=' . $entry['id'];
-                                        break;
-                                    case 'GS-CoarseThan':
-                                        $link = '../reviews/grain-size-coarsethan-agg.php?id=' . $entry['id'];
-                                        break;
-                                    case 'MC_Oven':
-                                        $link = '../reviews/moisture-oven.php?id=' . $entry['id'];
-                                        break;
-                                    case 'MC_Microwave':
-                                        $link = '../reviews/moisture-microwave.php?id=' . $entry['id'];
-                                        break;
-                                    case 'MC_Constant_Mass':
-                                        $link = '../reviews/moisture-constant-mass.php?id=' . $entry['id'];
-                                        break;
-                                    case 'SG':
-                                        $link = '../reviews/specific-gravity.php?id=' . $entry['id'];
-                                        break;
-                                    case 'SG-Coarse':
-                                        $link = '../reviews/specific-gravity-coarse-aggregates.php?id=' . $entry['id'];
-                                        break;
-                                    case 'SG-Fine':
-                                        $link = '../reviews/specific-gravity-fine-aggregate.php?id=' . $entry['id'];
-                                        break;
-                                    case 'LAA_Coarse_Filter':
-                                        $link = '../reviews/LAA-Small.php?id=' . $entry['id'];
-                                        break;
-                                    case 'LAA_Coarse_Aggregate':
-                                        $link = '../reviews/LAA-Large.php?id=' . $entry['id'];
-                                        break;
-                                    default:
-                                        $link = '#';
-                                        break;
-                                }
-                                ?>
-                                <a class="btn btn-primary" href="<?php echo $link; ?>"><i class="bi bi-eye"></i></a>
+                            // Mapa de enlaces según el tipo de prueba
+                            $links = [
+                            'AL' => '../reviews/atterberg-limit.php?id=',
+                            'BTS' => '../reviews/brazilian.php?id=',
+                            'GS' => '../reviews/grain-size.php?id=',
+                            'GS-Fine' => '../reviews/grain-size-fine-agg.php?id=',
+                            'GS-Coarse' => '../reviews/grain-size-coarse-agg.php?id=',
+                            'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php?id=',
+                            'LAA_Coarse_Aggregate' => '../reviews/LAA-Large.php?id=',
+                            'LAA_Coarse_Filter' => '../reviews/LAA-Small.php?id=',
+                            'MC_Oven' => '../reviews/moisture-oven.php?id=',
+                            'MC_Microwave' => '../reviews/moisture-microwave.php?id=',
+                            'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php?id=',
+                            'MC_Scale' => '../reviews/moisture-scale.php?id=',
+                            'PLT' => '../reviews/point-Load.php?id=',
+                            'SND' => '../reviews/soundness.php?id=',
+                            'SG' => '../reviews/specific-gravity.php?id=',
+                            'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php?id=',
+                            'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php?id=',
+                            'SP' => '../reviews/standard-proctor.php?id=',
+                            'UCS' => '../reviews/unixial-compressive.php?id=',
+                            'PH' => '../reviews/pinhole-test.php?id=',
+                            'GS_CF' => '../reviews/grain-size-coarse-filter.php?id=',
+                            'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
+                            'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
+                            'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
+                        ];
+
+                        // Asignar el enlace basado en el tipo de prueba, o un enlace por defecto
+                        $link = isset($links[$testType]) ? $links[$testType] . $id : '#';
+                       ?>
+
+<a class="btn btn-primary" href="<?php echo $link; ?>"><i class="bi bi-eye"></i></a>
+
                             </td>
                         </tr>
                     <?php endforeach; ?>

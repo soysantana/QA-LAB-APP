@@ -18,15 +18,17 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(300, 250));
 
-$pdf->setSourceFile('mc-oven.pdf');
+$pdf->setSourceFile('PV-F-81248_Laboratory Moisture Content by Oven_Rev 5.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
-$pdf->SetFont('Arial', '', 11);
-$pdf->SetXY(54, 37);
-$pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
-$pdf->SetXY(54, 42);
-$pdf->Cell(30, 5, $Search['Sample_By'], 0, 1, 'C');
+$pdf->SetFont('Arial', '', 10);
+$pdf->SetXY(52, 32);
+$pdf->Cell(30, 5, 'PVDJ SOIL LAB', 0, 1, 'L');
+$pdf->SetXY(52, 37);
+$pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'L');
+$pdf->SetXY(52, 42);
+$pdf->Cell(30, 5, $Search['Sample_By'], 0, 1, 'L');
 
 $pdf->SetXY(170, 30);
 $pdf->Cell(30, 6, $Search['Method'], 0, 1, 'C');

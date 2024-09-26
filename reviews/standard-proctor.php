@@ -8,12 +8,12 @@
 <?php 
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['update-sp'])) {
-        include('../database/standard-proctor.php');
-    } elseif (isset($_POST['repeat-sp'])) {
-        include('../database/standard-proctor.php');
-    } elseif (isset($_POST['reviewed-sp'])) {
-        include('../database/standard-proctor.php');
+    if (isset($_POST['update_sp'])) {
+        include('../database/standard-proctor/update.php');
+    } elseif (isset($_POST['repeat_sp'])) {
+        include('../database/standard-proctor/repeat.php');
+    } elseif (isset($_POST['reviewed_sp'])) {
+        include('../database/standard-proctor/reviewed.php');
     }
   }
 ?>
@@ -380,14 +380,14 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="update-sp">Update Essay</button>
+          <button type="submit" class="btn btn-success" name="update_sp">Update Essay</button>
           
           <a href="../pdf/sp.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
         </div>
 
         <div class="btn-group mt-2" role="group">
-          <button type="submit" class="btn btn-primary" name="repeat-sp">Repeat</button>
-          <button type="submit" class="btn btn-primary" name="reviewed-sp">Reviewed</button>
+          <button type="submit" class="btn btn-primary" name="repeat_sp">Repeat</button>
+          <button type="submit" class="btn btn-primary" name="reviewed_sp">Reviewed</button>
           <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
           <button type="button" class="btn btn-primary" onclick="search()">Seach Gravity</button>
         </div>

@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(440, 360));
 
-$pdf->setSourceFile('gs.pdf');
+$pdf->setSourceFile('PV-F-81247_Laboratory Sieve Grain Size for General Soil_Rev 5.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -382,8 +382,9 @@ $pdf->Cell(19, 6, $Search['Cc'], 0, 1, 'C');
 $pdf->SetXY(314, 343);
 $pdf->Cell(19, 6, $Search['Cu'], 0, 1, 'C');
 
-$pdf->SetXY(41, 165);
-$pdf->Cell(108, 105, "", 0, 1, 'C');
+$pdf->SetXY(41, 170);
+$pdf->MultiCell(108, 5, $Search['Comments'], 0, 'L');
+
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('L', array(285, 280));
 
-$pdf->setSourceFile('sg-fine.pdf'); 
+$pdf->setSourceFile('PV-F-83833_Laboratory  Specific Gravity and Absortion in Fine Aggregates_Rev 1'); 
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
