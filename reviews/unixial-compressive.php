@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Unixial Compresive Strenght';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('unixial_compressive', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/unixial-compressive.php');
     } elseif (isset($_POST['Reviewed_UCS'])) {
         include('../database/unixial-compressive.php');
+    } elseif (isset($_POST['delete_ucs'])) {
+        include('../database/unixial-compressive.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -248,8 +250,11 @@
             <div class="d-grid gap-2 mt-3">
               <button type="submit" class="btn btn-success" name="Update_UCS">Update Essay</button>
               <a href="../pdf/ucs.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+              <button type="submit" class="btn btn-danger" name="delete_ucs"><i class="bi bi-trash"></i></button>
+              <?php if (user_can_access(1)): ?>
               <button type="submit" class="btn btn-primary" name="Repeat_UCS">Repeat</button>
               <button type="submit" class="btn btn-primary" name="Reviewed_UCS">Reviewed</button>
+              <?php endif; ?>
             </div>
           </div>
         </div>

@@ -499,6 +499,23 @@
  }
 ?>
 
+<!-- Delete GS General -->
+<?php
+ if (isset($_POST['delete_gs_general']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('grain_size_general', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
+ }
+?>
+
 <!-- Grain Size Fine Aggregate -->
 <?php
  require_once('../config/load.php');
@@ -1047,6 +1064,23 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete GS Fine Aggregate -->
+<?php
+ if (isset($_POST['delete_gs_fine']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('grain_size_fine', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>
 
@@ -1610,6 +1644,23 @@
  }
 ?>
 
+<!-- Delete GS Coarse Aggregate -->
+<?php
+ if (isset($_POST['delete_gs_coarse']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('grain_size_coarse', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
+ }
+?>
+
 <!-- Grain Size Coarse Than Aggregate -->
 <?php
  require_once('../config/load.php');
@@ -2166,5 +2217,22 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete GS Coarse Than Aggregate -->
+<?php
+ if (isset($_POST['delete_gs_coarsethan']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('grain_size_coarsethan', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>

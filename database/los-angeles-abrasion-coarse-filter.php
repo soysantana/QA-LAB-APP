@@ -365,6 +365,23 @@
  }
 ?>
 
+<!-- Delete LAA Coarse Filter -->
+<?php
+ if (isset($_POST['delete_LAA_Coarse_Filter']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('los_angeles_abrasion_coarse_filter', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
+ }
+?>
+
 <!-- LAA Coarse Aggregate -->
 <?php
  require_once('../config/load.php');
@@ -720,5 +737,22 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete LAA Coarse Aggregate -->
+<?php
+ if (isset($_POST['delete_LAA_Coarse_Aggregate']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('los_angeles_abrasion_coarse_aggregate', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>

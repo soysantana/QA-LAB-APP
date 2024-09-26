@@ -324,13 +324,11 @@ window.addEventListener("load", function () {
   // Agregar la clase 'no-scroll' al body para desactivar el scroll
   document.body.classList.add('no-scroll');
 
-  setTimeout(function () {
-      var loader = document.querySelector(".loader-container");
-      loader.style.display = "none";
-      
-      // Quitar la clase 'no-scroll' del body para activar el scroll
-      document.body.classList.remove('no-scroll');
-  }, 200);
+  var loader = document.querySelector(".loader-container");
+  loader.style.display = "none";
+  
+  // Quitar la clase 'no-scroll' del body para activar el scroll
+  document.body.classList.remove('no-scroll');
 });
 
   /**

@@ -202,7 +202,7 @@ function tableExists($table){
       elseif(is_array($login_level) && isset($login_level['group_status']) && $login_level['group_status'] === '0'):
             $session->msg('d', 'Este nivel de usuario está inactivo!');
             redirect('/index.php', false);
-      //cheackin log in User level and Require level is Less than or equal to
+      //cheackin log in User level and Require level is Less than or equaly to
      elseif($current_user['user_level'] <= (int)$require_level):
               return true;
       else:
@@ -210,6 +210,38 @@ function tableExists($table){
             redirect('/pages/home.php', false);
         endif;
 
+     }
+  /*--------------------------------------------------------------*/
+  /* Function for checking which user level has access to a feature
+  /* level for accessing specific functionality or content
+  /*--------------------------------------------------------------*/
+   function user_can_access($required_level) {
+     global $session;
+     $current_user = current_user();
+    
+      // Comprobar si el nivel del usuario es mayor o igual al requerido
+      return $current_user['user_level'] <= $required_level;
+     }
+  /*--------------------------------------------------------------*/
+  /* Function determines the user level and assigns the 
+  /* appropriate variables for accessing specific functionality 
+  /*--------------------------------------------------------------*/
+   function get_user_review() {
+     $current_user = current_user();
+
+      if (isset($current_user['user_level'])) {
+          global $review, $review_essay;
+          $review_variable = 'show';
+
+          if ($current_user['user_level'] <= 1) {
+              $review = $review_variable;
+          } else {
+              $review_essay = $review_variable;
+          }
+          return true;
+      }
+
+      return false;
      }
    /*--------------------------------------------------------------*/
    /* Function for Finding all product name

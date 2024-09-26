@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Pinhole Test';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('pinhole_test', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/pinhole-test.php');
     } elseif (isset($_POST['Reviewed_PH'])) {
         include('../database/pinhole-test.php');
+    } elseif (isset($_POST['delete_ph'])) {
+        include('../database/pinhole-test.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -408,8 +410,11 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="Update_PH">Update Essay</button>
+          <button type="submit" class="btn btn-danger" name="delete_ph"><i class="bi bi-trash"></i></button>
+          <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="Repeat_PH">Repeat</button>
           <button type="submit" class="btn btn-primary" name="Reviewed_PH">Reviewed</button>
+          <?php endif; ?>
         </div>
 
       </div>

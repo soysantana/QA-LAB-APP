@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Soundness Test';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('soundness', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/soundness.php');
     } elseif (isset($_POST['Reviewed_SND'])) {
         include('../database/soundness.php');
+    } elseif (isset($_POST['delete_snd'])) {
+        include('../database/soundness.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
   <div class="pagetitle">
@@ -644,8 +646,11 @@ $cols = count($rows[0]); // Número de columnas
               
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="Update_SND">Update Essay</button>
+                <button type="submit" class="btn btn-danger" name="delete_snd"><i class="bi bi-trash"></i></button>
+                <?php if (user_can_access(1)): ?>
                 <button type="submit" class="btn btn-primary" name="Repeat_SND">Repeat</button>
                 <button type="submit" class="btn btn-primary" name="Reviewed_SND">Reviewed</button>
+                <?php endif; ?>
               </div>
 
             </div>

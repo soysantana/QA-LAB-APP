@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Point Load';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('point_load', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/point-load.php');
     } elseif (isset($_POST['Reviewed_PLT'])) {
         include('../database/point-load.php');
+    } elseif (isset($_POST['delete_plt'])) {
+        include('../database/point-load.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -266,8 +268,11 @@
             <div class="d-grid gap-2 mt-3">
               <button type="submit" class="btn btn-success" name="Update_PLT">Update Essay</button>
               <a href="../pdf/plt.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+              <button type="submit" class="btn btn-danger" name="delete_plt"><i class="bi bi-trash"></i></button>
+              <?php if (user_can_access(1)): ?>
               <button type="submit" class="btn btn-primary" name="Repeat_PLT">Repeat</button>
               <button type="submit" class="btn btn-primary" name="Reviewed_PLT">Reviewed</button>
+              <?php endif; ?>
             </div>
           </div>
         </div>

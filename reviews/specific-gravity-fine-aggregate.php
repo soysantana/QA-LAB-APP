@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Specific Gravity Fine';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('specific_gravity_fine', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/specific-gravity.php');
     } elseif (isset($_POST['reviewed-sg-fine'])) {
         include('../database/specific-gravity.php');
+    } elseif (isset($_POST['delete_sg_fine'])) {
+        include('../database/specific-gravity.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -234,11 +236,14 @@
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update-sg-fine">Update Essay</button>
           <a href="../pdf/sg-fine.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_sg_fine"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
+        <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="repeat-sg-fine">Repeat</button>
           <button type="submit" class="btn btn-primary" name="reviewed-sg-fine">Reviewed</button>
+        <?php endif; ?>  
         </div>
       
       </div>

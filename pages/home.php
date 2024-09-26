@@ -96,7 +96,7 @@ foreach ($testTypes as $testType => $data) {
             echo '<td>' . $item['Sample_ID'] . '</td>';
             echo '<td>' . $item['Sample_Number'] . '</td>';
             echo '<td>' . $item['Test_Type'] . '</td>';
-            echo '<td><span class="badge bg-' . getBadgeClass($status) . '">' . $status . '</span></td>';
+            echo '<td><span class="badge bg-' . getBadgeClass($status) . '">' . translateStatus($status) . '</span></td>';
             echo '</tr>';
         }
         // No se cuenta "NoStatusFound" ni se muestra
@@ -156,7 +156,26 @@ function getBadgeClass($status) {
             return 'danger'; // Para NoStatusFound, pero no se mostrará
     }
 }
+
+function translateStatus($status) {
+    switch ($status) {
+        case 'Preparation':
+            return 'Preparación';
+        case 'Realization':
+            return 'Realización';
+        case 'Delivery':
+            return 'Entrega';
+        case 'Review':
+            return 'Revisión';
+        case 'Repeat':
+            return 'Repetición';
+        default:
+            return $status; // Para NoStatusFound, pero no se mostrará
+    }
+}
 ?>
+
+
           </tbody>
         </table>
 
@@ -164,6 +183,58 @@ function getBadgeClass($status) {
 
     </div>
   </div><!-- End Process Database Requision -->
+
+        <!-- ENSAYOS EN REPETICION -->
+        <div class="col-12">
+       <div class="card recent-sales overflow-auto">
+
+       <div class="filter">
+        <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+          <li class="dropdown-header text-start">
+            <h6>Filtrar</h6>
+          </li>
+        
+          <li><a class="dropdown-item" href="#">Hoy</a></li>
+          <li><a class="dropdown-item" href="#">Este mes</a></li>
+          <li><a class="dropdown-item" href="#">Este año</a></li>
+        </ul>
+      </div>
+
+      <div class="card-body">
+        <h5 class="card-title">Ensayos en Repeticion <span>| Hoy</span></h5>
+        <?php $week = date('Y-m-d', strtotime('-7 days'));?>
+        <?php $Seach = find_by_sql("SELECT * FROM test_repeat WHERE Start_Date >= '{$week}'");?>
+        <table class="table table-borderless datatable">
+          <thead>
+            <tr>
+              <th scope="col">Muestra</th>
+              <th scope="col">Numero de muestra</th>
+              <th scope="col">Tipo de prueba</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Tecnico</th>
+              <th scope="col">Enviado Por</th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php foreach ($Seach as $Seach):?>
+              <tr>
+                <td><?php echo $Seach['Sample_Name']; ?></td>
+                <td><?php echo $Seach['Sample_Number']; ?></td>
+                <td><?php echo $Seach['Test_Type']; ?></td>
+                <td><?php echo date('Y-m-d', strtotime($Seach['Start_Date'])); ?></td>
+                <td></td>
+                <td><?php echo $Seach['Register_By']; ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+
+
+      </div>
+
+    </div>
+  </div><!-- End Method Proctor -->
 
       <!-- Method Proctor -->
       <div class="col-12">
@@ -405,7 +476,7 @@ function getBadgeClass($status) {
     <ul class="list-group">
     <?php foreach ($statusCounts as $status => $count): ?>
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            <?php echo $status; ?>
+          <?php echo translateStatus($status); ?>
             <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
         </li>
     <?php endforeach; ?>

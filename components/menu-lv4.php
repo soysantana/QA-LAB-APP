@@ -19,6 +19,7 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
+$unkow = !empty($unkow) ? $unkow : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
@@ -79,13 +80,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
           <i class="bi bi-question-circle"></i>
           <span>Lista de Pendientes</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
-          <i class="bi bi-calendar3"></i>
-          <span>Planificación Semanal</span>
         </a>
       </li><!-- End Register Page Nav -->
 

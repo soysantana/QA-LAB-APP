@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Standard Proctor';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('standard_proctor', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/standard-proctor/repeat.php');
     } elseif (isset($_POST['reviewed_sp'])) {
         include('../database/standard-proctor/reviewed.php');
+    } elseif (isset($_POST['delete_sp'])) {
+        include('../database/standard-proctor/delete.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -381,13 +383,15 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update_sp">Update Essay</button>
-          
           <a href="../pdf/sp.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_sp"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
+        <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="repeat_sp">Repeat</button>
           <button type="submit" class="btn btn-primary" name="reviewed_sp">Reviewed</button>
+        <?php endif; ?>
           <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
           <button type="button" class="btn btn-primary" onclick="search()">Seach Gravity</button>
         </div>

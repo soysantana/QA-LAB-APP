@@ -409,6 +409,23 @@
  }
 ?>
 
+<!-- Delete SG -->
+<?php
+ if (isset($_POST['delete_sg']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('specific_gravity', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
+ }
+?>
+
 <!-- Specific Gravity Coarse -->
 <?php
  if (isset($_POST['specific-gravity-coarse'])) {
@@ -782,6 +799,23 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete SG Coarse -->
+<?php
+ if (isset($_POST['delete_sg_coarse']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('specific_gravity_coarse', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>
 
@@ -1174,5 +1208,22 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete SG Fine -->
+<?php
+ if (isset($_POST['delete_sg_fine']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('specific_gravity_fine', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>

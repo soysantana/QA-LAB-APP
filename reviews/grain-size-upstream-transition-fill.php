@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Grain Size Upstream Transition Fill';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('grain_size_upstream_transition_fill', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/grain-size/gs-utf/repeat.php');
     } elseif (isset($_POST['reviewed_gs_utf'])) {
         include('../database/grain-size/gs-utf/reviewed.php');
+    } elseif (isset($_POST['delete_gs_utf'])) {
+        include('../database/grain-size/gs-utf/delete.php');
     }
   }
 ?>
 
 <?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -440,11 +442,14 @@
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update_gs_utf">Update Essay</button>
           <a href="../pdf/gs-fine.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_gs_utf"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
+        <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="repeat_gs_utf">Repeat</button>
           <button type="submit" class="btn btn-primary" name="reviewed_gs_utf">Reviewed</button>
+        <?php endif; ?>
         </div>
 
       </div>

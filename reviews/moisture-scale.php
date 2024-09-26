@@ -1,7 +1,6 @@
 <?php
   require_once('../config/load.php');
   $page_title = 'Moisture Content Scale';
-  $review = 'show';
   $Search = find_by_id('moisture_scale', $_GET['id']);
 ?>
 
@@ -14,11 +13,14 @@
         include('../database/moisture-content/mc-scale/repeat.php');
     } elseif (isset($_POST['reviewed_mc_scale'])) {
         include('../database/moisture-content/mc-scale/reviewed.php');
+    } elseif (isset($_POST['delete_mc_scale'])) {
+        include('../database/moisture-content/mc-scale/delete.php');
     }
   }
 ?>
 
 <?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 <div class="pagetitle">
@@ -184,11 +186,14 @@
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update_mc_scale">Update Essay</button>
           <a href="../pdf/gs.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_mc_scale"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
+        <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="repeat_mc_scale">Repeat</button>
           <button type="submit" class="btn btn-primary" name="reviewed_mc_scale">Reviewed</button>
+        <?php endif; ?>
         </div>
 
       </div>

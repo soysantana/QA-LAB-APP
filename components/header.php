@@ -190,11 +190,15 @@
 
       <?php elseif($user['user_level'] === '2'): ?>
         <!-- Document Control user -->
-      <?php include_once('menu.php');?>
+      <?php include_once('menu-lv2.php');?>
 
       <?php elseif($user['user_level'] === '3'): ?>
         <!-- Tecnico menu -->
       <?php include_once('menu-tecnico.php');?>
+
+      <?php elseif($user['user_level'] === '4'): ?>
+        <!-- Visitante menu -->
+      <?php include_once('menu-lv4.php');?>
 
   <?php endif;?>
 

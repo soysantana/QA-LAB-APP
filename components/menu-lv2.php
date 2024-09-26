@@ -166,27 +166,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-heading">Supervision</li>
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $unkow; ?>" href="#">
-          <i class="bi bi-android"></i>
-          <span>Desempeño</span>
-        </a>
-      </li><!-- End Review Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $unkow; ?>" href="#">
-          <i class="bi bi-people"></i>
-          <span>Usuarios / Grupos</span>
-        </a>
-      </li><!-- End Review Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $review; ?>" href="/pages/essay-review.php">
-          <i class="bi bi-card-checklist"></i>
-          <span>Revisión de ensayo</span>
-        </a>
-      </li><!-- End Review Page Nav -->
-
-      <li class="nav-item">
         <a class="nav-link <?php echo $review_essay; ?>" href="/pages/essay.php">
           <i class="bi bi-database"></i>
           <span>Ensayos Registrados</span>
@@ -210,15 +189,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
       </li>
       <!-- End User Profile -->
-
-      <!-- New Account -->
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="/pages/users-register.php">
-          <i class="bi bi-card-list"></i>
-          <span>Nueva cuenta</span>
-        </a>
-      </li>
-      <!-- End New Account -->
 
     </ul>
 

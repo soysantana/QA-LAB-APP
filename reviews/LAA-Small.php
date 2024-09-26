@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Los Angeles Abrasion';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('los_angeles_abrasion_coarse_filter', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/los-angeles-abrasion-coarse-filter.php');
     } elseif (isset($_POST['Reviewed_LAA_Coarse_Filter'])) {
         include('../database/los-angeles-abrasion-coarse-filter.php');
+    } elseif (isset($_POST['delete_LAA_Coarse_Filter'])) {
+        include('../database/los-angeles-abrasion-coarse-filter.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -232,8 +234,11 @@
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="Update_LAA_Coarse_Filter">Update Essay</button>
           <a href="../pdf/laa-cf.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_LAA_Coarse_Filter"><i class="bi bi-trash"></i></button>
+          <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="Repeat_LAA_Coarse_Filter">Repeat</button>
           <button type="submit" class="btn btn-primary" name="Reviewed_LAA_Coarse_Filter">Reviewed</button>
+          <?php endif; ?>
         </div>
 
       </div>

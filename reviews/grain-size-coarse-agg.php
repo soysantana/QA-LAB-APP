@@ -1,6 +1,5 @@
 <?php
   $page_title = 'Grain Size Coarse';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('grain_size_coarse', $_GET['id']);
 ?>
@@ -14,11 +13,14 @@
         include('../database/grain-size-general.php');
     } elseif (isset($_POST['reviewed-gs-coarse'])) {
         include('../database/grain-size-general.php');
+    } elseif (isset($_POST['delete_gs_coarse'])) {
+        include('../database/grain-size-general.php');
     }
   }
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -445,11 +447,14 @@
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update-gs-coarse">Update Essay</button>
           <a href="../pdf/gs-coarse.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_gs_coarse"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
+        <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="repeat-gs-coarse">Repeat</button>
           <button type="submit" class="btn btn-primary" name="reviewed-gs-coarse">Reviewed</button>
+        <?php endif; ?>
         </div>
 
       </div>

@@ -370,6 +370,23 @@
  }
 ?>
 
+<!-- Delete MC Oven -->
+<?php
+ if (isset($_POST['delete_mc_oven']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('moisture_oven', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
+ }
+?>
+
 <!-- Moisture Microwave -->
 <?php
  if (isset($_POST['moisture-microwave'])) {
@@ -748,6 +765,23 @@
  }
 ?>
 
+<!-- Delete MC Microwave -->
+<?php
+ if (isset($_POST['delete_mc_microwave']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('moisture_microwave', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
+ }
+?>
+
 <!-- Moisture Constant Mass -->
 <?php
  if (isset($_POST['moisture-constant-mass'])) {
@@ -1123,5 +1157,22 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete MC Constant Mass -->
+<?php
+ if (isset($_POST['delete_mc_constant_mass']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('moisture_constant_mass', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>
