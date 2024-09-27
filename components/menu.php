@@ -19,6 +19,7 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
+$user_group = !empty($user_group) ? $user_group : "collapsed";
 $unkow = !empty($unkow) ? $unkow : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
@@ -30,7 +31,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-item">
         <a class="nav-link <?php echo $class_home; ?> " href="/pages/home.php">
           <i class="bi bi-grid"></i>
-          <span>Dashboard</span>
+          <span>Panel de Control</span>
         </a>
       </li><!-- End Dashboard Nav -->
 
@@ -173,7 +174,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       </li><!-- End Review Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $unkow; ?>" href="#">
+        <a class="nav-link <?php echo $user_group; ?>" href="../pages/users-group.php">
           <i class="bi bi-people"></i>
           <span>Usuarios / Grupos</span>
         </a>

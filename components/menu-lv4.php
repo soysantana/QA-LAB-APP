@@ -30,7 +30,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-item">
         <a class="nav-link <?php echo $class_home; ?> " href="/pages/home.php">
           <i class="bi bi-grid"></i>
-          <span>Dashboard</span>
+          <span>Panel de Control</span>
         </a>
       </li><!-- End Dashboard Nav -->
 
