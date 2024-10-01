@@ -3,7 +3,7 @@ $page_title = 'Usuarios & Grupos';
 $user_group = 'show';
 require_once('../config/load.php');
 $Search = find_all('user_groups');
-page_require_level(2);
+page_require_level(1);
 include_once('../components/header.php');
 ?>
 <main id="main" class="main">
@@ -26,7 +26,7 @@ include_once('../components/header.php');
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Lista de Grupos</h5>
-            <table class="table table-bordered">
+            <table class="table datatable">
               <thead>
                 <tr>
                   <th>#</th>

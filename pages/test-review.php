@@ -40,10 +40,10 @@
       <div class="card-body">
         <h5 class="card-title">LISTA DE MUESTRAS EN REVISIÓN</h5>
 
-        <?php $week = date('Y-m-d', strtotime('-7 days'));?>
+        <?php $week = date('Y-m-d', strtotime('-30 days')); ?>
         <?php $Seach = find_by_sql("SELECT * FROM test_review WHERE Start_Date >= '{$week}'");?>
         <!-- Bordered Table -->
-        <table class="table table-bordered">
+        <table class="table table-bordered datatable">
           <thead>
             <tr>
               <th scope="col">#</th>
