@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'message' => '<div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle me-1"></i> I found it!
+                            <i class="bi bi-check-circle me-1"></i> Lo encontré!
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                           </div>',
             'mc_value' => $mc_value,
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => false,
             'message' => '<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-octagon me-1"></i> No results found.
+                            <i class="bi bi-exclamation-octagon me-1"></i> No se encontraron resultados.
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                           </div>',
         ]);

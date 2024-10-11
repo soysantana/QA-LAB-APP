@@ -197,8 +197,8 @@ $pdf->Cell(24, 25, $Search['Classification'], 0, 1, 'C');
 
 // Laboratory Comments
 
-$pdf->SetXY(284, 179);
-$pdf->Cell(60, 68, $Search['Comments'], 0, 1, 'C');
+$pdf->SetXY(284, 182);
+$pdf->MultiCell(60, 5, $Search['Comments'], 0, 'L');
 
 // GRAFICAS DEL LIMITER
 $imageBase64 = $Search['Liquid_Limit_Plot'];

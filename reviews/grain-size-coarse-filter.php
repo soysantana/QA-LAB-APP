@@ -441,7 +441,18 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update_gs_cf">Update Essay</button>
-          <a href="../pdf/gs-fine.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          
+          <div class="btn-group dropup" role="group">
+            <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-printer"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#?id=<?php echo ($Search['id']); ?>">Site Investigación</a></li>
+              <li><a class="dropdown-item" href="../pdf/gs-cf.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
+              <li><a class="dropdown-item" href="../pdf/gs-coarse.php?id=<?php echo ($Search['id']); ?>">Agregado Naranjo</a></li>
+            </ul>
+          </div>
+
           <button type="submit" class="btn btn-danger" name="delete_gs_cf"><i class="bi bi-trash"></i></button>
         </div>
 

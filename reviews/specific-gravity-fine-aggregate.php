@@ -227,7 +227,7 @@
       </div>
     </div>
 
-    <div class="col-lg-6">
+    <div class="col-lg-7">
       
     <div class="card">
       <div class="card-body">
@@ -235,7 +235,18 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update-sg-fine">Update Essay</button>
-          <a href="../pdf/sg-fine.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          
+          <div class="btn-group dropup" role="group">
+            <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-printer"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="../pdf/sg-fine.php?id=<?php echo ($Search['id']); ?>">Site Investigación</a></li>
+              <li><a class="dropdown-item" href="../pdf/sg-ff.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
+              <li><a class="dropdown-item" href="#">Agregado Naranjo</a></li>
+            </ul>
+          </div>
+
           <button type="submit" class="btn btn-danger" name="delete_sg_fine"><i class="bi bi-trash"></i></button>
         </div>
 

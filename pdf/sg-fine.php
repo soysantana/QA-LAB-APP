@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('L', array(285, 280));
 
-$pdf->setSourceFile('PV-F-83833_Laboratory  Specific Gravity and Absortion in Fine Aggregates_Rev 1'); 
+$pdf->setSourceFile('PV-F-83833_Laboratory  Specific Gravity and Absortion in Fine Aggregates_Rev 1.pdf'); 
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -97,7 +97,7 @@ $pdf->Cell(35, 10, $Search['Percent_Absortion'], 0, 1, 'C');
 //Comments
 $pdf->SetFont('Arial', '', 12);
 $pdf->SetXY(155, 103);
-$pdf->Cell(90, 80, $Search['Comments'], 0, 1, 'C');
+$pdf->MultiCell(90, 4, $Search['Comments'], 0, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
 ?>

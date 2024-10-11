@@ -383,7 +383,7 @@ $pdf->SetXY(314, 343);
 $pdf->Cell(19, 6, $Search['Cu'], 0, 1, 'C');
 
 $pdf->SetXY(41, 170);
-$pdf->MultiCell(108, 5, $Search['Comments'], 0, 'L');
+$pdf->MultiCell(108, 4, $Search['Comments'], 0, 'L');
 
 
 // GRAFICAS

@@ -344,7 +344,7 @@ $pdf->SetXY(346, 392);
 $pdf->Cell(37, 6, "", 0, 1, 'C');
 
 $pdf->SetXY(44, 438);
-$pdf->MultiCell(360, 70, $Search['Comments'], 0, 1, 'L');
+$pdf->MultiCell(360, 4, $Search['Comments'], 0, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

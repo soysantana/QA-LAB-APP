@@ -67,7 +67,7 @@
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $TotalWeight = $db->escape($_POST['WeigtTest']);
+        $TotalWeight = $db->escape($_POST['TotalWeight']);
         $WeigtTest = $db->escape($_POST['WeigtTest']);
         $Particles1 = $db->escape($_POST['Particles1']);
         $Particles2 = $db->escape($_POST['Particles2']);

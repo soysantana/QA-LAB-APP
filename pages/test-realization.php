@@ -10,9 +10,9 @@
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete-realization'])) {
-        include('../database/sample-tracking.php');
+        include('../database/sample-tracking/realization/delete.php');
     } elseif (isset($_POST['send-delivery'])) {
-        include('../database/sample-tracking.php');
+        include('../database/sample-tracking/delivery/save.php');
     }
   }
 ?>
@@ -44,7 +44,7 @@
 
         <?php $week = date('Y-m-d', strtotime('-30 days')); ?>
         <?php $delivery = "(SELECT 1 FROM test_delivery WHERE sample_name = p.sample_name AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
-        <?php $Seach = find_by_sql("SELECT * FROM test_realization p WHERE Start_Date >= '{$week}' AND NOT EXISTS $delivery"); ?>
+        <?php $Seach = find_by_sql("SELECT * FROM test_realization p WHERE Start_Date >= '{$week}' AND NOT EXISTS $delivery ORDER BY Register_Date DESC"); ?>
         <!-- Bordered Table -->
         <table class="table datatable">
           <thead>
@@ -98,11 +98,11 @@
       <div class="row g-3">
           <div class="col-md-12">
             <label for="Sname" class="form-label">Nombre de la muestra</label>
-            <input type="text" class="form-control" name="Sname" id="Sname">
+            <input type="text" class="form-control" name="Sname" id="Sname" readonly>
           </div>
           <div class="col-md-12">
             <label for="Snumber" class="form-label">Numero de muestra</label>
-            <input type="text" class="form-control" name="Snumber" id="Snumber">
+            <input type="text" class="form-control" name="Snumber" id="Snumber" readonly>
           </div>
           <div class="col-md-12">
             <label for="Ttype" class="form-label">Tipo de prueba</label>

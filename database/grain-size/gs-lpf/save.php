@@ -78,6 +78,7 @@
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
             ${"CumRet" . $i} = $db->escape($_POST["CumRet$i"]);
             ${"Pass" . $i} = $db->escape($_POST["Pass$i"]);
+            ${"Specs" . $i} = $db->escape($_POST["Specs$i"]);
         }
         
         $sql = "INSERT INTO grain_size_lpf (
@@ -137,7 +138,7 @@
         
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 13; $i++) {
-            $sql .= ", WtRet$i, Ret$i, CumRet$i, Pass$i";
+            $sql .= ", WtRet$i, Ret$i, CumRet$i, Pass$i, Specs$i";
         }
         
         $sql .= ") VALUES (
@@ -197,7 +198,7 @@
         
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 13; $i++) {
-            $sql .= ", '${"WtRet$i"}', '${"Ret$i"}', '${"CumRet$i"}', '${"Pass$i"}'";
+            $sql .= ", '${"WtRet$i"}', '${"Ret$i"}', '${"CumRet$i"}', '${"Pass$i"}', '${"Specs$i"}'";
         }
         
         $sql .= ")";        

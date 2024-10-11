@@ -10,11 +10,13 @@
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['test-preparation'])) {
-        include('../database/sample-tracking.php');
+        include('../database/sample-tracking/preparation/save.php');
     } elseif (isset($_POST['delete-preparation'])) {
-        include('../database/sample-tracking.php');
+        include('../database/sample-tracking/preparation/delete.php');
     } elseif (isset($_POST['send-realization'])) {
-        include('../database/sample-tracking.php');
+        include('../database/sample-tracking/realization/save.php');
+    } elseif (isset($_POST['update_technician'])) {
+        include('../database/sample-tracking/preparation/update.php');
     }
   }
 ?>
@@ -126,7 +128,8 @@
                 <td><?php echo $Seach['Start_Date']; ?></td>
                 <td>
                 <div class="btn-group" role="group" aria-label="Basic example">
-                <a class="btn btn-primary open-modal-btn" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true" data-sample-name="<?php echo $Seach['Sample_Name']; ?>"data-sample-number="<?php echo $Seach['Sample_Number']; ?>"data-test-type="<?php echo $Seach['Test_Type']; ?>"data-technician="<?php echo $Seach['Technician']; ?>"data-start-date="<?php echo $Seach['Start_Date']; ?>"><i class="bi bi-send me-1"></i></a>
+                <a class="btn btn-success open-modal-btn" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true" data-sample-name="<?php echo $Seach['Sample_Name']; ?>"data-sample-number="<?php echo $Seach['Sample_Number']; ?>"data-test-type="<?php echo $Seach['Test_Type']; ?>"data-technician="<?php echo $Seach['Technician']; ?>"data-start-date="<?php echo $Seach['Start_Date']; ?>"><i class="bi bi-send me-1"></i></a>
+                <button type="button" class="btn btn-primary" onclick="modalEdit('<?php echo $Seach['id']; ?>', '<?php echo $Seach['Technician']; ?>')"><i class="bi bi-pencil"></i></button>
                 <button type="button" class="btn btn-danger" onclick="modaldelete('<?php echo $Seach['id']; ?>')"><i class="bi bi-trash"></i></button>
                 </div>
                 </td>
@@ -155,11 +158,11 @@
       <div class="row g-3">
           <div class="col-md-12">
             <label for="Sname" class="form-label">Nombre de la muestra</label>
-            <input type="text" class="form-control" name="Sname" id="Sname">
+            <input type="text" class="form-control" name="Sname" id="Sname" readonly>
           </div>
           <div class="col-md-12">
             <label for="Snumber" class="form-label">Numero de muestra</label>
-            <input type="text" class="form-control" name="Snumber" id="Snumber">
+            <input type="text" class="form-control" name="Snumber" id="Snumber" readonly>
           </div>
           <div class="col-md-12">
             <label for="Ttype" class="form-label">Tipo de prueba</label>
@@ -206,6 +209,33 @@
   </div>
  </div>
  <!-- End Modal Update -->
+
+ <!-- Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Editar Técnico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editForm" action="test-preparation.php" method="post">
+            <div class="modal-body">
+                
+                    <div class="mb-3">
+                        <label for="technicianName" class="form-label">Nombre del Técnico</label>
+                        <input type="text" class="form-control" id="technicianName" name="technicianName" required>
+                    </div>
+                    <input type="hidden" id="technicianId" name="technicianId">
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="submit" class="btn btn-primary" name="update_technician">Guardar Cambios</button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
 
   <!-- Modal Delete -->
   <div class="modal fade" id="ModalDelete" tabindex="-1">
@@ -279,6 +309,16 @@
         console.log('No se ha seleccionado ningún ID para eliminar.');
       }
     }
+
+    function modalEdit(id, name) {
+    // Rellenar el input con el nombre del técnico y el ID oculto
+    document.getElementById('technicianId').value = id;
+    document.getElementById('technicianName').value = name;
+    
+    // Mostrar el modal
+    var modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
+}
 </script>
 
 <?php include_once('../components/footer.php');  ?>

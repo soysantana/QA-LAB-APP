@@ -10,7 +10,7 @@
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['test-review'])) {
-        include('../database/sample-tracking.php');
+        include('../database/sample-tracking/review/save.php');
     }
   }
 ?>

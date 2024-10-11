@@ -1,5 +1,5 @@
 <?php
-  $page_title = 'Grain Size Fine';
+  $page_title = 'Grain Size Fine Filter';
   $class_form = ' ';
   $form_show = 'show';
   $GrainSize = 'active';
@@ -9,8 +9,8 @@
 <?php 
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['grain-size-fine'])) {
-        include('../database/grain-size-general.php');
+    if (isset($_POST['gs_ff'])) {
+        include('../database/grain-size/gs-ff/save.php');
     } 
   }
 ?>
@@ -20,19 +20,19 @@
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Grain Size Fine Aggregate</h1>
+  <h1>Grain Size Fine Filter</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Grain Size Fine Aggregate</li>
+      <li class="breadcrumb-item active">Grain Size Fine Filter</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->
 <section class="section">
-  <div class="row" oninput="FineAgg()">
+  <div class="row" oninput="FF()">
 
-  <form class="row" action="grain-size-fine-agg.php" method="post">
+  <form class="row" action="grain-size-fine-filter.php" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
@@ -51,7 +51,6 @@
             <div class="col-md-6">
               <label for="Standard" class="form-label">Standard</label>
               <select id="Standard" class="form-select" name="Standard">
-                <option selected>Choose...</option>
                 <option value="ASTM-C136">ASTM-C136</option>
               </select>
             </div>
@@ -214,25 +213,19 @@
                     
                     <?php
                     $datos = array(
-                      array("5\"", "127", "WtRet1", "Ret1", "CumRet1", "Pass1", "Specs1"),
-                      array("4\"", "101.6", "WtRet2", "Ret2", "CumRet2", "Pass2", "Specs2"),
-                      array("3.5\"", "88.9", "WtRet3", "Ret3", "CumRet3", "Pass3", "Specs3"),
-                      array("3\"", "76.2", "WtRet4", "Ret4", "CumRet4", "Pass4", "Specs4"),
-                      array("2.5\"", "63.5", "WtRet5", "Ret5", "CumRet5", "Pass5", "Specs5"),
-                      array("2\"", "50.8", "WtRet6", "Ret6", "CumRet6", "Pass6", "Specs6"),
-                      array("1.5\"", "38.1", "WtRet7", "Ret7", "CumRet7", "Pass7", "Specs7"),
-                      array("1\"", "25", "WtRet8", "Ret8", "CumRet8", "Pass8", "Specs8"),
-                      array("3/4\"", "19", "WtRet9", "Ret9", "CumRet9", "Pass9", "Specs9"),
-                      array("1/2\"", "12.5", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
-                      array("3/8\"", "9.5", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
-                      array("No. 4", "4.75", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
-                      array("No. 10", "2", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
-                      array("No. 16", "1.18", "WtRet14", "Ret14", "CumRet14", "Pass14", "Specs14"),
-                      array("No. 20", "0.85", "WtRet15", "Ret15", "CumRet15", "Pass15", "Specs15"),
-                      array("No. 50", "0.3", "WtRet16", "Ret16", "CumRet16", "Pass16", "Specs16"),
-                      array("No. 60", "0.25", "WtRet17", "Ret17", "CumRet17", "Pass17", "Specs17"),
-                      array("No. 200", "0.075", "WtRet18", "Ret18", "CumRet18", "Pass18", "Specs18"),
-                      // Puedes agregar más filas según sea necesario
+                      array("12\"", "300", "WtRet1", "Ret1", "CumRet1", "Pass1", "Specs1"),
+                      array("3\"", "75", "WtRet2", "Ret2", "CumRet2", "Pass2", "Specs2"),
+                      array("1.5\"", "37.5", "WtRet3", "Ret3", "CumRet3", "Pass3", "Specs3"),
+                      array("1\"", "25", "WtRet4", "Ret4", "CumRet4", "Pass4", "Specs4"),
+                      array("3/4\"", "19", "WtRet5", "Ret5", "CumRet5", "Pass5", "Specs5"),
+                      array("3/8\"", "9.5", "WtRet6", "Ret6", "CumRet6", "Pass6", "Specs6"),
+                      array("No. 4", "4.75", "WtRet7", "Ret7", "CumRet7", "Pass7", "Specs7"),
+                      array("No. 10", "2", "WtRet8", "Ret8", "CumRet8", "Pass8", "Specs8"),
+                      array("No. 16", "1.18", "WtRet9", "Ret9", "CumRet9", "Pass9", "Specs9"),
+                      array("No. 20", "0.85", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
+                      array("No. 50", "0.3", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
+                      array("No. 60", "0.25", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
+                      array("No. 200", "0.075", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
                     );
 
                     foreach ($datos as $fila) {
@@ -281,7 +274,7 @@
         <h5 class="card-title"></h5>
         
         <!-- Grain Size Fine Aggregate -->
-        <div id="GrainSizeFineAggregate" style="min-height: 400px;" class="echart"></div>
+        <div id="GrainSizeFF" style="min-height: 400px;" class="echart"></div>
         <!-- End Grain Size Fine Aggregate -->
     
       </div>
@@ -355,8 +348,7 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="grain-size-fine">Save Essay</button>
-          <button type="button" class="btn btn-primary disabled">Search Moisture</button>
+          <button type="submit" class="btn btn-success" name="gs_ff">Save Essay</button>
         </div>
 
       </div>
@@ -375,5 +367,5 @@
 
 </script>
 <script src="../js/Grain-Size.js"></script>
-<script src="../libs/graph/Grain-Size-Fine.js"></script>
+<script src="../libs/graph/Grain-Size-FF.js"></script>
 <?php include_once('../components/footer.php');  ?>

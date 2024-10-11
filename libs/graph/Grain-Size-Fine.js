@@ -1,8 +1,24 @@
 /**
- * * Graph Grain Size Fine Aggregate
+ * * Graph Grain Size Fine Filter
  * */
 
-echarts.init(document.querySelector("#GrainSizeFineAggregate")).setOption({
+function getSpecsValues(specValue) {
+  if (specValue.includes('-')) {
+      const parts = specValue.split('-');
+      return {
+          left: parseFloat(parts[0]),  // Valor antes del guion
+          right: parseFloat(parts[1])   // Valor después del guion
+      };
+  } else {
+      const value = parseFloat(specValue);
+      return {
+          left: value,   // Valor igual en ambos
+          right: value
+      };
+  }
+}
+
+echarts.init(document.querySelector("#GrainSizeFineFilter")).setOption({
   xAxis: {
     name: 'Particle Diameter (mm)',
     nameLocation: 'center',
@@ -54,13 +70,13 @@ echarts.init(document.querySelector("#GrainSizeFineAggregate")).setOption({
     },
     { // line left
       data: [
-        [9.50, 100],
-        [4.75, 95],
-        [2.00, 75],
-        [1.18, 50],
-        [0.30, 5],
-        [0.25, 0],
-        [0.075, 0]
+        [9.5, getSpecsValues(document.getElementById("Specs11").value).left],
+        [4.75, getSpecsValues(document.getElementById("Specs12").value).left],
+        [2, getSpecsValues(document.getElementById("Specs13").value).left],
+        [1.18, getSpecsValues(document.getElementById("Specs14").value).left],
+        [0.3, getSpecsValues(document.getElementById("Specs16").value).left],
+        [0.25, getSpecsValues(document.getElementById("Specs17").value).left],
+        [0.075, getSpecsValues(document.getElementById("Specs18").value).left]
       ],
       type: 'line',
       color: 'black',
@@ -68,13 +84,13 @@ echarts.init(document.querySelector("#GrainSizeFineAggregate")).setOption({
     },
     { // line right
       data: [
-        [9.50, 100],
-        [4.75, 100],
-        [2.00, 100],
-        [1.18, 85],
-        [0.30, 30],
-        [0.25, 25],
-        [0.075, 1.7]
+        [9.5, getSpecsValues(document.getElementById("Specs11").value).right],
+        [4.75, getSpecsValues(document.getElementById("Specs12").value).right],
+        [2, getSpecsValues(document.getElementById("Specs13").value).right],
+        [1.18, getSpecsValues(document.getElementById("Specs14").value).right],
+        [0.3, getSpecsValues(document.getElementById("Specs16").value).right],
+        [0.25, getSpecsValues(document.getElementById("Specs17").value).right],
+        [0.075, getSpecsValues(document.getElementById("Specs18").value).right]
       ],
       type: 'line',
       color: 'black',

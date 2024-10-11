@@ -76,6 +76,7 @@
             $inputValues["Ret" . $i] = $db->escape($_POST["Ret$i"]);
             $inputValues["CumRet" . $i] = $db->escape($_POST["CumRet$i"]);
             $inputValues["Pass" . $i] = $db->escape($_POST["Pass$i"]);
+            $inputValues["Specs" . $i] = $db->escape($_POST["Specs$i"]);
         }
 
         $query = "UPDATE grain_size_lpf SET ";

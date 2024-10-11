@@ -12,7 +12,9 @@ include_once('../components/header.php');
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_user'])) {
         include('../database/user/update-user.php');
-    } 
+    } elseif (isset($_POST['delete_user'])) {
+        include('../database/user/delete-user.php');
+    }
   }
 ?>
 
@@ -126,6 +128,24 @@ include_once('../components/header.php');
 </div>
 <!-- End Modal -->
 
+  <!-- Modal Delete -->
+  <div class="modal fade" id="ModalDelete" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content text-center">
+        <div class="modal-header d-flex justify-content-center">
+          <h5>¿Está seguro?</h5>
+        </div>
+        <div class="modal-body">
+          <form id="deleteForm" method="post">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+          <button type="submit" class="btn btn-outline-danger" name="delete_user" onclick="Delete()">Sí</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Modal Delete -->
+
 <script>
 function modaledit(id) {
     const users = <?php echo json_encode($Search); ?>;
@@ -141,6 +161,26 @@ function modaledit(id) {
             keyboard: false
         });
         myModal.show();
+    }
+}
+
+function modaldelete(id) {
+    currentId = id; // Asigna el ID a la variable global
+
+    // Utiliza el método modal() de Bootstrap para mostrar el modal
+    $('#ModalDelete').modal('show');
+}
+
+function Delete() {
+    // Verifica si se ha guardado un ID
+    if (currentId !== undefined) {
+        // Concatena el ID al final de la URL en el atributo 'action' del formulario
+        document.getElementById("deleteForm").action = "users-group.php?id=" + currentId;
+
+        // Envía el formulario
+        document.getElementById("deleteForm").submit();
+    } else {
+        console.log('No se ha seleccionado ningún ID para eliminar.');
     }
 }
 </script>

@@ -2,6 +2,7 @@
   $page_title = 'Specific Gravity';
   $class_form = ' ';
   $form_show = 'show';
+  $SG = 'active';
   require_once('../config/load.php');
 ?>
 
@@ -165,7 +166,6 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="specific-gravity">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">SG Options</button>
         </div>
 
       </div>
@@ -179,34 +179,6 @@
 </section>
 
 </main><!-- End #main -->
-
-
-<div class="modal fade" id="disablebackdrop" tabindex="-1" data-bs-backdrop="false">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Hey! select an option</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <li>
-                    <a href="specific-gravity-coarse-aggregates.php"
-                        <span>Specific Gravity Coarse Filter</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="specific-gravity-fine-aggregate.php"
-                        <span>Specific Gravity Fine Filter</span>
-                    </a>
-                </li>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script src="../js/Specific-Gravity.js"></script>
 <?php include_once('../components/footer.php');  ?>
