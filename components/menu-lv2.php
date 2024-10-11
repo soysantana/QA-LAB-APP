@@ -19,6 +19,7 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
+$user_group = !empty($user_group) ? $user_group : "collapsed";
 $unkow = !empty($unkow) ? $unkow : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
@@ -30,7 +31,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       <li class="nav-item">
         <a class="nav-link <?php echo $class_home; ?> " href="/pages/home.php">
           <i class="bi bi-grid"></i>
-          <span>Panel de Control</span>
+          <span>Panel Control</span>
         </a>
       </li><!-- End Dashboard Nav -->
 
@@ -73,7 +74,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
         <ul id="forms-nav" class="nav-content collapse <?php echo $form_show; ?> " data-bs-parent="#sidebar-nav">
           <li>
-            <a href="/pages/moisture-oven.php" class="<?php echo $Moisture; ?>">
+            <a href="/pages/moisture-content-menu.php" class="<?php echo $Moisture; ?>">
               <i class="bi bi-circle"></i><span>Moisture Content</span>
             </a>
           </li>
@@ -83,12 +84,12 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
-            <a href="/pages/grain-size.php" class="<?php echo $GrainSize; ?>">
+            <a href="/pages/grain-size-menu.php" class="<?php echo $GrainSize; ?>">
               <i class="bi bi-circle"></i><span>Grain Size</span>
             </a>
           </li>
           <li>
-            <a href="/pages/specific-gravity.php" class="<?php echo $SG; ?>">
+            <a href="/pages/specific-gravity-menu.php" class="<?php echo $SG; ?>">
               <i class="bi bi-circle"></i><span>Specific Gravity</span>
             </a>
           </li>
@@ -98,17 +99,17 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
-            <a href="/pages/LAA-Small.php">
+            <a href="/pages/LAA-menu.php">
               <i class="bi bi-circle"></i><span>Los Angeles Abrasion</span>
             </a>
           </li>
           <li>
-            <a href="/pages/unixial-compressive.php">
+            <a href="/pages/compressive-menu.php">
               <i class="bi bi-circle"></i><span>Compresion</span>
             </a>
           </li>
           <li>
-            <a href="/pages/pinhole-test.php">
+            <a href="/pages/dispercion-menu.php">
               <i class="bi bi-circle"></i><span>Dispercion</span>
             </a>
           </li>
@@ -133,7 +134,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
-            <a href="/pages/density-bulk.php" class="<?php echo $Density; ?>">
+            <a href="/pages/densidades-menu.php" class="<?php echo $Density; ?>">
               <i class="bi bi-circle"></i><span>Density</span>
             </a>
           </li>
@@ -163,8 +164,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
       </li><!-- End Register Page Nav -->
 
-      <li class="nav-heading">Supervision</li>
-
       <li class="nav-item">
         <a class="nav-link <?php echo $review_essay; ?>" href="/pages/essay.php">
           <i class="bi bi-database"></i>
@@ -174,7 +173,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 
       <li class="nav-item">
         <a class="nav-link <?php echo $Sumarios; ?>" href="/pages/sumary.php">
-          <i class="bi bi-database"></i>
+          <i class="bi bi-clipboard-data"></i>
           <span>Sumarios</span>
         </a>
       </li><!-- End Register Page Nav -->
