@@ -1,7 +1,8 @@
 <?php
  $user = current_user();
+
  $Search = $_GET['id'];
- if (isset($_POST['update_gs_cf'])) {
+ if (isset($_POST['update-gs-coarse'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -67,7 +68,7 @@
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $TotalWeight = $db->escape($_POST['TotalWeight']);
+        $TotalWeight = $db->escape($_POST['WeigtTest']);
         $WeigtTest = $db->escape($_POST['WeigtTest']);
         $Particles1 = $db->escape($_POST['Particles1']);
         $Particles2 = $db->escape($_POST['Particles2']);
@@ -83,7 +84,7 @@
         $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
 
         $inputValues = array();
-        for ($i = 1; $i <= 13; $i++) {
+        for ($i = 1; $i <= 18; $i++) {
             $inputValues["WtRet" . $i] = $db->escape($_POST["WtRet$i"]);
             $inputValues["Ret" . $i] = $db->escape($_POST["Ret$i"]);
             $inputValues["CumRet" . $i] = $db->escape($_POST["CumRet$i"]);
@@ -91,7 +92,7 @@
             $inputValues["Specs" . $i] = $db->escape($_POST["Specs$i"]);
         }
 
-        $query = "UPDATE grain_size_coarse_filter SET ";
+        $query = "UPDATE grain_size_coarse SET ";
         foreach ($inputValues as $key => $value) {
             $query .= "$key = '$value', ";
         }
@@ -163,15 +164,15 @@
         $result = $db->query($query);
 
         if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'Sample has been updated');
-            redirect('../reviews/grain-size-coarse-filter.php?id=' . $Search, false);
+            $session->msg('s', 'La muestra ha sido actualizada');
+            redirect('/reviews/grain-size-coarse-filter.php?id=' . $Search, false);
         } else {
-            $session->msg('w', 'No changes were made');
-            redirect('../reviews/grain-size-coarse-filter.php?id=' . $Search, false);
+            $session->msg('w', 'No se hicieron cambios');
+            redirect('/reviews/grain-size-coarse-filter.php?id=' . $Search, false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('../reviews/grain-size-coarse-filter.php?id=' . $Search, false);
+        redirect('/reviews/grain-size-coarse-filter.php?id=' . $Search, false);
     }
  }
 ?>

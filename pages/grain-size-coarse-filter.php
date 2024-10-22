@@ -1,15 +1,12 @@
 <?php
   $page_title = 'Grain Size Coarse Filter';
-  $class_form = ' ';
-  $form_show = 'show';
-  $GrainSize = 'active';
   require_once('../config/load.php');
 ?>
 
 <?php 
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['gs_cf'])) {
+    if (isset($_POST['grain-size-coarse'])) {
         include('../database/grain-size/gs-cf/save.php');
     } 
   }
@@ -30,7 +27,7 @@
   </nav>
 </div><!-- End Page Title -->
 <section class="section">
-  <div class="row" oninput="CF()">
+  <div class="row" oninput="CoarseFilter()">
 
   <form class="row" action="grain-size-coarse-filter.php" method="post">
 
@@ -48,13 +45,24 @@
 
           <!-- Multi Columns Form -->
           <div class="row g-3">
-            <div class="col-md-6">
+          <div class="col-md-4">
+              <label for="specsType" class="form-label">Especificaciones</label>
+              <select id="specsType" class="form-select" name="specsType">
+                <option selected>Choose...</option>
+                <option value="I">Agregado Investigacion</option>
+                <option value="C">Contruccion</option>
+                <option value="N">Naranjo</option>
+                <option value="A">Acopio</option>
+              </select>
+            </div>
+            <div class="col-md-4">
               <label for="Standard" class="form-label">Standard</label>
               <select id="Standard" class="form-select" name="Standard">
+                <option selected>Choose...</option>
                 <option value="ASTM-C136">ASTM-C136</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="PMethods" class="form-label">Preparation Methods</label>
               <select id="PMethods" class="form-select" name="PMethods">
                 <option selected>Choose...</option>
@@ -64,7 +72,7 @@
                 <option value="Wet">Wet</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="SMethods" class="form-label">Split Methods</label>
               <select id="SMethods" class="form-select" name="SMethods">
                 <option selected>Choose...</option>
@@ -72,15 +80,15 @@
                 <option value="Mechanical">Mechanical</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="TestMethod" class="form-label">Test Method</label>
               <input type="text" class="form-control" name="TestMethod" id="TestMethod">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="Technician" class="form-label">Technician</label>
               <input type="text" class="form-control" name="Technician" id="Technician">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-12">
               <label for="DateTesting" class="form-label">Date of Testing</label>
               <input type="date" class="form-control" name="DateTesting" id="DateTesting">
             </div>
@@ -221,19 +229,25 @@
                     
                     <?php
                     $datos = array(
-                      array("12\"", "300", "WtRet1", "Ret1", "CumRet1", "Pass1", "Specs1"),
-                      array("3\"", "75.0", "WtRet2", "Ret2", "CumRet2", "Pass2", "Specs2"),
-                      array("1.5\"", "37.5", "WtRet3", "Ret3", "CumRet3", "Pass3", "Specs3"),
-                      array("1\"", "25.0", "WtRet4", "Ret4", "CumRet4", "Pass4", "Specs4"),
-                      array("3/4\"", "19.0", "WtRet5", "Ret5", "CumRet5", "Pass5", "Specs5"),
-                      array("3/8\"", "9.50", "WtRet6", "Ret6", "CumRet6", "Pass6", "Specs6"),
-                      array("No. 4", "4.75", "WtRet7", "Ret7", "CumRet7", "Pass7", "Specs7"),
-                      array("No. 10", "2.0", "WtRet8", "Ret8", "CumRet8", "Pass8", "Specs8"),
-                      array("No. 16", "1.18", "WtRet9", "Ret9", "CumRet9", "Pass9", "Specs9"),
-                      array("No. 20", "0.85", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
-                      array("No. 50", "0.30", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
-                      array("No. 60", "0.25", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
-                      array("No. 200", "0.075", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
+                      array("5\"", "127", "WtRet1", "Ret1", "CumRet1", "Pass1", "Specs1"),
+                      array("4\"", "101.6", "WtRet2", "Ret2", "CumRet2", "Pass2", "Specs2"),
+                      array("3.5\"", "88.9", "WtRet3", "Ret3", "CumRet3", "Pass3", "Specs3"),
+                      array("3\"", "76.2", "WtRet4", "Ret4", "CumRet4", "Pass4", "Specs4"),
+                      array("2.5\"", "63.5", "WtRet5", "Ret5", "CumRet5", "Pass5", "Specs5"),
+                      array("2\"", "50.8", "WtRet6", "Ret6", "CumRet6", "Pass6", "Specs6"),
+                      array("1.5\"", "38.1", "WtRet7", "Ret7", "CumRet7", "Pass7", "Specs7"),
+                      array("1\"", "25", "WtRet8", "Ret8", "CumRet8", "Pass8", "Specs8"),
+                      array("3/4\"", "19", "WtRet9", "Ret9", "CumRet9", "Pass9", "Specs9"),
+                      array("1/2\"", "12.7", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
+                      array("3/8\"", "9.5", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
+                      array("No. 4", "4.75", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
+                      array("No. 10", "2", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
+                      array("No. 16", "1.18", "WtRet14", "Ret14", "CumRet14", "Pass14", "Specs14"),
+                      array("No. 20", "0.85", "WtRet15", "Ret15", "CumRet15", "Pass15", "Specs15"),
+                      array("No. 50", "0.3", "WtRet16", "Ret16", "CumRet16", "Pass16", "Specs16"),
+                      array("No. 60", "0.25", "WtRet17", "Ret17", "CumRet17", "Pass17", "Specs17"),
+                      array("No. 200", "0.075", "WtRet18", "Ret18", "CumRet18", "Pass18", "Specs18"),
+                      // Puedes agregar más filas según sea necesario
                     );
 
                     foreach ($datos as $fila) {
@@ -282,7 +296,7 @@
         <h5 class="card-title"></h5>
         
         <!-- Grain Size Coarse Aggregate -->
-        <div id="GrainSizeCF" style="min-height: 400px;" class="echart"></div>
+        <div id="GrainSizeCoarseFilter" style="min-height: 400px;" class="echart"></div>
         <!-- End Grain Size Coarse Aggregate -->
     
       </div>
@@ -356,7 +370,7 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="gs_cf">Save Essay</button>
+          <button type="submit" class="btn btn-success" name="grain-size-coarse">Save Essay</button>
         </div>
 
       </div>
@@ -371,6 +385,6 @@
 
 </main><!-- End #main -->
 
-<script src="../js/Grain-Size.js"></script>
+<script src="../js/grain-size/gs-cf.js"></script>
 <script src="../libs/graph/Grain-Size-CF.js"></script>
 <?php include_once('../components/footer.php');  ?>

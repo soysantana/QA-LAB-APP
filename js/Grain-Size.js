@@ -595,7 +595,7 @@ document.querySelectorAll('input').forEach(input => {
     
         requestAnimationFrame(() => {
             var GrainSizeGeneral = echarts.getInstanceByDom(
-                document.getElementById("GrainSizeFineAggregate")
+                document.getElementById("GrainSizeFineFilter")
             );
     
             var ImageURL = GrainSizeGeneral.getDataURL({

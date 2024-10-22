@@ -1,7 +1,7 @@
 <?php
  $user = current_user();
 
- if (isset($_POST['gs_ff'])) {
+ if (isset($_POST['grain-size-fine'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -82,7 +82,7 @@
         $Graph = $db->escape($_POST['Graph']);
         $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
 
-        for ($i = 1; $i <= 13; $i++) {
+        for ($i = 1; $i <= 18; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
             ${"CumRet" . $i} = $db->escape($_POST["CumRet$i"]);
@@ -90,7 +90,7 @@
             ${"Specs" . $i} = $db->escape($_POST["Specs$i"]);
         }
         
-        $sql = "INSERT INTO grain_size_fine_filter (
+        $sql = "INSERT INTO grain_size_fine (
             id,
             Project_Name,
             Client,
@@ -155,7 +155,7 @@
             Graph";
         
         // Add the dynamically generated fields to the query
-        for ($i = 1; $i <= 13; $i++) {
+        for ($i = 1; $i <= 18; $i++) {
             $sql .= ", WtRet$i, Ret$i, CumRet$i, Pass$i, Specs$i";
         }
         
@@ -224,22 +224,22 @@
             '$Graph64'";
         
         // Add the dynamically generated values to the query
-        for ($i = 1; $i <= 13; $i++) {
+        for ($i = 1; $i <= 18; $i++) {
             $sql .= ", '${"WtRet$i"}', '${"Ret$i"}', '${"CumRet$i"}', '${"Pass$i"}', '${"Specs$i"}'";
         }
         
         $sql .= ")";
 
         if ($db->query($sql)) {
-            $session->msg('s', "Essay added successfully.");
-            redirect('../pages/grain-size-fine-filter.php', false);
+            $session->msg('s', "Ensayo agregado con éxito.");
+            redirect('/pages/grain-size-fine-filter.php', false);
         } else {
-            $session->msg('d', 'Sorry, the essay could not be added.');
-            redirect('../pages/grain-size-fine-filter.php', false);
+            $session->msg('w', 'Lo sentimos, el ensayo no se pudo agregar.');
+            redirect('/pages/grain-size-fine-filter.php', false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('../pages/grain-size-fine-filter.php', false);
+        redirect('/pages/grain-size-fine-filter.php', false);
     }
  }
 ?>

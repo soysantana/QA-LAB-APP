@@ -3,7 +3,7 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$Search = find_by_id('grain_size_fine_filter', $_GET['id']);
+$Search = find_by_id('grain_size_fine', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
@@ -16,7 +16,7 @@ class PDF extends Fpdi {
 $pdf = new PDF();
 $pdf->SetMargins(0, 0, 0);
 
-$pdf->AddPage('P', array(400, 380));
+$pdf->AddPage('L', array(380, 230));
 
 $pdf->setSourceFile('PV-TSF-CQA_FF-Grainsize and Reactivity Rev.2.pdf');
 $tplIdx = $pdf->importPage(1);

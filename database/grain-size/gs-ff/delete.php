@@ -1,8 +1,8 @@
 <?php
- if (isset($_POST['delete_gs_ff']) && isset($_GET['id'])) {
+ if (isset($_POST['delete_gs_fine']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
-    $ID = delete_by_id('grain_size_fine_filter', $delete);
+    $ID = delete_by_id('grain_size_fine', $delete);
 
     if ($ID) {
         $session->msg("s", "Borrado exitosamente");

@@ -1,8 +1,5 @@
 <?php
   $page_title = 'Grain Size Low Permeability Fill';
-  $class_form = ' ';
-  $form_show = 'show';
-  $GrainSize = 'active';
   require_once('../config/load.php');
 ?>
 

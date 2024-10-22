@@ -1,7 +1,5 @@
 <?php
   $page_title = 'Density Unit Weight';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 

@@ -1,6 +1,9 @@
 # Ignorar la carpeta 'err'
 err/
 
+# Ignorar la carpeta 'LAB-APP-SYSTEM-PROCESS'
+LAB-APP-SYSTEM-PROCESS/
+
 # Ignorar la carpeta 'proyects'
 proyects/
 

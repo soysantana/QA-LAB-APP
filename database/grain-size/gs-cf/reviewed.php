@@ -1,11 +1,12 @@
 <?php
- $user = current_user();
- if (isset($_POST["reviewed_gs_cf"])) {
+$user = current_user();
+
+ if (isset($_POST["reviewed-gs-coarse"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
-            "SELECT * FROM grain_size_coarse_filter WHERE id = '{$Search}' LIMIT 1"
+            "SELECT * FROM grain_size_coarse WHERE id = '{$Search}' LIMIT 1"
         );
 
         if ($search_data) {
@@ -49,13 +50,13 @@
                 )";
 
                 if ($db->query($sql)) {
-                    $session->msg("s", "essay sent to reviewd");
+                    $session->msg("s", "ensayo revisado");
                     redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
-                $session->msg("w", "A record already exists");
-                redirect("../reviews/grain-size-coarse-filter.php?id=" . $Search, false);
+                $session->msg("w", "Ya existe un registro");
+                redirect("/reviews/grain-size-coarse-filter.php?id=" . $Search, false);
             }
         } else {
         }

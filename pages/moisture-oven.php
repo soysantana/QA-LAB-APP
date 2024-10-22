@@ -1,9 +1,6 @@
 <?php
-  require_once('../config/load.php');
   $page_title = 'Moisture Content';
-  $class_form = ' ';
-  $form_show = 'show';
-  $Moisture = 'active';
+  require_once('../config/load.php');
 ?>
 
 <?php 

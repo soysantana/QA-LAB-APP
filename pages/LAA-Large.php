@@ -1,7 +1,5 @@
 <?php
   $page_title = 'Los Angeles Abrasion';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 

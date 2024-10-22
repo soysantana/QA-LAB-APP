@@ -1,5 +1,5 @@
 <?php
-  $page_title = 'Dispercion Menu';
+  $page_title = 'Dispersion Menu';
   require_once('../config/load.php');
 ?>
 
@@ -9,12 +9,12 @@
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Dispercion</h1>
+  <h1>Dispersion</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Pages</li>
-      <li class="breadcrumb-item active">Dispercion</li>
+      <li class="breadcrumb-item active">Dispersion</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->

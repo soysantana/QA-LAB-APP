@@ -1,8 +1,5 @@
 <?php
   $page_title = 'Specific Gravity Fine Filter';
-  $class_form = ' ';
-  $form_show = 'show';
-  $SG = 'active';
   require_once('../config/load.php');
 ?>
 

@@ -1,8 +1,6 @@
 <?php
-  require_once('../config/load.php');
   $page_title = 'Moisture Content Scale';
-  $class_form = ' ';
-  $form_show = 'show';
+  require_once('../config/load.php');
 ?>
 
 <?php 

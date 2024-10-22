@@ -1,11 +1,12 @@
 <?php
- $user = current_user();
- if (isset($_POST["reviewed_gs_ff"])) {
+$user = current_user();
+
+ if (isset($_POST["reviewed-gs-fine"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
-            "SELECT * FROM grain_size_fine_filter WHERE id = '{$Search}' LIMIT 1"
+            "SELECT * FROM grain_size_fine WHERE id = '{$Search}' LIMIT 1"
         );
 
         if ($search_data) {
@@ -49,7 +50,7 @@
                 )";
 
                 if ($db->query($sql)) {
-                    $session->msg("s", "essay sent to reviewd");
+                    $session->msg("s", "ensayo revisado");
                     redirect("/pages/essay-review.php", false);
                 } else {
                 }

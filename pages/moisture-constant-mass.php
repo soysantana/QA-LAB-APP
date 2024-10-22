@@ -1,8 +1,5 @@
 <?php
   $page_title = 'Moisture Constant Mass';
-  $class_form = ' ';
-  $form_show = 'show';
-  $Moisture = 'active';
   require_once('../config/load.php');
 ?>
 

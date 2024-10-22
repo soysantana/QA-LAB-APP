@@ -1,8 +1,5 @@
 <?php
   $page_title = 'Grain Size Fine Filter';
-  $class_form = ' ';
-  $form_show = 'show';
-  $GrainSize = 'active';
   require_once('../config/load.php');
 ?>
 
@@ -10,7 +7,7 @@
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['grain-size-fine'])) {
-        include('../database/grain-size-general.php');
+        include('../database/grain-size/gs-ff/save.php');
     } 
   }
 ?>
@@ -32,7 +29,7 @@
 <section class="section">
   <div class="row" oninput="FineFilter()">
 
-  <form class="row" action="grain-size-fine-agg.php" method="post">
+  <form class="row" action="grain-size-fine-filter.php" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
@@ -384,6 +381,6 @@
 <script>
 
 </script>
-<script src="../js/Grain-Size.js"></script>
+<script src="../js/grain-size/gs-ff.js"></script>
 <script src="../libs/graph/Grain-Size-Fine.js"></script>
 <?php include_once('../components/footer.php');  ?>

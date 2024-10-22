@@ -120,7 +120,6 @@
         "grain_size_fine",
         "grain_size_general",
         "grain_size_coarse_filter",
-        "grain_size_fine_filter",
         "grain_size_lpf",
         "grain_size_upstream_transition_fill",
         "los_angeles_abrasion_coarse_aggregate",

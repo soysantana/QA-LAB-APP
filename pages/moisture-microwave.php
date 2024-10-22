@@ -1,8 +1,5 @@
 <?php
   $page_title = 'Moisture Microwave';
-  $class_form = ' ';
-  $form_show = 'show';
-  $Moisture = 'active';
   require_once('../config/load.php');
 ?>
 

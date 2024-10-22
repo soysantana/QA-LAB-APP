@@ -1,19 +1,19 @@
 <?php
   $page_title = 'Grain Size Fine Filter';
   require_once('../config/load.php');
-  $Search = find_by_id('grain_size_fine_filter', $_GET['id']);
+  $Search = find_by_id('grain_size_fine', $_GET['id']);
 ?>
 
 <?php 
   // Manejo de los formularios
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['update_gs_ff'])) {
+    if (isset($_POST['update-gs-fine'])) {
         include('../database/grain-size/gs-ff/update.php');
-    } elseif (isset($_POST['repeat_gs_ff'])) {
+    } elseif (isset($_POST['repeat-gs-fine'])) {
         include('../database/grain-size/gs-ff/repeat.php');
-    } elseif (isset($_POST['reviewed_gs_ff'])) {
+    } elseif (isset($_POST['reviewed-gs-fine'])) {
         include('../database/grain-size/gs-ff/reviewed.php');
-    } elseif (isset($_POST['delete_gs_ff'])) {
+    } elseif (isset($_POST['delete_gs_fine'])) {
         include('../database/grain-size/gs-ff/delete.php');
     }
   }
@@ -35,7 +35,7 @@
   </nav>
 </div><!-- End Page Title -->
 <section class="section">
-  <div class="row" oninput="FF()">
+  <div class="row" oninput="FineFilter()">
 
   <form class="row" action="grain-size-fine-filter.php?id=<?php echo $Search['id']; ?>" method="post">
 
@@ -131,13 +131,24 @@
 
           <!-- Multi Columns Form -->
           <div class="row g-3">
-            <div class="col-md-6">
+          <div class="col-md-4">
+              <label for="specsType" class="form-label">Especificaciones</label>
+              <select id="specsType" class="form-select" name="specsType">
+                <option selected>Choose...</option>
+                <option value="I">Agregado Investigacion</option>
+                <option value="C">Contruccion</option>
+                <option value="N">Naranjo</option>
+                <option value="A">Acopio</option>
+              </select>
+            </div>
+            <div class="col-md-4">
               <label for="Standard" class="form-label">Standard</label>
               <select id="Standard" class="form-select" name="Standard">
+                <option selected>Choose...</option>
                 <option <?php if ($Search['Standard'] == 'ASTM-C136') echo 'selected'; ?>>ASTM-C136</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="PMethods" class="form-label">Preparation Methods</label>
               <select id="PMethods" class="form-select" name="PMethods">
                 <option selected>Choose...</option>
@@ -147,7 +158,7 @@
                 <option <?php if ($Search['Preparation_Method'] == 'Wet') echo 'selected'; ?>>Wet</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="SMethods" class="form-label">Split Methods</label>
               <select id="SMethods" class="form-select" name="SMethods">
                 <option selected>Choose...</option>
@@ -155,15 +166,15 @@
                 <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="TestMethod" class="form-label">Test Method</label>
               <input type="text" class="form-control" name="TestMethod" id="TestMethod" value="<?php echo ($Search['Methods']); ?>">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="Technician" class="form-label">Technician</label>
               <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-12">
               <label for="DateTesting" class="form-label">Date of Testing</label>
               <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
             </div>
@@ -296,19 +307,25 @@
                     
                     <?php
                     $datos = array(
-                      array("12\"", "300", "WtRet1", "Ret1", "CumRet1", "Pass1", "Specs1"),
-                      array("3\"", "75", "WtRet2", "Ret2", "CumRet2", "Pass2", "Specs2"),
-                      array("1.5\"", "37.5", "WtRet3", "Ret3", "CumRet3", "Pass3", "Specs3"),
-                      array("1\"", "25", "WtRet4", "Ret4", "CumRet4", "Pass4", "Specs4"),
-                      array("3/4\"", "19", "WtRet5", "Ret5", "CumRet5", "Pass5", "Specs5"),
-                      array("3/8\"", "9.5", "WtRet6", "Ret6", "CumRet6", "Pass6", "Specs6"),
-                      array("No. 4", "4.75", "WtRet7", "Ret7", "CumRet7", "Pass7", "Specs7"),
-                      array("No. 10", "2", "WtRet8", "Ret8", "CumRet8", "Pass8", "Specs8"),
-                      array("No. 16", "1.18", "WtRet9", "Ret9", "CumRet9", "Pass9", "Specs9"),
-                      array("No. 20", "0.85", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
-                      array("No. 50", "0.3", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
-                      array("No. 60", "0.25", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
-                      array("No. 200", "0.075", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
+                      array("5\"", "127", "WtRet1", "Ret1", "CumRet1", "Pass1", "Specs1"),
+                      array("4\"", "101.6", "WtRet2", "Ret2", "CumRet2", "Pass2", "Specs2"),
+                      array("3.5\"", "88.9", "WtRet3", "Ret3", "CumRet3", "Pass3", "Specs3"),
+                      array("3\"", "76.2", "WtRet4", "Ret4", "CumRet4", "Pass4", "Specs4"),
+                      array("2.5\"", "63.5", "WtRet5", "Ret5", "CumRet5", "Pass5", "Specs5"),
+                      array("2\"", "50.8", "WtRet6", "Ret6", "CumRet6", "Pass6", "Specs6"),
+                      array("1.5\"", "38.1", "WtRet7", "Ret7", "CumRet7", "Pass7", "Specs7"),
+                      array("1\"", "25", "WtRet8", "Ret8", "CumRet8", "Pass8", "Specs8"),
+                      array("3/4\"", "19", "WtRet9", "Ret9", "CumRet9", "Pass9", "Specs9"),
+                      array("1/2\"", "12.5", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
+                      array("3/8\"", "9.5", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
+                      array("No. 4", "4.75", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
+                      array("No. 10", "2", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
+                      array("No. 16", "1.18", "WtRet14", "Ret14", "CumRet14", "Pass14", "Specs14"),
+                      array("No. 20", "0.85", "WtRet15", "Ret15", "CumRet15", "Pass15", "Specs15"),
+                      array("No. 50", "0.3", "WtRet16", "Ret16", "CumRet16", "Pass16", "Specs16"),
+                      array("No. 60", "0.25", "WtRet17", "Ret17", "CumRet17", "Pass17", "Specs17"),
+                      array("No. 200", "0.075", "WtRet18", "Ret18", "CumRet18", "Pass18", "Specs18"),
+                      // Puedes agregar más filas según sea necesario
                     );
 
                     foreach ($datos as $fila) {
@@ -357,7 +374,7 @@
         <h5 class="card-title"></h5>
         
         <!-- Grain Size Fine Aggregate -->
-        <div id="GrainSizeFF" style="min-height: 400px;" class="echart"></div>
+        <div id="GrainSizeFineFilter" style="min-height: 400px;" class="echart"></div>
         <!-- End Grain Size Fine Aggregate -->
     
       </div>
@@ -431,26 +448,25 @@
         <h5 class="card-title">Actions</h5>
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="update_gs_ff">Update Essay</button>
+          <button type="submit" class="btn btn-success" name="update-gs-fine">Update Essay</button>
           
           <div class="btn-group dropup" role="group">
             <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-printer"></i>
             </button>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Site Investigación</a></li>
               <li><a class="dropdown-item" href="../pdf/gs-ff.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
-              <li><a class="dropdown-item" href="#">Agregado Naranjo</a></li>
+              <li><a class="dropdown-item" href="../pdf/gs-fine.php?id=<?php echo ($Search['id']); ?>">Agregado Naranjo</a></li>
             </ul>
           </div>
 
-          <button type="submit" class="btn btn-danger" name="delete_gs_ff"><i class="bi bi-trash"></i></button>
+          <button type="submit" class="btn btn-danger" name="delete_gs_fine"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
         <?php if (user_can_access(1)): ?>
-          <button type="submit" class="btn btn-primary" name="repeat_gs_ff">Repeat</button>
-          <button type="submit" class="btn btn-primary" name="reviewed_gs_ff">Reviewed</button>
+          <button type="submit" class="btn btn-primary" name="repeat-gs-fine">Repeat</button>
+          <button type="submit" class="btn btn-primary" name="reviewed-gs-fine">Reviewed</button>
         <?php endif; ?>
         </div>
 
@@ -466,9 +482,6 @@
 
 </main><!-- End #main -->
 
-<script>
-
-</script>
 <script src="../js/Grain-Size.js"></script>
-<script src="../libs/graph/Grain-Size-FF.js"></script>
+<script src="../libs/graph/Grain-Size-Fine.js"></script>
 <?php include_once('../components/footer.php');  ?>

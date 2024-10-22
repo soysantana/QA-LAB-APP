@@ -20,7 +20,8 @@ $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
 $user_group = !empty($user_group) ? $user_group : "collapsed";
-$unkow = !empty($unkow) ? $unkow : "collapsed";
+$dCliente = !empty($dCliente) ? $dCliente : "collapsed";
+$rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
@@ -110,7 +111,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           </li>
           <li>
             <a href="/pages/dispercion-menu.php">
-              <i class="bi bi-circle"></i><span>Dispercion</span>
+              <i class="bi bi-circle"></i><span>Dispersion</span>
             </a>
           </li>
           <li>
@@ -164,28 +165,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </a>
       </li><!-- End Register Page Nav -->
 
-      <li class="nav-heading">Supervision</li>
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $unkow; ?>" href="#">
-          <i class="bi bi-android"></i>
-          <span>Desempeño</span>
-        </a>
-      </li><!-- End Review Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $user_group; ?>" href="../pages/users-group.php">
-          <i class="bi bi-people"></i>
-          <span>Usuarios / Grupos</span>
-        </a>
-      </li><!-- End Review Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $review; ?>" href="/pages/essay-review.php">
-          <i class="bi bi-card-checklist"></i>
-          <span>Revisión de ensayo</span>
-        </a>
-      </li><!-- End Review Page Nav -->
+      <li class="nav-heading">Documentacion</li>
 
       <li class="nav-item">
         <a class="nav-link <?php echo $review_essay; ?>" href="/pages/essay.php">
@@ -200,6 +180,36 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           <span>Sumarios</span>
         </a>
       </li><!-- End Register Page Nav -->
+
+      <li class="nav-heading">Supervision</li>
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $review; ?>" href="/pages/essay-review.php">
+          <i class="bi bi-card-checklist"></i>
+          <span>Revisión de ensayo</span>
+        </a>
+      </li><!-- End Review Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $rendimiento; ?>" href="/pages/rendimiento.php">
+          <i class="bi bi-android"></i>
+          <span>Desempeño</span>
+        </a>
+      </li><!-- End Review Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $dCliente; ?>" href="/pages/detalle-cliente.php">
+          <i class="bi bi-info-circle"></i>
+          <span>Detalles de clientes</span>
+        </a>
+      </li><!-- End Review Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $user_group; ?>" href="../pages/users-group.php">
+          <i class="bi bi-people"></i>
+          <span>Usuarios / Grupos</span>
+        </a>
+      </li><!-- End Review Page Nav -->
 
       <li class="nav-heading">Configuracion</li>
 
