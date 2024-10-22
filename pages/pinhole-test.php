@@ -468,7 +468,6 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="Pinhole">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Dispercion Options</button>
         </div>
 
       </div>
@@ -479,10 +478,9 @@
   </form><!-- End Form -->
 
   </div>
+
 </section>
-
 </main><!-- End #main -->
-
 
 <script src="../js/Pinhole-Test.js"></script>
 <script src="../libs/graph/Pinhole-Test.js"></script>

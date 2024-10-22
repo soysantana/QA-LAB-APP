@@ -361,7 +361,9 @@ function translateStatus($status) {
                      <th scope="col">#</th>
                      <th scope="col">Muestra</th>
                      <th scope="col">Numero de muestra</th>
-                     <th scope="col">Progreso de ensayos</th>
+                     <th scope="col">Solicitados</th>
+                     <th scope="col">Entregados</th>
+
                      <th scope="col">Acciones</th>
                   </tr>
                </thead>
@@ -377,7 +379,7 @@ function translateStatus($status) {
                 if (isset($ReqViews[$column_name]) && !empty($ReqViews[$column_name])) {
                   $count_solicitados++;
                   // Verificar si el ensayo ha sido entregado
-                  $query = "SELECT COUNT(*) AS entregado FROM test_delivery WHERE Sample_Name = '{$ReqViews['Sample_ID']}' AND Test_Type = '{$ReqViews[$column_name]}'";
+                  $query = "SELECT COUNT(*) AS entregado FROM test_delivery WHERE Sample_Name = '{$ReqViews['Sample_ID']}' AND Sample_Number = '{$ReqViews['Sample_Number']}' AND Test_Type = '{$ReqViews[$column_name]}'";
                   $result = $db->query($query);
                   $row = $result->fetch_assoc();
                   if ($row['entregado'] > 0) {
@@ -386,19 +388,14 @@ function translateStatus($status) {
                 }
               }
                  // Calcular el porcentaje de ensayos entregados
-                $porce_entregados = ($count_solicitados > 0) ? ($count_entregados / $count_solicitados) * 100 : 0;
+                $porce_entregados = round(($count_entregados / $count_solicitados) * 100);
               ?>
                   <tr>
                      <th scope="row"><?php echo count_id();?></th>
                      <td><?php echo $ReqViews['Sample_ID']; ?></td>
                      <td><?php echo $ReqViews['Sample_Number']; ?></td>
-                     <td>
-                      
-                      <div class="progress" role="progressbar" aria-label="Porce Entregados" aria-valuenow="<?php echo $porce_entregados; ?>" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-bar" style="width: <?php echo $porce_entregados; ?>%"><?php echo $porce_entregados; ?>%</div>
-                      </div>
-
-                     </td>
+                     <td><span class="badge bg-primary rounded-pill me-2"><?php echo $count_solicitados; ?></span></td>
+                     <td><span class="badge bg-success rounded-pill me-2"><?php echo $count_entregados; ?></span></td>
                      <td>
                       <div class="btn-group" role="group">
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $ReqViews['id']; ?>"><i class="bi bi-eye"></i></button>

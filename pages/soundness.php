@@ -561,8 +561,6 @@ $cols = count($rows[0]); // Número de columnas
               
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="Soundness">Save Essay</button>
-                <button type="button" class="btn btn-primary" onclick="search()"></button>
-                <div id="mensaje-container"></div>
               </div>
 
             </div>

@@ -58,9 +58,9 @@
               <label for="PMethods" class="form-label">Preparation Methods</label>
               <select id="PMethods" class="form-select" name="PMethods">
                 <option selected>Choose...</option>
-                <option value="Oven_Dried">Oven Dried</option>
-                <option value="Air_Dried">Air Dried</option>
-                <option value="Microwave_Dried">Microwave Dried</option>
+                <option value="Oven Dried">Oven Dried</option>
+                <option value="Air Dried">Air Dried</option>
+                <option value="Microwave Dried">Microwave Dried</option>
                 <option value="Wet">Wet</option>
               </select>
             </div>

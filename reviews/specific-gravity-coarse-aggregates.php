@@ -256,9 +256,8 @@
               <i class="bi bi-printer"></i>
             </button>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="../pdf/sg-coarse.php?id=<?php echo ($Search['id']); ?>">Site Investigación</a></li>
+              <li><a class="dropdown-item" href="../pdf/sg-coarse.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
               <li><a class="dropdown-item" href="../pdf/sg-cf.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
-              <li><a class="dropdown-item" href="#">Agregado Naranjo</a></li>
             </ul>
           </div>
 

@@ -142,9 +142,9 @@
               <label for="PMethods" class="form-label">Preparation Methods</label>
               <select id="PMethods" class="form-select" name="PMethods">
                 <option selected>Choose...</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Oven_Dried') echo 'selected'; ?>>Oven Dried</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Air_Dried') echo 'selected'; ?>>Air Dried</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Microwave_Dried') echo 'selected'; ?>>Microwave Dried</option>
+                <option <?php if ($Search['Preparation_Method'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
+                <option <?php if ($Search['Preparation_Method'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
+                <option <?php if ($Search['Preparation_Method'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
                 <option <?php if ($Search['Preparation_Method'] == 'Wet') echo 'selected'; ?>>Wet</option>
               </select>
             </div>
@@ -391,7 +391,6 @@
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="../pdf/sp.php?id=<?php echo ($Search['id']); ?>">Site Investigación</a></li>
               <li><a class="dropdown-item" href="../pdf/sp-cqa.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
-              <li><a class="dropdown-item" href="#">Agregado Naranjo</a></li>
             </ul>
           </div>
 
