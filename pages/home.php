@@ -70,11 +70,27 @@ $statusCounts = [
     'Repeat' => 0,
 ];
 
+// Cargar los datos de todas las tablas una sola vez
+$preparationData = find_all('test_preparation');
+$realizationData = find_all('test_realization');
+$deliveryData = find_all('test_delivery');
+$reviewData = find_all('test_review');
+$repeatData = find_all('test_repeat');
+
+// Crear un array para cada tabla con las muestras y su estado
+$testDataByTable = [
+    'Preparation' => $preparationData,
+    'Realization' => $realizationData,
+    'Delivery' => $deliveryData,
+    'Review' => $reviewData,
+    'Repeat' => $repeatData,
+];
+
 foreach ($Requisitions as $requisition) {
     for ($i = 1; $i <= 20; $i++) {
         $testTypeKey = 'Test_Type' . $i;
 
-        if (isset($requisition[$testTypeKey]) && $requisition[$testTypeKey] !== null && $requisition[$testTypeKey] !== '') {
+        if (!empty($requisition[$testTypeKey])) {
             $testTypes[$requisition[$testTypeKey]][] = [
                 'Sample_ID' => $requisition['Sample_ID'],
                 'Sample_Number' => $requisition['Sample_Number'],
@@ -86,12 +102,10 @@ foreach ($Requisitions as $requisition) {
 
 foreach ($testTypes as $testType => $data) {
     foreach ($data as $item) {
-        $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type']);
-        $allowedStatuses = ['Preparation', 'Realization', 'Delivery', 'Review', 'Repeat'];
-
-        if (in_array($status, $allowedStatuses)) {
+        $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type'], $testDataByTable);
+        if ($status !== 'NoStatusFound') {
             $statusCounts[$status]++; // Incrementa el contador del estado correspondiente
-            
+
             echo '<tr>';
             echo '<td>' . $item['Sample_ID'] . '</td>';
             echo '<td>' . $item['Sample_Number'] . '</td>';
@@ -99,45 +113,27 @@ foreach ($testTypes as $testType => $data) {
             echo '<td><span class="badge bg-' . getBadgeClass($status) . '">' . translateStatus($status) . '</span></td>';
             echo '</tr>';
         }
-        // No se cuenta "NoStatusFound" ni se muestra
     }
 }
 
-function getStatus($sampleID, $sampleNumber, $testType) {
-    $statusFromPreparation = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_preparation');
-    $statusFromRealization = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_realization');
-    $statusFromDelivery = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_delivery');
-    $statusFromReview = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_review');
-    $statusFromRepeat = getStatusFromTestTable($sampleID, $sampleNumber, $testType, 'test_repeat');
-
-    // Verificar en orden para devolver el primer estado encontrado
-    if ($statusFromRepeat != 'NoStatusFound') {
-        return $statusFromRepeat;
-    } elseif ($statusFromReview != 'NoStatusFound') {
-        return $statusFromReview;
-    } elseif ($statusFromDelivery != 'NoStatusFound') {
-        return $statusFromDelivery;
-    } elseif ($statusFromRealization != 'NoStatusFound') {
-        return $statusFromRealization;
-    } elseif ($statusFromPreparation != 'NoStatusFound') {
-        return $statusFromPreparation;
-    } else {
-        return 'NoStatusFound'; // Esto ya no se cuenta
+function getStatus($sampleID, $sampleNumber, $testType, $testDataByTable) {
+    // Verificar los estados en el orden correcto
+    foreach (['Repeat', 'Review', 'Delivery', 'Realization', 'Preparation'] as $statusType) {
+        $status = getStatusFromTable($sampleID, $sampleNumber, $testType, $testDataByTable[$statusType]);
+        if ($status !== 'NoStatusFound') {
+            return $status;
+        }
     }
+    return 'NoStatusFound';
 }
 
-function getStatusFromTestTable($sampleID, $sampleNumber, $testType, $tableName) {
-    $testData = find_all($tableName);
-
-    $matchingResults = array_filter($testData, function ($row) use ($sampleID, $sampleNumber, $testType) {
-        return $row['Sample_Name'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType;
-    });
-
-    if (!empty($matchingResults)) {
-        $lastResult = end($matchingResults);
-        return $lastResult['Status'];
+function getStatusFromTable($sampleID, $sampleNumber, $testType, $tableData) {
+    foreach ($tableData as $row) {
+        if ($row['Sample_Name'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType) {
+            return $row['Status'];
+        }
     }
-    return 'NoStatusFound'; // Esto ya no se cuenta
+    return 'NoStatusFound';
 }
 
 function getBadgeClass($status) {
@@ -174,6 +170,7 @@ function translateStatus($status) {
     }
 }
 ?>
+
 
 
           </tbody>
@@ -350,109 +347,103 @@ function translateStatus($status) {
   </div><!-- End Method Proctor -->
 
   <div class="col-lg-12">
-      <div class="card">
-         <div class="card-body">
-            <h5 class="card-title">Muestras Registradas</h5>
-            <?php $ReqViews = find_all('lab_test_requisition_form') ?>
-            <!-- Table with stripped rows -->
-            <table class="table datatable">
-               <thead>
-                  <tr>
-                     <th scope="col">#</th>
-                     <th scope="col">Muestra</th>
-                     <th scope="col">Numero de muestra</th>
-                     <th scope="col">Solicitados</th>
-                     <th scope="col">Entregados</th>
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Muestras Registradas</h5>
+      <!-- Table with stripped rows -->
+      <table class="table datatable">
+        <thead>
+          <tr>
+            <th scope="col">Muestra</th>
+            <th scope="col">Numero de muestra</th>
+            <th scope="col">Solicitados</th>
+            <th scope="col">Entregados</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($Requisition as $ReqViews): ?>
+          <?php
+            $count_solicitados = 0;
+            $count_entregados = 0;
 
-                     <th scope="col">Acciones</th>
-                  </tr>
-               </thead>
-               <tbody>
-               <?php foreach ($ReqViews as $ReqViews):?>
+            // Consulta para obtener todas las entregas de la muestra actual
+            $query = "SELECT Test_Type FROM test_delivery WHERE Sample_Name = '{$ReqViews['Sample_ID']}' AND Sample_Number = '{$ReqViews['Sample_Number']}'";
+            $result = $db->query($query);
+            $entregados = [];
+            while ($row = $result->fetch_assoc()) {
+              $entregados[] = $row['Test_Type'];
+            }
 
-                <?php
-               $count_solicitados = 0;
-               $count_entregados = 0;
-               
-               for ($i = 1; $i <= 20; $i++) {
-                $column_name = 'Test_Type' . $i;
-                if (isset($ReqViews[$column_name]) && !empty($ReqViews[$column_name])) {
-                  $count_solicitados++;
-                  // Verificar si el ensayo ha sido entregado
-                  $query = "SELECT COUNT(*) AS entregado FROM test_delivery WHERE Sample_Name = '{$ReqViews['Sample_ID']}' AND Sample_Number = '{$ReqViews['Sample_Number']}' AND Test_Type = '{$ReqViews[$column_name]}'";
-                  $result = $db->query($query);
-                  $row = $result->fetch_assoc();
-                  if ($row['entregado'] > 0) {
-                    $count_entregados++;
-                  }
+            // Contar los ensayos solicitados y entregados
+            for ($i = 1; $i <= 20; $i++) {
+              $column_name = 'Test_Type' . $i;
+              if (!empty($ReqViews[$column_name])) {
+                $count_solicitados++;
+                if (in_array($ReqViews[$column_name], $entregados)) {
+                  $count_entregados++;
                 }
               }
-                 // Calcular el porcentaje de ensayos entregados
-                $porce_entregados = round(($count_entregados / $count_solicitados) * 100);
-              ?>
-                  <tr>
-                     <th scope="row"><?php echo count_id();?></th>
-                     <td><?php echo $ReqViews['Sample_ID']; ?></td>
-                     <td><?php echo $ReqViews['Sample_Number']; ?></td>
-                     <td><span class="badge bg-primary rounded-pill me-2"><?php echo $count_solicitados; ?></span></td>
-                     <td><span class="badge bg-success rounded-pill me-2"><?php echo $count_entregados; ?></span></td>
-                     <td>
-                      <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $ReqViews['id']; ?>"><i class="bi bi-eye"></i></button>
-                        <a href="requisition-form-edit.php?id=<?php echo $ReqViews['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
-                      </div>
-                    </td>
-                  </tr>
+            }
 
-                  <div class="modal" id="requisitionview<?php echo $ReqViews['id']; ?>" tabindex="-1">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Detalle del ensayo </h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
+            // Calcular el porcentaje de ensayos entregados
+            $porce_entregados = ($count_solicitados > 0) ? round(($count_entregados / $count_solicitados) * 100) : 0;
+          ?>
+          <tr>
+            <td><?php echo $ReqViews['Sample_ID']; ?></td>
+            <td><?php echo $ReqViews['Sample_Number']; ?></td>
+            <td><span class="badge bg-primary rounded-pill me-2"><?php echo $count_solicitados; ?></span></td>
+            <td><span class="badge bg-success rounded-pill me-2"><?php echo $count_entregados; ?></span></td>
+            <td>
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $ReqViews['id']; ?>"><i class="bi bi-eye"></i></button>
+                <a href="requisition-form-edit.php?id=<?php echo $ReqViews['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
+              </div>
+            </td>
+          </tr>
 
-                        <div class="container">
-                      
-                      <div class="card">
-                        <div class="card-body">
-                        <!-- Requested Essays -->
-                        <h5 class="card-title">Muestra</h5> 
+          <div class="modal" id="requisitionview<?php echo $ReqViews['id']; ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Detalle del ensayo</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="container">
+                    <div class="card">
+                      <div class="card-body">
+                        <h5 class="card-title">Muestra</h5>
                         <h5><?php echo $ReqViews['Sample_ID'] . "-" . $ReqViews['Sample_Number']; ?></h5>
-
-                        </div>
                       </div>
-                         
-                      <div class="card">
-                        <div class="card-body">
-                        <!-- Requested Essays -->
+                    </div>
+
+                    <div class="card">
+                      <div class="card-body">
                         <h5 class="card-title">Ensayos solicitados</h5>
                         <ul class="list-group">
-                          <?php for ($i = 1; $i <= 20; $i++) { $testTypeValue = $ReqViews['Test_Type' . $i]; if ($testTypeValue !== null && $testTypeValue !== '') { ?>
-                          <li class="list-group-item"><?php echo $testTypeValue; ?></li>
+                          <?php for ($i = 1; $i <= 20; $i++) {
+                            $testTypeValue = $ReqViews['Test_Type' . $i];
+                            if (!empty($testTypeValue)) { ?>
+                              <li class="list-group-item"><?php echo $testTypeValue; ?></li>
                           <?php } } ?>
                         </ul>
-                        <!-- End Requested Essays -->
-                        </div>
                       </div>
+                    </div>
 
-                      <div class="card">
-                        <div class="card-body">
-                        <!-- Requested Essays -->
+                    <div class="card">
+                      <div class="card-body">
                         <h5 class="card-title">Comentario</h5>
                         <ul class="list-group">
                           <li class="list-group-item d-flex justify-content-between align-items-center">
                             <h5><code><?php echo $ReqViews['Comment']; ?></code></h5>
                           </li>
                         </ul>
-                        <!-- End Requested Essays -->
-                        </div>
                       </div>
-                        
-                      <div class="card">
-                        <div class="card-body">
-                        <!-- Requested Essays -->
+                    </div>
+
+                    <div class="card">
+                      <div class="card-body">
                         <h5 class="card-title">Otros datos</h5>
                         <ul class="list-group">
                           <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -467,27 +458,25 @@ function translateStatus($status) {
                             <h5><code>Muestra por</code></h5>
                             <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Sample_By']; ?></span>
                           </li>
-                        </ul><!-- End Requested Essays -->
-
-                        </div>
-                      </div>
-
-
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        </div>
+                        </ul>
                       </div>
                     </div>
-                  </div><!-- End Modal-->
+                  </div>
 
-                <?php endforeach; ?>
-               </tbody>
-            </table>
-            <!-- End Table with stripped rows -->
-         </div>
-      </div>
-   </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!-- End Modal -->
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+      <!-- End Table with stripped rows -->
+    </div>
+  </div>
+</div>
 
     </div>
   </div><!-- End Left side columns -->
