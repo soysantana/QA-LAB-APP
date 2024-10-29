@@ -45,13 +45,32 @@ if (!empty($sample_ids) && !empty($sample_numbers)) {
     }
 }
 ?>
+<style>
+  /* Reducir padding y fuentes de la tabla */
+.table-hover.table-sm.table-bordered.datatable th,
+.table-hover.table-sm.table-bordered.datatable td {
+    padding: 5px 0px; /* Ajusta el padding según tus necesidades */
+    font-size: 12px; /* Tamaño de fuente más pequeño */
+    line-height: 1; /* Reduce el espaciado vertical */
+}
+
+/* Ajustar el ancho máximo para columnas si es necesario */
+.table-hover.table-sm.table-bordered.datatable th,
+.table-hover.table-sm.table-bordered.datatable td {
+    max-width: 300px; /* Cambia el ancho máximo según necesites */
+    white-space: nowrap; /* Evita el salto de línea dentro de las celdas */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+</style>
 
 <div class="col-md-12">
     <div class="card">
         <div class="card-body">
             <h5 class="card-title"></h5>
             <div class="table-responsive">
-                <table class="table table-hover table-sm table-bordered">
+                <table class="table table-hover table-sm table-bordered datatable">
                     <thead>
                         <tr>
                             <th>Fecha de Muestreo</th>
