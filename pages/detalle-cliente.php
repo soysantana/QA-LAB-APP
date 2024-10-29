@@ -2,7 +2,7 @@
   $page_title = 'Detalle del Cliente';
   require_once('../config/load.php');
   $dCliente = 'show';
-?>
+?>6
 
 <?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
@@ -21,23 +21,44 @@
 <section class="section">
   <div class="row">
 
-  <?php $Requisitions = find_all('lab_test_requisition_form'); ?>
+  <?php
+// Obtener todas las requisiciones de muestras
+$Requisitions = find_all('lab_test_requisition_form'); 
 
+// Preparar IDs de muestras para una sola consulta
+$sample_ids = array_column($Requisitions, 'Sample_ID');
+$sample_numbers = array_column($Requisitions, 'Sample_Number');
 
+// Consulta para obtener todos los ensayos entregados en una sola ejecución
+$test_delivery_data = [];
+if (!empty($sample_ids) && !empty($sample_numbers)) {
+    $ids_string = implode("','", $sample_ids);
+    $numbers_string = implode("','", $sample_numbers);
 
-  <div class="col-md-12">
+    $query = "SELECT Sample_Name, Sample_Number, Test_Type 
+              FROM test_delivery 
+              WHERE Sample_Name IN ('$ids_string') AND Sample_Number IN ('$numbers_string')";
+    $result = $db->query($query);
+
+    while ($row = $result->fetch_assoc()) {
+        $test_delivery_data[$row['Sample_Name']][$row['Sample_Number']][] = $row['Test_Type'];
+    }
+}
+?>
+
+<div class="col-md-12">
     <div class="card">
-      <div class="card-body">
-        <h5 class="card-title"></h5>
-        <div class="table-responsive">
-        <table class="table table-hover table-sm table-bordered">
-      <thead>
-        <tr>
-          <th>Fecha de Muestreo</th>
-          <th>Clientes</th>
-          <th>ID de Muestras</th>
-          <th>Numero de Muestras</th>
-          <th>MC</th>
+        <div class="card-body">
+            <h5 class="card-title"></h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Fecha de Muestreo</th>
+                            <th>Clientes</th>
+                            <th>ID de Muestras</th>
+                            <th>Numero de Muestras</th>
+                            <th>MC</th>
           <th>AL</th>
           <th>GS</th>
           <th>SP</th>
@@ -57,74 +78,68 @@
           <th>Sha</th>
           <th>Den</th>
           <th>Cru</th>
-          <th>Ens. Solicitados</th>
-          <th>Ens. Realizados</th>
-          <th>Progreso de Ensayos</th>
-        </tr>
-      </thead>
-      <tbody>
-      <?php foreach ($Requisitions as $Requisition): ?>
-        
-        <?php // Contar ensayos solicitados y entregados
-         $count_solicitados = 0;
-         $count_entregados = 0;
+                            <th>Ens. Solicitados</th>
+                            <th>Ens. Realizados</th>
+                            <th>Progreso de Ensayos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($Requisitions as $Requisition): ?>
+                            <?php
+                            $count_solicitados = 0;
+                            $count_entregados = 0;
+                            $test_status = [];
 
-         // Array para almacenar los resultados de cada Test_Type
-         $test_status = [];
-         
-         for ($i = 1; $i <= 20; $i++) {
-          $column_name = 'Test_Type' . $i;
-          if (isset($Requisition[$column_name]) && !empty($Requisition[$column_name])) {
-            $count_solicitados++;
-            // Verificar si el ensayo ha sido entregado
-            $query = "SELECT COUNT(*) AS entregado FROM test_delivery WHERE Sample_Name = '{$Requisition['Sample_ID']}' AND Sample_Number = '{$Requisition['Sample_Number']}' AND Test_Type = '{$Requisition[$column_name]}'";
-            $result = $db->query($query);
-            $row = $result->fetch_assoc();
-            if ($row['entregado'] > 0) {
-              $test_status[$i] = 'entregado';  // Guardar si fue entregado
-              $count_entregados++;
-            } else {
-              $test_status[$i] = 'no_entregado';  // Guardar si no fue entregado
-              }
-            } else {
-              $test_status[$i] = 'no_test';  // Guardar si no hay test
-              }
-            }
-            // Calcular el porcentaje de ensayos entregados
-            $porce_entregados = round(($count_entregados / $count_solicitados) * 100);
-        ?>
-        <tr>
-        <td class="text-center"><?php echo $Requisition['Sample_Date']; ?></td>
-        <td class="text-center"><?php echo $Requisition['Client']; ?></td>
-        <td class="text-center"><?php echo $Requisition['Sample_ID']; ?></td>
-        <td class="text-center"><?php echo $Requisition['Sample_Number']; ?></td> 
-        <?php for ($i = 1; $i <= 20; $i++): ?> <!-- For para la selecion de Check or X -->
-          <td class="text-center">
-            <?php if ($test_status[$i] === 'entregado'): ?>
-              <i class="bi bi-check fs-4 text-success"></i> <!-- Cotejo azul -->
-              <?php elseif ($test_status[$i] === 'no_entregado'): ?>
-              <i class="bi bi-x fs-4 text-danger"></i> <!-- X roja -->
-              <?php else: ?>
-              <i>-</i> <!-- Sin test -->
-              <?php endif; ?>
-          </td>
-        <?php endfor; ?>
-          <td class="text-center"><span class="badge bg-primary rounded-pill"><?php echo $count_solicitados; ?></span></td>
-          <td class="text-center"><span class="badge bg-success rounded-pill"><?php echo $count_entregados; ?></span></td>
-          <td class="text-center">
-            <div class="progress" role="progressbar" aria-label="Porce Entregados" aria-valuenow="<?php echo $porce_entregados; ?>" aria-valuemin="0" aria-valuemax="100">
-              <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: <?php echo $porce_entregados; ?>%"><?php echo $porce_entregados; ?>%</div>
+                            for ($i = 1; $i <= 20; $i++) {
+                                $column_name = 'Test_Type' . $i;
+                                if (!empty($Requisition[$column_name])) {
+                                    $count_solicitados++;
+                                    if (!empty($test_delivery_data[$Requisition['Sample_ID']][$Requisition['Sample_Number']]) &&
+                                        in_array($Requisition[$column_name], $test_delivery_data[$Requisition['Sample_ID']][$Requisition['Sample_Number']])) {
+                                        $test_status[$i] = 'entregado';
+                                        $count_entregados++;
+                                    } else {
+                                        $test_status[$i] = 'no_entregado';
+                                    }
+                                } else {
+                                    $test_status[$i] = 'no_test';
+                                }
+                            }
+
+                            $porce_entregados = ($count_solicitados > 0) ? round(($count_entregados / $count_solicitados) * 100) : 0;
+                            ?>
+                            <tr>
+                                <td class="text-center"><?php echo $Requisition['Sample_Date']; ?></td>
+                                <td class="text-center"><?php echo $Requisition['Client']; ?></td>
+                                <td class="text-center"><?php echo $Requisition['Sample_ID']; ?></td>
+                                <td class="text-center"><?php echo $Requisition['Sample_Number']; ?></td>
+                                <?php for ($i = 1; $i <= 20; $i++): ?>
+                                    <td class="text-center">
+                                        <?php if ($test_status[$i] === 'entregado'): ?>
+                                            <i class="bi bi-check fs-4 text-success"></i>
+                                        <?php elseif ($test_status[$i] === 'no_entregado'): ?>
+                                            <i class="bi bi-x fs-4 text-danger"></i>
+                                        <?php else: ?>
+                                            <i></i>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endfor; ?>
+                                <td class="text-center"><span class="badge bg-primary rounded-pill"><?php echo $count_solicitados; ?></span></td>
+                                <td class="text-center"><span class="badge bg-success rounded-pill"><?php echo $count_entregados; ?></span></td>
+                                <td class="text-center">
+                                    <div class="progress" role="progressbar" aria-label="Porce Entregados" aria-valuenow="<?php echo $porce_entregados; ?>" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: <?php echo $porce_entregados; ?>%"><?php echo $porce_entregados; ?>%</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-          </td>
-          </tr>
-      <?php endforeach; ?>
-      </tbody>
-    </table>
         </div>
-      </div>
     </div>
-  </div>
-  
+</div>
+
   
   <div class="col-lg-12">
     <div class="card">
