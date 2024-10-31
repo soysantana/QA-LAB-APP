@@ -2,7 +2,6 @@
 $page_title = "Ensayos Registrados";
 $review_essay = 'show';
 require_once "../config/load.php";
-
 page_require_level(2);
 include_once('../components/header.php');
 ?>
@@ -24,42 +23,40 @@ include_once('../components/header.php');
         <div class="row">
             <?php
             $tables = [
-                'atterberg_limit' => 'Atterberg Limit',
-                'moisture_oven' => 'Moisture Oven',
-                'moisture_constant_mass' => 'Moisture Constant Mass',
-                'moisture_microwave' => 'Moisture Microwave',
-                'moisture_scale' => 'Moisture Scale',
-                'grain_size_general' => 'Grain Size General',
-                'grain_size_coarse' => 'Grain Size Coarse',
-                'grain_size_fine' => 'Grain Size Fine',
-                'grain_size_coarsethan' => 'Grain Size Coarsethan',
-                'soundness' => 'Soundness',
-                'specific_gravity' => 'Specific Gravity',
-                'specific_gravity_coarse' => 'Specific Gravity Coarse',
-                'specific_gravity_fine' => 'Specific Gravity Fine',
-                'standard_proctor' => 'Standard Proctor',
-                'grain_size_upstream_transition_fill' => 'Grain Size UTF',
-                'grain_size_lpf' => 'Grain Size LPF',
-                'grain_size_fine_filter' => 'Grain Size FF',
-                'grain_size_coarse_filter' => 'Grain Size CF',
-                'point_load' => 'PLT',
-                'unixial_compressive' => 'UCS',
-                'brazilian' => 'BTS',
-                'los_angeles_abrasion_coarse_filter' => 'LAA Small',
-                'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
-                'pinhole_test' => 'Pinhole',
+                'atterberg_limit',
+                'moisture_oven',
+                'moisture_constant_mass',
+                'moisture_microwave',
+                'moisture_scale',
+                'grain_size_general',
+                'grain_size_coarse',
+                'grain_size_fine',
+                'grain_size_coarsethan',
+                'soundness',
+                'specific_gravity',
+                'specific_gravity_coarse',
+                'specific_gravity_fine',
+                'standard_proctor',
+                'grain_size_upstream_transition_fill',
+                'grain_size_lpf',
+                'grain_size_fine_filter',
+                'grain_size_coarse_filter',
+                'point_load',
+                'unixial_compressive',
+                'brazilian',
+                'los_angeles_abrasion_coarse_filter',
+                'los_angeles_abrasion_coarse_aggregate',
+                'pinhole_test',
             ];
 
-            $allData = [];
-            foreach ($tables as $tableName => $displayName) {
+            $allData = array_reduce($tables, function ($carry, $tableName) {
                 $data = find_all($tableName);
-                if ($data) {
-                    foreach ($data as $entry) {
-                        $entry['table_name'] = $displayName;
-                        $allData[] = $entry;
-                    }
+                foreach ($data as $entry) {
+                    $entry['table_name'] = $tableName;
+                    $carry[] = $entry;
                 }
-            }
+                return $carry;
+            }, []);
             ?>
 
             <div class="col-lg-12">
@@ -81,16 +78,19 @@ include_once('../components/header.php');
                             <tbody>
                                 <?php foreach ($allData as $entry): ?>
                                     <tr>
-                                        <td><?php echo $entry['Sample_ID']; ?></td>
-                                        <td><?php echo $entry['Sample_Number']; ?></td>
-                                        <td><?php echo $entry['Test_Type']; ?></td>
-                                        <td><?php echo date('Y-m-d', strtotime($entry['Sample_Date'])); ?></td>
-                                        <td><?php echo $entry['Register_By']; ?></td>
-                                        <td><?php echo date('Y-m-d', strtotime($entry['Registed_Date'])); ?></td>
+                                        <td><?= htmlspecialchars($entry['Sample_ID']); ?></td>
+                                        <td><?= htmlspecialchars($entry['Sample_Number']); ?></td>
+                                        <td><?= htmlspecialchars($entry['Test_Type']); ?></td>
+                                        <td><?= date('Y-m-d', strtotime($entry['Sample_Date'])); ?></td>
+                                        <td><?= htmlspecialchars($entry['Register_By']); ?></td>
+                                        <td><?= date('Y-m-d', strtotime($entry['Registed_Date'])); ?></td>
                                         <td>
-                                            <a class="btn btn-primary" href="<?php echo get_test_link($entry['Test_Type'], $entry['id']); ?>">
+                                            <a class="btn btn-primary" href="<?= get_test_link($entry['Test_Type'], $entry['id']); ?>">
                                                 <i class="bi bi-eye"></i>
                                             </a>
+                                            <button type="button" class="btn btn-danger" onclick="modaldelete('<?= $entry['id']; ?>', '<?= $entry['table_name']; ?>')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -99,14 +99,67 @@ include_once('../components/header.php');
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
 </main>
 
-<?php include_once('../components/footer.php'); ?>
+<div class="modal fade" id="ModalDelete" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-header d-flex justify-content-center">
+                <h5>¿Está seguro?</h5>
+            </div>
+            <div class="modal-body">
+                <form id="deleteForm" method="post">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="submit" class="btn btn-outline-danger" name="delete-essay" onclick="Delete()">Sí</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalTriggerButtons = document.querySelectorAll('.open-modal-btn');
+    const modalForm = document.querySelector('#disablebackdrop form');
+
+    modalTriggerButtons.forEach(button => button.addEventListener('click', function () {
+        const fields = ['sample-name', 'sample-number', 'test-type', 'technician', 'start-date'];
+        fields.forEach(field => {
+            const element = modalForm.querySelector(`#${field}`);
+            if (element) element.value = button.getAttribute(`data-${field}`);
+        });
+    }));
+});
+
+let selectedId, selectedTableName;
+
+function modaldelete(id, tableName) {
+    selectedId = id;
+    selectedTableName = tableName;
+    $('#ModalDelete').modal('show');
+}
+
+function Delete() {
+    if (selectedId && selectedTableName) {
+        document.getElementById("deleteForm").action = `essay.php?id=${selectedId}&table=${selectedTableName}`;
+        document.getElementById("deleteForm").submit();
+    } else {
+        console.error('ID o nombre de tabla no seleccionados.');
+    }
+}
+</script>
 
 <?php
+if (isset($_POST['delete-essay'], $_GET['id'], $_GET['table'])) {
+    $ID = delete_by_id($_GET['table'], $_GET['id']);
+    $msgType = $ID ? "s" : "d";
+    $session->msg($msgType, $ID ? "Borrado exitosamente" : "No encontrado");
+    redirect('essay.php');
+}
+include_once('../components/footer.php');
+
 function get_test_link($testType, $id) {
     $links = [
         'AL' => '../reviews/atterberg-limit.php?id=',
