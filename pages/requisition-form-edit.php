@@ -100,6 +100,7 @@
                 <option selected>Elegir...</option>
                 <option <?php if ($Search['Material_Type'] == 'Soil') echo 'selected'; ?>>Soil</option>
                 <option <?php if ($Search['Material_Type'] == 'Rock') echo 'selected'; ?>>Rock</option>
+                <option <?php if ($Search['Material_Type'] == 'Crudo') echo 'selected'; ?>>Crudo</option>
                 <option <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
                 <option <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
                 <option <?php if ($Search['Material_Type'] == 'FRF') echo 'selected'; ?>>FRF</option>

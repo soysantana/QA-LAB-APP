@@ -99,6 +99,7 @@
                 <option selected>Elegir...</option>
                 <option value="Soil">Soil</option>
                 <option value="Rock">Rock</option>
+                <option value="Crudo">Crudo</option>
                 <option value="RF">RF</option>
                 <option value="IRF">IRF</option>
                 <option value="FRF">FRF</option>
