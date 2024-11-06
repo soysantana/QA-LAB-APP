@@ -40,7 +40,7 @@
       <div class="card-body">
         <h5 class="card-title">LISTA DE MUESTRAS EN ENTREGA</h5>
 
-        <?php $week = date('Y-m-d', strtotime('-60 days')); ?>
+        <?php $week = date('Y-m-d', strtotime('-180 days')); ?>
         <?php $review = "(SELECT 1 FROM test_review WHERE sample_name = p.sample_name AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
         <?php $Seach = find_by_sql("SELECT * FROM test_delivery p WHERE Start_Date >= '{$week}' AND NOT EXISTS $review ORDER BY Register_Date DESC"); ?>
         <!-- Bordered Table -->
