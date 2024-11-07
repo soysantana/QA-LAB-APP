@@ -1,16 +1,16 @@
 <?php
-  $page_title = 'Planificación Semanal';
-  $wepln = 'show';
+  $page_title = 'Rotacion Laboral';
+  $ropln = 'show';
   require_once('../config/load.php');
 
   // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['save-calendar'])) {
-      include('../database/calendar/weekly-planning/save-calendar.php');
+      include('../database/calendar/job-rotation/save-calendar.php');
   } elseif (isset($_POST['update-calendar'])) {
-      include('../database/calendar/weekly-planning/update-calendar.php');
+      include('../database/calendar/job-rotation/update-calendar.php');
   } elseif (isset($_POST['delete-calendar'])) {
-      include('../database/calendar/weekly-planning/delete-calendar.php');
+      include('../database/calendar/job-rotation/delete-calendar.php');
   }
 }
 ?>
@@ -20,12 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main id="main" class="main">
 
 <div class="pagetitle">
-  <h1>Planificación Semanal</h1>
+  <h1>Rotacion Laboral</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="home.php">Home</a></li>
       <li class="breadcrumb-item">Paginas</li>
-      <li class="breadcrumb-item active">Planificación Semanal</li>
+      <li class="breadcrumb-item active">Rotacion Laboral</li>
     </ol>
   </nav>
 </div><!-- End Page Title -->
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <section class="section">
   <div class="row">
     
-  <form class="row" action="weekly-planning.php" method="post">
+  <form class="row" action="job-rotation.php" method="post">
     
   <div class="col-lg-10">
     <div class="card">
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Anotar Actividad Planificada</h5>
+        <h5 class="modal-title">Agregar Rotacion Laboral</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -79,14 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <input type="date" class="form-control" name="FecFin" id="FecFin" required>
         </div>
         <div class="col-md-12">
-          <label for="ColPic" class="form-label">Color Picker</label>
+          <label for="ColPic" class="form-label">Selector de Color</label>
           <input type="color" class="form-control form-control-color" name="ColPic" id="ColPic" required>
         </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary" name="save-calendar">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="submit" class="btn btn-primary" name="save-calendar">Guardar cambios</button>
       </div>
     </div>
   </div>
@@ -97,9 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true" style="display: none;">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="updateForm" action="weekly-planning.php" method="post">
+      <form id="updateForm" action="job-rotation.php" method="post">
         <div class="modal-header">
-          <h5 class="modal-title">Anotar Actividad Planificada</h5>
+          <h5 class="modal-title">Actualizar Rotacion Laboral</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -122,14 +122,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <input type="date" class="form-control" name="Final" id="Final">
             </div>
             <div class="col-md-12">
-              <label for="Color" class="form-label">Color Picker</label>
+              <label for="Color" class="form-label">Selector de Color</label>
               <input type="color" class="form-control form-control-color" name="Color" id="Color">
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger" name="delete-calendar"onclick="openModalDelete()">Delete</button>
-          <button type="submit" class="btn btn-primary" name="update-calendar">Update changes</button>
+          <button type="button" class="btn btn-danger" name="delete-calendar"onclick="openModalDelete()">Eliminar</button>
+          <button type="submit" class="btn btn-primary" name="update-calendar">Actualizar cambios</button>
         </div>
       </form> <!-- Close the form tag -->
     </div>
@@ -139,14 +139,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
    <!-- Modal -->
    <div class="modal fade" id="ModalDelete" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
-      <form class="modal-content text-center" action="weekly-planning.php" method="post">
+      <form class="modal-content text-center" action="job-rotation.php" method="post">
         <div class="modal-header d-flex justify-content-center">
-          <h5>Are you sure?</h5>
+          <h5>Estás seguro?</h5>
         </div>
         <div class="modal-body">
           <input type="hidden" name="event-id" id="delete-event-id">
           <button class="btn btn-secondary" onclick="closeModalDelete()">No</button>
-          <button class="btn btn-outline-danger" name="delete-calendar" onclick="confirmDelete()">Yes</button>
+          <button class="btn btn-outline-danger" name="delete-calendar" onclick="confirmDelete()">Si</button>
       </div>
     </form>
   </div>
@@ -184,28 +184,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           day: 'Día',
           list: 'Lista'
         },
-        events: [
-  <?php $Search = find_by_sql("SELECT * FROM calendar"); ?>
-  <?php foreach ($Search as $event): ?>
-    <?php if ($event['Rotation'] != 'Rotation'): ?>
-      {
-        id: '<?php echo $event['id']; ?>',
-        title: '<?php echo $event['Technician'] . ' - ' . $event['Activity']; ?>',
-        start: '<?php echo $event['Start_Date']; ?>',
-        end: '<?php echo $event['End_Date']; ?>',
-        color: '<?php echo $event['Color']; ?>',
-        extendedProps: {
-          Technician: '<?php echo $event['Technician']; ?>',
-          Activity: '<?php echo $event['Activity']; ?>',
-          Start_Date: '<?php echo $event['Start_Date']; ?>',
-          End_Date: '<?php echo $event['End_Date']; ?>',
-          Color: '<?php echo $event['Color']; ?>',
-        }
-      },
-    <?php endif; ?>
-  <?php endforeach; ?>
-],
-
+    events: [
+      <?php $Serch = find_by_sql("SELECT * FROM calendar WHERE Rotation = 'Rotation' "); ?>
+      <?php foreach ($Serch as $event): ?>
+        {
+          id: '<?php echo $event['id']; ?>',
+          title: '<?php echo $event['Technician'] . ' - ' . $event['Activity']; ?>',
+          start: '<?php echo $event['Start_Date']; ?>',
+          end: '<?php echo $event['End_Date']; ?>',
+          color: '<?php echo $event['Color']; ?>',
+          extendedProps: {
+            Technician: '<?php echo $event['Technician']; ?>',
+            Activity: '<?php echo $event['Activity']; ?>',
+            Start_Date: '<?php echo $event['Start_Date']; ?>',
+            End_Date: '<?php echo $event['End_Date']; ?>',
+            Color: '<?php echo $event['Color']; ?>',
+          }
+        },
+      <?php endforeach; ?>
+    ],
 
     eventClick: function (info) {
 
