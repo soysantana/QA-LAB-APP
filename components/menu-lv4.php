@@ -7,6 +7,7 @@ $requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
 $Sumarios = !empty($Sumarios) ? $Sumarios : "collapsed";
 $Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
 $wepln = !empty($wepln) ? $wepln : "collapsed";
+$ropln = !empty($ropln) ? $ropln : "collapsed";
 $GrainSize = !empty($GrainSize) ? $GrainSize : " ";
 $Moisture = !empty($Moisture) ? $Moisture : " ";
 $SG = !empty($SG) ? $SG : " ";
@@ -19,7 +20,9 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
-$unkow = !empty($unkow) ? $unkow : "collapsed";
+$user_group = !empty($user_group) ? $user_group : "collapsed";
+$dCliente = !empty($dCliente) ? $dCliente : "collapsed";
+$rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->

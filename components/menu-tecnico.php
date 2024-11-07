@@ -7,6 +7,7 @@ $requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
 $Sumarios = !empty($Sumarios) ? $Sumarios : "collapsed";
 $Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
 $wepln = !empty($wepln) ? $wepln : "collapsed";
+$ropln = !empty($ropln) ? $ropln : "collapsed";
 $GrainSize = !empty($GrainSize) ? $GrainSize : " ";
 $Moisture = !empty($Moisture) ? $Moisture : " ";
 $SG = !empty($SG) ? $SG : " ";
@@ -19,6 +20,9 @@ $delivery = !empty($delivery) ? $delivery : " ";
 $reviews = !empty($reviews) ? $reviews : " ";
 $repeat = !empty($repeat) ? $repeat : " ";
 $review = !empty($review) ? $review : "collapsed";
+$user_group = !empty($user_group) ? $user_group : "collapsed";
+$dCliente = !empty($dCliente) ? $dCliente : "collapsed";
+$rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
@@ -86,6 +90,13 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
           <i class="bi bi-calendar3"></i>
           <span>Planificación Semanal</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $ropln; ?>" href="/pages/job-rotation.php">
+          <i class="bi bi-calendar2"></i>
+          <span>Rotacion Laboral</span>
         </a>
       </li><!-- End Register Page Nav -->
 
