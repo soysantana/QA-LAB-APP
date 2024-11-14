@@ -308,35 +308,69 @@ function translateStatus($status) {
                   
                   foreach ($testTypes as $index => $sample) :
                     if ($sample['Test_Type'] === 'SP') :
-                      $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                      foreach ($GrainResults as $Grain) :
-                        if ($Grain) :
-                          $T3p4 = (float)$Grain['CumRet11'];
-                          $T3p8 = (float)$Grain['CumRet13'];
-                          $TNo4 = (float)$Grain['CumRet14'];
-                          $resultado = '';
-                          $CorrecionPorTamano = '';
-
-                          if ($T3p4 > 0) {
-                            $resultado = "C";
-                          } elseif ($T3p8 > 0 && $T3p4 == 0) {
-                            $resultado = "B";
-                          } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
-                            $resultado = "A";
-                          } else {
-                            $resultado = "No se puede determinar el método";
-                          }
-
-                          if ($T3p4 > 5) {
-                            $CorrecionPorTamano = "Correcion Por Sobre Tamaño, realizar SG Particulas Finas y Gruesas";
-                          }
-            ?>
-            <tr>
-              <td><?php echo $sample['Sample_ID'] . "-" . $sample['Sample_Number'] . "-" . $sample['Test_Type']; ?></td>
-              <td><?php echo $resultado; ?></td>
-              <td><?php echo $CorrecionPorTamano; ?></td>
-            </tr>
-            <?php endif; endforeach; endif; endforeach; ?>
+                        // Buscar en la tabla grain_size_general
+                        $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                
+                        // Buscar en otras tablas adicionales
+                        $GrainResultsCoarse = find_by_sql("SELECT * FROM grain_size_coarse WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                        $GrainResultsCoarseThan = find_by_sql("SELECT * FROM grain_size_coarsethan WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                        $GrainResultsCoarseFilter = find_by_sql("SELECT * FROM grain_size_coarse_filter WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                        $GrainResultsFine = find_by_sql("SELECT * FROM grain_size_fine WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                        $GrainResultsLPF = find_by_sql("SELECT * FROM grain_size_lpf WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                        $GrainResultsUpstream = find_by_sql("SELECT * FROM grain_size_upstream_transition_fill WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
+                
+                        // Combinamos los resultados de las tablas
+                        foreach ([$GrainResults, $GrainResultsCoarse, $GrainResultsCoarseThan, $GrainResultsCoarseFilter, $GrainResultsFine, $GrainResultsLPF, $GrainResultsUpstream] as $GrainResults) :
+                            foreach ($GrainResults as $Grain) :
+                                if ($Grain) :
+                                    // Asignar valores de las columnas de las tablas dependiendo de la tabla
+                                    if ($GrainResults === $GrainResultsCoarse || $GrainResults === $GrainResultsCoarseThan) {
+                                        $T3p4 = (float)$Grain['CumRet9'] ?? 0;
+                                        $T3p8 = (float)$Grain['CumRet10'] ?? 0;
+                                        $TNo4 = (float)$Grain['CumRet11'] ?? 0;
+                                    } elseif ($GrainResults === $GrainResultsFine) {
+                                        $T3p4 = (float)$Grain['CumRet9'] ?? 0;
+                                        $T3p8 = (float)$Grain['CumRet11'] ?? 0;
+                                        $TNo4 = (float)$Grain['CumRet12'] ?? 0;
+                                    } elseif ($GrainResults === $GrainResultsCoarseFilter || $GrainResults === $GrainResultsLPF) {
+                                        $T3p4 = (float)$Grain['CumRet5'] ?? 0;
+                                        $T3p8 = (float)$Grain['CumRet6'] ?? 0;
+                                        $TNo4 = (float)$Grain['CumRet7'] ?? 0;
+                                    } elseif ($GrainResults === $GrainResultsUpstream) {
+                                        $T3p4 = (float)$Grain['CumRet8'] ?? 0;
+                                        $T3p8 = (float)$Grain['CumRet10'] ?? 0;
+                                        $TNo4 = (float)$Grain['CumRet11'] ?? 0;
+                                    } else {
+                                        // Default para grain_size_general
+                                        $T3p4 = (float)$Grain['CumRet11'] ?? 0;
+                                        $T3p8 = (float)$Grain['CumRet13'] ?? 0;
+                                        $TNo4 = (float)$Grain['CumRet14'] ?? 0;
+                                    }
+                
+                                    $resultado = '';
+                                    $CorrecionPorTamano = '';
+                
+                                    if ($T3p4 > 0) {
+                                        $resultado = "C";
+                                    } elseif ($T3p8 > 0 && $T3p4 == 0) {
+                                        $resultado = "B";
+                                    } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
+                                        $resultado = "A";
+                                    } else {
+                                        $resultado = "No se puede determinar el método";
+                                    }
+                
+                                    if ($T3p4 > 5) {
+                                        $CorrecionPorTamano = "Correcion Por Sobre Tamaño, realizar SG Particulas Finas y Gruesas";
+                                    }
+                                    ?>
+                                    <tr>
+                                        <td><?php echo $sample['Sample_ID'] . "-" . $sample['Sample_Number'] . "-" . $sample['Test_Type']; ?></td>
+                                        <td><?php echo $resultado; ?></td>
+                                        <td><?php echo $CorrecionPorTamano; ?></td>
+                                    </tr>
+                                    <?php endif; endforeach; endforeach; endif; endforeach;?>
+                
           </tbody>
         </table>
 
