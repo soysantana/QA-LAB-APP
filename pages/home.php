@@ -71,10 +71,11 @@ $statusCounts = [
 ];
 
 // Cargar los datos de todas las tablas una sola vez
+$Reviewed = "(SELECT 1 FROM test_reviewed WHERE Tracking = p.Tracking)";
 $preparationData = find_all('test_preparation');
 $realizationData = find_all('test_realization');
 $deliveryData = find_all('test_delivery');
-$reviewData = find_all('test_review');
+$reviewData = find_by_sql("SELECT * FROM test_review p  WHERE NOT EXISTS $Reviewed");
 $repeatData = find_all('test_repeat');
 
 // Crear un array para cada tabla con las muestras y su estado

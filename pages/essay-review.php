@@ -66,9 +66,10 @@ include_once('../components/header.php');
 <?php
 function fetchData($tableName, $applyDateFilter = false)
 {
-    $week = date('Y-m-d', strtotime('-7 days'));
+    $Reviewed = "(SELECT 1 FROM test_reviewed WHERE Tracking = p.id)";
+    $week = date('Y-m-d', strtotime('-8 days'));
     $query = $applyDateFilter
-        ? "SELECT * FROM {$tableName} WHERE Registed_Date >= '{$week}'"
+        ? "SELECT * FROM {$tableName} p WHERE NOT EXISTS $Reviewed"
         : "SELECT * FROM {$tableName}";
     
     return find_by_sql($query);

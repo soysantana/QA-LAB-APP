@@ -70,6 +70,38 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </ul>
       </li><!-- End Tracking Nav -->
 
+      <li class="nav-heading">paginas</li>
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
+          <i class="bi bi-file-earmark"></i>
+          <span>Formulario de requisicion</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
+          <i class="bi bi-question-circle"></i>
+          <span>Lista de Pendientes</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
+          <i class="bi bi-calendar3"></i>
+          <span>Planificación Semanal</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link <?php echo $ropln; ?>" href="/pages/job-rotation.php">
+          <i class="bi bi-calendar2"></i>
+          <span>Rotacion Laboral</span>
+        </a>
+      </li><!-- End Register Page Nav -->
+
+      <li class="nav-heading">Documentacion</li>
+
       <li class="nav-item">
         <a class="nav-link <?php echo $class_form; ?>" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-text"></i><span>Registro de ensayos</span><i class="bi bi-chevron-down ms-auto"></i>
@@ -112,7 +144,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           </li>
           <li>
             <a href="/pages/dispercion-menu.php">
-              <i class="bi bi-circle"></i><span>Dispercion</span>
+              <i class="bi bi-circle"></i><span>Dispersion</span>
             </a>
           </li>
           <li>
@@ -142,36 +174,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           </li>
         </ul>
       </li><!-- End Forms Nav -->
-
-      <li class="nav-heading">paginas</li>
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
-          <i class="bi bi-file-earmark"></i>
-          <span>Formulario de requisicion</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
-          <i class="bi bi-question-circle"></i>
-          <span>Lista de Pendientes</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
-          <i class="bi bi-calendar3"></i>
-          <span>Planificación Semanal</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link <?php echo $ropln; ?>" href="/pages/job-rotation.php">
-          <i class="bi bi-calendar2"></i>
-          <span>Rotacion Laboral</span>
-        </a>
-      </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
         <a class="nav-link <?php echo $review_essay; ?>" href="/pages/essay.php">
