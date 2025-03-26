@@ -74,9 +74,9 @@
         $Particles1 = $db->escape($_POST['Particles1']);
         $Particles2 = $db->escape($_POST['Particles2']);
         $Particles3 = $db->escape($_POST['Particles3']);
-        $WeightNo4 = $db->escape($_POST['Particles4']);
-        $WeightReactiveNo4 = $db->escape($_POST['Particles5']);
-        $PercentReactive = $db->escape($_POST['Particles5']);
+        $WeightNo4 = $db->escape($_POST['WeightNo4']);
+        $WeightReactiveNo4 = $db->escape($_POST['WeightReactiveNo4']);
+        $PercentReactive = $db->escape($_POST['PercentReactive']);
         $AvgParticles = $db->escape($_POST['AvgParticles']);
         $ReactionResult = $db->escape($_POST['ReactionResult']);
         $AcidResult = $db->escape($_POST['AcidResult']);
