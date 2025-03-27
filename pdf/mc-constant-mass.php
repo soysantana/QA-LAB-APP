@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(320, 260));
 
-$pdf->setSourceFile('PV-F-83815_Laboratory Moisture Content Constant Mass_Rev 2.pdf');
+$pdf->setSourceFile('PV-F-83815 Laboratory Moisture Content Constant Mass.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -33,7 +33,7 @@ $pdf->Cell(30, 6, $Search['Method'], 0, 1, 'C');
 $pdf->SetXY(200, 45);
 $pdf->Cell(30, 6, $Search['Test_Start_Date'], 0, 1, 'C');
 $pdf->SetXY(200, 51);
-$pdf->Cell(30, 6, $Search['Registed_Date'], 0, 1, 'C');
+$pdf->Cell(30, 6, date('Y-m-d', strtotime($Search['Registed_Date'])), 0, 1, 'C');
 
 // Agregar contenido adicional
 $pdf->SetFont('Arial', '', 11);
@@ -88,8 +88,8 @@ $pdf->SetXY(163, 208);
 $pdf->Cell(81, 6, $Search['Moisture_Content_Porce'], 0, 1, 'C');
 
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(15, 230);
-$pdf->Cell(229, 45, $Search['Comments'], 0, 1, 'C');
+$pdf->SetXY(15, 210);
+$pdf->Cell(229, 45, $Search['Comments'], 0, 1, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
 ?>

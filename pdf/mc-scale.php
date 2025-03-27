@@ -3,7 +3,7 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$Search = find_by_id('moisture_oven', $_GET['id']);
+$Search = find_by_id('moisture_scale', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
@@ -16,26 +16,24 @@ class PDF extends Fpdi {
 $pdf = new PDF();
 $pdf->SetMargins(0, 0, 0);
 
-$pdf->AddPage('P', array(300, 250));
+$pdf->AddPage('P', array(300, 220));
 
-$pdf->setSourceFile('PV-F-81248 Laboratory Moisture Content by Oven.pdf');
+$pdf->setSourceFile('PV-F-01714_Laboratory Moisture Content with Scale_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
 $pdf->SetFont('Arial', '', 10);
-$pdf->SetXY(52, 32);
-$pdf->Cell(30, 5, 'PVDJ SOIL LAB', 0, 1, 'L');
-$pdf->SetXY(52, 37);
-$pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'L');
-$pdf->SetXY(52, 42);
-$pdf->Cell(30, 5, $Search['Sample_By'], 0, 1, 'L');
+$pdf->SetXY(52, 38);
+$pdf->Cell(30, 1, 'PVDJ SOIL LAB', 0, 1, 'L');
+$pdf->SetXY(52, 43);
+$pdf->Cell(30, 1, $Search['Technician'], 0, 1, 'L');
+$pdf->SetXY(52, 49);
+$pdf->Cell(30, 1, $Search['Sample_By'], 0, 1, 'L');
 
-$pdf->SetXY(170, 30);
-$pdf->Cell(30, 6, $Search['Method'], 0, 1, 'C');
 $pdf->SetXY(170, 36);
 $pdf->Cell(30, 6, $Search['Test_Start_Date'], 0, 1, 'C');
 $pdf->SetXY(170, 42);
-$pdf->Cell(30, 6, date('Y-m-d', strtotime($Search['Registed_Date'])), 0, 1, 'C');
+$pdf->Cell(30, 6, $Search['Registed_Date'], 0, 1, 'C');
 
 // Agregar contenido adicional
 $pdf->SetFont('Arial', '', 11);
@@ -64,22 +62,8 @@ $pdf->Cell(81, 6, $Search['East'], 0, 1, 'C');
 $pdf->SetXY(120, 120);
 $pdf->Cell(81, 6, $Search['Elev'], 0, 1, 'C');
 
-$pdf->SetXY(120, 141);
-$pdf->Cell(81, 1, '1', 0, 1, 'C');
 $pdf->SetXY(120, 147);
 $pdf->Cell(81, 1, $Search['Tare_Name'], 0, 1, 'C');
-$pdf->SetXY(120, 153);
-$pdf->Cell(81, 1, utf8_decode($Search['Temperature']), 0, 1, 'C');
-$pdf->SetXY(120, 158);
-$pdf->Cell(81, 1, $Search['Tare_Plus_Wet_Soil'], 0, 1, 'C');
-$pdf->SetXY(120, 163);
-$pdf->Cell(81, 1, $Search['Tare_Plus_Dry_Soil'], 0, 1, 'C');
-$pdf->SetXY(120, 169);
-$pdf->Cell(81, 1, $Search['Water_Ww'], 0, 1, 'C');
-$pdf->SetXY(120, 175);
-$pdf->Cell(81, 1, $Search['Tare_g'], 0, 1, 'C');
-$pdf->SetXY(120, 181);
-$pdf->Cell(81, 1, $Search['Dry_Soil_Ws'], 0, 1, 'C');
 $pdf->SetXY(120, 186);
 $pdf->Cell(81, 1, $Search['Moisture_Content_Porce'], 0, 1, 'C');
 
