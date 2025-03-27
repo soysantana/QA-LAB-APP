@@ -185,7 +185,7 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update_mc_scale">Update Essay</button>
-          <a href="../pdf/gs.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <a href="../pdf/mc-scale.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
           <button type="submit" class="btn btn-danger" name="delete_mc_scale"><i class="bi bi-trash"></i></button>
         </div>
 
