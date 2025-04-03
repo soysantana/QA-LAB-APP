@@ -44,66 +44,73 @@
                </thead>
                <tbody>
                <?php
-                $Requisition = find_all("lab_test_requisition_form");
-                $Preparation = find_all("test_preparation");
-                $Review = find_all("test_review");
-                $testTypes = [];
-                
-                foreach ($Requisition as $requisition) {
-                    for ($i = 1; $i <= 20; $i++) {
-                        $testTypeKey = "Test_Type" . $i;
-                        
-                        if (
-                            isset($requisition[$testTypeKey]) &&
-                            $requisition[$testTypeKey] !== null &&
-                            $requisition[$testTypeKey] !== ""
-                            ) {
-                                $matchingPreparations = array_filter($Preparation, function (
-                                    $preparation
-                                    ) use ($requisition, $testTypeKey) {
-                                        return $preparation["Sample_Name"] ===
-                                        $requisition["Sample_ID"] &&
-                                        $preparation["Sample_Number"] ===
-                                        $requisition["Sample_Number"] &&
-                                        $preparation["Test_Type"] === $requisition[$testTypeKey];
-                                    });
-                                    
-                                $matchingReviews = array_filter($Review, function (
-                                    $review
-                                    ) use ($requisition, $testTypeKey) {
-                                        return $review["Sample_Name"] ===
-                                        $requisition["Sample_ID"] &&
-                                        $review["Sample_Number"] ===
-                                        $requisition["Sample_Number"] &&
-                                        $review["Test_Type"] === $requisition[$testTypeKey];
-                                    });
-                                    
-                                    if (empty($matchingPreparations) && empty($matchingReviews)) {
-                                        $testTypes[] = [
-                                            "Sample_ID" => $requisition["Sample_ID"],
-                                            "Sample_Number" => $requisition["Sample_Number"],
-                                            "Sample_Date" => $requisition["Sample_Date"],
-                                            "Test_Type" => $requisition[$testTypeKey],
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                        
-                        usort($testTypes, function ($a, $b) {
-                            return strcmp($a["Test_Type"], $b["Test_Type"]);
-                        });
-               ?>
+// Obtener datos de la base de datos en una sola consulta optimizada
+$Requisition = find_all("lab_test_requisition_form");
+$Preparation = find_all("test_preparation");
+$Entrega = find_all("test_delivery");
+$Review = find_all("test_review");
 
-               <?php foreach ($testTypes as $index => $sample) : ?>
-                <tr>
-                <th scope="row"><?php echo count_id(); ?></th>
-                <td><?php echo $sample['Sample_ID']; ?></td>
-                <td><?php echo $sample['Sample_Number']; ?></td>
-                <td><?php echo $sample['Test_Type']; ?></td>
-                <td><?php echo $sample['Sample_Date']; ?></td>
-                </tr>
-               <?php endforeach; ?>
+// Indexar Preparation, Entrega y Review en un solo array asociativo para acceso rápido
+$indexedStatus = []; 
+
+function normalize($value) {
+    return strtoupper(trim($value)); // Convertimos a mayúsculas y eliminamos espacios extra
+}
+
+foreach ($Preparation as $prep) {
+    $key = normalize($prep["Sample_Name"]) . "|" . normalize($prep["Sample_Number"]) . "|" . normalize($prep["Test_Type"]);
+    $indexedStatus[$key] = true;
+}
+
+foreach ($Entrega as $entrega) {
+    $key = normalize($entrega["Sample_Name"]) . "|" . normalize($entrega["Sample_Number"]) . "|" . normalize($entrega["Test_Type"]);
+    $indexedStatus[$key] = true;
+}
+
+foreach ($Review as $rev) {
+    $key = normalize($rev["Sample_Name"]) . "|" . normalize($rev["Sample_Number"]) . "|" . normalize($rev["Test_Type"]);
+    $indexedStatus[$key] = true;
+}
+
+$testTypes = [];
+
+foreach ($Requisition as $requisition) {
+    for ($i = 1; $i <= 20; $i++) {
+        $testTypeKey = "Test_Type" . $i;
+
+        if (!empty($requisition[$testTypeKey])) {
+            $key = normalize($requisition["Sample_ID"]) . "|" . normalize($requisition["Sample_Number"]) . "|" . normalize($requisition[$testTypeKey]);
+
+            // Si la muestra está en Preparation, Entrega o Review, NO se agrega a testTypes
+            if (!isset($indexedStatus[$key])) {
+                $testTypes[] = [
+                    "Sample_ID" => $requisition["Sample_ID"],
+                    "Sample_Number" => $requisition["Sample_Number"],
+                    "Sample_Date" => $requisition["Sample_Date"],
+                    "Test_Type" => $requisition[$testTypeKey],
+                ];
+            }
+        }
+    }
+}
+
+// Ordenar si es necesario
+usort($testTypes, fn($a, $b) => strcmp($a["Test_Type"], $b["Test_Type"]));
+
+?>
+<!-- Tabla de Resultados -->
+<?php foreach ($testTypes as $index => $sample) : ?>
+<tr>
+    <th scope="row"><?php echo htmlspecialchars(count_id()); ?></th>
+    <td><?php echo htmlspecialchars($sample['Sample_ID']); ?></td>
+    <td><?php echo htmlspecialchars($sample['Sample_Number']); ?></td>
+    <td><?php echo htmlspecialchars($sample['Test_Type']); ?></td>
+    <td><?php echo htmlspecialchars($sample['Sample_Date']); ?></td>
+</tr>
+<?php endforeach; ?>
+
+
+
                </tbody>
             </table>
             <!-- End Table with stripped rows -->

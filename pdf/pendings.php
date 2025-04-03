@@ -6,49 +6,47 @@ require_once('../config/load.php');
 $columna = isset($_GET['columna']) ? $_GET['columna'] : '';
 $type = isset($_GET['type']) ? $_GET['type'] : '';
 
-$Requisition = find_all("lab_test_requisition_form");
-$Preparation = find_all("test_preparation");
-$Review = find_all("test_review");
+// Obtener datos de la base de datos en una sola consulta optimizada
+$data = [
+    "Requisition" => find_all("lab_test_requisition_form"),
+    "Preparation" => find_all("test_preparation"),
+    "Delivery" => find_all("test_delivery"),
+    "Review" => find_all("test_review")
+];
+
+// Función para normalizar valores (evitar espacios extra y diferencias de mayúsculas/minúsculas)
+function normalize($value) {
+    return strtoupper(trim($value));
+}
+
+// Indexar Preparation y Review en un array asociativo para acceso rápido
+$indexedStatus = [];
+
+foreach (["Preparation", "Delivery", "Review"] as $category) {
+    foreach ($data[$category] as $entry) {
+        $key = normalize($entry["Sample_Name"]) . "|" . normalize($entry["Sample_Number"]) . "|" . normalize($entry["Test_Type"]);
+        $indexedStatus[$key] = true;
+    }
+}
+
 $testTypes = [];
 
-foreach ($Requisition as $requisition) {
-    $testTypeKey = $columna;
+foreach ($data["Requisition"] as $requisition) {
+    if (!empty($requisition[$columna])) {
+        $key = normalize($requisition["Sample_ID"]) . "|" . normalize($requisition["Sample_Number"]) . "|" . normalize($requisition[$columna]);
 
-        if (
-            isset($requisition[$testTypeKey]) &&
-            $requisition[$testTypeKey] !== null &&
-            $requisition[$testTypeKey] !== ""
-        ) {
-            $matchingPreparations = array_filter($Preparation, function (
-                $preparation
-            ) use ($requisition, $testTypeKey) {
-                return $preparation["Sample_Name"] ===
-                    $requisition["Sample_ID"] &&
-                    $preparation["Sample_Number"] ===
-                    $requisition["Sample_Number"] &&
-                    $preparation["Test_Type"] === $requisition[$testTypeKey];
-            });
-
-            $matchingReviews = array_filter($Review, function (
-                $review
-            ) use ($requisition, $testTypeKey) {
-                return $review["Sample_Name"] ===
-                    $requisition["Sample_ID"] &&
-                    $review["Sample_Number"] ===
-                    $requisition["Sample_Number"] &&
-                    $review["Test_Type"] === $requisition[$testTypeKey];
-            });
-
-            if (empty($matchingPreparations) && empty($matchingReviews)) {
-                $testTypes[] = [
-                    "Sample_ID" => $requisition["Sample_ID"],
-                    "Sample_Number" => $requisition["Sample_Number"],
-                    "Sample_Date" => $requisition["Sample_Date"],
-                    "Test_Type" => $requisition[$testTypeKey],
-                ];
-            }
+        // Si la muestra NO está en Preparation o Review, agregar a testTypes
+        if (empty($indexedStatus[$key])) {
+            $testTypes[] = [
+                "Sample_ID" => $requisition["Sample_ID"],
+                "Sample_Number" => $requisition["Sample_Number"],
+                "Sample_Date" => $requisition["Sample_Date"],
+                "Test_Type" => $requisition[$columna],
+            ];
         }
     }
+}
+
 
 use setasign\Fpdi\Fpdi;
 
