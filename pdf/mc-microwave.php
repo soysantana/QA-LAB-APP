@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(300, 250));
 
-$pdf->setSourceFile('PV-F-83834_Laboratory Moisture Content by Microwave_Rev 1.pdf');
+$pdf->setSourceFile('template/PV-F-83834_Laboratory Moisture Content by Microwave_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -92,8 +92,8 @@ $pdf->SetXY(135, 214);
 $pdf->Cell(81, 6, $Search['Moisture_Content_Porce'], 0, 1, 'C');
 
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(21, 230);
-$pdf->Cell(183, 25, $Search['Comments'], 0, 1, 'C');
+$pdf->SetXY(22, 232);
+$pdf->Cell(180, 4, $Search['Comments'], 0, 1, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
 ?>

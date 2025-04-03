@@ -64,7 +64,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(8.5 * 25.4, 11 * 25.4));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('pendings.pdf');
+$pdf->setSourceFile('template/Pendings-List.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

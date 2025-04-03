@@ -3,219 +3,187 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$Search = find_by_id('atterberg_limit', $_GET['id']);
-
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
-    function Header() {}
+// Obtener datos de la base de datos
+$Search = find_by_id('atterberg_limit', $_GET['id']);
 
-    function Footer() {}
-}
+// Definir la clase PDF personalizada
+class PDF extends Fpdi {}
+
 
 $pdf = new PDF();
 $pdf->SetMargins(0, 0, 0);
+$pdf->AddPage('L', array(370, 290));
 
-$pdf->AddPage('L', array(360, 300));
-
-$pdf->setSourceFile('PV-F-80769_Laboratory Atteberg Limits_Rev. 5.pdf');
+// Importar plantilla
+$pdf->setSourceFile('template/PV-F-80769 Laboratory Atteberg Limits.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
-$pdf->SetFont('Arial', '', 10);
-$pdf->SetXY(58, 39);
-$pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
-$pdf->SetXY(58, 45);
-$pdf->Cell(30, 5, $Search['Sample_By'], 0, 1, 'C');
+// Configurar fuente
+$pdf->SetFont('Arial', 'B', 10);
 
-$pdf->SetXY(165, 32);
-$pdf->Cell(30, 6, $Search['Standard'], 0, 1, 'C');
-$pdf->SetXY(165, 39);
-$pdf->Cell(30, 6, $Search['Test_Start_Date'], 0, 1, 'C');
-$pdf->SetXY(165, 46);
-$pdf->Cell(30, 6, $Search['Registed_Date'], 0, 1, 'C');
+// Definir posiciones y valores en el PDF
+$fields = [
+    [58, 36, "PVDJ Soil Lab"],
+    [58, 43.5, $Search['Technician']],
+    [58, 50, $Search['Sample_By']],
+    [165, 36, $Search['Standard']],
+    [165, 43.5, $Search['Test_Start_Date']],
+    [165, 50, $Search['Registed_Date']],
+    [267, 36, ""],
+    [267, 42, $Search['Split_Method']],
+    [267, 48, $Search['Preparation_Method']],
+    [58, 67, $Search['Structure']],
+    [58, 72, $Search['Area']],
+    [58, 77, $Search['Source']],
+    [58, 82, $Search['Material_Type']],
+    [165, 67, $Search['Sample_ID']],
+    [165, 72, $Search['Sample_Number']],
+    [165, 77, $Search['Sample_Date']],
+    [165, 82, $Search['Elev']],
+    [165, 88, $Search['Nat_Mc']],
+    [267, 67, $Search['Depth_From']],
+    [267, 72, $Search['Depth_To']],
+    [267, 77, $Search['North']],
+    [267, 82, $Search['East']],
+];
 
-$pdf->SetXY(260, 32);
-$pdf->Cell(30, 6, $Search['Split_Method'], 0, 1, 'C');
-$pdf->SetXY(260, 38);
-$pdf->Cell(30, 6, $Search['Preparation_Method'], 0, 1, 'C');
+foreach ($fields as $field) {
+    list($x, $y, $value) = $field;
+    $pdf->SetXY($x, $y);
+    $pdf->Cell(30, 1, $value, 0, 1, 'C');
+}
 
-$pdf->SetXY(62, 64);
-$pdf->Cell(30, 6, $Search['Structure'], 0, 1, 'C');
-$pdf->SetXY(62, 70);
-$pdf->Cell(30, 6, $Search['Area'], 0, 1, 'C');
-$pdf->SetXY(62, 75);
-$pdf->Cell(30, 6, $Search['Source'], 0, 1, 'C');
-$pdf->SetXY(62, 80);
-$pdf->Cell(30, 6, $Search['Material_Type'], 0, 1, 'C');
 
-$pdf->SetXY(169, 64);
-$pdf->Cell(30, 6, $Search['Sample_ID'], 0, 1, 'C');
-$pdf->SetXY(169, 69.5);
-$pdf->Cell(30, 6, $Search['Sample_Number'], 0, 1, 'C');
-$pdf->SetXY(169, 75);
-$pdf->Cell(30, 6, $Search['Sample_Date'], 0, 1, 'C');
-$pdf->SetXY(169, 80);
-$pdf->Cell(30, 6, $Search['Elev'], 0, 1, 'C');
-
-$pdf->SetXY(260, 64);
-$pdf->Cell(30, 6, $Search['Depth_From'], 0, 1, 'C');
-$pdf->SetXY(260, 69.5);
-$pdf->Cell(30, 6, $Search['Depth_To'], 0, 1, 'C');
-$pdf->SetXY(260, 75);
-$pdf->Cell(30, 6, $Search['North'], 0, 1, 'C');
-$pdf->SetXY(260, 80);
-$pdf->Cell(30, 6, $Search['East'], 0, 1, 'C');
-
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->SetXY(69, 102);
-$pdf->Cell(35, 9, '1', 0, 1, 'C');
-$pdf->SetXY(104, 102);
-$pdf->Cell(28, 9, '2', 0, 1, 'C');
-$pdf->SetXY(132, 102);
-$pdf->Cell(24, 9, '3', 0, 1, 'C');
-
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->SetXY(69, 188);
-$pdf->Cell(35, 9, '1', 0, 1, 'C');
-$pdf->SetXY(104, 188);
-$pdf->Cell(28, 9, '2', 0, 1, 'C');
-$pdf->SetXY(132, 188);
-$pdf->Cell(24, 9, '3', 0, 1, 'C');
-
-//lIQUID lIMIT
-
+//Test Information Liquid Limit
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(69, 110);
-$pdf->Cell(35, 9, $Search['LL_Blows_1'], 0, 1, 'C');
-$pdf->SetXY(104, 110);
-$pdf->Cell(28, 9, $Search['LL_Blows_2'], 0, 1, 'C');
-$pdf->SetXY(132, 110);
-$pdf->Cell(24, 9, $Search['LL_Blows_3'], 0, 1, 'C');
-$pdf->SetXY(69, 119);
-$pdf->Cell(35, 9, $Search['LL_Container_1'], 0, 1, 'C');
-$pdf->SetXY(104, 119);
-$pdf->Cell(28, 9, $Search['LL_Container_2'], 0, 1, 'C');
-$pdf->SetXY(132, 119);
-$pdf->Cell(24, 9, $Search['LL_Container_3'], 0, 1, 'C');
-$pdf->SetXY(69, 127);
-$pdf->Cell(35, 9, $Search['LL_Wet_Soil_1'], 0, 1, 'C');
-$pdf->SetXY(104, 127);
-$pdf->Cell(28, 9, $Search['LL_Wet_Soil_2'], 0, 1, 'C');
-$pdf->SetXY(132, 127);
-$pdf->Cell(24, 9, $Search['LL_Wet_Soil_3'], 0, 1, 'C');
-$pdf->SetXY(69, 136);
-$pdf->Cell(35, 9, $Search['LL_Dry_Soil_Tare_1'], 0, 1, 'C');
-$pdf->SetXY(104, 136);
-$pdf->Cell(28, 9, $Search['LL_Dry_Soil_Tare_2'], 0, 1, 'C');
-$pdf->SetXY(132, 136);
-$pdf->Cell(24, 9, $Search['LL_Dry_Soil_Tare_3'], 0, 1, 'C');
-$pdf->SetXY(69, 144);
-$pdf->Cell(35, 9, $Search['LL_Water_1'], 0, 1, 'C');
-$pdf->SetXY(104, 144);
-$pdf->Cell(28, 9, $Search['LL_Water_2'], 0, 1, 'C');
-$pdf->SetXY(132, 144);
-$pdf->Cell(24, 9, $Search['LL_Water_3'], 0, 1, 'C');
-$pdf->SetXY(69, 153);
-$pdf->Cell(35, 9, $Search['LL_Tare_1'], 0, 1, 'C');
-$pdf->SetXY(104, 153);
-$pdf->Cell(28, 9, $Search['LL_Tare_2'], 0, 1, 'C');
-$pdf->SetXY(132, 153);
-$pdf->Cell(24, 9, $Search['LL_Tare_3'], 0, 1, 'C');
-$pdf->SetXY(69, 161);
-$pdf->Cell(35, 9, $Search['LL_Wt_Dry_Soil_1'], 0, 1, 'C');
-$pdf->SetXY(104, 161);
-$pdf->Cell(28, 9, $Search['LL_Wt_Dry_Soil_2'], 0, 1, 'C');
-$pdf->SetXY(132, 161);
-$pdf->Cell(24, 9, $Search['LL_Wt_Dry_Soil_3'], 0, 1, 'C');
-$pdf->SetXY(69, 169);
-$pdf->Cell(35, 9, $Search['LL_MC_Porce_1'], 0, 1, 'C');
-$pdf->SetXY(104, 169);
-$pdf->Cell(28, 9, $Search['LL_MC_Porce_2'], 0, 1, 'C');
-$pdf->SetXY(132, 169);
-$pdf->Cell(24, 9, $Search['LL_MC_Porce_3'], 0, 1, 'C');
 
-// PLASTIC LIMIT
+$pdf->SetXY(66, 112);
+$pdf->Cell(35, 4, $Search['LL_Blows_1'], 0, 1, 'C');
+$pdf->SetXY(100, 112);
+$pdf->Cell(28, 4, $Search['LL_Blows_2'], 0, 1, 'C');
+$pdf->SetXY(136, 112);
+$pdf->Cell(24, 4, $Search['LL_Blows_3'], 0, 1, 'C');
+$pdf->SetXY(66, 120);
+$pdf->Cell(35, 4, $Search['LL_Container_1'], 0, 1, 'C');
+$pdf->SetXY(100, 120);
+$pdf->Cell(28, 4, $Search['LL_Container_2'], 0, 1, 'C');
+$pdf->SetXY(136, 120);
+$pdf->Cell(24, 4, $Search['LL_Container_3'], 0, 1, 'C');
+$pdf->SetXY(66, 128);
+$pdf->Cell(35, 4, $Search['LL_Wet_Soil_1'], 0, 1, 'C');
+$pdf->SetXY(100, 128);
+$pdf->Cell(28, 4, $Search['LL_Wet_Soil_2'], 0, 1, 'C');
+$pdf->SetXY(136, 128);
+$pdf->Cell(24, 4, $Search['LL_Wet_Soil_3'], 0, 1, 'C');
+$pdf->SetXY(66, 136);
+$pdf->Cell(35, 4, $Search['LL_Dry_Soil_Tare_1'], 0, 1, 'C');
+$pdf->SetXY(100, 136);
+$pdf->Cell(28, 4, $Search['LL_Dry_Soil_Tare_2'], 0, 1, 'C');
+$pdf->SetXY(136, 136);
+$pdf->Cell(24, 4, $Search['LL_Dry_Soil_Tare_3'], 0, 1, 'C');
+$pdf->SetXY(66, 144);
+$pdf->Cell(35, 4, $Search['LL_Water_1'], 0, 1, 'C');
+$pdf->SetXY(100, 144);
+$pdf->Cell(28, 4, $Search['LL_Water_2'], 0, 1, 'C');
+$pdf->SetXY(136, 144);
+$pdf->Cell(24, 4, $Search['LL_Water_3'], 0, 1, 'C');
+$pdf->SetXY(66, 153);
+$pdf->Cell(35, 4, $Search['LL_Tare_1'], 0, 1, 'C');
+$pdf->SetXY(100, 153);
+$pdf->Cell(28, 4, $Search['LL_Tare_2'], 0, 1, 'C');
+$pdf->SetXY(136, 153);
+$pdf->Cell(24, 4, $Search['LL_Tare_3'], 0, 1, 'C');
+$pdf->SetXY(66, 161);
+$pdf->Cell(35, 4, $Search['LL_Wt_Dry_Soil_1'], 0, 1, 'C');
+$pdf->SetXY(100, 161);
+$pdf->Cell(28, 4, $Search['LL_Wt_Dry_Soil_2'], 0, 1, 'C');
+$pdf->SetXY(136, 161);
+$pdf->Cell(24, 4, $Search['LL_Wt_Dry_Soil_3'], 0, 1, 'C');
+$pdf->SetXY(66, 169);
+$pdf->Cell(35, 4, $Search['LL_MC_Porce_1'], 0, 1, 'C');
+$pdf->SetXY(100, 169);
+$pdf->Cell(28, 4, $Search['LL_MC_Porce_2'], 0, 1, 'C');
+$pdf->SetXY(136, 169);
+$pdf->Cell(24, 4, $Search['LL_MC_Porce_3'], 0, 1, 'C');
 
-$pdf->SetXY(69, 195);
-$pdf->Cell(35, 9, $Search['PL_Container_1'], 0, 1, 'C');
-$pdf->SetXY(104, 195);
-$pdf->Cell(28, 9, $Search['PL_Container_2'], 0, 1, 'C');
-$pdf->SetXY(132, 195);
-$pdf->Cell(24, 9, $Search['PL_Container_3'], 0, 1, 'C');
-$pdf->SetXY(69, 203);
-$pdf->Cell(35, 9, $Search['PL_Wet_Soil_1'], 0, 1, 'C');
-$pdf->SetXY(104, 203);
-$pdf->Cell(28, 9, $Search['PL_Wet_Soil_2'], 0, 1, 'C');
-$pdf->SetXY(132, 203);
-$pdf->Cell(24, 9, $Search['PL_Wet_Soil_3'], 0, 1, 'C');
-$pdf->SetXY(69, 210);
-$pdf->Cell(35, 9, $Search['PL_Dry_Soil_Tare_1'], 0, 1, 'C');
-$pdf->SetXY(104, 210);
-$pdf->Cell(28, 9, $Search['PL_Dry_Soil_Tare_2'], 0, 1, 'C');
-$pdf->SetXY(132, 210);
-$pdf->Cell(24, 9, $Search['PL_Dry_Soil_Tare_3'], 0, 1, 'C');
-$pdf->SetXY(69, 217);
-$pdf->Cell(35, 9, $Search['PL_Water_1'], 0, 1, 'C');
-$pdf->SetXY(104, 217);
-$pdf->Cell(28, 9, $Search['PL_Water_2'], 0, 1, 'C');
-$pdf->SetXY(132, 217);
-$pdf->Cell(24, 9, $Search['PL_Water_3'], 0, 1, 'C');
-$pdf->SetXY(69, 224);
-$pdf->Cell(35, 9, $Search['PL_Tare_1'], 0, 1, 'C');
-$pdf->SetXY(104, 224);
-$pdf->Cell(28, 9, $Search['PL_Tare_2'], 0, 1, 'C');
-$pdf->SetXY(132, 224);
-$pdf->Cell(24, 9, $Search['PL_Tare_3'], 0, 1, 'C');
-$pdf->SetXY(69, 231);
-$pdf->Cell(35, 9, $Search['PL_Wt_Dry_Soil_1'], 0, 1, 'C');
-$pdf->SetXY(104, 231);
-$pdf->Cell(28, 9, $Search['PL_Wt_Dry_Soil_2'], 0, 1, 'C');
-$pdf->SetXY(132, 231);
-$pdf->Cell(24, 9, $Search['PL_Wt_Dry_Soil_3'], 0, 1, 'C');
-$pdf->SetXY(69, 238.5);
-$pdf->Cell(35, 9, $Search['PL_MC_Porce_1'], 0, 1, 'C');
-$pdf->SetXY(104, 238.5);
-$pdf->Cell(28, 9, $Search['PL_MC_Porce_2'], 0, 1, 'C');
-$pdf->SetXY(132, 238.5);
-$pdf->Cell(24, 9, $Search['PL_MC_Porce_3'], 0, 1, 'C');
-$pdf->SetXY(69, 246);
-$pdf->Cell(87, 7, $Search['PL_Avg_Mc_Porce'], 0, 1, 'C');
+// Test Information Plastic Limit
+$pdf->SetXY(66, 194);
+$pdf->Cell(35, 4, $Search['PL_Container_1'], 0, 1, 'C');
+$pdf->SetXY(100, 194);
+$pdf->Cell(28, 4, $Search['PL_Container_2'], 0, 1, 'C');
+$pdf->SetXY(136, 194);
+$pdf->Cell(24, 4, $Search['PL_Container_3'], 0, 1, 'C');
+$pdf->SetXY(66, 201);
+$pdf->Cell(35, 4, $Search['PL_Wet_Soil_1'], 0, 1, 'C');
+$pdf->SetXY(100, 201);
+$pdf->Cell(28, 4, $Search['PL_Wet_Soil_2'], 0, 1, 'C');
+$pdf->SetXY(136, 201);
+$pdf->Cell(24, 4, $Search['PL_Wet_Soil_3'], 0, 1, 'C');
+$pdf->SetXY(66, 208);
+$pdf->Cell(35, 4, $Search['PL_Dry_Soil_Tare_1'], 0, 1, 'C');
+$pdf->SetXY(100, 208);
+$pdf->Cell(28, 4, $Search['PL_Dry_Soil_Tare_2'], 0, 1, 'C');
+$pdf->SetXY(136, 208);
+$pdf->Cell(24, 4, $Search['PL_Dry_Soil_Tare_3'], 0, 1, 'C');
+$pdf->SetXY(66, 214);
+$pdf->Cell(35, 4, $Search['PL_Water_1'], 0, 1, 'C');
+$pdf->SetXY(100, 214);
+$pdf->Cell(28, 4, $Search['PL_Water_2'], 0, 1, 'C');
+$pdf->SetXY(136, 214);
+$pdf->Cell(24, 4, $Search['PL_Water_3'], 0, 1, 'C');
+$pdf->SetXY(66, 221);
+$pdf->Cell(35, 4, $Search['PL_Tare_1'], 0, 1, 'C');
+$pdf->SetXY(100, 221);
+$pdf->Cell(28, 4, $Search['PL_Tare_2'], 0, 1, 'C');
+$pdf->SetXY(136, 221);
+$pdf->Cell(24, 4, $Search['PL_Tare_3'], 0, 1, 'C');
+$pdf->SetXY(66, 228);
+$pdf->Cell(35, 4, $Search['PL_Wt_Dry_Soil_1'], 0, 1, 'C');
+$pdf->SetXY(100, 228);
+$pdf->Cell(28, 4, $Search['PL_Wt_Dry_Soil_2'], 0, 1, 'C');
+$pdf->SetXY(136, 228);
+$pdf->Cell(24, 4, $Search['PL_Wt_Dry_Soil_3'], 0, 1, 'C');
+$pdf->SetXY(66, 235);
+$pdf->Cell(35, 4, $Search['PL_MC_Porce_1'], 0, 1, 'C');
+$pdf->SetXY(97, 235);;
+$pdf->Cell(35, 4, $Search['PL_MC_Porce_2'], 0, 1, 'C');
+$pdf->SetXY(131, 235);;
+$pdf->Cell(35, 4, $Search['PL_MC_Porce_3'], 0, 1, 'C');
+$pdf->SetXY(97, 242);
+$pdf->Cell(35, 4, $Search['PL_Avg_Mc_Porce'], 0, 1, 'C');
 
-// SUMMARY Atteberg Limit Parameter
+// Sumarry Atterberg Limits Parameters
+$pdf->SetXY(328, 104);
+$pdf->Cell(24, 4, $Search['Liquid_Limit_Porce'], 0, 1, 'C');
+$pdf->SetXY(328, 112);
+$pdf->Cell(24, 4, $Search['Plastic_Limit_Porce'], 0, 1, 'C');
+$pdf->SetXY(328, 120);
+$pdf->Cell(24, 4, $Search['Plasticity_Index_Porce'], 0, 1, 'C');
+$pdf->SetXY(328, 128);
+$pdf->Cell(24, 4, $Search['Liquidity_Index_Porce'], 0, 1, 'C');
+$pdf->SetXY(328, 151);
+$pdf->Cell(24, 4, $Search['Classification'], 0, 1, 'C');
 
-$pdf->SetXY(320, 102);
-$pdf->Cell(24, 9, $Search['Liquid_Limit_Porce'], 0, 1, 'C');
-$pdf->SetXY(320, 111);
-$pdf->Cell(24, 8, $Search['Plastic_Limit_Porce'], 0, 1, 'C');
-$pdf->SetXY(320, 119);
-$pdf->Cell(24, 9, $Search['Plasticity_Index_Porce'], 0, 1, 'C');
-$pdf->SetXY(320, 127);
-$pdf->Cell(24, 9, $Search['Liquidity_Index_Porce'], 0, 1, 'C');
-$pdf->SetXY(320, 144);
-$pdf->Cell(24, 25, $Search['Classification'], 0, 1, 'C');
+// Comments for the test
+$pdf->SetFont('Arial', '', 10);
+$pdf->SetXY(293, 182);
+$pdf->MultiCell(59, 4, $Search['Comments'], 0, 'L');
 
-// Laboratory Comments
+// Agregar imágenes al PDF
+function addImage($pdf, $base64, $x, $y, $w) {
+    $imageData = base64_decode($base64);
+    $tempFile = tempnam(sys_get_temp_dir(), 'image');
+    file_put_contents($tempFile, $imageData);
+    $pdf->Image($tempFile, $x, $y, $w, 0, 'PNG');
+    unlink($tempFile);
+}
 
-$pdf->SetXY(284, 182);
-$pdf->MultiCell(60, 5, $Search['Comments'], 0, 'L');
+addImage($pdf, $Search['Liquid_Limit_Plot'], 182, 100, 90);
+addImage($pdf, $Search['Plasticity_Chart'], 182, 175, 90);
 
-// GRAFICAS DEL LIMITER
-$imageBase64 = $Search['Liquid_Limit_Plot'];
-$imageData = base64_decode($imageBase64);
-$tempFile = tempnam(sys_get_temp_dir(), 'image');
-file_put_contents($tempFile, $imageData);
-$pdf->Image($tempFile, 170, 100, 100, 0, 'PNG');
-unlink($tempFile);
-
-// GRAFICAS DEL Plasticity
-$imageBase64 = $Search['Plasticity_Chart'];
-$imageData = base64_decode($imageBase64);
-$tempFile = tempnam(sys_get_temp_dir(), 'image');
-file_put_contents($tempFile, $imageData);
-$pdf->Image($tempFile, 175, 185, 100, 0, 'PNG');
-unlink($tempFile);
-
-
+// Salida del archivo PDF
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
 ?>

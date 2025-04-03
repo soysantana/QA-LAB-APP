@@ -24,7 +24,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(300, 220));
 
 // Importar plantilla de PDF
-$pdf->setSourceFile('PV-F-01714_Laboratory Moisture Content with Scale_Rev 1.pdf');
+$pdf->setSourceFile('template/PV-F-01714_Laboratory Moisture Content with Scale_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -50,21 +50,21 @@ foreach ($data_fields as $field) {
 // Información adicional
 $pdf->SetFont('Arial', '', 11);
 $additional_fields = [
-    [109, 64, $Search['Structure']],
-    [109, 70, $Search['Area']],
-    [109, 74.5, $Search['Source']],
-    [109, 80, $Search['Sample_Date']],
-    [109, 85, $Search['Sample_ID']],
-    [109, 89.5, $Search['Sample_Number']],
-    [109, 95, $Search['Material_Type']],
-    [109, 99.5, $Search['Depth_From']],
-    [109, 104.5, $Search['Depth_To']],
-    [109, 109.5, $Search['North']],
-    [109, 115, $Search['East']],
-    [109, 120, $Search['Elev']],
-    [109, 133.5, '1'],
-    [109, 138.5, $Search['Tare_Name']],
-    [109, 144, $Search['Moisture_Content_Porce']]
+    [107, 64, $Search['Structure']],
+    [107, 70, $Search['Area']],
+    [107, 74.5, $Search['Source']],
+    [107, 80, $Search['Sample_Date']],
+    [107, 85, $Search['Sample_ID']],
+    [107, 89.5, $Search['Sample_Number']],
+    [107, 95, $Search['Material_Type']],
+    [107, 99.5, $Search['Depth_From']],
+    [107, 104.5, $Search['Depth_To']],
+    [107, 109.5, $Search['North']],
+    [107, 115, $Search['East']],
+    [107, 120, $Search['Elev']],
+    [107, 133.6, '1'],
+    [107, 138.5, $Search['Tare_Name']],
+    [107, 144, $Search['Moisture_Content_Porce']]
 ];
 
 foreach ($additional_fields as $field) {
@@ -74,8 +74,8 @@ foreach ($additional_fields as $field) {
 
 // Agregar comentarios
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(19, 168);
-$pdf->Cell(170, 0, $Search['Comments'], 0, 1, 'L');
+$pdf->SetXY(19, 165);
+$pdf->Cell(150, 4, $Search['Comments'], 0, 1, 'L');
 
 // Generar y mostrar el PDF
 $filename = sprintf('%s-%s-%s.pdf', $Search['Sample_ID'], $Search['Sample_Number'], $Search['Test_Type']);

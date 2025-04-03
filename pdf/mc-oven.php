@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(300, 250));
 
-$pdf->setSourceFile('PV-F-81248 Laboratory Moisture Content by Oven.pdf');
+$pdf->setSourceFile('template/PV-F-81248 Laboratory Moisture Content by Oven.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

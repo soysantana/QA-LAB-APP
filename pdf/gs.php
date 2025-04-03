@@ -18,97 +18,85 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(440, 360));
 
-$pdf->setSourceFile('PV-F-81247_Laboratory Sieve Grain Size for General Soil_Rev 5.pdf');
+$pdf->setSourceFile('template/PV-F-81247 Laboratory Sieve Grain Size for General Soil.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
-$pdf->SetFont('Arial', '', 10);
-$pdf->SetXY(70, 46);
-$pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
+$pdf->SetFont('Arial', 'B', 11);
+
+// Information for the essay
+$pdf->SetXY(70, 45);
+$pdf->Cell(30, 5, "PVDJ Soil Lab", 0, 1, 'C');
 $pdf->SetXY(70, 52);
+$pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
+$pdf->SetXY(70, 57);
 $pdf->Cell(30, 5, $Search['Sample_By'], 0, 1, 'C');
-
-$pdf->SetXY(185, 39);
-$pdf->Cell(30, 6, $Search['Standard'], 0, 1, 'C');
-$pdf->SetXY(185, 46);
-$pdf->Cell(30, 6, $Search['Test_Start_Date'], 0, 1, 'C');
-$pdf->SetXY(185, 52);
-$pdf->Cell(30, 6, $Search['Registed_Date'], 0, 1, 'C');
-
-$pdf->SetXY(270, 38);
-$pdf->Cell(30, 6, $Search['Methods'], 0, 1, 'C');
-$pdf->SetXY(270, 45);
-$pdf->Cell(30, 6, $Search['Preparation_Method'], 0, 1, 'C');
-$pdf->SetXY(270, 51);
-$pdf->Cell(30, 6, $Search['Split_Method'], 0, 1, 'C');
-
-$pdf->SetXY(70, 69);
-$pdf->Cell(30, 6, $Search['Structure'], 0, 1, 'C');
 $pdf->SetXY(70, 75);
-$pdf->Cell(30, 6, $Search['Area'], 0, 1, 'C');
+$pdf->Cell(30, 6, $Search['Structure'], 0, 1, 'C');
 $pdf->SetXY(70, 82);
-$pdf->Cell(30, 6, $Search['Source'], 0, 1, 'C');
+$pdf->Cell(30, 6, $Search['Area'], 0, 1, 'C');
 $pdf->SetXY(70, 90);
+$pdf->Cell(30, 6, $Search['Source'], 0, 1, 'C');
+$pdf->SetXY(70, 97);
 $pdf->Cell(30, 6, $Search['Material_Type'], 0, 1, 'C');
 
-$pdf->SetXY(185, 69);
-$pdf->Cell(30, 6, $Search['Sample_ID'], 0, 1, 'C');
+$pdf->SetXY(185, 45);
+$pdf->Cell(30, 6, $Search['Standard'], 0, 1, 'C');
+$pdf->SetXY(185, 52);
+$pdf->Cell(30, 6, $Search['Test_Start_Date'], 0, 1, 'C');
+$pdf->SetXY(185, 57);
+$pdf->Cell(30, 6, $Search['Registed_Date'], 0, 1, 'C');
 $pdf->SetXY(185, 75);
+$pdf->Cell(30, 6, $Search['Sample_ID'], 0, 1, 'C');
+$pdf->SetXY(185, 82);
 $pdf->Cell(30, 6, $Search['Sample_Number'], 0, 1, 'C');
-$pdf->SetXY(185, 83);
-$pdf->Cell(30, 6, $Search['Sample_Date'], 0, 1, 'C');
 $pdf->SetXY(185, 90);
+$pdf->Cell(30, 6, $Search['Sample_Date'], 0, 1, 'C');
+$pdf->SetXY(185, 97);
 $pdf->Cell(30, 6, $Search['Elev'], 0, 1, 'C');
 
-$pdf->SetXY(270, 69);
-$pdf->Cell(30, 6, $Search['Depth_From'], 0, 1, 'C');
+$pdf->SetXY(270, 45);
+$pdf->Cell(30, 6, $Search['Methods'], 0, 1, 'C');
+$pdf->SetXY(270, 52);
+$pdf->Cell(30, 6, $Search['Preparation_Method'], 0, 1, 'C');
+$pdf->SetXY(270, 57);
+$pdf->Cell(30, 6, $Search['Split_Method'], 0, 1, 'C');
 $pdf->SetXY(270, 75);
+$pdf->Cell(30, 6, $Search['Depth_From'], 0, 1, 'C');
+$pdf->SetXY(270, 82);
 $pdf->Cell(30, 6, $Search['Depth_To'], 0, 1, 'C');
-$pdf->SetXY(270, 83);
-$pdf->Cell(30, 6, $Search['North'], 0, 1, 'C');
 $pdf->SetXY(270, 90);
+$pdf->Cell(30, 6, $Search['North'], 0, 1, 'C');
+$pdf->SetXY(270, 97);
 $pdf->Cell(30, 6, $Search['East'], 0, 1, 'C');
 
 // Testing Information
 $pdf->SetFont('Arial', '', 11);
-$pdf->SetXY(120, 110);
-$pdf->Cell(28, 8, $Search['Container'], 0, 1, 'C');
-$pdf->SetXY(120, 117);
-$pdf->Cell(28, 8, $Search['Wet_Soil_Tare'], 0, 1, 'C');
-$pdf->SetXY(120, 124);
-$pdf->Cell(28, 7, $Search['Wet_Dry_Tare'], 0, 1, 'C');
-$pdf->SetXY(120, 131);
-$pdf->Cell(28, 7, $Search['Tare'], 0, 1, 'C');
-$pdf->SetXY(120, 138);
-$pdf->Cell(28, 7, $Search['Wt_Dry_Soil'], 0, 1, 'C');
-$pdf->SetXY(120, 145);
-$pdf->Cell(28, 7, $Search['Wt_Washed'], 0, 1, 'C');
-$pdf->SetXY(120, 152);
-$pdf->Cell(28, 7, $Search['Wt_Wash_Pan'], 0, 1, 'C');
+$pdf->SetXY(120, 118);
+$pdf->Cell(28, 4, $Search['Container'], 0, 1, 'C');
+$pdf->SetXY(120, 125);
+$pdf->Cell(28, 4, $Search['Wet_Soil_Tare'], 0, 1, 'C');
+$pdf->SetXY(120, 132);
+$pdf->Cell(28, 4, $Search['Wet_Dry_Tare'], 0, 1, 'C');
+$pdf->SetXY(120, 139);
+$pdf->Cell(28, 4, $Search['Tare'], 0, 1, 'C');
+$pdf->SetXY(120, 146);
+$pdf->Cell(28, 4, $Search['Wt_Dry_Soil'], 0, 1, 'C');
+$pdf->SetXY(120, 153);
+$pdf->Cell(28, 4, $Search['Wt_Washed'], 0, 1, 'C');
+$pdf->SetXY(120, 160);
+$pdf->Cell(28, 4, $Search['Wt_Wash_Pan'], 0, 1, 'C');
 
 //Grain Size Distribution
 $pdf->SetFont('Arial', '', 11);
-$pdf->SetXY(235, 117);
-$pdf->Cell(17, 7, $Search['WtRet1'], 0, 1, 'C');
-$pdf->SetXY(253, 117);
-$pdf->Cell(21, 7, $Search['Ret1'], 0, 1, 'C');
-$pdf->SetXY(275, 117);
-$pdf->Cell(21, 7, $Search['CumRet1'], 0, 1, 'C');
-$pdf->SetXY(296, 117);
-$pdf->Cell(18, 7, $Search['Pass1'], 0, 1, 'C');
-$pdf->SetXY(314, 117);
-//$pdf->Cell(19, 7, $Search['Wt_Ret_8_203'], 0, 1, 'C');
-
 $pdf->SetXY(235, 124);
-$pdf->Cell(17, 7, "", 0, 1, 'C');
+$pdf->Cell(17, 7, $Search['WtRet1'], 0, 1, 'C');
 $pdf->SetXY(253, 124);
-$pdf->Cell(21, 7, "0.00", 0, 1, 'C');
+$pdf->Cell(21, 7, $Search['Ret1'], 0, 1, 'C');
 $pdf->SetXY(275, 124);
 $pdf->Cell(21, 7, $Search['CumRet1'], 0, 1, 'C');
 $pdf->SetXY(296, 124);
 $pdf->Cell(18, 7, $Search['Pass1'], 0, 1, 'C');
-$pdf->SetXY(314, 124);
-//$pdf->Cell(19, 7, $Search['Wt_Ret_8_203'], 0, 1, 'C');
 
 $pdf->SetXY(235, 131);
 $pdf->Cell(17, 7, $Search['WtRet2'], 0, 1, 'C');
@@ -379,12 +367,14 @@ $pdf->SetXY(314, 331);
 $pdf->Cell(19, 6, $Search['D85'], 0, 1, 'C');
 $pdf->SetXY(314, 337);
 $pdf->Cell(19, 6, $Search['Cc'], 0, 1, 'C');
-$pdf->SetXY(314, 343);
+$pdf->SetXY(314, 344);
 $pdf->Cell(19, 6, $Search['Cu'], 0, 1, 'C');
 
-$pdf->SetXY(41, 170);
-$pdf->MultiCell(108, 4, $Search['Comments'], 0, 'L');
+// Classifivation as per ASTM-D2487
 
+// Comments the laboratory
+$pdf->SetXY(41, 180);
+$pdf->MultiCell(107, 4, $Search['Comments'], 0, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

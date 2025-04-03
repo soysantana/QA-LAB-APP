@@ -18,7 +18,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(320, 260));
 
-$pdf->setSourceFile('PV-F-83815 Laboratory Moisture Content Constant Mass.pdf');
+$pdf->setSourceFile('template/PV-F-83815 Laboratory Moisture Content Constant Mass.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

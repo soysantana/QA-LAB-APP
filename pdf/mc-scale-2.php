@@ -24,7 +24,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('L', array(340, 250));
 
 // Importar plantilla de PDF
-$pdf->setSourceFile('PV-F-01714 Laboratory Moisture Content with Scale.pdf');
+$pdf->setSourceFile('template/PV-F-01714 Laboratory Moisture Content with Scale.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -41,6 +41,7 @@ $data_fields = [
     [158, 57, ""],
     [158, 62.5, $Search['Test_Start_Date']],
     [158, 68, $Search['Registed_Date']],
+    [250, 41.5, $Search['Client']],
     [250, 57, $Search['Methods']],
     [250, 62.5, ""],
     [250, 68, ""]
@@ -77,8 +78,8 @@ foreach ($additional_fields as $field) {
 
 // Agregar comentarios
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(50, 166);
-$pdf->Cell(5, 0, $Search['Comments'], 0, 1, 'L');
+$pdf->SetXY(50, 165);
+$pdf->Cell(145, 4, $Search['Comments'], 0, 1, 'L');
 
 // Generar y mostrar el PDF
 $filename = sprintf('%s-%s-%s.pdf', $Search['Sample_ID'], $Search['Sample_Number'], $Search['Test_Type']);
