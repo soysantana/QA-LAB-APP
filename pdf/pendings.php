@@ -15,7 +15,8 @@ $data = [
 ];
 
 // Función para normalizar valores (evitar espacios extra y diferencias de mayúsculas/minúsculas)
-function normalize($value) {
+function normalize($value)
+{
     return strtoupper(trim($value));
 }
 
@@ -50,7 +51,8 @@ foreach ($data["Requisition"] as $requisition) {
 
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
+class PDF extends Fpdi
+{
     function Header() {}
 
     function Footer() {}
@@ -120,30 +122,29 @@ foreach ($testTypes as $index => $sample) {
                         $resultado = "No se puede determinar el metodo";
                     }
 
-                    $pdf->SetX($tableX); 
-                    $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
+                    $pdf->SetX($tableX);
+                    $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
                     $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-                    $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
+                    $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
                     $pdf->Cell(45, 10, $resultado, 1, 1, 'C');
                 }
             }
         } else {
             // Si no hay resultados de Grain Size
-            $pdf->SetX($tableX); 
-            $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
+            $pdf->SetX($tableX);
+            $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
             $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-            $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
+            $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
             $pdf->Cell(45, 10, 'No data', 1, 1, 'C'); // Colocamos "No data" si no hay tamaño de grano
         }
     } else {
         // Si no es tipo SP
-        $pdf->SetX($tableX); 
-        $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
+        $pdf->SetX($tableX);
+        $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
         $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-        $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
+        $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
         $pdf->Cell(45, 10, '', 1, 1, 'C'); // Método en blanco
     }
 }
 
 $pdf->Output();
-?>

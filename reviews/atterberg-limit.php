@@ -1,22 +1,22 @@
 <?php
-  $page_title = 'Atterberg Limit';
-  require_once('../config/load.php');
-  $Search = find_by_id('atterberg_limit', $_GET['id']);
+$page_title = 'Atterberg Limit';
+require_once('../config/load.php');
+$Search = find_by_id('atterberg_limit', $_GET['id']);
 ?>
 
-<?php 
-  // Manejo de los formularios
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['update-atterberg-limit'])) {
-        include('../database/atterberg-limit.php');
-    } elseif (isset($_POST['repeat-atterberg-limit'])) {
-        include('../database/atterberg-limit.php');
-    } elseif (isset($_POST['reviewed-atterberg-limit'])) {
-        include('../database/atterberg-limit.php');
-    } elseif (isset($_POST['delete_al'])) {
-        include('../database/atterberg-limit.php');
-    }
+<?php
+// Manejo de los formularios
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['update-atterberg-limit'])) {
+    include('../database/atterberg-limit.php');
+  } elseif (isset($_POST['repeat-atterberg-limit'])) {
+    include('../database/atterberg-limit.php');
+  } elseif (isset($_POST['reviewed-atterberg-limit'])) {
+    include('../database/atterberg-limit.php');
+  } elseif (isset($_POST['delete_al'])) {
+    include('../database/atterberg-limit.php');
   }
+}
 ?>
 
 <?php page_require_level(2); ?>
@@ -24,167 +24,167 @@
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
-<div class="pagetitle">
-  <h1>Atterberg Limit</h1>
-  <nav>
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-      <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Atterberg Limit</li>
-    </ol>
-  </nav>
-</div><!-- End Page Title -->
-<section class="section">
-  <div class="row" oninput="LLyPL()">
+  <div class="pagetitle">
+    <h1>Atterberg Limit</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
+        <li class="breadcrumb-item">Forms</li>
+        <li class="breadcrumb-item active">Atterberg Limit</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+  <section class="section">
+    <div class="row" oninput="LLyPL()">
 
-  <form class="row" action="atterberg-limit.php?id=<?php echo $Search['id']; ?>" method="post">
-  
-  <div class="col-md-4">
-  <?php echo display_msg($msg); ?>
-  </div>
+      <form class="row" action="atterberg-limit.php?id=<?php echo $Search['id']; ?>" method="post">
 
-  <div id="product_info">
-    <div class="col-lg-12">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Sample Information</h5>
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label for="ProjectName" class="form-label">Project Name</label>
-              <input type="text" class="form-control" name="ProjectName" id="ProjectName" value="<?php echo ($Search['Project_Name']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="Client" class="form-label">Client</label>
-              <input type="text" class="form-control" name="Client" id="Client" value="<?php echo ($Search['Client']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="ProjectNumber" class="form-label">Project Number</label>
-              <input type="text" class="form-control" name="ProjectNumber" id="ProjectNumber" value="<?php echo ($Search['Project_Number']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="Structure" class="form-label">Structure</label>
-              <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo ($Search['Structure']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="Area" class="form-label">Work Area</label>
-              <input type="text" class="form-control" name="Area" id="Area" value="<?php echo ($Search['Area']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="Source" class="form-label">Borrow Source</label>
-              <input type="text" class="form-control" name="Source" id="Source" value="<?php echo ($Search['Source']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="MType" class="form-label">Material Type</label>
-              <input type="text" class="form-control" name="MType" id="MType" value="<?php echo ($Search['Material_Type']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="SType" class="form-label">Sample Type</label>
-              <input type="text" class="form-control" name="SType" id="SType" value="<?php echo ($Search['Sample_Type']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="SampleName" class="form-label">Sample Name</label>
-              <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo ($Search['Sample_ID']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="SampleNumber" class="form-label">Sample Number</label>
-              <input type="text" class="form-control" name="SampleNumber" id="SampleNumber" value="<?php echo ($Search['Sample_Number']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="Sample Date" class="form-label">Sample Date</label>
-              <input type="text" class="form-control" name="CollectionDate" id="Sample Date" value="<?php echo ($Search['Sample_Date']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="SampleBy" class="form-label">Sample By</label>
-              <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo ($Search['Sample_By']); ?>">
-            </div>
-            <div class="col-md-4">
-              <label for="Depth From" class="form-label">Depth From</label>
-              <input type="text" class="form-control" name="DepthFrom" id="Depth From" value="<?php echo ($Search['Depth_From']); ?>">
-            </div>
-            <div class="col-md-2">
-              <label for="Depth To" class="form-label">Depth To</label>
-              <input type="text" class="form-control" name="DepthTo" id="Depth To" value="<?php echo ($Search['Depth_To']); ?>">
-            </div>
-            <div class="col-md-2">
-              <label for="North" class="form-label">North</label>
-              <input type="text" class="form-control" name="North" id="North" value="<?php echo ($Search['North']); ?>">
-            </div>
-            <div class="col-md-2">
-              <label for="East" class="form-label">East</label>
-              <input type="text" class="form-control" name="East" id="East" value="<?php echo ($Search['East']); ?>">
-            </div>
-            <div class="col-md-2">
-              <label for="Elevation" class="form-label">Elevation</label>
-              <input type="text" class="form-control" name="Elev" id="Elevation" value="<?php echo ($Search['Elev']); ?>">
+        <div class="col-md-4">
+          <?php echo display_msg($msg); ?>
+        </div>
+
+        <div id="product_info">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Sample Information</h5>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label for="ProjectName" class="form-label">Project Name</label>
+                    <input type="text" class="form-control" name="ProjectName" id="ProjectName" value="<?php echo ($Search['Project_Name']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Client" class="form-label">Client</label>
+                    <input type="text" class="form-control" name="Client" id="Client" value="<?php echo ($Search['Client']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="ProjectNumber" class="form-label">Project Number</label>
+                    <input type="text" class="form-control" name="ProjectNumber" id="ProjectNumber" value="<?php echo ($Search['Project_Number']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Structure" class="form-label">Structure</label>
+                    <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo ($Search['Structure']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Area" class="form-label">Work Area</label>
+                    <input type="text" class="form-control" name="Area" id="Area" value="<?php echo ($Search['Area']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Source" class="form-label">Borrow Source</label>
+                    <input type="text" class="form-control" name="Source" id="Source" value="<?php echo ($Search['Source']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="MType" class="form-label">Material Type</label>
+                    <input type="text" class="form-control" name="MType" id="MType" value="<?php echo ($Search['Material_Type']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SType" class="form-label">Sample Type</label>
+                    <input type="text" class="form-control" name="SType" id="SType" value="<?php echo ($Search['Sample_Type']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SampleName" class="form-label">Sample Name</label>
+                    <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo ($Search['Sample_ID']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SampleNumber" class="form-label">Sample Number</label>
+                    <input type="text" class="form-control" name="SampleNumber" id="SampleNumber" value="<?php echo ($Search['Sample_Number']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Sample Date" class="form-label">Sample Date</label>
+                    <input type="text" class="form-control" name="CollectionDate" id="Sample Date" value="<?php echo ($Search['Sample_Date']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SampleBy" class="form-label">Sample By</label>
+                    <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo ($Search['Sample_By']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Depth From" class="form-label">Depth From</label>
+                    <input type="text" class="form-control" name="DepthFrom" id="Depth From" value="<?php echo ($Search['Depth_From']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="Depth To" class="form-label">Depth To</label>
+                    <input type="text" class="form-control" name="DepthTo" id="Depth To" value="<?php echo ($Search['Depth_To']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="North" class="form-label">North</label>
+                    <input type="text" class="form-control" name="North" id="North" value="<?php echo ($Search['North']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="East" class="form-label">East</label>
+                    <input type="text" class="form-control" name="East" id="East" value="<?php echo ($Search['East']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="Elevation" class="form-label">Elevation</label>
+                    <input type="text" class="form-control" name="Elev" id="Elevation" value="<?php echo ($Search['Elev']); ?>">
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-  
-    <div class="col-lg-12">
 
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Trial Information</h5>
+        <div class="col-lg-12">
 
-          <!-- Multi Columns Form -->
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="Standard" class="form-label">Standard</label>
-              <select id="Standard" class="form-select" name="Standard">
-                <option selected>Choose...</option>
-                <option <?php if ($Search['Standard'] == 'ASTM-D4318') echo 'selected'; ?>>ASTM-D4318</option>
-              </select>
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Trial Information</h5>
+
+              <!-- Multi Columns Form -->
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="Standard" class="form-label">Standard</label>
+                  <select id="Standard" class="form-select" name="Standard">
+                    <option selected>Choose...</option>
+                    <option <?php if ($Search['Standard'] == 'ASTM-D4318') echo 'selected'; ?>>ASTM-D4318</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="PMethods" class="form-label">Preparation Methods</label>
+                  <select id="PMethods" class="form-select" name="PMethods">
+                    <option selected>Choose...</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Wet') echo 'selected'; ?>>Wet</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="SMethods" class="form-label">Split Methods</label>
+                  <select id="SMethods" class="form-select" name="SMethods">
+                    <option selected>Choose...</option>
+                    <option <?php if ($Search['Split_Method'] == 'Manual') echo 'selected'; ?>>Manual</option>
+                    <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="NatMc" class="form-label">Natural Mc %</label>
+                  <input type="text" class="form-control" name="NatMc" id="NatMc" value="<?php echo ($Search['Nat_Mc']); ?>">
+                </div>
+                <div class="col-md-6">
+                  <label for="Technician" class="form-label">Technician</label>
+                  <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
+                </div>
+                <div class="col-md-6">
+                  <label for="DateTesting" class="form-label">Date of Testing</label>
+                  <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
+                </div>
+                <div class="col-12">
+                  <label for="Comments" class="form-label">Comments</label>
+                  <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
+                </div>
+                <div class="col-12">
+                  <textarea hidden class="form-control" name="PlotLimit" id="PlotLimit" style="height: 100px;"><?php echo ($Search['Liquid_Limit_Plot']); ?></textarea>
+                  <textarea hidden class="form-control" name="PlotPlasticity" id="PlotPlasticity" style="height: 100px;"><?php echo ($Search['Plasticity_Chart']); ?></textarea>
+                </div>
+              </div><!-- End Multi Columns Form -->
+
             </div>
-            <div class="col-md-6">
-              <label for="PMethods" class="form-label">Preparation Methods</label>
-              <select id="PMethods" class="form-select" name="PMethods">
-                <option selected>Choose...</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
-                <option <?php if ($Search['Preparation_Method'] == 'Wet') echo 'selected'; ?>>Wet</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="SMethods" class="form-label">Split Methods</label>
-              <select id="SMethods" class="form-select" name="SMethods">
-                <option selected>Choose...</option>
-                <option <?php if ($Search['Split_Method'] == 'Manual') echo 'selected'; ?>>Manual</option>
-                <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="NatMc" class="form-label">Natural Mc %</label>
-              <input type="text" class="form-control" name="NatMc" id="NatMc" value="<?php echo ($Search['Nat_Mc']); ?>">
-            </div>
-            <div class="col-md-6">
-              <label for="Technician" class="form-label">Technician</label>
-              <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
-            </div>
-            <div class="col-md-6">
-              <label for="DateTesting" class="form-label">Date of Testing</label>
-              <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
-            </div>
-            <div class="col-12">
-              <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
-            </div>
-            <div class="col-12">
-              <textarea hidden class="form-control" name="PlotLimit" id="PlotLimit" style="height: 100px;"><?php echo ($Search['Liquid_Limit_Plot']); ?></textarea>
-              <textarea hidden class="form-control" name="PlotPlasticity" id="PlotPlasticity" style="height: 100px;"><?php echo ($Search['Plasticity_Chart']); ?></textarea>
-            </div>
-          </div><!-- End Multi Columns Form -->
+          </div>
 
         </div>
-      </div>
 
-    </div>
-
-    <div class="col-lg-5">
-    <div class="card">
+        <div class="col-lg-5">
+          <div class="card">
             <div class="card-body">
               <h5 class="card-title">Liquid Limit</h5>
               <!-- Bordered Table -->
@@ -312,112 +312,112 @@
               <!-- End Bordered Table -->
             </div>
           </div>
-    </div>
+        </div>
 
-    <div class="col-lg-4">
+        <div class="col-lg-4">
 
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title"></h5>
-        
-        <!-- Multi Point Liquid Limit Plot Chart -->
-        <div id="liquid-limit" style="min-height: 400px;" class="echart"></div>
-        <!-- End Multi Point Liquid Limit Plot Chart -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title"></h5>
 
-      </div>
-    </div>
-          
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title"></h5>
-              
-        <!-- Plasticity Chart -->
-        <div id="PlasticityChart" style="min-height: 400px;" class="echart"></div>
-        <!-- End Plasticity Chart -->
-            
-      </div>
-    </div>
+              <!-- Multi Point Liquid Limit Plot Chart -->
+              <div id="liquid-limit" style="min-height: 400px;" class="echart"></div>
+              <!-- End Multi Point Liquid Limit Plot Chart -->
 
-    </div>
-    
-    <div class="col-lg-3">
-      
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Summary Atteberg Limit Parameter</h5>
-        <!-- Summary Atteberg Limit Parameter -->
-        <table class="table table-bordered">
-          <tbody>
-            <tr>
-              <th scope="row" style="width: 175px;">Liquid Limit (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="LLPorce" id="LLPorce" readonly tabindex="-1" value="<?php echo ($Search['Liquid_Limit_Porce']); ?>"></td>
-            </tr>
-            <tr>
-              <th scope="row">Plastic Limit (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="PLPorce" id="PLPorce" readonly tabindex="-1" value="<?php echo ($Search['Plastic_Limit_Porce']); ?>"></td>
-            </tr>
-            <tr>
-              <th scope="row">Plasticity Index (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="PLIndexPorce" id="PLIndexPorce" readonly tabindex="-1" value="<?php echo ($Search['Plasticity_Index_Porce']); ?>"></td>
-            </tr>
-            <tr>
-              <th scope="row">Liquidity Index (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="LLIndexPorce" id="LLIndexPorce" readonly tabindex="-1" value="<?php echo ($Search['Liquidity_Index_Porce']); ?>"></td>
-              <input hidden style="border: none;" class="form-control" name="Rsquared" id="Rsquared" readonly tabindex="-1" value="<?php echo ($Search['Rsquared']); ?>">
-            </tr>
-          </tbody>
-        </table>
-        <!-- End Default Table Example -->
-        <!-- Summary Atteberg Limit Parameter -->
-        <table class="table table-bordered">
-          <tbody>
-            <tr>
-              <th scope="row" style="width: 160px;">Soil Classification as per Unified Soil Classification System, ASTM designation D2487-06</th>
-              <td><input type="text" style="border: none;" class="form-control" name="classifysoil" id="classifysoil" readonly tabindex="-1" value="<?php echo ($Search['Classification']); ?>"></td>
-            </tr>
-          </tbody>
-        </table>
-        <!-- End Default Table Example -->
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Actions</h5>
-        <!-- Actions Buttons -->
-        <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="update-atterberg-limit">UpdateEssay</button>
-
-          <div class="btn-group dropup" role="group">
-            <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-printer"></i>
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="../pdf/al.php?id=<?php echo ($Search['id']); ?>">Site Investigación</a></li>
-              <li><a class="dropdown-item" href="../pdf/al-bgc.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
-            </ul>
+            </div>
           </div>
 
-          <button type="submit" class="btn btn-danger" name="delete_al"><i class="bi bi-trash"></i></button>
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title"></h5>
+
+              <!-- Plasticity Chart -->
+              <div id="PlasticityChart" style="min-height: 400px;" class="echart"></div>
+              <!-- End Plasticity Chart -->
+
+            </div>
+          </div>
+
         </div>
 
-        <div class="btn-group mt-2" role="group">
-        <?php if (user_can_access(1)): ?>
-          <button type="submit" class="btn btn-primary" name="repeat-atterberg-limit">Repeat</button>
-          <button type="submit" class="btn btn-primary" name="reviewed-atterberg-limit">Reviewed</button>
-        <?php endif; ?>
-          <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
+        <div class="col-lg-3">
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Summary Atteberg Limit Parameter</h5>
+              <!-- Summary Atteberg Limit Parameter -->
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row" style="width: 175px;">Liquid Limit (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLPorce" id="LLPorce" readonly tabindex="-1" value="<?php echo ($Search['Liquid_Limit_Porce']); ?>"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Plastic Limit (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLPorce" id="PLPorce" readonly tabindex="-1" value="<?php echo ($Search['Plastic_Limit_Porce']); ?>"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Plasticity Index (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLIndexPorce" id="PLIndexPorce" readonly tabindex="-1" value="<?php echo ($Search['Plasticity_Index_Porce']); ?>"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Liquidity Index (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLIndexPorce" id="LLIndexPorce" readonly tabindex="-1" value="<?php echo ($Search['Liquidity_Index_Porce']); ?>"></td>
+                    <input hidden style="border: none;" class="form-control" name="Rsquared" id="Rsquared" readonly tabindex="-1" value="<?php echo ($Search['Rsquared']); ?>">
+                  </tr>
+                </tbody>
+              </table>
+              <!-- End Default Table Example -->
+              <!-- Summary Atteberg Limit Parameter -->
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row" style="width: 160px;">Soil Classification as per Unified Soil Classification System, ASTM designation D2487-06</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="classifysoil" id="classifysoil" readonly tabindex="-1" value="<?php echo ($Search['Classification']); ?>"></td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- End Default Table Example -->
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Actions</h5>
+              <!-- Actions Buttons -->
+              <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-success" name="update-atterberg-limit">UpdateEssay</button>
+
+                <div class="btn-group dropup" role="group">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-printer"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="../pdf/AL-Naranjo.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
+                    <li><a class="dropdown-item" href="../pdf/AL-Build.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
+                  </ul>
+                </div>
+
+                <button type="submit" class="btn btn-danger" name="delete_al"><i class="bi bi-trash"></i></button>
+              </div>
+
+              <div class="btn-group mt-2" role="group">
+                <?php if (user_can_access(1)): ?>
+                  <button type="submit" class="btn btn-primary" name="repeat-atterberg-limit">Repeat</button>
+                  <button type="submit" class="btn btn-primary" name="reviewed-atterberg-limit">Reviewed</button>
+                <?php endif; ?>
+                <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
+              </div>
+              <div class="mt-2" id="mensaje-container"></div>
+            </div>
+          </div>
+
         </div>
-        <div class="mt-2" id="mensaje-container"></div>
-      </div>
+
+      </form><!-- End Form -->
+
     </div>
-  
-  </div>
-
-  </form><!-- End Form -->
-
-  </div>
-</section>
+  </section>
 
 </main><!-- End #main -->
 

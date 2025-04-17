@@ -457,6 +457,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="../pdf/GS-FF-Build.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
                     <li><a class="dropdown-item" href="../pdf/GS-FF-Naranjo.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
+                    <li><a class="dropdown-item" href="../pdf/GS-FF-Acopio.php?id=<?php echo ($Search['id']); ?>">Acopio</a></li>
                   </ul>
                 </div>
 

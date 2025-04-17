@@ -7,7 +7,8 @@ $Search = find_by_id('moisture_constant_mass', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
+class PDF extends Fpdi
+{
     function Header() {}
 
     function Footer() {}
@@ -92,4 +93,3 @@ $pdf->SetXY(15, 210);
 $pdf->Cell(229, 45, $Search['Comments'], 0, 1, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
-?>
