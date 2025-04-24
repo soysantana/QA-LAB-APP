@@ -60,7 +60,9 @@ if (!$session->isUserLoggedIn(true)) {
                   </thead>
                   <tbody>
                     <?php
-                    $Requisitions = find_all('lab_test_requisition_form');
+                    $week = date('Y-m-d', strtotime('-14 days'));
+                    //$Requisitions = find_all('lab_test_requisition_form');
+                    $Requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date >= '{$week}' ORDER BY Registed_Date DESC");
                     $testTypes = [];
                     $statusCounts = [
                       'Preparation' => 0,
@@ -268,7 +270,8 @@ if (!$session->isUserLoggedIn(true)) {
                   </thead>
                   <tbody>
                     <?php
-                    $Requisition = find_all("lab_test_requisition_form");
+                    $week = date('Y-m-d', strtotime('-31 days'));
+                    $Requisition = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date >= '{$week}' ORDER BY Registed_Date DESC");
                     $Preparation = find_all("test_preparation");
                     $Review = find_all("test_review");
                     $testTypes = [];

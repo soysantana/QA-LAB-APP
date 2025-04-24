@@ -373,6 +373,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             </div>
           </div>
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Coarse Grained Classification using the USCS</h5>
+              <!-- Bordered Table -->
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <td><input type="text" style="border: none;" class="form-control text-center" name="ClassificationUSCS1" id="ClassificationUSCS1" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <td><input type="text" style="border: none;" class="form-control text-center" name="ClassificationUSCS2" id="ClassificationUSCS2" readonly tabindex="-1"></td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- End Bordered Table -->
+            </div>
+          </div>
+
         </div>
 
         <div class="col-lg-6">

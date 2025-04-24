@@ -54,7 +54,6 @@ function TRF() {
         }
     });
 
-    console.log("Totales de los screens (formateados):", totals);
 }
 
 /**

@@ -387,4 +387,4 @@ $pdf->Image($tempFile, 140, 95, 200, 0, 'PNG');
 unlink($tempFile);
 
 
-$pdf->Output();
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
