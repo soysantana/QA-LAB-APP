@@ -1,12 +1,18 @@
 <?php
   $page_title = 'Moisture Microwave';
-  $class_form = ' ';
-  $form_show = 'show';
-  $Moisture = 'active';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['moisture-microwave'])) {
+        include('../database/moisture-content.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -23,11 +29,11 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/moisture-content.php" method="post">
-
-  <div id="product_info"></div>
+  <form class="row" action="moisture-microwave.php" method="post">
 
   <?php echo display_msg($msg); ?>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 

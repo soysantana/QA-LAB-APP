@@ -1,11 +1,9 @@
 <?php
   $page_title = 'Concrete Specimens';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 

@@ -3,7 +3,7 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$Search = find_by_id('moisture_microwave', (int)$_GET['id']);
+$Search = find_by_id('moisture_microwave', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
@@ -18,11 +18,13 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(300, 250));
 
-$pdf->setSourceFile('mc-microwave.pdf');
+$pdf->setSourceFile('template/PV-F-83834_Laboratory Moisture Content by Microwave_Rev 1.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
 $pdf->SetFont('Arial', '', 11);
+$pdf->SetXY(67, 33);
+$pdf->Cell(30, 5, 'PVDJ SOIL LAB', 0, 1, 'C');
 $pdf->SetXY(67, 37);
 $pdf->Cell(30, 5, $Search['Technician'], 0, 1, 'C');
 $pdf->SetXY(67, 42);
@@ -90,8 +92,8 @@ $pdf->SetXY(135, 214);
 $pdf->Cell(81, 6, $Search['Moisture_Content_Porce'], 0, 1, 'C');
 
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(21, 230);
-$pdf->Cell(183, 25, $Search['Comments'], 0, 1, 'C');
+$pdf->SetXY(22, 232);
+$pdf->Cell(180, 4, $Search['Comments'], 0, 1, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
 ?>

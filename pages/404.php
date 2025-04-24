@@ -24,17 +24,17 @@
 
 <!-- Vendor JS Files -->
 
-<script src="/app/assets/vendor/apexcharts/apexcharts.min.js"></script>
-<script src="/app/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="/app/assets/vendor/chart.js/chart.umd.js"></script>
-<script src="/app/assets/vendor/echarts/echarts.min.js"></script>
-<script src="/app/assets/vendor/quill/quill.min.js"></script>
-<script src="/app/assets/vendor/simple-datatables/simple-datatables.js"></script>
-<script src="/app/assets/vendor/tinymce/tinymce.min.js"></script>
-<script src="/app/assets/vendor/php-email-form/validate.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/apexcharts/apexcharts.min.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/chart.js/chart.umd.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/echarts/echarts.min.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/quill/quill.min.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/simple-datatables/simple-datatables.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/tinymce/tinymce.min.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/vendor/php-email-form/validate.js"></script>
 
 <!-- Template Main JS File -->
-<script src="/app/assets/js/main.js"></script>
+<script src="https://pvj-app.azurewebsites.net/assets/js/main.js"></script>
 
 </body>
 

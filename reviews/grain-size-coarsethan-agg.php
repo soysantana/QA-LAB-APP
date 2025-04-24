@@ -1,11 +1,26 @@
 <?php
   $page_title = 'Grain Size Coarse Than';
-  $review = 'show';
   require_once('../config/load.php');
   $Search = find_by_id('grain_size_coarsethan', $_GET['id']);
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update-gs-coarsethan'])) {
+        include('../database/grain-size-general.php');
+    } elseif (isset($_POST['repeat-gs-coarsethan'])) {
+        include('../database/grain-size-general.php');
+    } elseif (isset($_POST['reviewed-gs-coarsethan'])) {
+        include('../database/grain-size-general.php');
+    } elseif (isset($_POST['delete_gs_coarsethan'])) {
+        include('../database/grain-size-general.php');
+    }
+  }
+?>
+
+<?php page_require_level(2); ?>
+<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -22,7 +37,7 @@
 <section class="section">
   <div class="row" oninput="CoarsethanAgg()">
 
-  <form class="row" action="../database/grain-size-general.php?id=<?php echo $Search['id']; ?>" method="post">
+  <form class="row" action="grain-size-coarsethan-agg.php?id=<?php echo $Search['id']; ?>" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
@@ -428,11 +443,14 @@
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="update-gs-coarsethan">Update Essay</button>
           <a href="../pdf/gs-coarsethan.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+          <button type="submit" class="btn btn-danger" name="delete_gs_coarsethan"><i class="bi bi-trash"></i></button>
         </div>
 
         <div class="btn-group mt-2" role="group">
+         <?php if (user_can_access(1)): ?>
           <button type="submit" class="btn btn-primary" name="repeat-gs-coarsethan">Repeat</button>
           <button type="submit" class="btn btn-primary" name="reviewed-gs-coarsethan">Reviewed</button>
+         <?php endif; ?>
         </div>
 
       </div>

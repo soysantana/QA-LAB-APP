@@ -1,11 +1,9 @@
 <?php
   $page_title = 'Density Unit Weight';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -154,7 +152,6 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="button" class="btn btn-success">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">Launch</button>
         </div>
 
       </div>
@@ -163,65 +160,9 @@
   </div>
 
   </div>
-</section>
 
+</section>
 </main><!-- End #main -->
 
-
-<div class="modal fade" id="disablebackdrop" tabindex="-1" data-bs-backdrop="false">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Hey! select an option</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <li>
-                    <a href="#" onclick="loadContent('grain-size-fine-agg.php')"> <!-- Modificado -->
-                        <span>Grain Size Fine Aggregate</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="loadContent('grain-size-coarse-agg.php')"> <!-- Modificado -->
-                        <span>Grain Size Coarse Aggregate</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="loadContent('grain-size-coarsethan-agg.php')"> <!-- Modificado -->
-                        <span>Grain Size Coarse Than Aggregate</span>
-                    </a>
-                </li>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function loadContent(page) {
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState == 4 && xhr.status == 200) {
-      // Reemplazar solo el contenido dentro de la etiqueta main
-      document.getElementById("main").innerHTML = xhr.responseText;
-
-      // Cerrar y volver a abrir el modal
-      $('#disablebackdrop').modal('hide');
-      $('#disablebackdrop').modal('show');
-    }
-  };
-
-  xhr.open("GET", page, true);
-  xhr.send();
-}
-
-</script>
-
 <script src="../js/Grain-Size.js"></script>
-
-
-
 <?php include_once('../components/footer.php');  ?>

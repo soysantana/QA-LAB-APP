@@ -1,29 +1,29 @@
 function LLyPL() {
   // Obtener Los Valores Del liquid Limit
-  const NatMc = parseFloat(document.getElementById("NatMc").value) || 0;
-  const Blows1 = parseFloat(document.getElementById("Blows1").value) || 0;
-  const Blows2 = parseFloat(document.getElementById("Blows2").value) || 0;
-  const Blows3 = parseFloat(document.getElementById("Blows3").value) || 0;
-  const LLWetSoil1 = parseFloat(document.getElementById("LLWetSoil1").value) || 0;
-  const LLWetSoil2 = parseFloat(document.getElementById("LLWetSoil2").value) || 0;
-  const LLWetSoil3 = parseFloat(document.getElementById("LLWetSoil3").value) || 0;
-  const LLDrySoilTare1 = parseFloat(document.getElementById("LLDrySoilTare1").value) || 0;
-  const LLDrySoilTare2 = parseFloat(document.getElementById("LLDrySoilTare2").value) || 0;
-  const LLDrySoilTare3 = parseFloat(document.getElementById("LLDrySoilTare3").value) || 0;
-  const LLTare1 = parseFloat(document.getElementById("LLTare1").value) || 0;
-  const LLTare2 = parseFloat(document.getElementById("LLTare2").value) || 0;
-  const LLTare3 = parseFloat(document.getElementById("LLTare3").value) || 0;
+  const NatMc = parseFloat(document.getElementById("NatMc").value);
+  const Blows1 = parseFloat(document.getElementById("Blows1").value);
+  const Blows2 = parseFloat(document.getElementById("Blows2").value);
+  const Blows3 = parseFloat(document.getElementById("Blows3").value);
+  const LLWetSoil1 = parseFloat(document.getElementById("LLWetSoil1").value);
+  const LLWetSoil2 = parseFloat(document.getElementById("LLWetSoil2").value);
+  const LLWetSoil3 = parseFloat(document.getElementById("LLWetSoil3").value);
+  const LLDrySoilTare1 = parseFloat(document.getElementById("LLDrySoilTare1").value);
+  const LLDrySoilTare2 = parseFloat(document.getElementById("LLDrySoilTare2").value);
+  const LLDrySoilTare3 = parseFloat(document.getElementById("LLDrySoilTare3").value);
+  const LLTare1 = parseFloat(document.getElementById("LLTare1").value);
+  const LLTare2 = parseFloat(document.getElementById("LLTare2").value);
+  const LLTare3 = parseFloat(document.getElementById("LLTare3").value);
 
   // Obtener Los Valores Del Plastic Limit
-  const PLWetSoil1 = parseFloat(document.getElementById("PLWetSoil1").value) || 0;
-  const PLWetSoil2 = parseFloat(document.getElementById("PLWetSoil2").value) || 0;
-  const PLWetSoil3 = parseFloat(document.getElementById("PLWetSoil3").value) || 0;
-  const PLDrySoilTare1 = parseFloat(document.getElementById("PLDrySoilTare1").value) || 0;
-  const PLDrySoilTare2 = parseFloat(document.getElementById("PLDrySoilTare2").value) || 0;
-  const PLDrySoilTare3 = parseFloat(document.getElementById("PLDrySoilTare3").value) || 0;
-  const PLTare1 = parseFloat(document.getElementById("PLTare1").value) || 0;
-  const PLTare2 = parseFloat(document.getElementById("PLTare2").value) || 0;
-  const PLTare3 = parseFloat(document.getElementById("PLTare3").value) || 0;
+  const PLWetSoil1 = parseFloat(document.getElementById("PLWetSoil1").value);
+  const PLWetSoil2 = parseFloat(document.getElementById("PLWetSoil2").value);
+  const PLWetSoil3 = parseFloat(document.getElementById("PLWetSoil3").value);
+  const PLDrySoilTare1 = parseFloat(document.getElementById("PLDrySoilTare1").value);
+  const PLDrySoilTare2 = parseFloat(document.getElementById("PLDrySoilTare2").value);
+  const PLDrySoilTare3 = parseFloat(document.getElementById("PLDrySoilTare3").value);
+  const PLTare1 = parseFloat(document.getElementById("PLTare1").value);
+  const PLTare2 = parseFloat(document.getElementById("PLTare2").value);
+  const PLTare3 = parseFloat(document.getElementById("PLTare3").value);
 
   // Calculos de Liquid Limit
   const LLWater1 = LLWetSoil1 - LLDrySoilTare1;
@@ -144,36 +144,36 @@ function LLyPL() {
   var rSquare = 1 - SSE / SST;
 
   // Pasar el resultado al input
-  document.getElementById("LLWater1").value = LLWater1.toFixed(2);
-  document.getElementById("LLWater2").value = LLWater2.toFixed(2);
-  document.getElementById("LLWater3").value = LLWater3.toFixed(2);
+  document.getElementById("LLWater1").value = isNaN(LLWater1) ? "" : LLWater1.toFixed(2);
+  document.getElementById("LLWater2").value = isNaN(LLWater2) ? "" : LLWater2.toFixed(2);
+  document.getElementById("LLWater3").value = isNaN(LLWater3) ? "" : LLWater3.toFixed(2);
 
-  document.getElementById("LLWtDrySoil1").value = LLWtDrySoil1.toFixed(2);
-  document.getElementById("LLWtDrySoil2").value = LLWtDrySoil2.toFixed(2);
-  document.getElementById("LLWtDrySoil3").value = LLWtDrySoil3.toFixed(2);
+  document.getElementById("LLWtDrySoil1").value = isNaN(LLWtDrySoil1) ? "" : LLWtDrySoil1.toFixed(2);
+  document.getElementById("LLWtDrySoil2").value = isNaN(LLWtDrySoil2) ? "" : LLWtDrySoil2.toFixed(2);
+  document.getElementById("LLWtDrySoil3").value = isNaN(LLWtDrySoil3) ? "" : LLWtDrySoil3.toFixed(2);
 
-  document.getElementById("LLMCPorce1").value = LLMCPorce1.toFixed(2);
-  document.getElementById("LLMCPorce2").value = LLMCPorce2.toFixed(2);
-  document.getElementById("LLMCPorce3").value = LLMCPorce3.toFixed(2);
+  document.getElementById("LLMCPorce1").value = isNaN(LLMCPorce1) ? "" : LLMCPorce1.toFixed(2);
+  document.getElementById("LLMCPorce2").value = isNaN(LLMCPorce2) ? "" : LLMCPorce2.toFixed(2);
+  document.getElementById("LLMCPorce3").value = isNaN(LLMCPorce3) ? "" : LLMCPorce3.toFixed(2);
 
-  document.getElementById("PLWater1").value = PLWater1.toFixed(2);
-  document.getElementById("PLWater2").value = PLWater2.toFixed(2);
-  document.getElementById("PLWater3").value = PLWater3.toFixed(2);
+  document.getElementById("PLWater1").value = isNaN(PLWater1) ? "" : PLWater1.toFixed(2);
+  document.getElementById("PLWater2").value = isNaN(PLWater2) ? "" : PLWater2.toFixed(2);
+  document.getElementById("PLWater3").value = isNaN(PLWater3) ? "" : PLWater3.toFixed(2);
 
-  document.getElementById("PLWtDrySoil1").value = PLWtDrySoil1.toFixed(2);
-  document.getElementById("PLWtDrySoil2").value = PLWtDrySoil2.toFixed(2);
-  document.getElementById("PLWtDrySoil3").value = PLWtDrySoil3.toFixed(2);
+  document.getElementById("PLWtDrySoil1").value = isNaN(PLWtDrySoil1) ? "" : PLWtDrySoil1.toFixed(2);
+  document.getElementById("PLWtDrySoil2").value = isNaN(PLWtDrySoil2) ? "" : PLWtDrySoil2.toFixed(2);
+  document.getElementById("PLWtDrySoil3").value = isNaN(PLWtDrySoil3) ? "" : PLWtDrySoil3.toFixed(2);
 
-  document.getElementById("PLMCPorce1").value = PLMCPorce1.toFixed(2);
-  document.getElementById("PLMCPorce2").value = PLMCPorce2.toFixed(2);
-  document.getElementById("PLMCPorce3").value = PLMCPorce3.toFixed(2);
+  document.getElementById("PLMCPorce1").value = isNaN(PLMCPorce1) ? "" : PLMCPorce1.toFixed(2);
+  document.getElementById("PLMCPorce2").value = isNaN(PLMCPorce2) ? "" : PLMCPorce2.toFixed(2);
+  document.getElementById("PLMCPorce3").value = isNaN(PLMCPorce3) ? "" : PLMCPorce3.toFixed(2);
 
-  document.getElementById("PLAvgMcPorce").value = PLAvgMcPorce.toFixed(2);
+  document.getElementById("PLAvgMcPorce").value = isNaN(PLAvgMcPorce) ? "" : PLAvgMcPorce.toFixed(2);
 
   document.getElementById("LLPorce").value = LLPorce.toFixed(0);
   document.getElementById("PLPorce").value = PLPorce.toFixed(0);
   document.getElementById("PLIndexPorce").value = PLIndexPorce.toFixed(0);
-  document.getElementById("LLIndexPorce").value = LLIndexPorce.toFixed(4);
+  document.getElementById("LLIndexPorce").value = isNaN(LLIndexPorce) ? "" : LLIndexPorce.toFixed(4);
   document.getElementById("classifysoil").value = classifysoil();
   document.getElementById("Rsquared").value = rSquare.toFixed(4);
 }
@@ -186,13 +186,13 @@ function LLyPL() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Liquid-Limit-Plot.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });
     $.ajax({
       url: "../libs/graph/Plasticity-Chart.js",
-      type: "POST",
+      type: "GET",
       data: $("#nopasonada").serialize(),
       success: function(data) {}
     });

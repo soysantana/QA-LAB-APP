@@ -5,7 +5,16 @@
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['standard-proctor'])) {
+        include('../database/standard-proctor/save.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -22,13 +31,13 @@
 <section class="section">
   <div class="row" oninput="SProctor()">
 
-  <form class="row" action="../database/standard-proctor.php" method="post">
-
-  <div id="product_info"></div>
+  <form class="row" action="standard-proctor.php" method="post">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>
   </div>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 
@@ -49,9 +58,9 @@
               <label for="PMethods" class="form-label">Preparation Methods</label>
               <select id="PMethods" class="form-select" name="PMethods">
                 <option selected>Choose...</option>
-                <option value="Oven_Dried">Oven Dried</option>
-                <option value="Air_Dried">Air Dried</option>
-                <option value="Microwave_Dried">Microwave Dried</option>
+                <option value="Oven Dried">Oven Dried</option>
+                <option value="Air Dried">Air Dried</option>
+                <option value="Microwave Dried">Microwave Dried</option>
                 <option value="Wet">Wet</option>
               </select>
             </div>

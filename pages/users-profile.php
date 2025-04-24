@@ -4,6 +4,19 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['Edit-Account'])) {
+        include('../user/edit-account.php');
+    } elseif (isset($_POST['upload'])) {
+        include('../user/edit-account.php');
+    } elseif (isset($_POST['delete'])) {
+        include('../user/edit-account.php');
+    }
+  }
+?>
+
 <?php page_require_level(3); ?>
 <?php include_once('../components/header.php');  ?>
 
@@ -108,7 +121,7 @@
                 <div class="tab-pane fade profile-edit pt-3" id="profile-edit">
 
                   <!-- Profile Edit Form -->
-                  <form method="post" enctype="multipart/form-data" action="../user/edit-account.php?id=<?php echo $user['id'];?>">
+                  <form method="post" enctype="multipart/form-data" action="users-profile.php">
                     <div class="row mb-3">
                       <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">Imagen de perfil</label>
                       <div class="col-md-3 col-lg-5">

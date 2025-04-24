@@ -1,11 +1,18 @@
 <?php
   $page_title = 'Moisture Content';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['moisture-oven'])) {
+        include('../database/moisture-content.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -22,11 +29,11 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/moisture-content.php" method="post">
-
-  <div id="product_info"></div>
+  <form class="row" action="moisture-oven.php" method="post">
 
   <?php echo display_msg($msg); ?>
+
+  <div id="product_info"></div>
 
     <div class="col-lg-12">
 
@@ -125,7 +132,6 @@
         <!-- Actions Buttons -->
         <div class="d-grid gap-2 mt-3">
           <button type="submit" class="btn btn-success" name="moisture-oven">Save Essay</button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true">MC Options</button>
         </div>
 
       </div>
@@ -139,40 +145,6 @@
 </section>
 
 </main><!-- End #main -->
-
-
-
-<div class="modal fade" id="disablebackdrop" tabindex="-1" data-bs-backdrop="false">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Hey! select an option</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <li>
-                    <a href="moisture-scale.php">
-                        <span>Moisture Content Scale</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="moisture-microwave.php">
-                        <span>Moisture Content Microwave</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="moisture-constant-mass.php">
-                        <span>Moisture content Constant Mass</span>
-                    </a>
-                </li>
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script src="../js/Moisture-Content.js"></script>
 <?php include_once('../components/footer.php');  ?>

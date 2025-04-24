@@ -2,7 +2,23 @@
  * * Graph Grain Size Coarse Filter
  * */
 
-echarts.init(document.querySelector("#GrainSizeCF")).setOption({
+function getSpecsValues(specValue) {
+  if (specValue.includes('-')) {
+      const parts = specValue.split('-');
+      return {
+          left: parseFloat(parts[0]),  // Valor antes del guion
+          right: parseFloat(parts[1])   // Valor después del guion
+      };
+  } else {
+      const value = parseFloat(specValue);
+      return {
+          left: value,   // Valor igual en ambos
+          right: value
+      };
+  }
+}
+
+echarts.init(document.querySelector("#GrainSizeCoarseFilter")).setOption({
   xAxis: {
     name: 'Particle Diameter (mm)',
     nameLocation: 'center',
@@ -29,19 +45,24 @@ echarts.init(document.querySelector("#GrainSizeCF")).setOption({
   series: [
     {
       data: [
-        [300, document.getElementById("Pass1").value],
-        [75, document.getElementById("Pass2").value],
-        [37.5, document.getElementById("Pass3").value],
-        [25, document.getElementById("Pass4").value],
-        [19, document.getElementById("Pass5").value],
-        [9.5, document.getElementById("Pass6").value],
-        [4.75, document.getElementById("Pass7").value],
-        [2, document.getElementById("Pass8").value],
-        [1.18, document.getElementById("Pass9").value],
-        [0.85, document.getElementById("Pass10").value],
-        [0.3, document.getElementById("Pass11").value],
-        [0.25, document.getElementById("Pass12").value],
-        [0.075, document.getElementById("Pass13").value]
+        [127, document.getElementById("Pass1").value],
+        [101.6, document.getElementById("Pass2").value],
+        [88.90, document.getElementById("Pass3").value],
+        [76.20, document.getElementById("Pass4").value],
+        [63.50, document.getElementById("Pass5").value],
+        [50.80, document.getElementById("Pass6").value],
+        [38.10, document.getElementById("Pass7").value],
+        [25.00, document.getElementById("Pass8").value],
+        [19.00, document.getElementById("Pass9").value],
+        [12.7, document.getElementById("Pass10").value],
+        [9.50, document.getElementById("Pass11").value],
+        [4.75, document.getElementById("Pass12").value],
+        [2.00, document.getElementById("Pass13").value],
+        [1.18, document.getElementById("Pass14").value],
+        [0.85, document.getElementById("Pass15").value],
+        [0.30, document.getElementById("Pass16").value],
+        [0.25, document.getElementById("Pass17").value],
+        [0.075, document.getElementById("Pass18").value]
       ],
       type: 'line',
       color: 'orange',
@@ -49,14 +70,14 @@ echarts.init(document.querySelector("#GrainSizeCF")).setOption({
     },
     { // line left
       data: [
-        [37.5, 100],
-        [25, 87],
-        [19, 70],
-        [9.5, 33],
-        [4.75, 7],
-        [2, 0],
-        [0.85, 0],
-        [0.075, 0]
+        [38.1, getSpecsValues(document.getElementById("Specs7").value).left],
+        [25, getSpecsValues(document.getElementById("Specs8").value).left],
+        [19, getSpecsValues(document.getElementById("Specs9").value).left],
+        [9.5, getSpecsValues(document.getElementById("Specs11").value).left],
+        [4.75, getSpecsValues(document.getElementById("Specs12").value).left],
+        [2, getSpecsValues(document.getElementById("Specs13").value).left],
+        [0.85, getSpecsValues(document.getElementById("Specs15").value).left],
+        [0.075, getSpecsValues(document.getElementById("Specs18").value).left]
       ],
       type: 'line',
       color: 'black',
@@ -64,14 +85,14 @@ echarts.init(document.querySelector("#GrainSizeCF")).setOption({
     },
     { // line right
       data: [
-        [37.5, 100],
-        [25, 100],
-        [19, 100],
-        [9.5, 100],
-        [4.75, 60],
-        [2, 15],
-        [0.85, 7],
-        [0.075, 5]
+        [38.1, getSpecsValues(document.getElementById("Specs7").value).right],
+        [25, getSpecsValues(document.getElementById("Specs8").value).right],
+        [19, getSpecsValues(document.getElementById("Specs9").value).right],
+        [9.5, getSpecsValues(document.getElementById("Specs11").value).right],
+        [4.75, getSpecsValues(document.getElementById("Specs12").value).right],
+        [2, getSpecsValues(document.getElementById("Specs13").value).right],
+        [0.85, getSpecsValues(document.getElementById("Specs15").value).right],
+        [0.075, getSpecsValues(document.getElementById("Specs18").value).right]
       ],
       type: 'line',
       color: 'black',

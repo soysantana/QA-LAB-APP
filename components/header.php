@@ -5,8 +5,8 @@
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="/app/index.php" class="logo d-flex align-items-center">
-        <img src="/app/assets/img/favicon.ico" alt="">
+      <a href="/index.php" class="logo d-flex align-items-center">
+        <img src="/assets/img/favicon.ico" alt="">
         <span class="d-none d-lg-block">Laboratorio</span>
       </a>
       <i class="bi bi-list toggle-sidebar-btn"></i>
@@ -29,145 +29,112 @@
           </a>
         </li><!-- End Search Icon-->
 
-      <li class="nav-item dropdown">
-       <?php $username = $user["name"]; ?>
-       <?php $Repeat = find_by_sql("SELECT * FROM test_repeat WHERE Register_By = '{$username}' ORDER BY Start_Date DESC"); ?>
-       <?php $Reviewed = find_by_sql("SELECT * FROM test_reviewed WHERE Register_By = '{$username}' AND Signed != 1 ORDER BY Start_Date DESC"); ?>
+        <li class="nav-item dropdown">
+    <?php
+    $username = $user["name"];
+    
+    // Realizar las consultas SQL directamente
+    $repeatSql = "SELECT * FROM test_repeat WHERE Register_By = '$username' ORDER BY Start_Date DESC";
+    $repeatTests = find_by_sql($repeatSql);
 
-       <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
+    $reviewedSql = "SELECT * FROM test_reviewed WHERE Register_By = '$username' AND Signed != 1 ORDER BY Start_Date DESC";
+    $reviewedTests = find_by_sql($reviewedSql);
+
+    $totalNotifications = count($repeatTests) + count($reviewedTests);
+    
+    $urls = [
+      'AL' => '../reviews/atterberg-limit.php',
+      'BTS' => '../reviews/brazilian.php',
+      'GS' => '../reviews/grain-size.php',
+      'GS-Fine' => '../reviews/grain-size-fine-agg.php',
+      'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
+      'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
+      'GS_FF' => '../reviews/grain-size-fine-filter.php',
+      'GS_CF' => '../reviews/grain-size-coarse-filter.php',
+      'GS_LPF' => '../reviews/grain-size-lpf.php',
+      'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php',
+      'LAA_Coarse_Aggregate' => '../reviews/LAA-Large.php',
+      'LAA_Coarse_Filter' => '../reviews/LAA-Small.php',
+      'MC_Oven' => '../reviews/moisture-oven.php',
+      'MC_Microwave' => '../reviews/moisture-microwave.php',
+      'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
+      'PLT' => '../reviews/point-Load.php',
+      'SG' => '../reviews/specific-gravity.php',
+      'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
+      'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php',
+      'SP' => '../reviews/standard-proctor.php',
+      'UCS' => '../reviews/unixial-compressive.php',
+    ];
+
+    function formatTimeElapsed($startDate) {
+        $timeElapsed = time() - strtotime($startDate);
+        $minutesElapsed = floor($timeElapsed / 60);
+        $hoursElapsed = floor($minutesElapsed / 60);
+        $daysElapsed = floor($hoursElapsed / 24);
+
+        if ($daysElapsed > 0) {
+            return "$daysElapsed day" . ($daysElapsed == 1 ? '' : 's') . " ago";
+        } elseif ($hoursElapsed > 0) {
+            return "$hoursElapsed hr" . ($hoursElapsed == 1 ? '' : 's') . " ago";
+        } else {
+            return "$minutesElapsed min. ago";
+        }
+    }
+
+    function generateNotificationItem($item, $type, $urls) {
+        $url = $urls[$item['Test_Type']] ?? '#';
+        $iconClass = $type === 'repeat' ? 'bi-exclamation-circle text-warning' : 'bi-check-circle text-success';
+        $message = $type === 'repeat' ? $item['Comment'] : 'Enviar a Firma';
+
+        echo "
+        <li class='notification-item' onclick=\"redirectToURL('{$item['Test_Type']}', '{$item['Tracking']}')\">
+            <i class='bi $iconClass'></i>
+            <div>
+                <h4>{$item['Sample_Name']}-{$item['Sample_Number']}-{$item['Test_Type']}</h4>
+                <p>$message</p>
+                <p>" . formatTimeElapsed($item['Start_Date']) . "</p>
+            </div>
+        </li>";
+    }
+    ?>
+
+    <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
         <i class="bi bi-bell"></i>
-        <span class="badge bg-primary badge-number"><?php echo count($Repeat) + count($Reviewed); ?></span>
-       </a><!-- End Notification Icon -->
+        <span class="badge bg-primary badge-number"><?php echo $totalNotifications; ?></span>
+    </a><!-- End Notification Icon -->
 
-       <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications">
+    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications">
         <li class="dropdown-header">
-          Tienes <?php echo count($Repeat) + count($Reviewed); ?> nuevas notificaciones
-          <a href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">Ver todo</span></a>
+            Tienes <?php echo $totalNotifications; ?> nuevas notificaciones
+            <a href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">Ver todo</span></a>
         </li>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-        
-        <?php
-         $count = 0;
-         foreach ($Repeat as $repeatItem) : 
-          if ($count >= 3) {
-            break;
-          }
-        ?>
-        <?php
-          $urls = array(
-          'AL' => '../reviews/atterberg-limit.php',
-          'MC_Oven' => '../reviews/moisture-oven.php',
-          'MC_Microwave' => '../reviews/moisture-microwave.php',
-          'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
-          'GS' => '../reviews/grain-size.php',
-          'GS-Fine' => '../reviews/grain-size-fine-agg.php',
-          'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
-          'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
-          'SG' => '../reviews/specific-gravity.php',
-          'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
-          'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php',
-          'SP' => '../reviews/standard-proctor.php',
-          );
-           
-          $id = $repeatItem['Sample_Name'];
-          $number = $repeatItem['Sample_Number'];
-          $testType = $repeatItem['Test_Type'];
-          $tracking = $repeatItem['Tracking'];
-        ?>
-        
-        <li class="notification-item" onclick="redirectToURL('<?php echo $repeatItem['Test_Type']; ?>', '<?php echo $repeatItem['Tracking']; ?>')">
-          <i class="bi bi-exclamation-circle text-warning"></i>
-          <div>
-            <h4><?php echo $repeatItem['Sample_Name'] . '-' . $repeatItem['Sample_Number'] . '-' . $repeatItem['Test_Type']; ?></h4>
-            <p><?php echo $repeatItem['Comment']; ?></p>
-            <?php 
-             $notificationDate = strtotime($repeatItem['Start_Date']); 
-             $timeElapsed = time() - $notificationDate;
-             
-             $minutesElapsed = floor($timeElapsed / 60);
-             $hoursElapsed = floor($minutesElapsed / 60);
-             $daysElapsed = floor($hoursElapsed / 24);
-             
-             if ($daysElapsed > 0) {
-                echo "<p>$daysElapsed day" . ($daysElapsed == 1 ? '' : 's') . " ago</p>";
-             } elseif ($hoursElapsed > 0) {
-                echo "<p>$hoursElapsed hr" . ($hoursElapsed == 1 ? '' : 's') . " ago</p>";
-             } else {
-                echo "<p>$minutesElapsed min. ago</p>";
-             }
-            ?>
-          </div>
-        </li>
-        <?php $count++; endforeach; ?>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
+        <li><hr class="dropdown-divider"></li>
 
         <?php
-         $count = 0;
-         foreach ($Reviewed as $reviewedItem) : 
-          if ($count >= 3) {
-            break;
-          }
+        $maxNotifications = 3;
+        $count = 0;
+
+        foreach ($repeatTests as $repeatItem) {
+            if ($count >= $maxNotifications) break;
+            generateNotificationItem($repeatItem, 'repeat', $urls);
+            $count++;
+        }
+
+        $count = 0;
+
+        foreach ($reviewedTests as $reviewedItem) {
+            if ($count >= $maxNotifications) break;
+            generateNotificationItem($reviewedItem, 'reviewed', $urls);
+            $count++;
+        }
         ?>
-        <?php
-           $urls = array(
-            'AL' => '../reviews/atterberg-limit.php',
-            'MC_Oven' => '../reviews/moisture-oven.php',
-            'MC_Microwave' => '../reviews/moisture-microwave.php',
-            'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
-            'GS' => '../reviews/grain-size.php',
-            'GS-Fine' => '../reviews/grain-size-fine-agg.php',
-            'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
-            'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
-            'SG' => '../reviews/specific-gravity.php',
-            'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
-            'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php',
-            'SP' => '../reviews/standard-proctor.php',
-           );
-           
-           $id = $reviewedItem['Sample_Name'];
-           $number = $reviewedItem['Sample_Number'];
-           $testType = $reviewedItem['Test_Type'];
-           $tracking = $reviewedItem['Tracking'];
-        ?>
-        
-        <li class="notification-item" onclick="redirectToURL('<?php echo $reviewedItem['Test_Type']; ?>', '<?php echo $reviewedItem['Tracking']; ?>')">
-          <i class="bi bi-check-circle text-success"></i>
-          <div>
-            <h4><?php echo $reviewedItem['Sample_Name'] . '-' . $reviewedItem['Sample_Number'] . '-' . $reviewedItem['Test_Type']; ?></h4>
-            <p>Enviar a Firma</p>
-            <?php 
-             $notificationDate = strtotime($reviewedItem['Start_Date']); 
-             $timeElapsed = time() - $notificationDate;
-             
-             $minutesElapsed = floor($timeElapsed / 60);
-             $hoursElapsed = floor($minutesElapsed / 60);
-             $daysElapsed = floor($hoursElapsed / 24);
-             
-             if ($daysElapsed > 0) {
-              echo "<p>$daysElapsed day" . ($daysElapsed == 1 ? '' : 's') . " ago</p>";
-             } elseif ($hoursElapsed > 0) {
-              echo "<p>$hoursElapsed hr" . ($hoursElapsed == 1 ? '' : 's') . " ago</p>";
-             } else {
-              echo "<p>$minutesElapsed min. ago</p>";
-             }
-            ?>
-          </div>
-        </li>
-        <?php $count++; endforeach; ?>
-  
-        <li>
-          <hr class="dropdown-divider">
-        </li>
+
+        <li><hr class="dropdown-divider"></li>
         <li class="dropdown-footer">
-          <a href="../pages/message.php">Mostrar todas las notificaciones</a>
+            <a href="../pages/message.php">Mostrar todas las notificaciones</a>
         </li>
-
-       </ul><!-- End Notification Dropdown Items -->
-      </li><!-- End Notification Nav -->
+    </ul><!-- End Notification Dropdown Items -->
+</li><!-- End Notification Nav -->
 
         <li class="nav-item dropdown pe-3">
 
@@ -218,16 +185,20 @@
   </header><!-- End Header -->
 
   <?php if($user['user_level'] === '1'): ?>
-        <!-- admin menu -->
+        <!-- Supervisor menu -->
       <?php include_once('menu.php');?>
 
       <?php elseif($user['user_level'] === '2'): ?>
-        <!-- Special user -->
-      <?php include_once('menu.php');?>
+        <!-- Document Control user -->
+      <?php include_once('menu-lv2.php');?>
 
       <?php elseif($user['user_level'] === '3'): ?>
-        <!-- User menu -->
-      <?php include_once('menu.php');?>
+        <!-- Tecnico menu -->
+      <?php include_once('menu-tecnico.php');?>
+
+      <?php elseif($user['user_level'] === '4'): ?>
+        <!-- Visitante menu -->
+      <?php include_once('menu-lv4.php');?>
 
   <?php endif;?>
 

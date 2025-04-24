@@ -1,11 +1,18 @@
 <?php
   $page_title = 'Grout Specimens';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['grout'])) {
+        include('../database/grout.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -22,7 +29,7 @@
 <section class="section">
   <div class="row" oninput="GROUT()">
 
-  <form class="row" action="../database/grout.php" method="post" enctype="multipart/form-data">
+  <form class="row" action="grout.php" method="post" enctype="multipart/form-data">
 
   <div class="col-md-4">
   <?php echo display_msg($msg); ?>

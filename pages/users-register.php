@@ -15,8 +15,8 @@
             <div class="col-lg-5 col-md-6 d-flex flex-column align-items-center justify-content-center">
 
               <div class="d-flex justify-content-center py-4">
-                <a href="../index.php" class="logo d-flex align-items-center w-auto">
-                  <img src="/app/assets/img/BARRICK-GOLD-logo.svg" width="200px" alt="logo-barrick">
+                <a href="/index.php" class="logo d-flex align-items-center w-auto">
+                  <img src="/assets/img/BARRICK-GOLD-logo.svg" width="200px" alt="logo-barrick">
                 </a>
               </div><!-- End Logo -->
 
@@ -122,17 +122,17 @@
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
 <!-- Vendor JS Files -->
-<script src="/app/assets/vendor/apexcharts/apexcharts.min.js"></script>
-<script src="/app/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="/app/assets/vendor/chart.js/chart.umd.js"></script>
-<script src="/app/assets/vendor/echarts/echarts.min.js"></script>
-<script src="/app/assets/vendor/quill/quill.min.js"></script>
-<script src="/app/assets/vendor/simple-datatables/simple-datatables.js"></script>
-<script src="/app/assets/vendor/tinymce/tinymce.min.js"></script>
-<script src="/app/assets/vendor/php-email-form/validate.js"></script>
+<script src="/assets/vendor/apexcharts/apexcharts.min.js"></script>
+<script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/assets/vendor/chart.js/chart.umd.js"></script>
+<script src="/assets/vendor/echarts/echarts.min.js"></script>
+<script src="/assets/vendor/quill/quill.min.js"></script>
+<script src="/assets/vendor/simple-datatables/simple-datatables.js"></script>
+<script src="/assets/vendor/tinymce/tinymce.min.js"></script>
+<script src="/assets/vendor/php-email-form/validate.js"></script>
 
 <!-- Template Main JS File -->
-<script src="/app/assets/js/main.js"></script>
+<script src="/assets/js/main.js"></script>
 
 </body>
 

@@ -182,7 +182,7 @@ function SGSOIL() {
 
   if (DensityTable && DensityWaterTempAfter) {
     const WeightSoil = WeightTare-MassDryPycn;
-    const VolumePycn = (PycnWaterTemp-WeightSoil)/DensityTable[1];
+    const VolumePycn = (PycnWaterTemp-MassDryPycn)/DensityTable[1];
     const PycnWaterTempAfter = ((PycnWaterTemp - MassDryPycn) * (DensityWaterTempAfter[1] / DensityTable[1])) + MassDryPycn;
     const SgSoilTemp = WeightSoil/(PycnWaterTempAfter-(WeightPycnSoilWaterMpws-WeightSoil));
     const SgSolid = DensityWaterTempAfter[2]*SgSoilTemp;

@@ -1,5 +1,4 @@
 <?php
-  require_once('../config/load.php');
  //update user other info
   if(isset($_POST['Edit-Account'])){
     $req_fields = array('fullName','username', 'company', 'job', 'country', 'phone', 'email' );
@@ -38,11 +37,81 @@ if (isset($_POST['upload'])) {
 
     if (empty($errors)) {
         $id = $_SESSION['user_id'];
+        
         // Manejo de la carga de la imagen
         if ($_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
-            $imagen_tmp = $_FILES['file_upload']['tmp_name']; // Usar 'tmp_name' en lugar de 'file_upload'
-            $imagen_data = file_get_contents($imagen_tmp); // Lee el contenido del archivo
+            $imagen_tmp = $_FILES['file_upload']['tmp_name'];
+            $tipo_imagen = exif_imagetype($imagen_tmp);
+
+            // Cargar la imagen según su tipo
+            switch ($tipo_imagen) {
+                case IMAGETYPE_JPEG:
+                    $imagen = imagecreatefromjpeg($imagen_tmp);
+                    break;
+                case IMAGETYPE_PNG:
+                    $imagen = imagecreatefrompng($imagen_tmp);
+                    break;
+                case IMAGETYPE_GIF:
+                    $imagen = imagecreatefromgif($imagen_tmp);
+                    break;
+                case IMAGETYPE_BMP:
+                    $imagen = imagecreatefrombmp($imagen_tmp);
+                    break;
+                case IMAGETYPE_WEBP:
+                    $imagen = imagecreatefromwebp($imagen_tmp);
+                    break;
+                default:
+                    $session->msg('w', 'Formato de imagen no soportado.');
+                    redirect('../pages/users-profile.php', false);
+            }
+
+            // Establecer el nuevo tamaño y la calidad
+            $nuevo_ancho = 120; // Ajusta el ancho deseado
+            $nuevo_alto = 120;  // Ajusta la altura deseada
+
+            // Crear una nueva imagen con las dimensiones especificadas
+            $imagen_comprimida = imagecreatetruecolor($nuevo_ancho, $nuevo_alto);
+
+            // Manejar la transparencia si es necesario
+            if ($tipo_imagen == IMAGETYPE_PNG || $tipo_imagen == IMAGETYPE_GIF) {
+                imagealphablending($imagen_comprimida, false);
+                $color_transparente = imagecolorallocatealpha($imagen_comprimida, 255, 255, 255, 127);
+                imagefilledrectangle($imagen_comprimida, 0, 0, $nuevo_ancho, $nuevo_alto, $color_transparente);
+                imagealphablending($imagen_comprimida, true);
+                imagesavealpha($imagen_comprimida, true); // Guardar la información de la transparencia
+            }
+
+            // Redimensionar la imagen
+            imagecopyresampled($imagen_comprimida, $imagen, 0, 0, 0, 0, $nuevo_ancho, $nuevo_alto, imagesx($imagen), imagesy($imagen));
+
+            // Guardar la imagen comprimida en un archivo temporal
+            $temp_file = tempnam(sys_get_temp_dir(), 'img');
+            switch ($tipo_imagen) {
+                case IMAGETYPE_JPEG:
+                    imagejpeg($imagen_comprimida, $temp_file, 75); // Calidad 75
+                    break;
+                case IMAGETYPE_PNG:
+                    imagepng($imagen_comprimida, $temp_file, 6); // Compresión de 0 a 9
+                    break;
+                case IMAGETYPE_GIF:
+                    imagegif($imagen_comprimida, $temp_file);
+                    break;
+                case IMAGETYPE_BMP:
+                    imagebmp($imagen_comprimida, $temp_file);
+                    break;
+                case IMAGETYPE_WEBP:
+                    imagewebp($imagen_comprimida, $temp_file, 75); // Calidad 75
+                    break;
+            }
+
+            // Leer el contenido del archivo comprimido
+            $imagen_data = file_get_contents($temp_file);
             $imagen_data = $db->escape($imagen_data); // Escapa los datos para evitar SQL Injection
+
+            // Limpiar
+            imagedestroy($imagen);
+            imagedestroy($imagen_comprimida);
+            unlink($temp_file); // Eliminar archivo temporal
         } else {
             $session->msg('w', 'Inserte una imagen.');
             redirect('../pages/users-profile.php', false);
@@ -50,9 +119,8 @@ if (isset($_POST['upload'])) {
 
         // Actualización de la base de datos
         $sql = "UPDATE users SET image = '{$imagen_data}' WHERE id='{$id}'";
-        // Ejecutar la consulta SQL aquí (falta esta parte en tu código)
-
-        // Verificar si la actualización se realizó con éxito y mostrar un mensaje apropiado
+        
+        // Ejecutar la consulta SQL
         if ($db->query($sql)) {
             $session->msg('s', 'Imagen actualizada correctamente.');
             redirect('../pages/users-profile.php', false);

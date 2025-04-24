@@ -4,6 +4,15 @@
   require_once('../config/load.php');
 ?>
 
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['requisition-form'])) {
+        include('../database/requisition-form.php');
+    } 
+  }
+?>
+
 <?php page_require_level(3); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
@@ -26,7 +35,7 @@
 <section class="section">
   <div class="row">
 
-  <form class="row" action="../database/requisition-form.php" method="post">
+  <form class="row" action="requisition-form.php" method="post">
 
     <div class="col-lg-6">
 
@@ -90,12 +99,20 @@
                 <option selected>Elegir...</option>
                 <option value="Soil">Soil</option>
                 <option value="Rock">Rock</option>
-                <option value="CF">CF</option>
-                <option value="FF">FF</option>
-                <option value="FRF">FRF</option>
+                <option value="Crudo">Crudo</option>
+                <option value="RF">RF</option>
                 <option value="IRF">IRF</option>
-                <option value="LPF">LPF</option>
+                <option value="FRF">FRF</option>
                 <option value="UTF">UTF</option>
+                <option value="TRF">TRF</option>
+                <option value="FF">FF</option>
+                <option value="CF">CF</option>
+                <option value="LPF">LPF</option>
+                <option value="RS">RS</option>
+                <option value="EMF">EMF</option>
+                <option value="GF">GF</option>
+                <option value="UFF">UFF</option>
+                <option value="EF">EF</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -121,6 +138,10 @@
             <div class="col-md-3">
               <label for="Elev" class="form-label">Elevación</label>
               <input type="text" class="form-control" name="Elev" id="Elev">
+            </div>
+            <div class="col-md-3">
+              <label for="Cviaje" class="form-label">Cantidad de Viajes</label>
+              <input type="text" class="form-control" name="Cviaje" id="Cviaje">
             </div>
             <div class="col-md-3">
               <label for="SampleBy" class="form-label">Muestreado por</label>
@@ -158,197 +179,155 @@
 
           <!-- Multi Columns Form -->
           <div class="row g-3">
-            <div class="col-md-3">
-              <label for="mcOven" class="form-label">Suelo</label>
+            <div class="col-md-7">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType1" id="mcOven" value="MC">
-                <label class="form-check-label" for="mcOven">
-                  MC (Oven)
-                </label>
-              </div>
-              
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType2" id="mcStove" value="MC">
-                <label class="form-check-label" for="mcStove">
-                  MC (Stove)
+                <input class="form-check-input" type="checkbox" name="TestType1" id="MC" value="MC">
+                <label class="form-check-label" for="MC">
+                  Contenido de Humedad (MC)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType3" id="mcScale" value="MC">
-                <label class="form-check-label" for="mcScale">
-                  MC (Scale)
+                <input class="form-check-input" type="checkbox" name="TestType2" id="AL" value="AL">
+                <label class="form-check-label" for="AL">
+                  Limite De Atterberg (AL)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType4" id="Atterberg" value="AL">
-                <label class="form-check-label" for="Atterberg">
-                  Atterberg Limit
+                <input class="form-check-input" type="checkbox" name="TestType3" id="GS" value="GS">
+                <label class="form-check-label" for="GS">
+                  Granulometria por Tamizado (GS)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType5" id="GrainSize" value="GS">
-                <label class="form-check-label" for="GrainSize">
-                  Grain Size
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType6" id="SP" value="SP">
+                <input class="form-check-input" type="checkbox" name="TestType4" id="SP" value="SP">
                 <label class="form-check-label" for="SP">
-                  Standard Proctor
+                  Proctor Estandar (SP)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType7" id="SG" value="SG">
+                <input class="form-check-input" type="checkbox" name="TestType5" id="SG" value="SG">
                 <label class="form-check-label" for="SG">
-                  Specific Gravity
+                  Gravedad Espesifica (SG)
                 </label>
               </div>
             </div>
 
-            <div class="col-md-3">
-              <label for="mcOvenAgg" class="form-label">Agregados</label>
+            <div class="col-md-5">
+  
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType1" id="mcOvenAgg" value="MC">
-                <label class="form-check-label" for="mcOvenAgg">
-                  MC (Oven)
-                </label>
-              </div>
-              
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType8" id="AR" value="AR">
+                <input class="form-check-input" type="checkbox" name="TestType6" id="AR" value="AR">
                 <label class="form-check-label" for="AR">
-                  Acid Reactivity
+                  Reactividad Acida (AR)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType5" id="GrainSizeAgg" value="GS">
-                <label class="form-check-label" for="GrainSizeAgg">
-                  Grain Size
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType6" id="SpAgg" value="SP">
-                <label class="form-check-label" for="SpAgg">
-                  Standard Proctor
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType9" id="SCT" value="SCT">
+                <input class="form-check-input" type="checkbox" name="TestType7" id="SCT" value="SCT">
                 <label class="form-check-label" for="SCT">
-                  Sand Castle
+                  Castillo de Arena (SCT)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType7" id="SgAgg" value="SG">
-                <label class="form-check-label" for="SgAgg">
-                  Specific Gravity
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType10" id="LAA" value="LAA">
+                <input class="form-check-input" type="checkbox" name="TestType8" id="LAA" value="LAA">
                 <label class="form-check-label" for="LAA">
-                  Los Angeles Abrasion
+                  Abrasion de Los Angeles (LAA)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType11" id="SND" value="SND">
+                <input class="form-check-input" type="checkbox" name="TestType9" id="SND" value="SND">
                 <label class="form-check-label" for="SND">
-                  Soundness
-                </label>
-              </div>
-            </div>
-
-            <div class="col-md-3">
-              <label for="UCS" class="form-label">Roca</label>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType12" id="UCS" value="UCS">
-                <label class="form-check-label" for="UCS">
-                  UCS
-                </label>
-              </div>
-              
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType13" id="PLT" value="PLT">
-                <label class="form-check-label" for="PLT">
-                  PLT
+                  Sanidad (SND)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType14" id="BTT" value="BTT">
-                <label class="form-check-label" for="BTT">
-                  BTT
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType7" id="SgRock" value="SG">
-                <label class="form-check-label" for="SgRock">
-                  Specific Gravity
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType10" id="LAaRock" value="LAA">
-                <label class="form-check-label" for="LAaRock">
-                  Los Angeles Abrasion
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType15" id="Consolidation" value="Consolidation">
+                <input class="form-check-input" type="checkbox" name="TestType10" id="Consolidation" value="Consolidation">
                 <label class="form-check-label" for="Consolidation">
-                  Consolidation
+                  Consolidacion
                 </label>
               </div>
 
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType6" id="SpRock" value="SP">
-                <label class="form-check-label" for="SpRock">
-                  Standard Proctor
-                </label>
-              </div>
+            </div> <!-- END -->
 
-            </div>
+            <div class="col-md-7">
 
-            <div class="col-md-3">
-              <label for="HY" class="form-label">Prueba especial</label>
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType16" id="HY" value="HY">
-                <label class="form-check-label" for="HY">
-                  Hydrometer
+                <input class="form-check-input" type="checkbox" name="TestType11" id="UCS" value="UCS">
+                <label class="form-check-label" for="UCS">
+                  Compresion Simple (UCS)
                 </label>
               </div>
               
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType17" id="DHY" value="DHY">
+                <input class="form-check-input" type="checkbox" name="TestType12" id="PLT" value="PLT">
+                <label class="form-check-label" for="PLT">
+                  Carga Puntual (PLT)
+                </label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="TestType13" id="BTS" value="BTS">
+                <label class="form-check-label" for="BTS">
+                  Traccion Simple (BTS)
+                </label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="TestType14" id="HY" value="HY">
+                <label class="form-check-label" for="HY">
+                  Hidrometro (HY)
+                </label>
+              </div>
+              
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="TestType15" id="DHY" value="DHY">
                 <label class="form-check-label" for="DHY">
-                  Doble Hydrometer
+                  Doble Hidrometro (DHY)
                 </label>
               </div>
 
+            </div> <!-- END -->
+
+            <div class="col-md-5">
+
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType18" id="PH" value="PH">
+                <input class="form-check-input" type="checkbox" name="TestType16" id="PH" value="PH">
                 <label class="form-check-label" for="PH">
-                  Pinhole
+                  Pinhole (PH)
                 </label>
               </div>
 
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="TestType19" id="PGS" value="Permeability">
-                <label class="form-check-label" for="PGS">
-                  Permeability Granular Soil
+                <input class="form-check-input" type="checkbox" name="TestType17" id="Permeability" value="Permeability">
+                <label class="form-check-label" for="Permeability">
+                  Permeabilidad
+                </label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="TestType18" id="SHAPE" value="SHAPE">
+                <label class="form-check-label" for="SHAPE">
+                  Formas de Particulas (SHAPE)
+                </label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="TestType19" id="DENSITY" value="DENSITY">
+                <label class="form-check-label" for="DENSITY">
+                  Densidad
+                </label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="TestType20" id="CRUMBS" value="CRUMBS">
+                <label class="form-check-label" for="CRUMBS">
+                  Crumbs
                 </label>
               </div>
 
@@ -367,7 +346,7 @@
           <!-- Actions Buttons -->
           <div class="d-grid gap-2 mt-3">
             <button type="submit" class="btn btn-success" name="requisition-form">Guardar formulario de solicitud</button>
-            <a href="requisition-form-view.php" class="btn btn-primary">Formulario de solicitud de búsqueda</a>
+            <a href="requisition-form-view.php" class="btn btn-primary">Muestras Registradas</a>
           </div>
 
         </div>

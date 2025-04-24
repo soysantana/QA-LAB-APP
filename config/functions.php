@@ -59,15 +59,20 @@ function display_msg($msg = array()) {
 /*--------------------------------------------------------------*/
 /* Function for redirect
 /*--------------------------------------------------------------*/
-function redirect($url, $permanent = false)
-{
-    if (headers_sent() === false)
-    {
-      header('Location: ' . $url, true, ($permanent === true) ? 301 : 302);
-    }
-
-    exit();
+function redirect($url, $permanent = false) {
+  if (!headers_sent()) {
+      // Enviar la cabecera de redirección
+      header('Location: ' . $url, true, ($permanent ? 301 : 302));
+      exit(); // Asegúrate de terminar el script después de redirigir
+  } else {
+      // Si las cabeceras ya han sido enviadas, usa un redireccionamiento de JavaScript
+      echo '<script type="text/javascript">';
+      echo 'window.location.href="' . $url . '";';
+      echo '</script>';
+      exit();
+  }
 }
+
 /*--------------------------------------------------------------*/
 /* Function for find out total saleing price, buying price and profit
 /*--------------------------------------------------------------*/

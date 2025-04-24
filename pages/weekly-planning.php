@@ -2,6 +2,17 @@
   $page_title = 'Planificación Semanal';
   $wepln = 'show';
   require_once('../config/load.php');
+
+  // Manejo de los formularios
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['save-calendar'])) {
+      include('../database/calendar/weekly-planning/save-calendar.php');
+  } elseif (isset($_POST['update-calendar'])) {
+      include('../database/calendar/weekly-planning/update-calendar.php');
+  } elseif (isset($_POST['delete-calendar'])) {
+      include('../database/calendar/weekly-planning/delete-calendar.php');
+  }
+}
 ?>
 
 <?php page_require_level(3); ?>
@@ -24,7 +35,7 @@
 <section class="section">
   <div class="row">
     
-  <form class="row" action="../database/calendar.php" method="post">
+  <form class="row" action="weekly-planning.php" method="post">
     
   <div class="col-lg-10">
     <div class="card">
@@ -86,7 +97,7 @@
   <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true" style="display: none;">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="updateForm" action="../database/calendar.php" method="post">
+      <form id="updateForm" action="weekly-planning.php" method="post">
         <div class="modal-header">
           <h5 class="modal-title">Anotar Actividad Planificada</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -128,15 +139,16 @@
    <!-- Modal -->
    <div class="modal fade" id="ModalDelete" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
-      <div class="modal-content text-center">
+      <form class="modal-content text-center" action="weekly-planning.php" method="post">
         <div class="modal-header d-flex justify-content-center">
           <h5>Are you sure?</h5>
         </div>
         <div class="modal-body">
+          <input type="hidden" name="event-id" id="delete-event-id">
           <button class="btn btn-secondary" onclick="closeModalDelete()">No</button>
-          <button class="btn btn-outline-danger" onclick="confirmDelete()">Yes</button>
+          <button class="btn btn-outline-danger" name="delete-calendar" onclick="confirmDelete()">Yes</button>
       </div>
-    </div>
+    </form>
   </div>
   </div>
   <!-- End Modal -->
@@ -172,25 +184,28 @@
           day: 'Día',
           list: 'Lista'
         },
-    events: [
-      <?php $Serch = find_all('calendar') ?>
-      <?php foreach ($Serch as $event): ?>
-        {
-          id: '<?php echo $event['id']; ?>',
-          title: '<?php echo $event['Technician'] . ' - ' . $event['Activity']; ?>',
-          start: '<?php echo $event['Start_Date']; ?>',
-          end: '<?php echo $event['End_Date']; ?>',
-          color: '<?php echo $event['Color']; ?>',
-          extendedProps: {
-            Technician: '<?php echo $event['Technician']; ?>',
-            Activity: '<?php echo $event['Activity']; ?>',
-            Start_Date: '<?php echo $event['Start_Date']; ?>',
-            End_Date: '<?php echo $event['End_Date']; ?>',
-            Color: '<?php echo $event['Color']; ?>',
-          }
-        },
-      <?php endforeach; ?>
-    ],
+        events: [
+  <?php $Search = find_by_sql("SELECT * FROM calendar"); ?>
+  <?php foreach ($Search as $event): ?>
+    <?php if ($event['Rotation'] != 'Rotation'): ?>
+      {
+        id: '<?php echo $event['id']; ?>',
+        title: '<?php echo $event['Technician'] . ' - ' . $event['Activity']; ?>',
+        start: '<?php echo $event['Start_Date']; ?>',
+        end: '<?php echo $event['End_Date']; ?>',
+        color: '<?php echo $event['Color']; ?>',
+        extendedProps: {
+          Technician: '<?php echo $event['Technician']; ?>',
+          Activity: '<?php echo $event['Activity']; ?>',
+          Start_Date: '<?php echo $event['Start_Date']; ?>',
+          End_Date: '<?php echo $event['End_Date']; ?>',
+          Color: '<?php echo $event['Color']; ?>',
+        }
+      },
+    <?php endif; ?>
+  <?php endforeach; ?>
+],
+
 
     eventClick: function (info) {
 
@@ -202,6 +217,7 @@
       $('#updateModal #Final').val(event.extendedProps.End_Date);
       $('#updateModal #Color').val(event.extendedProps.Color);
       $('#updateModal #event-id').val(event.id);
+      $('#delete-event-id').val(event.id);
       $('#updateModal').modal('show');
     },
 

@@ -1,6 +1,5 @@
 <!-- Atterberg Limit -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['atterberg-limit'])) {
@@ -325,8 +324,8 @@
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $NatMc = $db->escape($_POST['NatMc']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedBy = $user['name'];
+        $ModifiedDate = make_date();
         $TestType = "AL";
         // Liquid
         $Blows1 = $db->escape($_POST['Blows1']);
@@ -413,8 +412,8 @@
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Nat_Mc = '{$NatMc}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         // Liquid
         $query .= "LL_Blows_1 = '{$Blows1}', ";
@@ -541,7 +540,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/atterberg-limit.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -607,7 +606,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/atterberg-limit.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -618,5 +617,22 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete -->
+<?php
+ if (isset($_POST['delete_al']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('atterberg_limit', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>

@@ -6,53 +6,53 @@ require_once('../config/load.php');
 $columna = isset($_GET['columna']) ? $_GET['columna'] : '';
 $type = isset($_GET['type']) ? $_GET['type'] : '';
 
-$Requisition = find_all("lab_test_requisition_form");
-$Preparation = find_all("test_preparation");
-$Review = find_all("test_review");
+// Obtener datos de la base de datos en una sola consulta optimizada
+$data = [
+    "Requisition" => find_all("lab_test_requisition_form"),
+    "Preparation" => find_all("test_preparation"),
+    "Delivery" => find_all("test_delivery"),
+    "Review" => find_all("test_review")
+];
+
+// Función para normalizar valores (evitar espacios extra y diferencias de mayúsculas/minúsculas)
+function normalize($value)
+{
+    return strtoupper(trim($value));
+}
+
+// Indexar Preparation y Review en un array asociativo para acceso rápido
+$indexedStatus = [];
+
+foreach (["Preparation", "Delivery", "Review"] as $category) {
+    foreach ($data[$category] as $entry) {
+        $key = normalize($entry["Sample_Name"]) . "|" . normalize($entry["Sample_Number"]) . "|" . normalize($entry["Test_Type"]);
+        $indexedStatus[$key] = true;
+    }
+}
+
 $testTypes = [];
 
-foreach ($Requisition as $requisition) {
-    $testTypeKey = $columna;
+foreach ($data["Requisition"] as $requisition) {
+    if (!empty($requisition[$columna])) {
+        $key = normalize($requisition["Sample_ID"]) . "|" . normalize($requisition["Sample_Number"]) . "|" . normalize($requisition[$columna]);
 
-        if (
-            isset($requisition[$testTypeKey]) &&
-            $requisition[$testTypeKey] !== null &&
-            $requisition[$testTypeKey] !== ""
-        ) {
-            $matchingPreparations = array_filter($Preparation, function (
-                $preparation
-            ) use ($requisition, $testTypeKey) {
-                return $preparation["Sample_Name"] ===
-                    $requisition["Sample_ID"] &&
-                    $preparation["Sample_Number"] ===
-                    $requisition["Sample_Number"] &&
-                    $preparation["Test_Type"] === $requisition[$testTypeKey];
-            });
-
-            $matchingReviews = array_filter($Review, function (
-                $review
-            ) use ($requisition, $testTypeKey) {
-                return $review["Sample_Name"] ===
-                    $requisition["Sample_ID"] &&
-                    $review["Sample_Number"] ===
-                    $requisition["Sample_Number"] &&
-                    $review["Test_Type"] === $requisition[$testTypeKey];
-            });
-
-            if (empty($matchingPreparations) && empty($matchingReviews)) {
-                $testTypes[] = [
-                    "Sample_ID" => $requisition["Sample_ID"],
-                    "Sample_Number" => $requisition["Sample_Number"],
-                    "Sample_Date" => $requisition["Sample_Date"],
-                    "Test_Type" => $requisition[$testTypeKey],
-                ];
-            }
+        // Si la muestra NO está en Preparation o Review, agregar a testTypes
+        if (empty($indexedStatus[$key])) {
+            $testTypes[] = [
+                "Sample_ID" => $requisition["Sample_ID"],
+                "Sample_Number" => $requisition["Sample_Number"],
+                "Sample_Date" => $requisition["Sample_Date"],
+                "Test_Type" => $requisition[$columna],
+            ];
         }
     }
+}
+
 
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
+class PDF extends Fpdi
+{
     function Header() {}
 
     function Footer() {}
@@ -64,7 +64,7 @@ $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(8.5 * 25.4, 11 * 25.4));
 
 // Importar una página de otro PDF
-$pdf->setSourceFile('pendings.pdf');
+$pdf->setSourceFile('template/Pendings-List.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -99,42 +99,52 @@ $pdf->Cell(45, 10, 'Metodo', 1, 1, 'C', true);
 $pdf->SetFont('Arial', '', 10);
 
 foreach ($testTypes as $index => $sample) {
-    
-    if ($sample['Test_Type'] === 'SP') { 
+
+    if ($sample['Test_Type'] === 'SP') {
+        // Verificamos si hay resultados para el tamaño de grano
         $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
 
-        foreach ($GrainResults as $Grain) {
-            if ($Grain) {
-                $T3p4 = (float)$Grain['CumRet11'];
-                $T3p8 = (float)$Grain['CumRet13'];
-                $TNo4 = (float)$Grain['CumRet14'];
-                $resultado = '';
+        if (!empty($GrainResults)) {
+            foreach ($GrainResults as $Grain) {
+                if ($Grain) {
+                    $T3p4 = (float)$Grain['CumRet11'];
+                    $T3p8 = (float)$Grain['CumRet13'];
+                    $TNo4 = (float)$Grain['CumRet14'];
+                    $resultado = '';
 
-                if ($T3p4 > 0) {
-                    $resultado = "C";
-                } elseif ($T3p8 > 0 && $T3p4 == 0) {
-                    $resultado = "B";
-                } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
-                    $resultado = "A";
-                } else {
-                    $resultado = "No se puede determinar el método";
+                    if ($T3p4 > 0) {
+                        $resultado = "C";
+                    } elseif ($T3p8 > 0 && $T3p4 == 0) {
+                        $resultado = "B";
+                    } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
+                        $resultado = "A";
+                    } else {
+                        $resultado = "No se puede determinar el metodo";
+                    }
+
+                    $pdf->SetX($tableX);
+                    $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
+                    $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
+                    $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
+                    $pdf->Cell(45, 10, $resultado, 1, 1, 'C');
                 }
-
-                $pdf->SetX($tableX); 
-                $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
-                $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-                $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
-                $pdf->Cell(45, 10, $resultado, 1, 1, 'C');
             }
+        } else {
+            // Si no hay resultados de Grain Size
+            $pdf->SetX($tableX);
+            $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
+            $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
+            $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
+            $pdf->Cell(45, 10, 'No data', 1, 1, 'C'); // Colocamos "No data" si no hay tamaño de grano
         }
     } else {
-        $pdf->SetX($tableX); 
-        $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C'); 
+        // Si no es tipo SP
+        $pdf->SetX($tableX);
+        $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
         $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-        $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C'); 
+        $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
         $pdf->Cell(45, 10, '', 1, 1, 'C'); // Método en blanco
     }
 }
 
 $pdf->Output();
-?>

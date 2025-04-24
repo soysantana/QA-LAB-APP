@@ -1,11 +1,18 @@
 <?php
   $page_title = 'Los Angeles Abrasion';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['LAA_Coarse_Aggregate'])) {
+        include('../database/los-angeles-abrasion-coarse-filter.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -22,7 +29,7 @@
 <section class="section">
   <div class="row">
 
-  <form action="../database/los-angeles-abrasion-coarse-filter.php" method="post" class="row">
+  <form action="LAA-Large.php" method="post" class="row">
 
   <div class="col-md-7">
   <?php echo display_msg($msg); ?>

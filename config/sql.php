@@ -39,17 +39,24 @@ function find_by_id($table,$id)
 /*--------------------------------------------------------------*/
 /* Function for Delete data from table by id
 /*--------------------------------------------------------------*/
-function delete_by_id($table,$id)
+function delete_by_id($table, $id)
 {
-  global $db;
-  if(tableExists($table))
-   {
-    $sql = "DELETE FROM ".$db->escape($table);
-    $sql .= " WHERE id=". $db->escape($id);
-    $sql .= " LIMIT 1";
-    $db->query($sql);
-    return ($db->affected_rows() === 1) ? true : false;
-   }
+    global $db;
+    if (tableExists($table)) {
+        // Escapa tanto el nombre de la tabla como el ID
+        $table = $db->escape($table);
+        $id = $db->escape($id);
+        
+        // Construye la consulta SQL, asegurando que el ID esté entre comillas simples
+        $sql = "DELETE FROM {$table} WHERE id = '{$id}' LIMIT 1";
+        
+        // Ejecuta la consulta
+        $db->query($sql);
+        
+        // Retorna true si una fila fue afectada (es decir, eliminada)
+        return ($db->affected_rows() === 1) ? true : false;
+    }
+    return false; // Retorna false si la tabla no existe
 }
 /*--------------------------------------------------------------*/
 /* Function for Count id  By table name
@@ -190,19 +197,51 @@ function tableExists($table){
      //if user not login
      if (!$session->isUserLoggedIn(true)):
             $session->msg('d','Por favor Iniciar sesión...');
-            redirect('/app/index.php', false);
+            redirect('/index.php', false);
       //if Group status Deactive
       elseif(is_array($login_level) && isset($login_level['group_status']) && $login_level['group_status'] === '0'):
             $session->msg('d', 'Este nivel de usuario está inactivo!');
-            redirect('/app/pages/home.php', false);
-      //cheackin log in User level and Require level is Less than or equal to
+            redirect('/index.php', false);
+      //cheackin log in User level and Require level is Less than or equaly to
      elseif($current_user['user_level'] <= (int)$require_level):
               return true;
       else:
             $session->msg("d", "¡Lo siento!  no tienes permiso para ver la página.");
-            redirect('/app/pages/home.php', false);
+            redirect('/pages/home.php', false);
         endif;
 
+     }
+  /*--------------------------------------------------------------*/
+  /* Function for checking which user level has access to a feature
+  /* level for accessing specific functionality or content
+  /*--------------------------------------------------------------*/
+   function user_can_access($required_level) {
+     global $session;
+     $current_user = current_user();
+    
+      // Comprobar si el nivel del usuario es mayor o igual al requerido
+      return $current_user['user_level'] <= $required_level;
+     }
+  /*--------------------------------------------------------------*/
+  /* Function determines the user level and assigns the 
+  /* appropriate variables for accessing specific functionality 
+  /*--------------------------------------------------------------*/
+   function get_user_review() {
+     $current_user = current_user();
+
+      if (isset($current_user['user_level'])) {
+          global $review, $review_essay;
+          $review_variable = 'show';
+
+          if ($current_user['user_level'] <= 1) {
+              $review = $review_variable;
+          } else {
+              $review_essay = $review_variable;
+          }
+          return true;
+      }
+
+      return false;
      }
    /*--------------------------------------------------------------*/
    /* Function for Finding all product name

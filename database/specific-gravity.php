@@ -1,6 +1,5 @@
 <!-- Specific Gravity -->
 <?php
- require_once('../config/load.php');
  $user = current_user();
 
  if (isset($_POST['specific-gravity'])) {
@@ -200,8 +199,8 @@
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SG";
 
         $PycnUsed = $db->escape($_POST['PycnUsed']);
@@ -244,8 +243,8 @@
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Pycnometer_Used = '{$PycnUsed}', ";
         $query .= "Pycnometer_Number = '{$PycnNumber}', ";
@@ -330,7 +329,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/specific-gravity.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -396,7 +395,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/specific-gravity.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -407,6 +406,23 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete SG -->
+<?php
+ if (isset($_POST['delete_sg']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('specific_gravity', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>
 
@@ -590,8 +606,8 @@
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SG-Coarse";
 
         $SpecificGravityOD = $db->escape($_POST['SpecificGravityOD']);
@@ -632,8 +648,8 @@
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Specific_Gravity_OD = '{$SpecificGravityOD}', ";
         $query .= "Specific_Gravity_SSD = '{$SpecificGravitySSD}', ";
@@ -706,7 +722,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/specific-gravity-coarse-aggregates.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -772,7 +788,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/specific-gravity-coarse-aggregates.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -783,6 +799,23 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete SG Coarse -->
+<?php
+ if (isset($_POST['delete_sg_coarse']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('specific_gravity_coarse', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>
 
@@ -975,8 +1008,8 @@
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
         $TestMethod = $db->escape($_POST['TestMethod']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "SG-Fine";
 
         $SpecificGravityOD = $db->escape($_POST['SpecificGravityOD']);
@@ -1016,8 +1049,8 @@
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Methods = '{$TestMethod}', ";
-        $query .= "Registed_Date = '{$RegistedDate}', ";
-        $query .= "Register_By = '{$RegisterBy}', ";
+        $query .= "Modified_Date = '{$ModifiedDate}', ";
+        $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
         $query .= "Specific_Gravity_OD = '{$SpecificGravityOD}', ";
         $query .= "Specific_Gravity_SSD = '{$SpecificGravitySSD}', ";
@@ -1098,7 +1131,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to repeat");
-                    redirect("../reviews/specific-gravity-fine-aggregate.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -1164,7 +1197,7 @@
 
                 if ($db->query($sql)) {
                     $session->msg("s", "essay sent to reviewd");
-                    redirect("../reviews/specific-gravity-fine-aggregate.php?id=" . $Search, false);
+                    redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
@@ -1175,5 +1208,22 @@
         }
     } else {
     }
+ }
+?>
+
+<!-- Delete SG Fine -->
+<?php
+ if (isset($_POST['delete_sg_fine']) && isset($_GET['id'])) {
+    $delete = $_GET['id'];
+
+    $ID = delete_by_id('specific_gravity_fine', $delete);
+
+    if ($ID) {
+        $session->msg("s", "Borrado exitosamente");
+    } else {
+        $session->msg("d", "No encontrado");
+    }
+
+    redirect('/pages/essay.php');
  }
 ?>

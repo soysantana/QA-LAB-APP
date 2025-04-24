@@ -1,11 +1,18 @@
 <?php
   $page_title = 'Unixial Compresive Strenght';
-  $class_form = ' ';
-  $form_show = 'show';
   require_once('../config/load.php');
 ?>
 
-<?php page_require_level(1); ?>
+<?php 
+  // Manejo de los formularios
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['unixial-compressive'])) {
+        include('../database/unixial-compressive.php');
+    } 
+  }
+?>
+
+<?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
@@ -24,7 +31,7 @@
   <section class="section">
     <div class="row">
 
-    <form class="row" action="../database/unixial-compressive.php" method="post" enctype="multipart/form-data">
+    <form class="row" action="unixial-compressive.php" method="post" enctype="multipart/form-data">
 
     <div class="col-md-4">
     <?php echo display_msg($msg); ?>
@@ -192,8 +199,8 @@
       </div>
 
     </div>
-  </section>
 
+  </section>
 </main>
 <!-- End #main -->
 
