@@ -1,8 +1,8 @@
 <?php
- $user = current_user();
+$user = current_user();
 
- $Search = $_GET['id'];
- if (isset($_POST['update-gs-coarse'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-gs-coarse'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -60,6 +60,8 @@
         $D85 = $db->escape($_POST['D85']);
         $Cc = $db->escape($_POST['Cc']);
         $Cu = $db->escape($_POST['Cu']);
+        $ClassificationUSCS1 = $db->escape($_POST['ClassificationUSCS1']);
+        $ClassificationUSCS2 = $db->escape($_POST['ClassificationUSCS2']);
 
         $PanWtRen = $db->escape($_POST['PanWtRen']);
         $PanRet = $db->escape($_POST['PanRet']);
@@ -141,6 +143,8 @@
         $query .= "D85 = '{$D85}', ";
         $query .= "Cc = '{$Cc}', ";
         $query .= "Cu = '{$Cu}', ";
+        $query .= "ClassificationUSCS1 = '{$ClassificationUSCS1}', ";
+        $query .= "ClassificationUSCS2 = '{$ClassificationUSCS2}', ";
         $query .= "PanWtRen = '{$PanWtRen}', ";
         $query .= "PanRet = '{$PanRet}', ";
         $query .= "TotalWtRet = '{$TotalWtRet}', ";
@@ -174,5 +178,4 @@
         $session->msg("d", $errors);
         redirect('/reviews/grain-size-coarse-filter.php?id=' . $Search, false);
     }
- }
-?>
+}

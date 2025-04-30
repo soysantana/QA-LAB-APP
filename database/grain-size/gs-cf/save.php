@@ -1,7 +1,7 @@
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['grain-size-coarse'])) {
+if (isset($_POST['grain-size-coarse'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -61,6 +61,8 @@
         $D85 = $db->escape($_POST['D85']);
         $Cc = $db->escape($_POST['Cc']);
         $Cu = $db->escape($_POST['Cu']);
+        $ClassificationUSCS1 = $db->escape($_POST['ClassificationUSCS1']);
+        $ClassificationUSCS2 = $db->escape($_POST['ClassificationUSCS2']);
 
         $PanWtRen = $db->escape($_POST['PanWtRen']);
         $PanRet = $db->escape($_POST['PanRet']);
@@ -91,7 +93,7 @@
             ${"Pass" . $i} = $db->escape($_POST["Pass$i"]);
             ${"Specs" . $i} = $db->escape($_POST["Specs$i"]);
         }
-        
+
         $sql = "INSERT INTO grain_size_coarse (
             id,
             Project_Name,
@@ -139,6 +141,8 @@
             D85,
             Cc,
             Cu,
+            ClassificationUSCS1,
+            ClassificationUSCS2,
             PanWtRen,
             PanRet,
             TotalWtRet,
@@ -157,12 +161,12 @@
             Reaction_Strength_Result,
             Acid_Reactivity_Test_Result,
             Graph";
-        
+
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 18; $i++) {
             $sql .= ", WtRet$i, Ret$i, CumRet$i, Pass$i, Specs$i";
         }
-        
+
         $sql .= ") VALUES (
             '$id',
             '$ProjectName',
@@ -210,6 +214,8 @@
             '$D85',
             '$Cc',
             '$Cu',
+            '$ClassificationUSCS1',
+            '$ClassificationUSCS2',
             '$PanWtRen',
             '$PanRet',
             '$TotalWtRet',
@@ -228,13 +234,13 @@
             '$ReactionResult',
             '$AcidResult',
             '$Graph64'";
-        
+
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 18; $i++) {
             $sql .= ", '${"WtRet$i"}', '${"Ret$i"}', '${"CumRet$i"}', '${"Pass$i"}', '${"Specs$i"}'";
         }
-        
-        $sql .= ")";        
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Ensayo agregado con éxito.");
@@ -247,5 +253,4 @@
         $session->msg("d", $errors);
         redirect('/pages/grain-size-coarse-filter.php', false);
     }
- }
-?>
+}
