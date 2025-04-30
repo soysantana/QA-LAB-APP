@@ -373,10 +373,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <table class="table table-bordered">
                 <tbody>
                   <tr>
-                    <td><input type="text" style="border: none;" class="form-control text-center" name="ClassificationUSCS1" id="ClassificationUSCS1" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control text-center" name="ClassificationUSCS1" id="ClassificationUSCS1" value="<?php echo ($Search['ClassificationUSCS1']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
-                    <td><input type="text" style="border: none;" class="form-control text-center" name="ClassificationUSCS2" id="ClassificationUSCS2" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control text-center" name="ClassificationUSCS2" id="ClassificationUSCS2" value="<?php echo ($Search['ClassificationUSCS2']); ?>" readonly tabindex="-1"></td>
                   </tr>
                 </tbody>
               </table>
