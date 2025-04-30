@@ -434,6 +434,8 @@ console.log(result); // "Passed" o "Failed"
         return "SP-SM-Poorly graded sand with silt";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
         return "SP-SM-Poorly graded sand with silt and sand";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu > 6 && Cc >= 1 && Cc <= 3.4 && gravel>= 15) {
+        return "SP~SM-Poorly graded sand with silt and gravel";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel < 15) {
         return "SP-SC-Poorly graded sand with clay";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {

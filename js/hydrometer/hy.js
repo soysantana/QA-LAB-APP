@@ -1,93 +1,123 @@
-  /**
-   * Function Grain Size Coarse Aggregate
-   */
+function HY() {
 
-  function GrainSize() {
+    const TareWetSoil = document.getElementById("TareWetSoil").value;
+    const TareDrySoil = document.getElementById("TareDrySoil").value;
+    const TareMc = document.getElementById("TareMc").value;
+    const AirDriedMassHydrometer = document.getElementById("AirDriedMassHydrometer").value;
+    const MassRetainedAfterHy = document.getElementById("MassRetainedAfterHy").value;
+
+    // Humedad
+    const WaterWw = TareWetSoil - TareDrySoil;
+    const DrySoilWs = TareDrySoil - TareMc;
+    const Moisture = (WaterWw / DrySoilWs)*100;
+    // Correcion
+    const DryMassHy = (AirDriedMassHydrometer/(1+(Moisture/100)));
+    const DryMassHyPassingNo200 = DryMassHy - MassRetainedAfterHy;
+    const FineContentHy = 100*(1-(MassRetainedAfterHy/DryMassHy));
+
+    document.getElementById("WaterWw").value = WaterWw.toFixed(2);
+    document.getElementById("DrySoilWs").value = DrySoilWs.toFixed(2);
+    document.getElementById("MC").value = Moisture.toFixed(2) + "%";
+
+    document.getElementById("DryMassHydrometer").value = DryMassHy.toFixed(2);
+    document.getElementById("DryMassHySpecimenPassing").value = DryMassHyPassingNo200.toFixed(2);
+    document.getElementById("FineContentHySpecimen").value = FineContentHy.toFixed(2);
+}
+
+function GS() {
+    const getValue = (id) => {
+        const value = parseFloat(document.getElementById(id).value);
+        return isNaN(value) ? null : value;
+    };
+
+    const setValue = (id, value) => {
+        document.getElementById(id).value = value !== null ? value.toFixed(2) : "";
+    };
+
+    const WtDrySoilTare = getValue("WtDrySoilTare");
+    const Tare_GS = getValue("Tare_GS");
+    const WtWashed = getValue("WtWashed");
+
+    const WtDrySoil = WtDrySoilTare - Tare_GS;
+    const WtWashPan = WtDrySoil - WtWashed;
+
+    setValue("WtDrySoil", WtDrySoil);
+    setValue("WtWashPan", WtWashPan);
+
     const cumRetArray = [0];
     const PassArray = [];
-    let CoarserGravel;
-    let gravel;
-    let sand;
-    let fines;
 
-    for (let i = 1; i <= 22; i++) {
-        // Obtener los valores
-        const DrySoilTare = parseFloat(document.getElementById("DrySoilTare").value);
-        const Tare = parseFloat(document.getElementById("Tare").value);
-        const Washed = parseFloat(document.getElementById("Washed").value);
-        const WtRet = parseFloat(document.getElementById("WtRet" + i).value) || 0;
-        const PanWtRen = parseFloat(document.getElementById("PanWtRen").value);
+    for (let i = 1; i <= 17; i++) {
+        const WtRet = getValue("WtRet" + i);
 
-        // Calculation
-        const DrySoil = DrySoilTare - Tare;
-        const WashPan = DrySoil - Washed;
+        let Ret = 0, CumRet = 0, Pass = 100;
 
-        // Grain Size Distribution
-        const Ret = (WtRet / DrySoil) * 100;
-        const CumRet = cumRetArray[i - 1] + Ret;
-        cumRetArray.push(CumRet);
-        const Pass = 100 - CumRet;
-        const PanRet = (PanWtRen / DrySoil) * 100;
-        const TotalWtRet = PanWtRen + WashPan;
-        const TotalRet = (TotalWtRet / DrySoil) * 100;
-        const TotalCumRet = cumRetArray[22] + TotalRet;
-        const TotalPass = Math.abs(100 - TotalCumRet);
-        
+        if (WtDrySoil && WtRet !== null) {
+            Ret = (WtRet / WtDrySoil) * 100;
+            CumRet = cumRetArray[i - 1] + Ret;
+            cumRetArray.push(CumRet);
+            Pass = 100 - CumRet;
+        } else {
+            cumRetArray.push(cumRetArray[i - 1]);
+        }
 
-        // Summary Grain Size Distribution Parameter
-    PassArray.push(Pass);
-    if (PassArray.length <= 22) {
-      CoarserGravel = 100 - PassArray[5]; 
-      gravel = PassArray[5] - PassArray[13];
-      sand = PassArray[13] - PassArray[21];
-      fines = PassArray[21];
-    } else {
-      CoarserGravel = null;
-      gravel = null;
-      sand = null;
-      fines = null;
+    setValue("Ret" + i, WtRet !== null ? Ret : null);
+    setValue("CumRet" + i, WtRet !== null ? CumRet : null);
+    setValue("Pass" + i, WtRet !== null ? Pass : null);
+
+        PassArray.push(Pass);
     }
-        
 
-        // Result
-        document.getElementById("DrySoil").value = DrySoil.toFixed(2);
-        document.getElementById("WashPan").value = WashPan.toFixed(2);
-        document.getElementById("Ret" + i).value = Ret.toFixed(2);
-        document.getElementById("CumRet" + i).value = CumRet.toFixed(2);
-        document.getElementById("Pass" + i).value = Pass.toFixed(2);
-        document.getElementById("PanRet").value = PanRet.toFixed(2);
-        document.getElementById("TotalWtRet").value = TotalWtRet.toFixed(2);
-        document.getElementById("TotalRet").value = TotalRet.toFixed(2);
-        document.getElementById("TotalCumRet").value = TotalCumRet.toFixed(2);
-        document.getElementById("TotalPass").value = TotalPass.toFixed(2);
-        document.getElementById("CoarserGravel").value = CoarserGravel !== null && !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
-        document.getElementById("Gravel").value = gravel !== null && !isNaN(gravel) ? gravel.toFixed(2) : "";
-        document.getElementById("Sand").value = sand !== null && !isNaN(sand) ? sand.toFixed(2) : "";
-        document.getElementById("Fines").value = fines !== null && !isNaN(fines) ? fines.toFixed(2) : "";
+    // Pan y Total Pan
+    const PanWtRen = getValue("PanWtRen");
+
+    const TotalWtRet = WtWashPan + PanWtRen;
+    const PanRet = (PanWtRen / WtDrySoil) * 100;
+    const TotalRet = (TotalWtRet / WtDrySoil) * 100;
+    const TotalCumRet = cumRetArray[17] + TotalRet;
+    const TotalPass = 100 - TotalCumRet;
+
+    setValue("TotalWtRet", TotalWtRet);
+    setValue("PanRet", PanRet);
+    setValue("TotalRet", TotalRet);
+    setValue("TotalCumRet", TotalCumRet);
+    setValue("TotalPass", TotalPass);
+
+    
+    // Summary Grain Size Distribution Parameter
+    let fines = null, sand = null, gravel = null, CoarserGravel = null;
+
+    if (PassArray.length === 17) {
+        fines = PassArray[16];                           // No. 200 Sieve (índice 16)
+        sand = PassArray[8] - PassArray[16];            // No. 4 Sieve (índice 8)
+        gravel = PassArray[0] - PassArray[8];          // 3" Sieve (índice 0)
+        CoarserGravel = 100 - PassArray[0];
     }
+
+    setValue("CoarserGravel", CoarserGravel);
+    setValue("Gravel", gravel);
+    setValue("Sand", sand);
+    setValue("Fines", fines);
 
     // Sumary Parameter
     const datos = [
-        [PassArray[21], 0.075, PassArray[20], 0.106],
-        [PassArray[20], 0.106, PassArray[19], 0.15],
-        [PassArray[19], 0.15, PassArray[18], 0.25],
-        [PassArray[18], 0.25, PassArray[17], 0.3],
-        [PassArray[17], 0.3, PassArray[16], 0.85],
-        [PassArray[16], 0.85, PassArray[14], 1.18],
-        [PassArray[15], 1.18, PassArray[13], 2],
-        [PassArray[14], 2, PassArray[12], 4.75],
-        [PassArray[13], 4.75, PassArray[11], 9.5],
-        [PassArray[12], 9.5, PassArray[10], 12.5],
-        [PassArray[11], 12.5, PassArray[9], 19],
-        [PassArray[10], 19, PassArray[8], 25],
-        [PassArray[9], 25, PassArray[7], 38.1],
-        [PassArray[8], 38.1, PassArray[6], 50.8],
-        [PassArray[7], 50.8, PassArray[5], 63.5],
-        [PassArray[6], 63.5, PassArray[4], 76.2],
-        [PassArray[5], 76.2, PassArray[3], 88.9],
-        [PassArray[4], 88.9, PassArray[2], 101.6],
-        [PassArray[3], 101.6, PassArray[1], 127],
-        [PassArray[2], 127, PassArray[0], 0.0]
+        [PassArray[16], 0.075, PassArray[15], 0.106],
+        [PassArray[15], 0.106, PassArray[14], 0.15],
+        [PassArray[14], 0.15, PassArray[13], 0.25],
+        [PassArray[13], 0.25, PassArray[12], 0.3],
+        [PassArray[12], 0.3, PassArray[11], 0.85],
+        [PassArray[11], 0.85, PassArray[10], 1.18],
+        [PassArray[10], 1.18, PassArray[9], 2.00],
+        [PassArray[9], 2.00, PassArray[8], 4.75],
+        [PassArray[8], 4.75, PassArray[7], 9.5],
+        [PassArray[7], 9.5, PassArray[6], 12.50],
+        [PassArray[6], 12.50, PassArray[5], 19.0],
+        [PassArray[5], 19.0, PassArray[4], 25.0],
+        [PassArray[4], 25.0, PassArray[3], 37.5],
+        [PassArray[3], 37.5, PassArray[2], 50.8],
+        [PassArray[2], 50.8, PassArray[1], 63],
+        [PassArray[1], 63, PassArray[0], 75],
+        [PassArray[0], 75, 0, 0]
     ];
 
     const valoresBuscados = [10, 15, 30, 60, 85];
@@ -193,35 +223,36 @@
     // Calcular la expresión
     const D85 = Math.exp((85 - b85) / c85);
 
-    document.getElementById("D10").value = D10.toFixed(2);
-    document.getElementById("D15").value = D15.toFixed(2);
-    document.getElementById("D30").value = D30.toFixed(2);
-    document.getElementById("D60").value = D60.toFixed(2);
-    document.getElementById("D85").value = D85.toFixed(2);
+    setValue("D10", D10);
+    setValue("D15", D15);
+    setValue("D30", D30);
+    setValue("D60", D60);
+    setValue("D85", D85);
 
-    let Cc;
-    let Cu;
+    const Cc = (D30 ** 2) / (D60 * D10);
+    const Cu = D60 / D10;
 
-    const umbral = 0.01;
+    setValue("Cc", Cc);
+    setValue("Cu", Cu);
 
-    if (D30 > umbral && D60 > umbral && D10 > umbral) {
-        Cc = (D30 ** 2) / (D60 * D10);
-        Cu = D60 / D10;
-    } else {
-        Cc = '-';
-        Cu = '-';
-    }
+}
 
-    if (D30 <= umbral || D60 <= umbral || D10 <= umbral) {
-        Cc = '-';
-        Cu = '-';
-    }
-
-    document.getElementById("Cc").value = Cc !== '-' ? parseFloat(Cc.toFixed(2)) : '-';
-    document.getElementById("Cu").value = Cu !== '-' ? parseFloat(Cu.toFixed(2)) : '-';
-    
-    
   function clasificarSuelo() {
+        const getValue = (id) => {
+        const value = parseFloat(document.getElementById(id).value);
+        return isNaN(value) ? null : value;
+    };
+
+    const setValue = (id, value) => {
+        document.getElementById(id).value = value !== null ? value.toFixed(2) : "";
+    };
+
+    const gravel = getValue("Gravel");
+    const sand = getValue("Sand");
+    const fines = getValue("Sand");
+    const Cu = getValue("Cu");
+    const Cc = getValue("Cc");
+
     if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
         return "GW-Well graded gravel";
     } else if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 0.5 && Cc <= 3 && sand >= 15) {
@@ -284,8 +315,6 @@
         return "SP-SM-Poorly graded sand with silt";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
         return "SP-SM-Poorly graded sand with silt and sand";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu > 6 && Cc >= 1 && Cc <= 3.4 && gravel>= 15) {
-        return "SP~SM-Poorly graded sand with silt and gravel";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel < 15) {
         return "SP-SC-Poorly graded sand with clay";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
@@ -311,56 +340,9 @@
     // Obtener el valor del campo de texto
   let classification = clasificarSuelo();
 
+  console.log(classification); // Imprimir la clasificación en la consola
+
   // Dividir el texto basado en el primer guion
   let parts = classification.split(/-(.+)/); // Usa una expresión regular para dividir en el primer guion
   let part1 = parts[0]; // Parte antes del primer guion
   let part2 = parts[1] || ""; // Parte después del primer guion, o vacío si no existe
-
-  // Asignar los valores a los inputs
-  document.getElementById("ClassificationUSCS1").value = part2;
-  document.getElementById("ClassificationUSCS2").value = part1;
-    
-
-    $("input").on("blur", function(event) {
-        event.preventDefault();
-        enviarData();
-    });
-
-    function enviarData() {
-        $.ajax({
-            url: "../libs/graph/Grain-Size-General.js",
-            type: "GET",
-            data: $("#nopasonada").serialize(),
-            success: function(data) {}
-        });
-    }
-
-    function actualizarImagen() {
-        var GrainSizeGeneral = echarts.getInstanceByDom(document.getElementById('GrainSizeGeneral'));
-
-        var ImageURL = GrainSizeGeneral.getDataURL({
-            pixelRatio: 1,
-            backgroundColor: '#fff'
-        });
-
-        fetch(ImageURL)
-            .then(response => response.blob())
-            .then(GraphBlob => {
-                // Convierte la imagen a base64
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(GraphBlob);
-                });
-            })
-            .then(GraphBase64 => {
-                document.getElementById('Graph').value = GraphBase64;
-            })
-            .catch(error => console.error('Error al convertir la imagen a Base64:', error));
-    }
-    document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('blur', actualizarImagen);
-    });
-
-}

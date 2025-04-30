@@ -1,6 +1,10 @@
 function LPF() {
   const cumRetArray = [0];
   const PassArray = [];
+  let CoarserGravel;
+  let gravel;
+  let sand;
+  let fines;
 
   var Specs12 = document.getElementById("Specs2");
   var Specs3p4 = document.getElementById("Specs5");
@@ -41,10 +45,17 @@ function LPF() {
 
     // Summary Grain Size Distribution Parameter
     PassArray.push(Pass);
-    const CoarserGravel =  100 - PassArray[1];
-    const Gravel =  PassArray[1] - PassArray[6];
-    const Sand =  PassArray[6] - PassArray[12];
-    const Fines =  PassArray[PassArray.length - 1];  
+    if (PassArray.length <= 17) {
+      CoarserGravel = 100 - PassArray[1];
+      gravel = PassArray[1] - PassArray[6];
+      sand = PassArray[6] - PassArray[12];
+      fines = PassArray[12];
+    } else {
+      CoarserGravel = null;
+      gravel = null;
+      sand = null;
+      fines = null;
+    }
 
     // Result
     document.getElementById("DrySoil").value = DrySoil.toFixed(2);
@@ -57,10 +68,10 @@ function LPF() {
     document.getElementById("TotalRet").value = TotalRet.toFixed(2);
     document.getElementById("TotalCumRet").value = TotalCumRet.toFixed(2);
     document.getElementById("TotalPass").value = TotalPass.toFixed(2);
-    document.getElementById("CoarserGravel").value = CoarserGravel.toFixed(2);
-    document.getElementById("Gravel").value = Gravel.toFixed(2);
-    document.getElementById("Sand").value = Sand.toFixed(2);
-    document.getElementById("Fines").value = Fines.toFixed(2);
+    document.getElementById("CoarserGravel").value = CoarserGravel !== null && !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
+    document.getElementById("Gravel").value = gravel !== null && !isNaN(gravel) ? gravel.toFixed(2) : "";
+    document.getElementById("Sand").value = sand !== null && !isNaN(sand) ? sand.toFixed(2) : "";
+    document.getElementById("Fines").value = fines !== null && !isNaN(fines) ? fines.toFixed(2) : "";
   }
   // Sumary Parameter
  const datos = [
@@ -208,6 +219,105 @@ function LPF() {
   
   document.getElementById("Cc").value = Cc !== '-' ? parseFloat(Cc.toFixed(2)) : '-';
   document.getElementById("Cu").value = Cu !== '-' ? parseFloat(Cu.toFixed(2)) : '-';
+
+    function clasificarSuelo() {
+    if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
+        return "GW-Well graded gravel";
+    } else if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 0.5 && Cc <= 3 && sand >= 15) {
+        return "GW-Well graded gravel with sand";
+    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3  && sand < 15) {
+        return "GP-Poorly graded gravel";
+    } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand < 15) {
+        return "GP-Poorly graded gravel";
+    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
+        return "GP-Poorly graded gravel with sand";
+    } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand >= 15) {
+        return "GP-Poorly graded gravel with sand";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
+        return "GW-GM Well graded gravel with silt";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
+        return "GW-GM Well graded gravel with silt and sand";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
+        return "GW-GC-Well graded gravel with clay";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
+        return "GW-GC-Well graded gravel with clay and sand";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
+        return "GP-GM-Poorly graded gravel with silt";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
+        return "GP-GM-Poorly graded gravel with silt and sand";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
+        return "GP-GC-Poorly graded gravel with clay";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
+        return "GP-GC-Poorly graded gravel with clay and sand";
+    } else if (gravel > sand && fines >= 5 && fines > 12 && sand < 15) {
+        return "GM-Silty gravel";
+    } else if (gravel > sand && fines >= 5 && fines > 12 && sand >= 15) {
+        return "GM-Silty gravel with sand";
+    } else if (gravel > sand && fines >= 5 && fines > 12 && sand < 15) {
+        return "GC-Clayey gravel";
+    } else if (gravel > sand && fines >= 5 && fines > 12 && sand >= 15) {
+        return "GC-Clayey gravel with sand";
+    } else if (gravel > sand && fines >= 5 && fines > 12 && sand < 15) {
+        return "GC-GM-Silty clayey gravel";
+    } else if (gravel > sand && fines >= 5 && fines > 12 && sand >= 15) {
+        return "GC-GM-Silty clayey gravel with sand";
+    } else if (sand > gravel && fines < 5 && Cu >= 6 && Cc >= 0.5 && Cc <= 3 && gravel < 15) {
+        return "SW-Well graded sand";
+    } else if (sand > gravel && fines < 5 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel >= 15) {
+        return "SW-Well graded sand with gravel";
+    } else if (sand > gravel && fines < 5 && Cu < 6.4 && Cc < 1 && gravel < 15) {
+        return "SP-Poorly graded sand";
+    } else if (sand > gravel && fines < 5 && Cu < 6 &&  Cc > 3 && gravel < 15) {
+        return "SP-Poorly graded sand";
+    } else if (sand > gravel && fines < 5 && Cu < 6 && (Cc < 1 || Cc > 3) && gravel >= 15) {
+        return "SP-Poorly graded sand with gravel";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel < 15) {
+        return "SW-SM-Well graded sand with silt";
+    } else if (sand >gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel>= 15) {
+        return "SW-SM-Well graded sand with silt and sand";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel< 15) {
+        return "SW-SC-Well graded sand with clay";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel >= 15) {
+        return "SW-SC-Well graded sand with clay and sand";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel < 15) {
+        return "SP-SM-Poorly graded sand with silt";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
+        return "SP-SM-Poorly graded sand with silt and sand";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu > 6 && Cc >= 1 && Cc <= 3.4 && gravel>= 15) {
+        return "SP~SM-Poorly graded sand with silt and gravel";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel < 15) {
+        return "SP-SC-Poorly graded sand with clay";
+    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
+        return "SP-SC-Poorly graded sand with clay and sand";
+    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel < 15) {
+        return "SM-Silty sand";
+    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel >= 15) {
+        return "SM-Silty sand with gravel";
+    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel < 15) {
+        return "SC-Clayey sand";
+    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel >= 15) {
+        return "SC-Clayey sand with gravel";
+    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel < 15) {
+        return "SC-GM-Silty clayey sand";
+    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel >= 15) {
+        return "SC-GM-Silty clayey sand with gravel";
+    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
+        return "GW-Well graded gravel with fines";
+    } else {
+        return "No se pudo clasificar el suelo.";
+    }
+}
+    // Obtener el valor del campo de texto
+  let classification = clasificarSuelo();
+
+  // Dividir el texto basado en el primer guion
+  let parts = classification.split(/-(.+)/); // Usa una expresión regular para dividir en el primer guion
+  let part1 = parts[0]; // Parte antes del primer guion
+  let part2 = parts[1] || ""; // Parte después del primer guion, o vacío si no existe
+
+  // Asignar los valores a los inputs
+  document.getElementById("ClassificationUSCS1").value = part2;
+  document.getElementById("ClassificationUSCS2").value = part1;
 
   $("input").on("blur", function(event) {
     event.preventDefault();
