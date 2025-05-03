@@ -228,121 +228,222 @@ function GS() {
     setValue("D30", D30);
     setValue("D60", D60);
     setValue("D85", D85);
+    
+    const umbral = 0.01;
 
-    const Cc = (D30 ** 2) / (D60 * D10);
-    const Cu = D60 / D10;
+    let Cc, Cu;
 
-    setValue("Cc", Cc);
-    setValue("Cu", Cu);
+    if (D30 > umbral && D60 > umbral && D10 > umbral) {
+        Cc = (D30 ** 2) / (D60 * D10);
+        Cu = D60 / D10;
+    } else {
+        Cc = '-';
+        Cu = '-';
+    }
+
+    if (D30 <= umbral || D60 <= umbral || D10 <= umbral) {
+        Cc = '-';
+        Cu = '-';
+    }
+
+    document.getElementById("Cc").value = Cc !== '-' ? parseFloat(Cc.toFixed(2)) : '-';
+    document.getElementById("Cu").value = Cu !== '-' ? parseFloat(Cu.toFixed(2)) : '-';
 
 }
 
-  function clasificarSuelo() {
-        const getValue = (id) => {
+function clasificarSuelo() {
+    const getValue = (id) => {
         const value = parseFloat(document.getElementById(id).value);
         return isNaN(value) ? null : value;
     };
 
     const setValue = (id, value) => {
-        document.getElementById(id).value = value !== null ? value.toFixed(2) : "";
+        document.getElementById(id).value = value !== null ? value : "";
     };
 
     const gravel = getValue("Gravel");
     const sand = getValue("Sand");
-    const fines = getValue("Sand");
+    const fines = getValue("Fines");
     const Cu = getValue("Cu");
     const Cc = getValue("Cc");
+    const LL = getValue("LiquidLimit");
+    const PI = getValue("PlasticityIndex");
 
-    if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
-        return "GW-Well graded gravel";
-    } else if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 0.5 && Cc <= 3 && sand >= 15) {
-        return "GW-Well graded gravel with sand";
-    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3  && sand < 15) {
-        return "GP-Poorly graded gravel";
-    } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand < 15) {
-        return "GP-Poorly graded gravel";
-    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
-        return "GP-Poorly graded gravel with sand";
-    } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand >= 15) {
-        return "GP-Poorly graded gravel with sand";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
-        return "GW-GM Well graded gravel with silt";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
-        return "GW-GM Well graded gravel with silt and sand";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
-        return "GW-GC-Well graded gravel with clay";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
-        return "GW-GC-Well graded gravel with clay and sand";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
-        return "GP-GM-Poorly graded gravel with silt";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
-        return "GP-GM-Poorly graded gravel with silt and sand";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
-        return "GP-GC-Poorly graded gravel with clay";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
-        return "GP-GC-Poorly graded gravel with clay and sand";
-    } else if (gravel > sand && fines >= 5 && fines > 12 && sand < 15) {
-        return "GM-Silty gravel";
-    } else if (gravel > sand && fines >= 5 && fines > 12 && sand >= 15) {
-        return "GM-Silty gravel with sand";
-    } else if (gravel > sand && fines >= 5 && fines > 12 && sand < 15) {
-        return "GC-Clayey gravel";
-    } else if (gravel > sand && fines >= 5 && fines > 12 && sand >= 15) {
-        return "GC-Clayey gravel with sand";
-    } else if (gravel > sand && fines >= 5 && fines > 12 && sand < 15) {
-        return "GC-GM-Silty clayey gravel";
-    } else if (gravel > sand && fines >= 5 && fines > 12 && sand >= 15) {
-        return "GC-GM-Silty clayey gravel with sand";
-    } else if (sand > gravel && fines < 5 && Cu >= 6 && Cc >= 0.5 && Cc <= 3 && gravel < 15) {
-        return "SW-Well graded sand";
-    } else if (sand > gravel && fines < 5 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel >= 15) {
-        return "SW-Well graded sand with gravel";
-    } else if (sand > gravel && fines < 5 && Cu < 6.4 && Cc < 1 && gravel < 15) {
-        return "SP-Poorly graded sand";
-    } else if (sand > gravel && fines < 5 && Cu < 6 &&  Cc > 3 && gravel < 15) {
-        return "SP-Poorly graded sand";
-    } else if (sand > gravel && fines < 5 && Cu < 6 && (Cc < 1 || Cc > 3) && gravel >= 15) {
-        return "SP-Poorly graded sand with gravel";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel < 15) {
-        return "SW-SM-Well graded sand with silt";
-    } else if (sand >gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel>= 15) {
-        return "SW-SM-Well graded sand with silt and sand";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel< 15) {
-        return "SW-SC-Well graded sand with clay";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel >= 15) {
-        return "SW-SC-Well graded sand with clay and sand";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel < 15) {
-        return "SP-SM-Poorly graded sand with silt";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
-        return "SP-SM-Poorly graded sand with silt and sand";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel < 15) {
-        return "SP-SC-Poorly graded sand with clay";
-    } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu < 6 && Cc < 1 && Cc > 3 && gravel>= 15) {
-        return "SP-SC-Poorly graded sand with clay and sand";
-    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel < 15) {
-        return "SM-Silty sand";
-    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel >= 15) {
-        return "SM-Silty sand with gravel";
-    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel < 15) {
-        return "SC-Clayey sand";
-    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel >= 15) {
-        return "SC-Clayey sand with gravel";
-    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel < 15) {
-        return "SC-GM-Silty clayey sand";
-    } else if (sand > gravel && fines >= 5 && fines > 12 && gravel >= 15) {
-        return "SC-GM-Silty clayey sand with gravel";
-    } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
-        return "GW-Well graded gravel with fines";
+    const tipo = sand >= gravel ? "arena" : "grava";
+    const mayoritario = tipo === "arena" ? "sand" : "gravel";
+    const minoritario = tipo === "arena" ? "gravel" : "sand";
+
+    let resultado = "";
+
+    if (fines >= 50) {
+        if (LL < 50) {
+            if (PI > 7 && PI >= 0.73 * (LL - 20)) resultado = "CL - Lean clay";
+            else if (PI >= 4 && PI <= 7 && PI >= 0.73 * (LL - 20)) resultado = "CL-ML - Silty clay";
+            else resultado = "ML - Silt";
+        } else {
+            resultado = PI >= 0.73 * (LL - 20) ? "CH - Fat clay" : "MH - Elastic silt";
+        }
     } else {
-        return "No se pudo clasificar el suelo.";
+        const limpio = fines < 5;
+        const conFinos = fines >= 12;
+
+        if (limpio) {
+            if (tipo === "arena") {
+                resultado = (Cu !== null && Cc !== null && Cu >= 6 && Cc >= 1 && Cc <= 3)
+                    ? "SW - Well graded sand"
+                    : "SP - Poorly graded sand";
+            } else {
+                resultado = (Cu !== null && Cc !== null && Cu >= 4 && Cc >= 1 && Cc <= 3)
+                    ? "GW - Well graded gravel"
+                    : "GP - Poorly graded gravel";
+            }
+        } else if (conFinos) {
+            let simbolo;
+            if (LL >= 50) {
+                simbolo = PI >= 0.73 * (LL - 20)
+                    ? (tipo === "arena" ? "SC" : "GC")
+                    : (tipo === "arena" ? "SM" : "GM");
+            } else {
+                simbolo = PI >= 7
+                    ? (tipo === "arena" ? "SC" : "GC")
+                    : (tipo === "arena" ? "SM" : "GM");
+            }
+
+            const nombre = simbolo.endsWith("C")
+                ? `Clayey ${mayoritario} with ${minoritario}`
+                : `Silty ${mayoritario} with ${minoritario}`;
+
+            resultado = `${simbolo} - ${nombre}`;
+        } else {
+            // Transicional (entre 5% y 12% de finos)
+            let simbolo1 = tipo === "arena" ? "SP" : "GP";
+            let simbolo2 = PI >= 7 ? (tipo === "arena" ? "SC" : "GC") : (tipo === "arena" ? "SM" : "GM");
+            resultado = `${simbolo1}-${simbolo2} - ${mayoritario} with some fines`;
+        }
     }
+
+    setValue("Classification1", resultado);
 }
-    // Obtener el valor del campo de texto
-  let classification = clasificarSuelo();
 
-  console.log(classification); // Imprimir la clasificación en la consola
+function hydrometer() {
+  // Fechas
+  const base = document.getElementById("Date1").value;
+  if (!base) return;
 
-  // Dividir el texto basado en el primer guion
-  let parts = classification.split(/-(.+)/); // Usa una expresión regular para dividir en el primer guion
-  let part1 = parts[0]; // Parte antes del primer guion
-  let part2 = parts[1] || ""; // Parte después del primer guion, o vacío si no existe
+  for (let i = 2; i <= 8; i++) {
+    document.getElementById("Date" + i).value = base;
+  }
+
+  const date = new Date(base);
+  date.setDate(date.getDate() + 1);
+  document.getElementById("Date9").value = date.toISOString().split("T")[0];
+
+  // Horas
+    const baseTime = document.getElementById("Hour1").value;
+  if (!baseTime) return;
+
+  const [hours, minutes] = baseTime.split(":").map(Number);
+  const baseDate = new Date();
+  baseDate.setHours(hours, minutes, 0, 0);
+
+  for (let i = 2; i <= 9; i++) {
+    const readingInput = document.getElementById("ReadingTimeT" + i);
+    if (!readingInput) continue;
+
+    const timeToAdd = parseFloat(readingInput.value);
+    if (isNaN(timeToAdd)) continue;
+
+    const newDate = new Date(baseDate);
+    newDate.setMinutes(newDate.getMinutes() + timeToAdd);
+
+    const hh = String(newDate.getHours()).padStart(2, '0');
+    const mm = String(newDate.getMinutes()).padStart(2, '0');
+    document.getElementById("Hour" + i).value = `${hh}:${mm}`;
+  }
+
+// Calculation
+let total = 0;
+let count = 0;
+let average = null;
+
+const Hr1 = 11.0;
+const Hr2 = 7.08;
+const r1 = 65.0;
+const r2 = 60.0;
+const vhb = 60.0;
+const Ac2 = 2*27.48;
+const CM = 1.0;
+const MassDensWater = 0.99821;
+const Acceleration = 980.7;
+
+
+  const SG_Result = parseFloat(document.getElementById("SG_Result").value);
+  const Volumeofsuspension = parseFloat(document.getElementById("Volumeofsuspension").value);
+  const DryMassHySpecimenPassing = parseFloat(document.getElementById("DryMassHySpecimenPassing").value);
+  const MeniscusCorrection = parseFloat(document.getElementById("MeniscusCorrection").value);
+  const Viscosityofwater = parseFloat(document.getElementById("Viscosityofwater").value);
+  const PassNo200 = parseFloat(document.getElementById("Pass17").value);
+
+  const DmmR2 = Viscosityofwater * 18;
+  const MDWA = MassDensWater * Acceleration;
+  const AMDW = MDWA*(SG_Result-1);
+  const DmmHr1 = DmmR2/AMDW;
+
+for (let i = 1; i <= 5; i++) {  // Solo del 1 al 5 para calcular el promedio
+  const HyCalibrationTemp = parseFloat(document.getElementById("HyCalibrationTemp" + i).value);
+  const HyCalibrationRead = parseFloat(document.getElementById("HyCalibrationRead" + i).value);
+
+  if (!isNaN(HyCalibrationTemp) && !isNaN(HyCalibrationRead)) {
+    const AorB = HyCalibrationRead + (0.01248 * HyCalibrationTemp) + (0.00795 * (HyCalibrationTemp ** 2));
+    total += AorB;
+    count++;
+  }
+}
+
+if (count > 0) {
+  average = (total / count);
+
+  for (let i = 1; i <= 9; i++) {  // Se usa el promedio del 1-5 en todos los campos del 1-9
+    const field = document.getElementById("ABdependingHy" + i);
+    if (field) field.value = average.toFixed(1);
+  }
+}
+
+// Aquí continúa tu otro bucle completo (1 al 9) para calcular y mostrar los resultados:
+for (let i = 1; i <= 9; i++) {
+  const Temp = parseFloat(document.getElementById("Temp" + i).value);
+  const HyReading = parseFloat(document.getElementById("HyReading" + i).value);
+  const ReadingTimeT = parseFloat(document.getElementById("ReadingTimeT" + i).value);
+  const ABdependingHy = parseFloat(document.getElementById("ABdependingHy" + i).value);
+  console.log(average);
+
+  const ReadingTimeMin = ReadingTimeT * 60;
+
+  if (average !== null && !isNaN(Temp)) {
+    const OffsetReading = average - (0.01248 * Temp) - (0.00795 * (Temp ** 2));
+    document.getElementById("OffsetReading" + i).value = OffsetReading.toFixed(1);
+
+    const MassPercentFiner = 0.6226 * ((SG_Result / (SG_Result - 1)) * ((Volumeofsuspension / DryMassHySpecimenPassing) * (HyReading - OffsetReading)) * (100 / 1000));
+    document.getElementById("MassPercentFiner" + i).value = MassPercentFiner.toFixed(2);
+
+    const EffectiveLength = Hr2 + ((Hr1 / r1) * (r2 - HyReading + MeniscusCorrection)) - (vhb / Ac2);
+    document.getElementById("EffectiveLength" + i).value = EffectiveLength.toFixed(2);
+
+    const DMm = Math.sqrt(DmmHr1 * (EffectiveLength / ReadingTimeMin)) * 10;
+    document.getElementById("DMm" + i).value = DMm.toFixed(4);
+
+    const PassingPerceTotalSample = (PassNo200 * MassPercentFiner) / 100;
+    document.getElementById("PassingPerceTotalSample" + i).value = PassingPerceTotalSample.toFixed(2);
+  } else {
+    document.getElementById("OffsetReading" + i).value = "";
+  }
+}
+
+
+
+
+
+
+
+
+}
