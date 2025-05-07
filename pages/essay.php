@@ -47,6 +47,7 @@ include_once('../components/header.php');
                 'los_angeles_abrasion_coarse_filter',
                 'los_angeles_abrasion_coarse_aggregate',
                 'pinhole_test',
+                'hydrometer'
             ];
 
             $allData = array_reduce($tables, function ($carry, $tableName) {
@@ -186,6 +187,7 @@ function get_test_link($testType, $id) {
         'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
+        'HY' => '../reviews/hydrometer.php?id='
     ];
     return isset($links[$testType]) ? $links[$testType] . $id : '#';
 }

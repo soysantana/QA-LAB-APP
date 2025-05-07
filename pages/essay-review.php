@@ -53,6 +53,7 @@ include_once('../components/header.php');
             'los_angeles_abrasion_coarse_filter' => 'LAA Small',
             'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
             'pinhole_test' => 'Pinhole',
+            'Hydrometer' => 'Hydrometer',
           ]); ?>
         </div>
 
@@ -99,6 +100,7 @@ function getTestLink($testType, $id) {
         'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
+        'HY' => '../reviews/hydrometer.php?id=',
     ];
     
     return isset($links[$testType]) ? $links[$testType] . $id : '#';
