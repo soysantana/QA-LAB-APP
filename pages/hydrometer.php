@@ -26,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </ol>
         </nav>
     </div><!-- End Page Title -->
-    <section class="section" oninput="clasificarSuelo()">
-        <div class="row" oninput="HY()">
+    <section class="section" oninput="clasificarSuelo()" onchange="hydrometer(); HY(); GS();">
+        <div class="row">
 
             <form class="row" action="hydrometer.php" method="post">
 
@@ -284,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body">
                             <h5 class="card-title">Grain Size Distribution</h5>
 
-                            <table class="table table-bordered" oninput="GS()">
+                            <table class="table table-bordered">
                                 <tbody>
                                     <tr>
                                         <th scope="row">Container</th>
@@ -340,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body">
                             <h5 class="card-title"></h5>
 
-                            <table class="table table-bordered" oninput="GS()">
+                            <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th scope="col">Screen</th>
@@ -557,13 +557,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <!-- end Hydrometer Calibration Table -->
 
+                <!-- Grain Size Graph For the Hydrometer -->
+                <div class="col-lg-7">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title"></h5>
+
+                            <div id="HydrometerGraph" style="min-height: 400px;" class="echart"></div>
+
+                        </div>
+                    </div>
+                </div>
+                <!-- end Grain Size Graph For the Hydrometer -->
+
                 <!-- Information Calculation Hydrometer Table -->
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title"></h5>
 
-                            <table class="table table-bordered table-sm" oninput="hydrometer()">
+                            <table class="table table-bordered table-sm">
                                 <tbody>
                                     <tr>
                                         <th scope="row">#</th>

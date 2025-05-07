@@ -1,5 +1,9 @@
-function HY() {
+let DMmGlobal = [];
+let PassingPerceTotalSampleGlobal = [];
+let PassArray = [];
+let DryMassHyPassingGlobal = [];
 
+function HY() {
     const TareWetSoil = document.getElementById("TareWetSoil").value;
     const TareDrySoil = document.getElementById("TareDrySoil").value;
     const TareMc = document.getElementById("TareMc").value;
@@ -13,6 +17,7 @@ function HY() {
     // Correcion
     const DryMassHy = (AirDriedMassHydrometer/(1+(Moisture/100)));
     const DryMassHyPassingNo200 = DryMassHy - MassRetainedAfterHy;
+    DryMassHyPassingGlobal = [DryMassHyPassingNo200];
     const FineContentHy = 100*(1-(MassRetainedAfterHy/DryMassHy));
 
     document.getElementById("WaterWw").value = WaterWw.toFixed(2);
@@ -31,7 +36,7 @@ function GS() {
     };
 
     const setValue = (id, value) => {
-        document.getElementById(id).value = value !== null ? value.toFixed(2) : "";
+        document.getElementById(id).value = value !== null ? value : "";
     };
 
     const WtDrySoilTare = getValue("WtDrySoilTare");
@@ -41,11 +46,11 @@ function GS() {
     const WtDrySoil = WtDrySoilTare - Tare_GS;
     const WtWashPan = WtDrySoil - WtWashed;
 
-    setValue("WtDrySoil", WtDrySoil);
-    setValue("WtWashPan", WtWashPan);
+    setValue("WtDrySoil", WtDrySoil.toFixed(2));
+    setValue("WtWashPan", WtWashPan.toFixed(2));
 
     const cumRetArray = [0];
-    const PassArray = [];
+    PassArray = [];
 
     for (let i = 1; i <= 17; i++) {
         const WtRet = getValue("WtRet" + i);
@@ -61,9 +66,9 @@ function GS() {
             cumRetArray.push(cumRetArray[i - 1]);
         }
 
-    setValue("Ret" + i, WtRet !== null ? Ret : null);
-    setValue("CumRet" + i, WtRet !== null ? CumRet : null);
-    setValue("Pass" + i, WtRet !== null ? Pass : null);
+    setValue("Ret" + i, WtRet !== null ? Ret.toFixed(2) : null);
+    setValue("CumRet" + i, WtRet !== null ? CumRet.toFixed(2) : null);
+    setValue("Pass" + i, WtRet !== null ? Pass.toFixed(2) : null);
 
         PassArray.push(Pass);
     }
@@ -77,13 +82,13 @@ function GS() {
     const TotalCumRet = cumRetArray[17] + TotalRet;
     const TotalPass = 100 - TotalCumRet;
 
-    setValue("TotalWtRet", TotalWtRet);
-    setValue("PanRet", PanRet);
-    setValue("TotalRet", TotalRet);
-    setValue("TotalCumRet", TotalCumRet);
-    setValue("TotalPass", TotalPass);
+    setValue("TotalWtRet", TotalWtRet.toFixed(2));
+    setValue("PanRet", PanRet.toFixed(2));
+    setValue("TotalRet", TotalRet.toFixed(2));
+    setValue("TotalCumRet", TotalCumRet.toFixed(2));
+    setValue("TotalPass", TotalPass.toFixed(2));
 
-    
+
     // Summary Grain Size Distribution Parameter
     let fines = null, sand = null, gravel = null, CoarserGravel = null;
 
@@ -94,13 +99,22 @@ function GS() {
         CoarserGravel = 100 - PassArray[0];
     }
 
-    setValue("CoarserGravel", CoarserGravel);
-    setValue("Gravel", gravel);
-    setValue("Sand", sand);
-    setValue("Fines", fines);
+    setValue("CoarserGravel", CoarserGravel.toFixed(2));
+    setValue("Gravel", gravel.toFixed(2));
+    setValue("Sand", sand.toFixed(2));
+    setValue("Fines", fines.toFixed(2));
 
     // Sumary Parameter
     const datos = [
+        [PassingPerceTotalSampleGlobal[8], DMmGlobal[8], PassingPerceTotalSampleGlobal[7], DMmGlobal[7]],
+        [PassingPerceTotalSampleGlobal[7], DMmGlobal[7], PassingPerceTotalSampleGlobal[6], DMmGlobal[6]],
+        [PassingPerceTotalSampleGlobal[6], DMmGlobal[6], PassingPerceTotalSampleGlobal[5], DMmGlobal[5]],
+        [PassingPerceTotalSampleGlobal[5], DMmGlobal[5], PassingPerceTotalSampleGlobal[4], DMmGlobal[4]],
+        [PassingPerceTotalSampleGlobal[4], DMmGlobal[4], PassingPerceTotalSampleGlobal[3], DMmGlobal[3]],
+        [PassingPerceTotalSampleGlobal[3], DMmGlobal[3], PassingPerceTotalSampleGlobal[2], DMmGlobal[2]],
+        [PassingPerceTotalSampleGlobal[2], DMmGlobal[2], PassingPerceTotalSampleGlobal[1], DMmGlobal[1]],
+        [PassingPerceTotalSampleGlobal[1], DMmGlobal[1], PassingPerceTotalSampleGlobal[0], DMmGlobal[0]],
+        [PassingPerceTotalSampleGlobal[0], DMmGlobal[0], PassArray[16], 0.075],
         [PassArray[16], 0.075, PassArray[15], 0.106],
         [PassArray[15], 0.106, PassArray[14], 0.15],
         [PassArray[14], 0.15, PassArray[13], 0.25],
@@ -223,13 +237,13 @@ function GS() {
     // Calcular la expresión
     const D85 = Math.exp((85 - b85) / c85);
 
-    setValue("D10", D10);
-    setValue("D15", D15);
-    setValue("D30", D30);
-    setValue("D60", D60);
-    setValue("D85", D85);
-    
-    const umbral = 0.01;
+    setValue("D10", D10.toFixed(3));
+    setValue("D15", D15.toFixed(3));
+    setValue("D30", D30.toFixed(3));
+    setValue("D60", D60.toFixed(3));
+    setValue("D85", D85.toFixed(3));
+
+    const umbral = 0.001;
 
     let Cc, Cu;
 
@@ -382,7 +396,6 @@ const Acceleration = 980.7;
   const DryMassHySpecimenPassing = parseFloat(document.getElementById("DryMassHySpecimenPassing").value);
   const MeniscusCorrection = parseFloat(document.getElementById("MeniscusCorrection").value);
   const Viscosityofwater = parseFloat(document.getElementById("Viscosityofwater").value);
-  const PassNo200 = parseFloat(document.getElementById("Pass17").value);
 
   const DmmR2 = Viscosityofwater * 18;
   const MDWA = MassDensWater * Acceleration;
@@ -414,8 +427,6 @@ for (let i = 1; i <= 9; i++) {
   const Temp = parseFloat(document.getElementById("Temp" + i).value);
   const HyReading = parseFloat(document.getElementById("HyReading" + i).value);
   const ReadingTimeT = parseFloat(document.getElementById("ReadingTimeT" + i).value);
-  const ABdependingHy = parseFloat(document.getElementById("ABdependingHy" + i).value);
-  console.log(average);
 
   const ReadingTimeMin = ReadingTimeT * 60;
 
@@ -423,16 +434,18 @@ for (let i = 1; i <= 9; i++) {
     const OffsetReading = average - (0.01248 * Temp) - (0.00795 * (Temp ** 2));
     document.getElementById("OffsetReading" + i).value = OffsetReading.toFixed(1);
 
-    const MassPercentFiner = 0.6226 * ((SG_Result / (SG_Result - 1)) * ((Volumeofsuspension / DryMassHySpecimenPassing) * (HyReading - OffsetReading)) * (100 / 1000));
+    const MassPercentFiner = 0.6226 * ((SG_Result / (SG_Result - 1)) * ((Volumeofsuspension / DryMassHyPassingGlobal) * (HyReading - OffsetReading)) * (100 / 1000));
     document.getElementById("MassPercentFiner" + i).value = MassPercentFiner.toFixed(2);
 
     const EffectiveLength = Hr2 + ((Hr1 / r1) * (r2 - HyReading + MeniscusCorrection)) - (vhb / Ac2);
     document.getElementById("EffectiveLength" + i).value = EffectiveLength.toFixed(2);
 
     const DMm = Math.sqrt(DmmHr1 * (EffectiveLength / ReadingTimeMin)) * 10;
+    DMmGlobal[i - 1] = DMm;
     document.getElementById("DMm" + i).value = DMm.toFixed(4);
 
-    const PassingPerceTotalSample = (PassNo200 * MassPercentFiner) / 100;
+    const PassingPerceTotalSample = (PassArray[16] * MassPercentFiner) / 100;
+    PassingPerceTotalSampleGlobal[i - 1] = PassingPerceTotalSample;
     document.getElementById("PassingPerceTotalSample" + i).value = PassingPerceTotalSample.toFixed(2);
   } else {
     document.getElementById("OffsetReading" + i).value = "";

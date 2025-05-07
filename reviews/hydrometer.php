@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </ol>
         </nav>
     </div><!-- End Page Title -->
-    <section class="section" oninput="clasificarSuelo()">
-        <div class="row" oninput="HY()">
+    <section class="section" oninput="clasificarSuelo()" onchange="hydrometer(); HY(); GS();">
+        <div class="row">
 
             <form class="row" action="hydrometer.php?id=<?php echo $Search['id']; ?>" method="post">
 
@@ -40,77 +40,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-body">
-                            <h5 class="card-title">Sample Information</h5>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label for="ProjectName" class="form-label">Project Name</label>
-                                    <input type="text" class="form-control" name="ProjectName" id="ProjectName" value="<?php echo ($Search['Project_Name']); ?>">
+                                <h5 class="card-title">Sample Information</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="ProjectName" class="form-label">Project Name</label>
+                                        <input type="text" class="form-control" name="ProjectName" id="ProjectName" value="<?php echo ($Search['Project_Name']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Client" class="form-label">Client</label>
+                                        <input type="text" class="form-control" name="Client" id="Client" value="<?php echo ($Search['Client']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="ProjectNumber" class="form-label">Project Number</label>
+                                        <input type="text" class="form-control" name="ProjectNumber" id="ProjectNumber" value="<?php echo ($Search['Project_Number']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Structure" class="form-label">Structure</label>
+                                        <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo ($Search['Structure']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Area" class="form-label">Work Area</label>
+                                        <input type="text" class="form-control" name="Area" id="Area" value="<?php echo ($Search['Area']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Source" class="form-label">Borrow Source</label>
+                                        <input type="text" class="form-control" name="Source" id="Source" value="<?php echo ($Search['Source']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="MType" class="form-label">Material Type</label>
+                                        <input type="text" class="form-control" name="MType" id="MType" value="<?php echo ($Search['Material_Type']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="SType" class="form-label">Sample Type</label>
+                                        <input type="text" class="form-control" name="SType" id="SType" value="<?php echo ($Search['Sample_Type']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="SampleName" class="form-label">Sample Name</label>
+                                        <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo ($Search['Sample_ID']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="SampleNumber" class="form-label">Sample Number</label>
+                                        <input type="text" class="form-control" name="SampleNumber" id="SampleNumber" value="<?php echo ($Search['Sample_Number']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Sample Date" class="form-label">Sample Date</label>
+                                        <input type="text" class="form-control" name="CollectionDate" id="Sample Date" value="<?php echo ($Search['Sample_Date']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="SampleBy" class="form-label">Sample By</label>
+                                        <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo ($Search['Sample_By']); ?>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Depth From" class="form-label">Depth From</label>
+                                        <input type="text" class="form-control" name="DepthFrom" id="Depth From" value="<?php echo ($Search['Depth_From']); ?>">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="Depth To" class="form-label">Depth To</label>
+                                        <input type="text" class="form-control" name="DepthTo" id="Depth To" value="<?php echo ($Search['Depth_To']); ?>">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="North" class="form-label">North</label>
+                                        <input type="text" class="form-control" name="North" id="North" value="<?php echo ($Search['North']); ?>">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="East" class="form-label">East</label>
+                                        <input type="text" class="form-control" name="East" id="East" value="<?php echo ($Search['East']); ?>">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="Elevation" class="form-label">Elevation</label>
+                                        <input type="text" class="form-control" name="Elev" id="Elevation" value="<?php echo ($Search['Elev']); ?>">
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="Client" class="form-label">Client</label>
-                                    <input type="text" class="form-control" name="Client" id="Client" value="<?php echo ($Search['Client']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="ProjectNumber" class="form-label">Project Number</label>
-                                    <input type="text" class="form-control" name="ProjectNumber" id="ProjectNumber" value="<?php echo ($Search['Project_Number']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="Structure" class="form-label">Structure</label>
-                                    <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo ($Search['Structure']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="Area" class="form-label">Work Area</label>
-                                    <input type="text" class="form-control" name="Area" id="Area" value="<?php echo ($Search['Area']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="Source" class="form-label">Borrow Source</label>
-                                    <input type="text" class="form-control" name="Source" id="Source" value="<?php echo ($Search['Source']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="MType" class="form-label">Material Type</label>
-                                    <input type="text" class="form-control" name="MType" id="MType" value="<?php echo ($Search['Material_Type']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="SType" class="form-label">Sample Type</label>
-                                    <input type="text" class="form-control" name="SType" id="SType" value="<?php echo ($Search['Sample_Type']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="SampleName" class="form-label">Sample Name</label>
-                                    <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo ($Search['Sample_ID']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="SampleNumber" class="form-label">Sample Number</label>
-                                    <input type="text" class="form-control" name="SampleNumber" id="SampleNumber" value="<?php echo ($Search['Sample_Number']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="Sample Date" class="form-label">Sample Date</label>
-                                    <input type="text" class="form-control" name="CollectionDate" id="Sample Date" value="<?php echo ($Search['Sample_Date']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="SampleBy" class="form-label">Sample By</label>
-                                    <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo ($Search['Sample_By']); ?>">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="Depth From" class="form-label">Depth From</label>
-                                    <input type="text" class="form-control" name="DepthFrom" id="Depth From" value="<?php echo ($Search['Depth_From']); ?>">
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="Depth To" class="form-label">Depth To</label>
-                                    <input type="text" class="form-control" name="DepthTo" id="Depth To" value="<?php echo ($Search['Depth_To']); ?>">
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="North" class="form-label">North</label>
-                                    <input type="text" class="form-control" name="North" id="North" value="<?php echo ($Search['North']); ?>">
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="East" class="form-label">East</label>
-                                    <input type="text" class="form-control" name="East" id="East" value="<?php echo ($Search['East']); ?>">
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="Elevation" class="form-label">Elevation</label>
-                                    <input type="text" class="form-control" name="Elev" id="Elevation" value="<?php echo ($Search['Elev']); ?>">
-                                </div>
-                            </div>
                             </div>
                         </div>
                     </div>
@@ -365,7 +365,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body">
                             <h5 class="card-title">Grain Size Distribution</h5>
 
-                            <table class="table table-bordered" oninput="GS()">
+                            <table class="table table-bordered">
                                 <tbody>
                                     <tr>
                                         <th scope="row">Container</th>
@@ -421,7 +421,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body">
                             <h5 class="card-title"></h5>
 
-                            <table class="table table-bordered" oninput="GS()">
+                            <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th scope="col">Screen</th>
@@ -575,25 +575,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <th scope="row">Actual Reading</th>
                                     </tr>
                                     <?php
-                                        // Convertir cada cadena en un array
-                                        $hyCalibrationTemps = explode(',', $Search["HyCalibrationTemp"]);
-                                        $hyCalibrationReads = explode(',', $Search["HyCalibrationRead"]);
-                                        $hyMeasureTemps = explode(',', $Search["HyMeasureTemp"]);
-                                        $hyMeasureFluids = explode(',', $Search["HyMeasureFluid"]);
+                                    // Convertir cada cadena en un array
+                                    $hyCalibrationTemps = explode(',', $Search["HyCalibrationTemp"]);
+                                    $hyCalibrationReads = explode(',', $Search["HyCalibrationRead"]);
+                                    $hyMeasureTemps = explode(',', $Search["HyMeasureTemp"]);
+                                    $hyMeasureFluids = explode(',', $Search["HyMeasureFluid"]);
 
-                                        for ($i = 1; $i <= 9; $i++) {
-                                            $tempValue   = isset($hyCalibrationTemps[$i - 1]) ? trim($hyCalibrationTemps[$i - 1]) : '';
-                                            $readValue   = isset($hyCalibrationReads[$i - 1]) ? trim($hyCalibrationReads[$i - 1]) : '';
-                                            $measTemp    = isset($hyMeasureTemps[$i - 1]) ? trim($hyMeasureTemps[$i - 1]) : '';
-                                            $fluidValue  = isset($hyMeasureFluids[$i - 1]) ? trim($hyMeasureFluids[$i - 1]) : '';
+                                    for ($i = 1; $i <= 9; $i++) {
+                                        $tempValue   = isset($hyCalibrationTemps[$i - 1]) ? trim($hyCalibrationTemps[$i - 1]) : '';
+                                        $readValue   = isset($hyCalibrationReads[$i - 1]) ? trim($hyCalibrationReads[$i - 1]) : '';
+                                        $measTemp    = isset($hyMeasureTemps[$i - 1]) ? trim($hyMeasureTemps[$i - 1]) : '';
+                                        $fluidValue  = isset($hyMeasureFluids[$i - 1]) ? trim($hyMeasureFluids[$i - 1]) : '';
 
-                                            echo '<tr>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp' . $i . '" id="HyCalibrationTemp' . $i . '" value="' . $tempValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead' . $i . '" id="HyCalibrationRead' . $i . '" value="' . $readValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp' . $i . '" id="HyMeasureTemp' . $i . '" value="' . $measTemp . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid' . $i . '" id="HyMeasureFluid' . $i . '" value="' . $fluidValue . '"></td>';
-                                            echo '</tr>';
-                                        }
+                                        echo '<tr>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp' . $i . '" id="HyCalibrationTemp' . $i . '" value="' . $tempValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead' . $i . '" id="HyCalibrationRead' . $i . '" value="' . $readValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp' . $i . '" id="HyMeasureTemp' . $i . '" value="' . $measTemp . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid' . $i . '" id="HyMeasureFluid' . $i . '" value="' . $fluidValue . '"></td>';
+                                        echo '</tr>';
+                                    }
                                     ?>
 
                                 </tbody>
@@ -612,7 +612,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body">
                             <h5 class="card-title"></h5>
 
-                            <div id="HydrometerGraph" style="min-height: 500px;" class="echart"></div>
+                            <div id="HydrometerGraph" style="min-height: 400px;" class="echart"></div>
 
                         </div>
                     </div>
@@ -625,7 +625,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body">
                             <h5 class="card-title"></h5>
 
-                            <table class="table table-bordered table-sm" oninput="hydrometer()">
+                            <table class="table table-bordered table-sm">
                                 <tbody>
                                     <tr>
                                         <th scope="row">#</th>
@@ -642,45 +642,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <th scope="row">passing percentage respect to the total sample</th>
                                     </tr>
                                     <?php
-                                        $readingTimeValues = [1, 2, 4, 15, 30, 60, 240, 360, 1440];
-                                        $dateValues                    = explode(',', $Search["Date"]);
-                                        $hourValues                    = explode(',', $Search["Hour"]);
-                                        $temps                         = explode(',', $Search["Temp"]);
-                                        $hyReadings                    = explode(',', $Search["HyReading"]);
-                                        $abDependingHy                = explode(',', $Search["ABdependingHy"]);
-                                        $offsetReading                = explode(',', $Search["OffsetReading"]);
-                                        $massPercentFiner             = explode(',', $Search["MassPercentFiner"]);
-                                        $effectiveLength              = explode(',', $Search["EffectiveLength"]);
-                                        $dmm                           = explode(',', $Search["DMm"]);
-                                        $passingPerceTotalSample      = explode(',', $Search["PassingPerceTotalSample"]);
+                                    $readingTimeValues             = explode(',', $Search["ReadingTimeT"]);
+                                    $dateValues                    = explode(',', $Search["Date"]);
+                                    $hourValues                    = explode(',', $Search["Hour"]);
+                                    $temps                         = explode(',', $Search["Temp"]);
+                                    $hyReadings                    = explode(',', $Search["HyReading"]);
+                                    $abDependingHy                = explode(',', $Search["ABdependingHy"]);
+                                    $offsetReading                = explode(',', $Search["OffsetReading"]);
+                                    $massPercentFiner             = explode(',', $Search["MassPercentFiner"]);
+                                    $effectiveLength              = explode(',', $Search["EffectiveLength"]);
+                                    $dmm                           = explode(',', $Search["DMm"]);
+                                    $passingPerceTotalSample      = explode(',', $Search["PassingPerceTotalSample"]);
 
-                                        for ($i = 1; $i <= 9; $i++) {
-                                            $dateValue       = isset($dateValues[$i - 1]) ? trim($dateValues[$i - 1]) : '';
-                                            $hourValue       = isset($hourValues[$i - 1]) ? trim($hourValues[$i - 1]) : '';
-                                            $tempValue       = isset($temps[$i - 1]) ? trim($temps[$i - 1]) : '';
-                                            $hyReadingValue  = isset($hyReadings[$i - 1]) ? trim($hyReadings[$i - 1]) : '';
-                                            $abValue         = isset($abDependingHy[$i - 1]) ? trim($abDependingHy[$i - 1]) : '';
-                                            $offsetValue     = isset($offsetReading[$i - 1]) ? trim($offsetReading[$i - 1]) : '';
-                                            $massValue       = isset($massPercentFiner[$i - 1]) ? trim($massPercentFiner[$i - 1]) : '';
-                                            $lengthValue     = isset($effectiveLength[$i - 1]) ? trim($effectiveLength[$i - 1]) : '';
-                                            $dmmValue        = isset($dmm[$i - 1]) ? trim($dmm[$i - 1]) : '';
-                                            $passingValue    = isset($passingPerceTotalSample[$i - 1]) ? trim($passingPerceTotalSample[$i - 1]) : '';
+                                    for ($i = 1; $i <= 9; $i++) {
+                                        $readingTimeValue       = isset($readingTimeValues[$i - 1]) ? trim($readingTimeValues[$i - 1]) : '';
+                                        $dateValue       = isset($dateValues[$i - 1]) ? trim($dateValues[$i - 1]) : '';
+                                        $hourValue       = isset($hourValues[$i - 1]) ? trim($hourValues[$i - 1]) : '';
+                                        $tempValue       = isset($temps[$i - 1]) ? trim($temps[$i - 1]) : '';
+                                        $hyReadingValue  = isset($hyReadings[$i - 1]) ? trim($hyReadings[$i - 1]) : '';
+                                        $abValue         = isset($abDependingHy[$i - 1]) ? trim($abDependingHy[$i - 1]) : '';
+                                        $offsetValue     = isset($offsetReading[$i - 1]) ? trim($offsetReading[$i - 1]) : '';
+                                        $massValue       = isset($massPercentFiner[$i - 1]) ? trim($massPercentFiner[$i - 1]) : '';
+                                        $lengthValue     = isset($effectiveLength[$i - 1]) ? trim($effectiveLength[$i - 1]) : '';
+                                        $dmmValue        = isset($dmm[$i - 1]) ? trim($dmm[$i - 1]) : '';
+                                        $passingValue    = isset($passingPerceTotalSample[$i - 1]) ? trim($passingPerceTotalSample[$i - 1]) : '';
 
-                                            echo '<tr>';
-                                            echo '<th scope="row">' . $i . '</th>';
-                                            echo '<td><input type="date" style="border: none;" class="form-control" name="Date' . $i . '" id="Date' . $i . '" value="' . $dateValue . '"></td>';
-                                            echo '<td><input type="time" style="border: none;" class="form-control" name="Hour' . $i . '" id="Hour' . $i . '" value="' . $hourValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT' . $i . '" id="ReadingTimeT' . $i . '" value="' . $readingTimeValues[$i - 1] . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="Temp' . $i . '" id="Temp' . $i . '" value="' . $tempValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="HyReading' . $i . '" id="HyReading' . $i . '" value="' . $hyReadingValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="ABdependingHy' . $i . '" id="ABdependingHy' . $i . '" value="' . $abValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="OffsetReading' . $i . '" id="OffsetReading' . $i . '" value="' . $offsetValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner' . $i . '" id="MassPercentFiner' . $i . '" value="' . $massValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="EffectiveLength' . $i . '" id="EffectiveLength' . $i . '" value="' . $lengthValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="DMm' . $i . '" id="DMm' . $i . '" value="' . $dmmValue . '"></td>';
-                                            echo '<td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample' . $i . '" id="PassingPerceTotalSample' . $i . '" value="' . $passingValue . '"></td>';
-                                            echo '</tr>';
-                                        }
+                                        echo '<tr>';
+                                        echo '<th scope="row">' . $i . '</th>';
+                                        echo '<td><input type="date" style="border: none;" class="form-control" name="Date' . $i . '" id="Date' . $i . '" value="' . $dateValue . '"></td>';
+                                        echo '<td><input type="time" style="border: none;" class="form-control" name="Hour' . $i . '" id="Hour' . $i . '" value="' . $hourValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT' . $i . '" id="ReadingTimeT' . $i . '" value="' . $readingTimeValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="Temp' . $i . '" id="Temp' . $i . '" value="' . $tempValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="HyReading' . $i . '" id="HyReading' . $i . '" value="' . $hyReadingValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="ABdependingHy' . $i . '" id="ABdependingHy' . $i . '" value="' . $abValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="OffsetReading' . $i . '" id="OffsetReading' . $i . '" value="' . $offsetValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner' . $i . '" id="MassPercentFiner' . $i . '" value="' . $massValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="EffectiveLength' . $i . '" id="EffectiveLength' . $i . '" value="' . $lengthValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="DMm' . $i . '" id="DMm' . $i . '" value="' . $dmmValue . '"></td>';
+                                        echo '<td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample' . $i . '" id="PassingPerceTotalSample' . $i . '" value="' . $passingValue . '"></td>';
+                                        echo '</tr>';
+                                    }
                                     ?>
 
 

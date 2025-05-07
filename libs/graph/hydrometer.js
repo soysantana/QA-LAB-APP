@@ -23,7 +23,10 @@ echarts.init(document.querySelector("#HydrometerGraph")).setOption({
       type: 'line',
       color: 'orange',
       smooth: true,
-      symbol: 'circle',
+      lineStyle: {
+        width: 3
+      },
+      showSymbol: false,
       data: [
         [75, document.getElementById("Pass1").value],
         [63, document.getElementById("Pass2").value],
@@ -52,6 +55,147 @@ echarts.init(document.querySelector("#HydrometerGraph")).setOption({
         [document.getElementById("DMm8").value, document.getElementById("PassingPerceTotalSample8").value],
         [document.getElementById("DMm9").value, document.getElementById("PassingPerceTotalSample9").value]
       ]
+    },
+        {
+      data: [
+        [300, 0],
+        [300, 100]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false,
+      smooth: true
+    },
+    {
+      data: [
+        [75, 0],
+        [75, 100]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false,
+      smooth: true
+    },
+    {
+      data: [
+        [4.75, 0],
+        [4.75, 100]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false,
+      smooth: true
+    },
+    {
+      data: [
+        [1.18, 0],
+        [1.18, 100]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false,
+      smooth: true,
+      lineStyle: {
+        type: 'dashed'
+      }
+    },
+    {
+      data: [
+        [0.25, 0],
+        [0.25, 100]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false,
+      smooth: true,
+      lineStyle: {
+        type: 'dashed'
+      }
+    },
+    {
+      data: [
+        [0.075, 0],
+        [0.075, 100]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false,
+      smooth: true,
+      lineStyle: {
+        type: 'dashed'
+      }
+    },
+    {
+      data: [
+        [0.002, 0],
+        [0.002, 100]
+      ],
+      type: 'line',
+      color: 'green',
+      showSymbol: false,
+      smooth: true
+    }
+  ],
+   graphic: [
+    {
+      type: 'text',
+      left: '17%',
+      top: '75%',
+      style: {
+        text: 'Cobbles',
+        fill: 'black',
+        fontSize: 13
+      }
+    },
+    {
+      type: 'text',
+      left: '29%',
+      top: '57%',
+      style: {
+        text: 'Gravel',
+        fill: 'black',
+        fontSize: 13
+      }
+    },
+    {
+      type: 'text',
+      left: '37%',
+      top: '60%',
+      style: {
+        text: 'Coarse',
+        fill: 'black',
+        fontSize: 13
+      }
+    },
+    {
+      type: 'text',
+      left: '41%',
+      top: '55%',
+      style: {
+        text: 'Sand',
+        fill: 'black',
+        fontSize: 13
+      }
+    },
+    {
+      type: 'text',
+      left: '44%',
+      top: '60%',
+      style: {
+        text: 'Medium',
+        fill: 'black',
+        fontSize: 13
+      }
+    },
+    {
+      type: 'text',
+      left: '51%',
+      top: '60%',
+      style: {
+        text: 'Fine',
+        fill: 'black',
+        fontSize: 13
+      }
     }
   ]
 });

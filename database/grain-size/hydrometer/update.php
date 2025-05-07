@@ -10,7 +10,7 @@ if (isset($_POST['UpdateHydrometer'])) {
     );
     validate_fields($req_fields);
 
-if (empty($errors)) {
+    if (empty($errors)) {
         $ProjectName = $db->escape($_POST['ProjectName']);
         $Client = $db->escape($_POST['Client']);
         $ProjectNumber = $db->escape($_POST['ProjectNumber']);
@@ -38,10 +38,9 @@ if (empty($errors)) {
         $HydrometerType = $db->escape($_POST['HydrometerType']);
         $MixingMethod = $db->escape($_POST['MixingMethod']);
         $SpecificGravitywas = $db->escape($_POST['SpecificGravitywas']);
-        $RegistedDate = make_date();
-        $RegisterBy = $user['name'];
+        $ModifiedDate = make_date();
+        $ModifiedBy = $user['name'];
         $TestType = "HY";
-        $id = uuid();
 
         // Hydrometer Analisis
         $DispersingAgent = $db->escape($_POST['DispersingAgent']);
@@ -124,11 +123,12 @@ if (empty($errors)) {
 
         // Grain Size
         for ($i = 1; $i <= 17; $i++) {
-            $inputValues{"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
-            $inputValues{"Ret" . $i} = $db->escape($_POST["Ret$i"]);
-            $inputValues{"CumRet" . $i} = $db->escape($_POST["CumRet$i"]);
-            $inputValues{"Pass" . $i} = $db->escape($_POST["Pass$i"]);
+            $inputValues["WtRet" . $i] = $db->escape($_POST["WtRet$i"]);
+            $inputValues["Ret" . $i]   = $db->escape($_POST["Ret$i"]);
+            $inputValues["CumRet" . $i] = $db->escape($_POST["CumRet$i"]);
+            $inputValues["Pass" . $i]  = $db->escape($_POST["Pass$i"]);
         }
+
 
         // Hydrometer Calibration & Analysis
         for ($i = 1; $i <= 9; $i++) {
@@ -149,49 +149,49 @@ if (empty($errors)) {
             ${"PassingPerceTotalSample" . $i} = $db->escape($_POST["PassingPerceTotalSample$i"]);
 
             // Concatenar si el campo tiene valor
-            if (!empty($inputValues{"HyCalibrationTemp" . $i})) {
+            if (!empty(${"HyCalibrationTemp" . $i})) {
                 $combinedHyCalibrationTemp .= ($combinedHyCalibrationTemp ? ", " : "") . ${"HyCalibrationTemp" . $i};
             }
-            if (!empty($inputValues{"HyCalibrationRead" . $i})) {
+            if (!empty(${"HyCalibrationRead" . $i})) {
                 $combinedHyCalibrationRead .= ($combinedHyCalibrationRead ? ", " : "") . ${"HyCalibrationRead" . $i};
             }
-            if (!empty($inputValues{"HyMeasureTemp" . $i})) {
+            if (!empty(${"HyMeasureTemp" . $i})) {
                 $combinedHyMeasureTemp .= ($combinedHyMeasureTemp ? ", " : "") . ${"HyMeasureTemp" . $i};
             }
-            if (!empty($inputValues{"HyMeasureFluid" . $i})) {
+            if (!empty(${"HyMeasureFluid" . $i})) {
                 $combinedHyMeasureFluid .= ($combinedHyMeasureFluid ? ", " : "") . ${"HyMeasureFluid" . $i};
             }
-            if (!empty($inputValues{"Date" . $i})) {
+            if (!empty(${"Date" . $i})) {
                 $combinedDates .= ($combinedDates ? ", " : "") . ${"Date" . $i};
             }
-            if (!empty($inputValues{"Hour" . $i})) {
+            if (!empty(${"Hour" . $i})) {
                 $combinedHour .= ($combinedHour ? ", " : "") . ${"Hour" . $i};
             }
-            if (!empty($inputValues{"ReadingTimeT" . $i})) {
+            if (!empty(${"ReadingTimeT" . $i})) {
                 $combinedReadingTimeT .= ($combinedReadingTimeT ? ", " : "") . ${"ReadingTimeT" . $i};
             }
-            if (!empty($inputValues{"Temp" . $i})) {
+            if (!empty(${"Temp" . $i})) {
                 $combinedTemp .= ($combinedTemp ? ", " : "") . ${"Temp" . $i};
             }
-            if (!empty($inputValues{"HyReading" . $i})) {
+            if (!empty(${"HyReading" . $i})) {
                 $combinedHyReading .= ($combinedHyReading ? ", " : "") . ${"HyReading" . $i};
             }
-            if (!empty($inputValues{"ABdependingHy" . $i})) {
+            if (!empty(${"ABdependingHy" . $i})) {
                 $combinedABdependingHy .= ($combinedABdependingHy ? ", " : "") . ${"ABdependingHy" . $i};
             }
-            if (!empty($inputValues{"OffsetReading" . $i})) {
+            if (!empty(${"OffsetReading" . $i})) {
                 $combinedOffsetReading .= ($combinedOffsetReading ? ", " : "") . ${"OffsetReading" . $i};
             }
-            if (!empty($inputValues{"MassPercentFiner" . $i})) {
+            if (!empty(${"MassPercentFiner" . $i})) {
                 $combinedMassPercentFiner .= ($combinedMassPercentFiner ? ", " : "") . ${"MassPercentFiner" . $i};
             }
-            if (!empty($inputValues{"EffectiveLength" . $i})) {
+            if (!empty(${"EffectiveLength" . $i})) {
                 $combinedEffectiveLength .= ($combinedEffectiveLength ? ", " : "") . ${"EffectiveLength" . $i};
             }
-            if (!empty($inputValues{"DMm" . $i})) {
+            if (!empty(${"DMm" . $i})) {
                 $combinedDMm .= ($combinedDMm ? ", " : "") . ${"DMm" . $i};
             }
-            if (!empty($inputValues{"PassingPerceTotalSample" . $i})) {
+            if (!empty(${"PassingPerceTotalSample" . $i})) {
                 $combinedPassingPerceTotalSample .= ($combinedPassingPerceTotalSample ? ", " : "") . ${"PassingPerceTotalSample" . $i};
             }
         }
@@ -222,10 +222,33 @@ if (empty($errors)) {
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
-        $query .= "Methods = '{$TestMethod}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
+        $query .= "DispersionAgent = '{$DispersingAgent}', ";
+        $query .= "Amountused = '{$Amountused}', ";
+        $query .= "Temperatureoftest = '{$Temperatureoftest}', ";
+        $query .= "Viscosityofwater = '{$Viscosityofwater}', ";
+        $query .= "MassdensityofwaterCalibrated = '{$MassdensityofwaterCalibrated}', ";
+        $query .= "Acceleration = '{$Acceleration}', ";
+        $query .= "Volumeofsuspension = '{$Volumeofsuspension}', ";
+        $query .= "MeniscusCorrection = '{$MeniscusCorrection}', ";
+        $query .= "TareName = '{$TareName}', ";
+        $query .= "OvenTemp = '{$OvenTemp}', ";
+        $query .= "TareWetSoil = '{$TareWetSoil}', ";
+        $query .= "TareDrySoil = '{$TareDrySoil}', ";
+        $query .= "WaterWw = '{$WaterWw}', ";
+        $query .= "TareMc = '{$TareMc}', ";
+        $query .= "DrySoilWs = '{$DrySoilWs}', ";
+        $query .= "MC = '{$MC}', ";
+        $query .= "AirDriedMassHydrometer = '{$AirDriedMassHydrometer}', ";
+        $query .= "DryMassHydrometer = '{$DryMassHydrometer}', ";
+        $query .= "MassRetainedAfterHy = '{$MassRetainedAfterHy}', ";
+        $query .= "DryMassHySpecimenPassing = '{$DryMassHySpecimenPassing}', ";
+        $query .= "FineContentHySpecimen = '{$FineContentHySpecimen}', ";
+        $query .= "LiquidLimit = '{$LiquidLimit}', ";
+        $query .= "PlasticityIndex = '{$PlasticityIndex}', ";
+        $query .= "SG_Result = '{$SG_Result}', ";
         $query .= "Container = '{$Container}', ";
         $query .= "Wet_Soil_Tare = '{$WetSoil}', ";
         $query .= "Wet_Dry_Tare = '{$DrySoilTare}', ";
@@ -245,13 +268,27 @@ if (empty($errors)) {
         $query .= "Cc = '{$Cc}', ";
         $query .= "Cu = '{$Cu}', ";
         $query .= "Classification1 = '{$Classification1}', ";
+        $query .= "HyCalibrationTemp = '{$combinedHyCalibrationTemp}', ";
+        $query .= "HyCalibrationRead = '{$combinedHyCalibrationRead}', ";
+        $query .= "HyMeasureTemp = '{$combinedHyMeasureTemp}', ";
+        $query .= "HyMeasureFluid = '{$combinedHyMeasureFluid}', ";
+        $query .= "Date = '{$combinedDates}', ";
+        $query .= "Hour = '{$combinedHour}', ";
+        $query .= "ReadingTimeT = '{$combinedReadingTimeT}', ";
+        $query .= "Temp = '{$combinedTemp}', ";
+        $query .= "HyReading = '{$combinedHyReading}', ";
+        $query .= "ABdependingHy = '{$combinedABdependingHy}', ";
+        $query .= "OffsetReading = '{$combinedOffsetReading}', ";
+        $query .= "MassPercentFiner = '{$combinedMassPercentFiner}', ";
+        $query .= "EffectiveLength = '{$combinedEffectiveLength}', ";
+        $query .= "DMm = '{$combinedDMm}', ";
+        $query .= "PassingPerceTotalSample = '{$combinedPassingPerceTotalSample}', ";
         $query .= "PanWtRen = '{$PanWtRen}', ";
         $query .= "PanRet = '{$PanRet}', ";
         $query .= "TotalWtRet = '{$TotalWtRet}', ";
         $query .= "TotalRet = '{$TotalRet}', ";
         $query .= "TotalCumRet = '{$TotalCumRet}', ";
-        $query .= "TotalPass = '{$TotalPass}', ";
-        $query .= "Graph = '{$Graph64}' ";
+        $query .= "TotalPass = '{$TotalPass}' ";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);
