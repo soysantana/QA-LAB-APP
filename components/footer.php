@@ -4,7 +4,7 @@
       &copy; Copyright <strong><span>2023</span></strong>. All Rights Reserved
     </div>
     <div class="credits">
-      Designed by <a href="#">Santana</a>
+      Designed by <a href="https://github.com/soysantana" target="_blank">Santana</a>
     </div>
   </footer><!-- End Footer -->
 

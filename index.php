@@ -14,7 +14,6 @@
 
               <div class="d-flex justify-content-center py-4">
                 <a href="index.php" class="logo d-flex align-items-center w-auto">
-                  <img src="assets/img/BARRICK-GOLD-logo.svg" width="200px" alt="logo-barrick">
                 </a>
               </div><!-- End Logo -->
 

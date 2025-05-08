@@ -118,6 +118,11 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
             </a>
           </li>
           <li>
+            <a href="/pages/reactivity.php">
+              <i class="bi bi-circle"></i><span>Reactividad</span>
+            </a>
+          </li>
+          <li>
             <a href="/pages/grain-size-menu.php" class="<?php echo $GrainSize; ?>">
               <i class="bi bi-circle"></i><span>Grain Size</span>
             </a>
