@@ -9,6 +9,12 @@ $Search = find_by_id('hydrometer', $_GET['id']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['UpdateHydrometer'])) {
         include('../database/grain-size/hydrometer/update.php');
+    } elseif (isset($_POST['RepeatHydrometer'])) {
+        include('../database/grain-size/hydrometer/repeat.php');
+    } elseif (isset($_POST['ReviewedHydrometer'])) {
+        include('../database/grain-size/hydrometer/reviewed.php');
+    } elseif (isset($_POST['DeleteHydrometer'])) {
+        include('../database/grain-size/hydrometer/delete.php');
     }
 }
 ?>
@@ -27,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </ol>
         </nav>
     </div><!-- End Page Title -->
-    <section class="section" oninput="clasificarSuelo()" onchange="hydrometer(); HY(); GS();">
+    <section class="section">
         <div class="row">
 
             <form class="row" action="hydrometer.php?id=<?php echo $Search['id']; ?>" method="post">
@@ -703,6 +709,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <!-- Actions Buttons -->
                             <div class="d-grid gap-2 mt-3">
                                 <button type="submit" class="btn btn-success" name="UpdateHydrometer">Update Hydrometer</button>
+                                <button type="submit" class="btn btn-danger" name="DeleteHY"><i class="bi bi-trash"></i></button>
+                                <?php if (user_can_access(1)): ?>
+                                    <button type="submit" class="btn btn-primary" name="RepeatHydrometer">Repeat</button>
+                                    <button type="submit" class="btn btn-primary" name="ReviewedHydrometer">Reviewed</button>
+                                <?php endif; ?>
                             </div>
 
                         </div>

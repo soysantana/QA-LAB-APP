@@ -38,8 +38,6 @@ function TRF() {
                 if (!isNaN(value)) {
                     totals[key] += value; // Suma el valor al total correspondiente
                 }
-            } else {
-                console.warn(`Elemento con id "${key}_${i}" no encontrado.`);
             }
         });
     }
@@ -49,8 +47,6 @@ function TRF() {
         const totalInput = document.getElementById(`sTotal_${index + 1}`); // Mapear a sTotal_1, sTotal_2, etc.
         if (totalInput) {
             totalInput.value = totals[key].toLocaleString("en-US"); // Formatea el total con separadores de miles
-        } else {
-            console.warn(`Elemento con id "sTotal_${index + 1}" no encontrado.`);
         }
     });
 
@@ -70,8 +66,6 @@ function calculatePasanteHumedo() {
             if (!isNaN(value)) {
                 total += value; // Suma al total si es un número válido
             }
-        } else {
-            console.warn(`Elemento con id "WtPhumedo_${i}" no encontrado.`); // Muestra un aviso si el elemento no existe
         }
     }
 
@@ -79,11 +73,7 @@ function calculatePasanteHumedo() {
     const totalInput = document.getElementById("TDMPHumedo");
     if (totalInput) {
         totalInput.value = total.toLocaleString("en-US"); // Formatea el total con separadores de miles
-    } else {
-        console.error('Elemento con id "TDMPHumedo" no encontrado.');
     }
-
-    console.log("Total calculado:", total.toLocaleString("en-US")); // Muestra el total formateado en la consola
 }
 
 /**
@@ -100,8 +90,6 @@ function calculateRepresentativoSecoSucio() {
             if (!isNaN(value)) {
                 total += value; // Suma al total si es un número válido
             }
-        } else {
-            console.warn(`Elemento con id "WtReSecoSucio_${i}" no encontrado.`); // Muestra un aviso si el elemento no existe
         }
     }
 
@@ -109,9 +97,40 @@ function calculateRepresentativoSecoSucio() {
     const totalInput = document.getElementById("TDMRSecoSucio");
     if (totalInput) {
         totalInput.value = total.toLocaleString("en-US"); // Formatea el total con separadores de miles
-    } else {
-        console.error('Elemento con id "TDMRSecoSucio" no encontrado.');
     }
 
-    console.log("Total calculado:", total.toLocaleString("en-US")); // Muestra el total formateado en la consola
+for (let i = 1; i <= 10; i++) {
+    const sTotal = document.getElementById(`sTotal_${i}`); // Obtiene el input por ID
+    if (sTotal) {
+        const value = parseFloat(sTotal.value); // Convierte el valor a número
+        if (!isNaN(value)) {
+            total += value; // Suma al total si es un número válido
+        }
+        console.log("Suma total:", total); // Muestra el total final
+    }
 }
+}
+
+/**
+ * Function to calculate the total of sTotal_ inputs
+ */
+function TotalMore3() {
+    let total = 0; // Inicializa el total en 0
+
+    for (let i = 1; i <= 10; i++) {
+        const sTotal = document.getElementById(`sTotal_${i}`); // Obtiene el input por ID
+        if (sTotal) {
+                    const rawValue = sTotal.value.replace(',', '.');
+        const value = parseFloat(rawValue); // Convierte el valor a número
+            if (!isNaN(value)) {
+                total += value; // Suma al total si es un número válido
+            }
+            console.log("Suma total:", total); // Muestra el total final
+        }
+    }
+}
+
+  $("input").on("blur", function(event) {
+    event.preventDefault();
+    TotalMore3();
+  });

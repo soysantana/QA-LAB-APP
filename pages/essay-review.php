@@ -22,40 +22,41 @@ include_once('../components/header.php');
     <section class="section">
         <div class="row">
 
-        <?php echo display_msg($msg); ?>
+            <?php echo display_msg($msg); ?>
 
-        <div class="col-lg-6">
-          <?php displayAccordion([
-            'atterberg_limit' => 'Atterberg Limit',
-            'moisture_oven' => 'Moisture Oven',
-            'moisture_constant_mass' => 'Moisture Constant Mass',
-            'moisture_microwave' => 'Moisture Microwave',
-            'moisture_scale' => 'Moisture Scale',
-            'grain_size_general' => 'Grain Size General',
-            'grain_size_coarse' => 'Grain Size Coarse Filter',
-            'grain_size_fine' => 'Grain Size Fine Filter',
-            'grain_size_coarsethan' => 'Grain Size Coarsethan',
-            'soundness' => 'Soundness',
-            'specific_gravity' => 'Specific Gravity',
-            'specific_gravity_coarse' => 'Specific Gravity Coarse',
-            'specific_gravity_fine' => 'Specific Gravity Fine',
-            'standard_proctor' => 'Standard Proctor',
-          ]); ?>
-        </div>
+            <div class="col-lg-6">
+                <?php displayAccordion([
+                    'atterberg_limit' => 'Atterberg Limit',
+                    'moisture_oven' => 'Moisture Oven',
+                    'moisture_constant_mass' => 'Moisture Constant Mass',
+                    'moisture_microwave' => 'Moisture Microwave',
+                    'moisture_scale' => 'Moisture Scale',
+                    'grain_size_general' => 'Grain Size General',
+                    'grain_size_coarse' => 'Grain Size Coarse Filter',
+                    'grain_size_fine' => 'Grain Size Fine Filter',
+                    'grain_size_coarsethan' => 'Grain Size Coarsethan',
+                    'soundness' => 'Soundness',
+                    'specific_gravity' => 'Specific Gravity',
+                    'specific_gravity_coarse' => 'Specific Gravity Coarse',
+                    'specific_gravity_fine' => 'Specific Gravity Fine',
+                    'standard_proctor' => 'Standard Proctor',
+                ]); ?>
+            </div>
 
-        <div class="col-lg-6">
-          <?php displayAccordion([
-            'grain_size_upstream_transition_fill' => 'Grain Size UTF',
-            'grain_size_lpf' => 'Grain Size LPF',
-            'point_load' => 'PLT',
-            'unixial_compressive' => 'UCS',
-            'brazilian' => 'BTS',
-            'los_angeles_abrasion_coarse_filter' => 'LAA Small',
-            'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
-            'pinhole_test' => 'Pinhole',
-            'Hydrometer' => 'Hydrometer',
-          ]); ?>
-        </div>
+            <div class="col-lg-6">
+                <?php displayAccordion([
+                    'grain_size_upstream_transition_fill' => 'Grain Size UTF',
+                    'grain_size_lpf' => 'Grain Size LPF',
+                    'point_load' => 'PLT',
+                    'unixial_compressive' => 'UCS',
+                    'brazilian' => 'BTS',
+                    'los_angeles_abrasion_coarse_filter' => 'LAA Small',
+                    'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
+                    'pinhole_test' => 'Pinhole',
+                    'Hydrometer' => 'Hydrometer',
+                    'reactivity' => 'Reactivity',
+                ]); ?>
+            </div>
 
         </div>
     </section>
@@ -68,15 +69,16 @@ include_once('../components/header.php');
 function fetchData($tableName, $applyDateFilter = false)
 {
     $Reviewed = "(SELECT 1 FROM test_reviewed WHERE Tracking = p.id)";
-    $week = date('Y-m-d', strtotime('-8 days'));
+    $week = date('Y-m-d', strtotime('-7 days'));
     $query = $applyDateFilter
-        ? "SELECT * FROM {$tableName} p WHERE NOT EXISTS $Reviewed"
+        ? "SELECT * FROM {$tableName} p WHERE NOT EXISTS $Reviewed OR p.Registed_Date >= '$week'"
         : "SELECT * FROM {$tableName}";
-    
+
     return find_by_sql($query);
 }
 
-function getTestLink($testType, $id) {
+function getTestLink($testType, $id)
+{
     $links = [
         'AL' => '../reviews/atterberg-limit.php?id=',
         'BTS' => '../reviews/brazilian.php?id=',
@@ -101,20 +103,23 @@ function getTestLink($testType, $id) {
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
+        'AR-CF' => '../reviews/reactivity-coarse.php?id=',
+        'AR-FF' => '../reviews/reactivity-fine.php?id=',
     ];
-    
+
     return isset($links[$testType]) ? $links[$testType] . $id : '#';
 }
 
-function displayAccordion($tables) {
+function displayAccordion($tables)
+{
     echo '<div class="card"><div class="card-body">';
     echo '<h5 class="card-title">Essay menu under review</h5>';
     echo '<div class="accordion accordion-flush" id="accordionFlushExample">';
-    
+
     foreach ($tables as $tableName => $displayName) {
         $data = fetchData($tableName, true);
         if (empty($data)) continue;
-        
+
         echo '<div class="accordion-item">';
         echo '<h2 class="accordion-header" id="flush-heading' . $tableName . '">';
         echo '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse' . $tableName . '" aria-expanded="false" aria-controls="flush-collapse' . $tableName . '">';
@@ -122,15 +127,15 @@ function displayAccordion($tables) {
         echo '</button></h2>';
         echo '<div id="flush-collapse' . $tableName . '" class="accordion-collapse collapse" aria-labelledby="flush-heading' . $tableName . '" data-bs-parent="#accordionFlushExample">';
         echo '<div class="accordion-body">';
-        
+
         foreach ($data as $entry) {
             $link = getTestLink($entry['Test_Type'], $entry['id']);
             echo '<a href="' . $link . '" class="text-danger">' . $entry['Sample_ID'] . '-' . $entry['Sample_Number'] . '</a><br>';
         }
-        
+
         echo '</div></div></div>';
     }
-    
+
     echo '</div></div></div>';
 }
 ?>

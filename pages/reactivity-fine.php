@@ -6,8 +6,8 @@ require_once('../config/load.php');
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['save_reactivity'])) {
-    include('../database/reactivity/ar/save.php');
+  if (isset($_POST['SaveReactivity'])) {
+    include('../database/reactivity/save.php');
   }
 }
 ?>
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main id="main" class="main">
 
   <div class="pagetitle">
-    <h1>Reactivity Coarse Filter</h1>
+    <h1>Reactivity Fine Particles</h1>
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="home.php">Home</a></li>
@@ -27,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="Reactivity()">
+    <div class="row" onchange="reactivityTest('FM13-006')">
 
-      <form class="row" action="reactivity.php" method="post">
+      <form class="row" action="reactivity-fine.php" method="post">
 
         <div class="col-md-4">
           <?php echo display_msg($msg); ?>
@@ -49,32 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
                     <option selected>Choose...</option>
-                    <option value="ASTM-C136">ASTM-C136</option>
+                    <option value="FM13-006">FM13-006</option>
                   </select>
                 </div>
                 <div class="col-md-4">
-                  <label for="PMethods" class="form-label">Preparation Methods</label>
-                  <select id="PMethods" class="form-select" name="PMethods">
-                    <option selected>Choose...</option>
-                    <option value="Oven Dried">Oven Dried</option>
-                    <option value="Air Dried">Air Dried</option>
-                    <option value="Microwave Dried">Microwave Dried</option>
-                    <option value="Wet">Wet</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label for="SMethods" class="form-label">Split Methods</label>
-                  <select id="SMethods" class="form-select" name="SMethods">
-                    <option selected>Choose...</option>
-                    <option value="Manual">Manual</option>
-                    <option value="Mechanical">Mechanical</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting">
                 </div>
@@ -95,14 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-body">
               <h5 class="card-title">Testing Information</h5>
 
-              <h5 class="card-title">Reactivity Test Method FM13-007</h5>
+              <h5 class="card-title">Reactivity Test Method FM13-006</h5>
               <!-- Bordered Table -->
               <table class="table table-bordered">
                 <tbody>
-                  <tr>
-                    <th scope="row">Total Sample Weight (g):</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="TotalWeight" id="TotalWeight"></td>
-                  </tr>
                   <tr>
                     <th scope="row">Weight used for the Test (g):</th>
                     <td><input type="text" style="border: none;" class="form-control" name="WeigtTest" id="WeigtTest"></td>
@@ -120,16 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td><input type="text" style="border: none;" class="form-control" name="Particles3" id="Particles3"></td>
                   </tr>
                   <tr>
-                    <th scope="row">Weight Mat. Ret. No. 4 (If Applicable)</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="WeightNo4" id="WeightNo4"></td>
+                    <th scope="row">D Particles Reactive #:</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Particles4" id="Particles4"></td>
                   </tr>
                   <tr>
-                    <th scope="row">Wt Reactive Part. Ret. No.4 (If Applicable)</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="WeightReactiveNo4" id="WeightReactiveNo4"></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Percent Reactive Particles (If Applicable)</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="PercentReactive" id="PercentReactive"></td>
+                    <th scope="row">E Particles Reactive #:</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Particles5" id="Particles5"></td>
                   </tr>
                   <tr>
                     <th scope="row">Average Particles Reactive:</th>
@@ -163,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <h5 class="card-title">Actions</h5>
               <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
-                <button type="submit" class="btn btn-success" name="save_reactivity">Save Essay</button>
+                <button type="submit" class="btn btn-success" name="SaveReactivity" value="FM13-006">Save Essay</button>
               </div>
 
             </div>
@@ -178,4 +152,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
+<script src="../js/reactivity.js"></script>
 <?php include_once('../components/footer.php');  ?>

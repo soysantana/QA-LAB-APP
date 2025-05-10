@@ -460,3 +460,21 @@ for (let i = 1; i <= 9; i++) {
 
 
 }
+
+  $("input").on("blur", function(event) {
+    event.preventDefault();
+    HY();
+    GS();
+    hydrometer();
+    clasificarSuelo();
+    enviarData();
+  });
+
+  function enviarData() {
+    $.ajax({
+      url: "../libs/graph/hydrometer.js",
+      type: "GET",
+      data: $("#nopasonada").serialize(),
+      success: function(data) {}
+    });
+  }

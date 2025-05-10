@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </ol>
         </nav>
     </div><!-- End Page Title -->
-    <section class="section" oninput="clasificarSuelo()" onchange="hydrometer(); HY(); GS();">
+    <section class="section">
         <div class="row">
 
             <form class="row" action="hydrometer.php" method="post">
@@ -751,4 +751,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 <script src="../js/hydrometer/hy.js"></script>
+<script src="../libs/graph/hydrometer.js"></script>
 <?php include_once('../components/footer.php');  ?>

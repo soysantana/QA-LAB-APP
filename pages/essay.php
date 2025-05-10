@@ -47,7 +47,8 @@ include_once('../components/header.php');
                 'los_angeles_abrasion_coarse_filter',
                 'los_angeles_abrasion_coarse_aggregate',
                 'pinhole_test',
-                'hydrometer'
+                'hydrometer',
+                'reactivity'
             ];
 
             $allData = array_reduce($tables, function ($carry, $tableName) {
@@ -121,35 +122,35 @@ include_once('../components/header.php');
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modalTriggerButtons = document.querySelectorAll('.open-modal-btn');
-    const modalForm = document.querySelector('#disablebackdrop form');
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalTriggerButtons = document.querySelectorAll('.open-modal-btn');
+        const modalForm = document.querySelector('#disablebackdrop form');
 
-    modalTriggerButtons.forEach(button => button.addEventListener('click', function () {
-        const fields = ['sample-name', 'sample-number', 'test-type', 'technician', 'start-date'];
-        fields.forEach(field => {
-            const element = modalForm.querySelector(`#${field}`);
-            if (element) element.value = button.getAttribute(`data-${field}`);
-        });
-    }));
-});
+        modalTriggerButtons.forEach(button => button.addEventListener('click', function() {
+            const fields = ['sample-name', 'sample-number', 'test-type', 'technician', 'start-date'];
+            fields.forEach(field => {
+                const element = modalForm.querySelector(`#${field}`);
+                if (element) element.value = button.getAttribute(`data-${field}`);
+            });
+        }));
+    });
 
-let selectedId, selectedTableName;
+    let selectedId, selectedTableName;
 
-function modaldelete(id, tableName) {
-    selectedId = id;
-    selectedTableName = tableName;
-    $('#ModalDelete').modal('show');
-}
-
-function Delete() {
-    if (selectedId && selectedTableName) {
-        document.getElementById("deleteForm").action = `essay.php?id=${selectedId}&table=${selectedTableName}`;
-        document.getElementById("deleteForm").submit();
-    } else {
-        console.error('ID o nombre de tabla no seleccionados.');
+    function modaldelete(id, tableName) {
+        selectedId = id;
+        selectedTableName = tableName;
+        $('#ModalDelete').modal('show');
     }
-}
+
+    function Delete() {
+        if (selectedId && selectedTableName) {
+            document.getElementById("deleteForm").action = `essay.php?id=${selectedId}&table=${selectedTableName}`;
+            document.getElementById("deleteForm").submit();
+        } else {
+            console.error('ID o nombre de tabla no seleccionados.');
+        }
+    }
 </script>
 
 <?php
@@ -161,7 +162,8 @@ if (isset($_POST['delete-essay'], $_GET['id'], $_GET['table'])) {
 }
 include_once('../components/footer.php');
 
-function get_test_link($testType, $id) {
+function get_test_link($testType, $id)
+{
     $links = [
         'AL' => '../reviews/atterberg-limit.php?id=',
         'BTS' => '../reviews/brazilian.php?id=',
@@ -187,7 +189,9 @@ function get_test_link($testType, $id) {
         'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
-        'HY' => '../reviews/hydrometer.php?id='
+        'HY' => '../reviews/hydrometer.php?id=',
+        'AR-CF' => '../reviews/reactivity-coarse.php?id=',
+        'AR-FF' => '../reviews/reactivity-fine.php?id='
     ];
     return isset($links[$testType]) ? $links[$testType] . $id : '#';
 }
