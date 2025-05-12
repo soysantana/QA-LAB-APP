@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="TRF()">
+    <div class="row">
 
       <form class="row" action="grain-size-trf.php" method="post">
 
@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         </div>
 
-        <div class="col-lg-6" oninput="calculatePasanteHumedo()">
+        <div class="col-lg-6">
 
           <div class="card">
             <div class="card-body">
@@ -204,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         </div>
 
-        <div class="col-lg-6" oninput="calculateRepresentativoSecoSucio()">
+        <div class="col-lg-6">
 
           <div class="card">
             <div class="card-body">
@@ -335,16 +335,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                   <?php
                   $datos = array(
-                    array("3\"", "WtRet1", "Ret1", "CumRet1", "Pass1"),
-                    array("2\"", "WtRet2", "Ret2", "CumRet2", "Pass2"),
-                    array("1.5\"", "WtRet3", "Ret3", "CumRet3", "Pass3"),
-                    array("1\"", "WtRet4", "Ret4", "CumRet4", "Pass4"),
-                    array("3/4\"", "WtRet5", "Ret5", "CumRet5", "Pass5"),
-                    array("1/2\"", "WtRet6", "Ret6", "CumRet6", "Pass6"),
-                    array("3/8\"", "WtRet7", "Ret7", "CumRet7", "Pass7"),
-                    array("No. 4", "WtRet8", "Ret8", "CumRet8", "Pass8"),
-                    array("No. 20", "WtRet9", "Ret9", "CumRet9", "Pass9"),
-                    array("No. 200", "WtRet10", "Ret10", "CumRet10", "Pass10"),
+                    array("40\"", "WtRet1", "Ret1", "CumRet1", "Pass1"),
+                    array("12\"", "WtRet2", "Ret2", "CumRet2", "Pass2"),
+                    array("10\"", "WtRet3", "Ret3", "CumRet3", "Pass3"),
+                    array("8\"", "WtRet4", "Ret4", "CumRet4", "Pass4"),
+                    array("6\"", "WtRet5", "Ret5", "CumRet5", "Pass5"),
+                    array("4\"", "WtRet6", "Ret6", "CumRet6", "Pass6"),
+                    array("3\"", "WtRet7", "Ret7", "CumRet7", "Pass7"),
+                    array("2\"", "WtRet8", "Ret8", "CumRet8", "Pass8"),
+                    array("1.5\"", "WtRet9", "Ret9", "CumRet9", "Pass9"),
+                    array("1\"", "WtRet10", "Ret10", "CumRet10", "Pass10"),
+                    array("3/4\"", "WtRet11", "Ret11", "CumRet11", "Pass11"),
+                    array("1/2\"", "WtRet12", "Ret12", "CumRet12", "Pass12"),
+                    array("3/8\"", "WtRet13", "Ret13", "CumRet13", "Pass13"),
+                    array("No. 4", "WtRet14", "Ret14", "CumRet14", "Pass14"),
+                    array("No. 20", "WtRet15", "Ret15", "CumRet15", "Pass15"),
+                    array("No. 200", "WtRet16", "Ret16", "CumRet16", "Pass16"),
                     // Puedes agregar más filas según sea necesario
                   );
 
@@ -410,12 +416,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   $datos = array(
                     array("(B) Container", "Container1", "Container2", "Container3", "Container4"),
                     array("(C) Wt Wet Soil + Tare, g", "WetSoil1", "WetSoil2", "WetSoil3", "WetSoil4"),
-                    array("(D) Wt Dry Soil + Tare, g", "WtRet3", "Ret3", "CumRet3", "Pass3"),
-                    array("(E) Wt Water, g = (C-D)", "WtRet4", "Ret4", "CumRet4", "Pass4"),
-                    array("(F) Tare, g", "WtRet5", "Ret5", "CumRet5", "Pass5"),
-                    array("(G) Wt Dry Soil, g = (D-F)", "WtRet6", "Ret6", "CumRet6", "Pass6"),
-                    array("(H) Moisture Content, % = (E/G)", "WtRet7", "Ret7", "CumRet7", "Pass7"),
-                    // Puedes agregar más filas según sea necesario
+                    array("(D) Wt Dry Soil + Tare, g", "WetDry1", "WetDry2", "WetDry3", "WetDry4"),
+                    array("(E) Wt Water, g = (C-D)", "WetWater1", "WetWater2", "WetWater3", "WetWater4"),
+                    array("(F) Tare, g", "TareMC1", "TareMC2", "TareMC3", "TareMC4"),
+                    array("(G) Wt Dry Soil, g = (D-F)", "WtDrySoil1", "WtDrySoil2", "WtDrySoil3", "WtDrySoil4"),
+                    array("(H) Moisture Content, % = (E/G)", "MoisturePercet1", "MoisturePercet2", "MoisturePercet3", "MoisturePercet4")
                   );
 
                   foreach ($datos as $fila) {
@@ -424,8 +429,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       if ($index < 1) {
                         echo '<th scope="row">' . $valor . '</th>';
                       } else {
-                        $readonly = ($index >= 3 && $index <= 8) ? 'readonly tabindex="-1"' : '';
-                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '" ' . $readonly . '></td>';
+                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '"></td>';
                       }
                     }
                     echo '</tr>';

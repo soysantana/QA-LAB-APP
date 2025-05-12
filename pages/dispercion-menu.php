@@ -29,6 +29,7 @@
           
           <div class="list-group">
             <a href="pinhole-test.php" class="list-group-item list-group-item-action">Pinhole</a>
+            <a href="double-hydrometer.php" class="list-group-item list-group-item-action">Double Hydrometer</a>
           </div>
 
         </div>

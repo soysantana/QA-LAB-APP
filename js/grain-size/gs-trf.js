@@ -1,6 +1,8 @@
-/**
- * Function Grain Size
- */
+let totalHumedo = 0;
+let totalSecoSucio = 0;
+let totalMore3 = 0;
+let totalLess3 = 0;
+
 function TRF() {
     const screenKeys = [
         "screen40",
@@ -52,85 +54,141 @@ function TRF() {
 
 }
 
-/**
- * Function to calculate the total of WtPhumedo inputs
- */
-function calculatePasanteHumedo() {
-    let total = 0; // Inicializa el total en 0
-
-    // Itera sobre los 55 inputs
+function calcularTotales() {
+    // Calcular total de WtPhumedo (1 al 55)
+    totalHumedo = 0;
     for (let i = 1; i <= 55; i++) {
-        const element = document.getElementById(`WtPhumedo_${i}`); // Obtiene el input por ID
-        if (element) {
-            const value = parseFloat(element.value); // Convierte el valor a número
-            if (!isNaN(value)) {
-                total += value; // Suma al total si es un número válido
-            }
+        const el = document.getElementById(`WtPhumedo_${i}`);
+        if (el) {
+            const val = parseFloat(el.value);
+            if (!isNaN(val)) totalHumedo += val;
         }
     }
+    const inputHumedo = document.getElementById("TDMPHumedo");
+    const inputLess3Ex = document.getElementById("Less3Ex");
+    if (inputHumedo) inputHumedo.value = totalHumedo.toLocaleString("en-US");
+    if (inputLess3Ex) inputLess3Ex.value = totalHumedo.toLocaleString("en-US");
 
-    // Asigna el total al input con ID "TDMPHumedo"
-    const totalInput = document.getElementById("TDMPHumedo");
-    if (totalInput) {
-        totalInput.value = total.toLocaleString("en-US"); // Formatea el total con separadores de miles
-    }
-}
-
-/**
- * Function to calculate the total of WtReSecoSucio_ inputs
- */
-function calculateRepresentativoSecoSucio() {
-    let total = 0; // Inicializa el total en 0
-
-    // Itera sobre los 8 inputs
+    // Calcular total de WtReSecoSucio (1 al 8)
+    totalSecoSucio = 0;
     for (let i = 1; i <= 8; i++) {
-        const element = document.getElementById(`WtReSecoSucio_${i}`); // Obtiene el input por ID
-        if (element) {
-            const value = parseFloat(element.value); // Convierte el valor a número
-            if (!isNaN(value)) {
-                total += value; // Suma al total si es un número válido
-            }
+        const el = document.getElementById(`WtReSecoSucio_${i}`);
+        if (el) {
+            const val = parseFloat(el.value);
+            if (!isNaN(val)) totalSecoSucio += val;
         }
     }
+    const inputSecoSucio = document.getElementById("TDMRSecoSucio");
+    if (inputSecoSucio) inputSecoSucio.value = totalSecoSucio.toLocaleString("en-US");
 
-    // Asigna el total al input con ID "TDMRSecoSucio"
-    const totalInput = document.getElementById("TDMRSecoSucio");
-    if (totalInput) {
-        totalInput.value = total.toLocaleString("en-US"); // Formatea el total con separadores de miles
-    }
-
-for (let i = 1; i <= 10; i++) {
-    const sTotal = document.getElementById(`sTotal_${i}`); // Obtiene el input por ID
-    if (sTotal) {
-        const value = parseFloat(sTotal.value); // Convierte el valor a número
-        if (!isNaN(value)) {
-            total += value; // Suma al total si es un número válido
-        }
-        console.log("Suma total:", total); // Muestra el total final
-    }
-}
-}
-
-/**
- * Function to calculate the total of sTotal_ inputs
- */
-function TotalMore3() {
-    let total = 0; // Inicializa el total en 0
-
+    // Calcular total de sTotal (1 al 10)
+    totalMore3 = 0;
     for (let i = 1; i <= 10; i++) {
-        const sTotal = document.getElementById(`sTotal_${i}`); // Obtiene el input por ID
-        if (sTotal) {
-                    const rawValue = sTotal.value.replace(',', '.');
-        const value = parseFloat(rawValue); // Convierte el valor a número
-            if (!isNaN(value)) {
-                total += value; // Suma al total si es un número válido
-            }
-            console.log("Suma total:", total); // Muestra el total final
+        const el = document.getElementById(`sTotal_${i}`);
+        if (el) {
+            const val = parseFloat(el.value.replace(/,/g, '')); // Elimina comas
+            if (!isNaN(val)) totalMore3 += val;
         }
     }
+    const inputMore3 = document.getElementById("More3Ex");
+    if (inputMore3) inputMore3.value = totalMore3.toLocaleString("en-US");
+
+        // Calcular total de sTotal (11 al 20)
+    totalLess3 = 0;
+    for (let i = 11; i <= 20; i++) {
+        const el = document.getElementById(`sTotal_${i}`);
+        if (el) {
+            const val = parseFloat(el.value.replace(/,/g, '')); // Elimina comas
+            if (!isNaN(val)) totalLess3 += val;
+        }
+    }
+}
+
+function moisture() {
+    const MoisturePercetArray = [];
+    for (let i = 1; i <= 4; i++) {
+        const WetSoil = parseFloat(document.getElementById("WetSoil" + i).value);
+        const WetDry = parseFloat(document.getElementById("WetDry" + i).value);
+        const TareMC = parseFloat(document.getElementById("TareMC" + i).value);
+
+        const WetWater = WetSoil - WetDry;
+        const WtDrySoil = WetDry - TareMC;
+        const MoisturePercet = WetWater / WtDrySoil * 100;
+
+        if (!isNaN(MoisturePercet)) {
+            MoisturePercetArray.push(MoisturePercet);
+        }
+
+        document.getElementById("WetWater" + i).value = WetWater.toFixed(1);
+        document.getElementById("WtDrySoil" + i).value = WtDrySoil.toFixed(1);
+        document.getElementById("MoisturePercet" + i).value = MoisturePercet.toFixed(2);
+    }
+
+    const promedio = average(MoisturePercetArray);
+    const CorrectionMC = totalHumedo/(1+(promedio/100));
+    const TotalPesoSecoSucio = totalMore3 + CorrectionMC;
+
+    document.getElementById("TotalPesoSecoSucio").value = TotalPesoSecoSucio;
+
+    //Grain Size Reducida
+    document.getElementById("PesoSecoSucio").value = totalSecoSucio;
+    document.getElementById("PesoLavado").value = totalLess3;
+
+    const PanLavado = totalSecoSucio - totalLess3;
+
+    document.getElementById("PanLavado").value = PanLavado;
+
+    // Factor de conversion
+    const FactorConversion = (totalSecoSucio/CorrectionMC)*100;
+
+    //GS Combinada & Factor aplicado
+    const cumRetArray = [0];
+    let WtRet1x10 = 0;
+    let FactorAplicado = 0;
+    for (let i = 1; i <= 20; i++) {
+        const WtRetExtendida = parseFloat(document.getElementById("sTotal_" + i).value.replace(/,/g, ""));
+
+    if (i >= 1 && i <= 10) {
+        WtRet1x10 += WtRetExtendida;
+        const Ret = (WtRetExtendida / TotalPesoSecoSucio) * 100;
+        const CumRet = cumRetArray[i - 1] + Ret; cumRetArray.push(CumRet);
+        const Pass = 100 - CumRet;
+    }
+
+    if (i >= 11 && i <= 19) {
+        const FactorAplicado = (WtRetExtendida * 100) / FactorConversion;
+        const RetCorrection = (FactorAplicado / TotalPesoSecoSucio) * 100;
+        const CumRet = cumRetArray[i - 1] + RetCorrection; cumRetArray.push(CumRet);
+        const Pass = 100 - CumRet;
+    }
+
+    }
+
+    const PanGS = parseFloat(document.getElementById("sTotal_20").value.replace(/,/g, ""));
+
+    const TotalPesoLavado = WtRet1x10 + FactorAplicado + PanGS;
+    const PerdidaPorLavado = TotalPesoSecoSucio - TotalPesoLavado;
+    console.log(TotalPesoLavado);
+    console.log(PerdidaPorLavado);
+
+    const TotalPanGS = PerdidaPorLavado + PanGS;
+    const TotalRetGS = (TotalPanGS / TotalPesoSecoSucio) * 100;
+    const TotalCumRetGS = cumRetArray[19] + TotalRetGS;
+    const TotalPassGS = 100 - TotalCumRetGS;
+
+    
+
+}
+
+function average(numbers) {
+    if (!Array.isArray(numbers) || numbers.length === 0) return 0;
+    const sum = numbers.reduce((acc, val) => acc + val, 0);
+    return sum / numbers.length;
 }
 
   $("input").on("blur", function(event) {
     event.preventDefault();
-    TotalMore3();
+    TRF();
+    calcularTotales();
+    moisture();
   });
