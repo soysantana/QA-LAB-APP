@@ -7,7 +7,7 @@ require_once('../config/load.php');
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['gs_utf'])) {
-    include('../database/grain-size/gs-utf/save.php');
+    include('../database/grain-size/gs-full/save.php');
   }
 }
 ?>
@@ -336,21 +336,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <?php
                   $datos = array(
                     array("40\"", "WtRet1", "Ret1", "CumRet1", "Pass1"),
-                    array("12\"", "WtRet2", "Ret2", "CumRet2", "Pass2"),
-                    array("10\"", "WtRet3", "Ret3", "CumRet3", "Pass3"),
-                    array("8\"", "WtRet4", "Ret4", "CumRet4", "Pass4"),
-                    array("6\"", "WtRet5", "Ret5", "CumRet5", "Pass5"),
-                    array("4\"", "WtRet6", "Ret6", "CumRet6", "Pass6"),
-                    array("3\"", "WtRet7", "Ret7", "CumRet7", "Pass7"),
-                    array("2\"", "WtRet8", "Ret8", "CumRet8", "Pass8"),
-                    array("1.5\"", "WtRet9", "Ret9", "CumRet9", "Pass9"),
-                    array("1\"", "WtRet10", "Ret10", "CumRet10", "Pass10"),
-                    array("3/4\"", "WtRet11", "Ret11", "CumRet11", "Pass11"),
-                    array("1/2\"", "WtRet12", "Ret12", "CumRet12", "Pass12"),
-                    array("3/8\"", "WtRet13", "Ret13", "CumRet13", "Pass13"),
-                    array("No. 4", "WtRet14", "Ret14", "CumRet14", "Pass14"),
-                    array("No. 20", "WtRet15", "Ret15", "CumRet15", "Pass15"),
-                    array("No. 200", "WtRet16", "Ret16", "CumRet16", "Pass16"),
+                    array("30\"", "WtRet2", "Ret2", "CumRet2", "Pass2"),
+                    array("20\"", "WtRet3", "Ret3", "CumRet3", "Pass3"),
+                    array("13\"", "WtRet4", "Ret4", "CumRet4", "Pass4"),
+                    array("12\"", "WtRet5", "Ret5", "CumRet5", "Pass5"),
+                    array("10\"", "WtRet6", "Ret6", "CumRet6", "Pass6"),
+                    array("8\"", "WtRet7", "Ret7", "CumRet7", "Pass7"),
+                    array("6\"", "WtRet8", "Ret8", "CumRet8", "Pass8"),
+                    array("4\"", "WtRet9", "Ret9", "CumRet9", "Pass9"),
+                    array("3\"", "WtRet10", "Ret10", "CumRet10", "Pass10"),
+                    array("2\"", "WtRet11", "Ret11", "CumRet11", "Pass11"),
+                    array("1.5\"", "WtRet12", "Ret12", "CumRet12", "Pass12"),
+                    array("1\"", "WtRet13", "Ret13", "CumRet13", "Pass13"),
+                    array("3/4\"", "WtRet14", "Ret14", "CumRet14", "Pass14"),
+                    array("1/2\"", "WtRet15", "Ret15", "CumRet15", "Pass15"),
+                    array("3/8\"", "WtRet16", "Ret16", "CumRet16", "Pass16"),
+                    array("No. 4", "WtRet17", "Ret17", "CumRet17", "Pass17"),
+                    array("No. 20", "WtRet18", "Ret18", "CumRet18", "Pass18"),
+                    array("No. 200", "WtRet19", "Ret19", "CumRet19", "Pass19"),
                     // Puedes agregar más filas según sea necesario
                   );
 
@@ -439,12 +442,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </table>
               <!-- End Bordered Table -->
 
+              <!-- Grain Size Graph For the GrainSizeRockGraph -->
+              <h5 class="card-title"></h5>
+              <div id="GrainSizeRockGraph" style="min-height: 400px;" class="echart"></div>
+              <!-- end Grain Size Graph For the GrainSizeRockGraph -->
+
+              <h5 class="card-title">Classification as per ASTM D2487:</h5>
+              <div><input type="text" class="form-control" name="classification" id="classification" readonly tabindex="-1"></div>
+
             </div>
 
           </div>
 
 
         </div>
+
+        <!-- Sumary Grain Size Distribution Table -->
+        <div class="col-lg-3">
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Summary Grain Size Distribution Parameter</h5>
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row">Coarser than Gravel%</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="CoarserGravel" id="CoarserGravel" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Gravel%</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Gravel" id="Gravel" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Sand%</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Sand" id="Sand" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Fines%</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Fines" id="Fines" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">D10 (mm) :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="D10" id="D10" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">D15 (mm) :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="D15" id="D15" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">D30 (mm) :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="D30" id="D30" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">D60 (mm) :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="D60" id="D60" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">D85 (mm) :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="D85" id="D85" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Cc :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Cc" id="Cc" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Cu :</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="Cu" id="Cu" readonly tabindex="-1"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+        <!-- end Sumary Grain Size Distribution Table -->
 
 
 
@@ -457,5 +528,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 <script src="../js/grain-size/gs-trf.js"></script>
-
+<script src="../libs/graph/Grain-Size-Full.js"></script>
 <?php include_once('../components/footer.php');  ?>
