@@ -1,13 +1,20 @@
 <?php
 $page_title = 'Grain Size Upstream Transition Fill';
 require_once('../config/load.php');
+$Search = find_by_id('grain_size_full', $_GET['id']);
 ?>
 
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['GSFull'])) {
-    include('../database/grain-size/gs-full/save.php');
+  if (isset($_POST['UpdateGSFull'])) {
+    include('../database/grain-size/gs-full/update.php');
+  } elseif (isset($_POST['RepeatGSFull'])) {
+    include('../database/grain-size/gs-full/repeat.php');
+  } elseif (isset($_POST['ReviewedGSFull'])) {
+    include('../database/grain-size/gs-full/reviewed.php');
+  } elseif (isset($_POST['DeleteGSFull'])) {
+    include('../database/grain-size/gs-full/delete.php');
   }
 }
 ?>
@@ -29,14 +36,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <section class="section">
     <div class="row">
 
-      <form class="row" action="grain-size-trf.php" method="post">
+      <form class="row" action="grain-size-trf.php?id=<?php echo $Search['id']; ?>" method="post">
 
         <div class="col-md-4">
           <?php echo display_msg($msg); ?>
         </div>
 
-        <div id="product_info"></div>
+        <!-- Sample Information -->
+        <div id="product_info">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Sample Information</h5>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label for="ProjectName" class="form-label">Project Name</label>
+                    <input type="text" class="form-control" name="ProjectName" id="ProjectName" value="<?php echo ($Search['Project_Name']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Client" class="form-label">Client</label>
+                    <input type="text" class="form-control" name="Client" id="Client" value="<?php echo ($Search['Client']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="ProjectNumber" class="form-label">Project Number</label>
+                    <input type="text" class="form-control" name="ProjectNumber" id="ProjectNumber" value="<?php echo ($Search['Project_Number']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Structure" class="form-label">Structure</label>
+                    <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo ($Search['Structure']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Area" class="form-label">Work Area</label>
+                    <input type="text" class="form-control" name="Area" id="Area" value="<?php echo ($Search['Area']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Source" class="form-label">Borrow Source</label>
+                    <input type="text" class="form-control" name="Source" id="Source" value="<?php echo ($Search['Source']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="MType" class="form-label">Material Type</label>
+                    <input type="text" class="form-control" name="MType" id="MType" value="<?php echo ($Search['Material_Type']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SType" class="form-label">Sample Type</label>
+                    <input type="text" class="form-control" name="SType" id="SType" value="<?php echo ($Search['Sample_Type']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SampleName" class="form-label">Sample Name</label>
+                    <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo ($Search['Sample_ID']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SampleNumber" class="form-label">Sample Number</label>
+                    <input type="text" class="form-control" name="SampleNumber" id="SampleNumber" value="<?php echo ($Search['Sample_Number']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Sample Date" class="form-label">Sample Date</label>
+                    <input type="text" class="form-control" name="CollectionDate" id="Sample Date" value="<?php echo ($Search['Sample_Date']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="SampleBy" class="form-label">Sample By</label>
+                    <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo ($Search['Sample_By']); ?>">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="Depth From" class="form-label">Depth From</label>
+                    <input type="text" class="form-control" name="DepthFrom" id="Depth From" value="<?php echo ($Search['Depth_From']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="Depth To" class="form-label">Depth To</label>
+                    <input type="text" class="form-control" name="DepthTo" id="Depth To" value="<?php echo ($Search['Depth_To']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="North" class="form-label">North</label>
+                    <input type="text" class="form-control" name="North" id="North" value="<?php echo ($Search['North']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="East" class="form-label">East</label>
+                    <input type="text" class="form-control" name="East" id="East" value="<?php echo ($Search['East']); ?>">
+                  </div>
+                  <div class="col-md-2">
+                    <label for="Elevation" class="form-label">Elevation</label>
+                    <input type="text" class="form-control" name="Elev" id="Elevation" value="<?php echo ($Search['Elev']); ?>">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End Sample Information -->
 
+        <!-- Trial Information -->
         <div class="col-lg-12">
 
           <div class="card">
@@ -48,41 +136,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-4">
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
-                    <option value="ASTM-D6913">ASTM-D6913</option>
+                    <option selected>Choose...</option>
+                    <option <?php if ($Search['Standard'] == 'ASTM-D6913') echo 'selected'; ?>>ASTM-D6913</option>
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label for="PMethods" class="form-label">Preparation Methods</label>
                   <select id="PMethods" class="form-select" name="PMethods">
                     <option selected>Choose...</option>
-                    <option value="Oven Dried">Oven Dried</option>
-                    <option value="Air Dried">Air Dried</option>
-                    <option value="Microwave Dried">Microwave Dried</option>
-                    <option value="Wet">Wet</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
+                    <option <?php if ($Search['Preparation_Method'] == 'Wet') echo 'selected'; ?>>Wet</option>
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label for="SMethods" class="form-label">Split Methods</label>
                   <select id="SMethods" class="form-select" name="SMethods">
                     <option selected>Choose...</option>
-                    <option value="Manual">Manual</option>
-                    <option value="Mechanical">Mechanical</option>
+                    <option <?php if ($Search['Split_Method'] == 'Manual') echo 'selected'; ?>>Manual</option>
+                    <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label for="Technician" class="form-label">Technician</label>
-                  <input type="text" class="form-control" name="Technician" id="Technician">
+                  <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
                 </div>
                 <div class="col-md-6">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
-                  <input type="date" class="form-control" name="DateTesting" id="DateTesting">
+                  <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
                 </div>
                 <div class="col-12">
                   <label for="Comments" class="form-label">Comments</label>
-                  <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"></textarea>
-                </div>
-                <div class="col-12">
-                  <textarea hidden class="form-control" name="Graph" id="Graph" style="height: 100px;"></textarea>
+                  <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
                 </div>
               </div><!-- End Multi Columns Form -->
 
@@ -90,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
         </div>
+        <!-- End Trial Information -->
 
         <div class="col-lg-12">
 

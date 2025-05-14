@@ -4,7 +4,6 @@ $user = current_user();
 if (isset($_POST['GSFull'])) {
     $req_fields = array(
         'SampleName',
-        'Standard',
         'Technician',
         'DateTesting'
     );
@@ -39,16 +38,8 @@ if (isset($_POST['GSFull'])) {
         $TestMethod = $db->escape($_POST['TestMethod']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
-        $TestType = "GS_CF";
+        $TestType = "GS_TRF";
         $id = uuid();
-
-        $Container = $db->escape($_POST['Container']);
-        $WetSoil = $db->escape($_POST['WetSoil']);
-        $DrySoilTare = $db->escape($_POST['DrySoilTare']);
-        $Tare = $db->escape($_POST['Tare']);
-        $DrySoil = $db->escape($_POST['DrySoil']);
-        $Washed = $db->escape($_POST['Washed']);
-        $WashPan = $db->escape($_POST['WashPan']);
 
         $CoarserGravel = $db->escape($_POST['CoarserGravel']);
         $Gravel = $db->escape($_POST['Gravel']);
@@ -61,32 +52,21 @@ if (isset($_POST['GSFull'])) {
         $D85 = $db->escape($_POST['D85']);
         $Cc = $db->escape($_POST['Cc']);
         $Cu = $db->escape($_POST['Cu']);
-        $ClassificationUSCS1 = $db->escape($_POST['ClassificationUSCS1']);
-        $ClassificationUSCS2 = $db->escape($_POST['ClassificationUSCS2']);
+        $ClassificationUSCS1 = $db->escape($_POST['classification']);
 
-        $PanWtRen = $db->escape($_POST['PanWtRen']);
-        $PanRet = $db->escape($_POST['PanRet']);
-        $TotalWtRet = $db->escape($_POST['TotalWtRet']);
-        $TotalRet = $db->escape($_POST['TotalRet']);
-        $TotalCumRet = $db->escape($_POST['TotalCumRet']);
-        $TotalPass = $db->escape($_POST['TotalPass']);
+        $combinedScreen = "";
 
-        $TotalWeight = $db->escape($_POST['WeigtTest']);
-        $WeigtTest = $db->escape($_POST['WeigtTest']);
-        $Particles1 = $db->escape($_POST['Particles1']);
-        $Particles2 = $db->escape($_POST['Particles2']);
-        $Particles3 = $db->escape($_POST['Particles3']);
-        $WeightNo4 = $db->escape($_POST['WeightNo4']);
-        $WeightReactiveNo4 = $db->escape($_POST['WeightReactiveNo4']);
-        $PercentReactive = $db->escape($_POST['PercentReactive']);
-        $AvgParticles = $db->escape($_POST['AvgParticles']);
-        $ReactionResult = $db->escape($_POST['ReactionResult']);
-        $AcidResult = $db->escape($_POST['AcidResult']);
+        // Hydrometer Calibration & Analysis
+        for ($i = 1; $i <= 10; $i++) {
+            ${"screen40_" . $i} = $db->escape($_POST["screen40_$i"]);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
+            // Concatenar si el campo tiene valor
+            if (!empty(${"screen40_" . $i})) {
+                $combinedScreen .= ($combinedScreen ? ", " : "") . ${"screen40_" . $i};
+            }
+        }
 
-        for ($i = 1; $i <= 18; $i++) {
+        for ($i = 1; $i <= 19; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
             ${"CumRet" . $i} = $db->escape($_POST["CumRet$i"]);
@@ -94,7 +74,7 @@ if (isset($_POST['GSFull'])) {
             ${"Specs" . $i} = $db->escape($_POST["Specs$i"]);
         }
 
-        $sql = "INSERT INTO grain_size_coarse (
+        $sql = "INSERT INTO grain_size_full (
             id,
             Project_Name,
             Client,
@@ -123,13 +103,7 @@ if (isset($_POST['GSFull'])) {
             Preparation_Method,
             Split_Method,
             Methods,
-            Container,
-            Wet_Soil_Tare,
-            Wet_Dry_Tare,
-            Tare,
-            Wt_Dry_Soil,
-            Wt_Washed,
-            Wt_Wash_Pan,
+            
             Coarser_than_Gravel,
             Gravel,
             Sand,
@@ -141,29 +115,10 @@ if (isset($_POST['GSFull'])) {
             D85,
             Cc,
             Cu,
-            ClassificationUSCS1,
-            ClassificationUSCS2,
-            PanWtRen,
-            PanRet,
-            TotalWtRet,
-            TotalRet,
-            TotalCumRet,
-            TotalPass,
-            Total_Sample_Weight,
-            Weight_Used_For_The_Test,
-            A_Particles_Reactive,
-            B_Particles_Reactive,
-            C_Particles_Reactive,
-            Weight_Mat_Ret_No_4,
-            Weight_Reactive_Part_Ret_No_4,
-            Percent_Reactive_Particles,
-            Average_Particles_Reactive,
-            Reaction_Strength_Result,
-            Acid_Reactivity_Test_Result,
-            Graph";
+            ClassificationUSCS1";
 
         // Add the dynamically generated fields to the query
-        for ($i = 1; $i <= 18; $i++) {
+        for ($i = 1; $i <= 19; $i++) {
             $sql .= ", WtRet$i, Ret$i, CumRet$i, Pass$i, Specs$i";
         }
 
@@ -196,13 +151,6 @@ if (isset($_POST['GSFull'])) {
             '$PMethods',
             '$SMethods',
             '$TestMethod',
-            '$Container',
-            '$WetSoil',
-            '$DrySoilTare',
-            '$Tare',
-            '$DrySoil',
-            '$Washed',
-            '$WashPan',
             '$CoarserGravel',
             '$Gravel',
             '$Sand',
@@ -214,29 +162,10 @@ if (isset($_POST['GSFull'])) {
             '$D85',
             '$Cc',
             '$Cu',
-            '$ClassificationUSCS1',
-            '$ClassificationUSCS2',
-            '$PanWtRen',
-            '$PanRet',
-            '$TotalWtRet',
-            '$TotalRet',
-            '$TotalCumRet',
-            '$TotalPass',
-            '$TotalWeight',
-            '$WeigtTest',
-            '$Particles1',
-            '$Particles2',
-            '$Particles3',
-            '$WeightNo4',
-            '$WeightReactiveNo4',
-            '$PercentReactive',
-            '$AvgParticles',
-            '$ReactionResult',
-            '$AcidResult',
-            '$Graph64'";
+            '$ClassificationUSCS1'";
 
         // Add the dynamically generated values to the query
-        for ($i = 1; $i <= 18; $i++) {
+        for ($i = 1; $i <= 19; $i++) {
             $sql .= ", '${"WtRet$i"}', '${"Ret$i"}', '${"CumRet$i"}', '${"Pass$i"}', '${"Specs$i"}'";
         }
 
@@ -244,13 +173,13 @@ if (isset($_POST['GSFull'])) {
 
         if ($db->query($sql)) {
             $session->msg('s', "Ensayo agregado con éxito.");
-            redirect('/pages/grain-size-coarse-filter.php', false);
+            redirect('/pages/grain-size-trf.php', false);
         } else {
             $session->msg('w', 'Lo sentimos, el ensayo no se pudo agregar.');
-            redirect('/pages/grain-size-coarse-filter.php', false);
+            redirect('/pages/grain-size-trf.php', false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('/pages/grain-size-coarse-filter.php', false);
+        redirect('/pages/grain-size-trf.php', false);
     }
 }

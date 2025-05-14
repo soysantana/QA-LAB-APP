@@ -47,6 +47,7 @@ include_once('../components/header.php');
                 <?php displayAccordion([
                     'grain_size_upstream_transition_fill' => 'Grain Size UTF',
                     'grain_size_lpf' => 'Grain Size LPF',
+                    'grain_size_full' => 'Grain Size TRF',
                     'point_load' => 'PLT',
                     'unixial_compressive' => 'UCS',
                     'brazilian' => 'BTS',
@@ -102,6 +103,7 @@ function getTestLink($testType, $id)
         'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
+        'GS_TRF' => '../reviews/grain-size-trf.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
         'AR-CF' => '../reviews/reactivity-coarse.php?id=',
         'AR-FF' => '../reviews/reactivity-fine.php?id=',
