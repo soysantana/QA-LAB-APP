@@ -178,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <!-- End Trial Information -->
 
+        <!-- Formato Extendido GS -->
         <div class="col-lg-12">
 
           <div class="card">
@@ -204,43 +205,100 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
 
                   <?php
-                  $datos = array(
-                    array("40\"", "screen40_1", "screen40_2", "screen40_3", "screen40_4", "screen40_5", "screen40_6", "screen40_7", "screen40_8", "screen40_9", "screen40_10", "sTotal_1"),
-                    array("30\"", "screen30_1", "screen30_2", "screen30_3", "screen30_4", "screen30_5", "screen30_6", "screen30_7", "screen30_8", "screen30_9", "screen30_10", "sTotal_2"),
-                    array("20\"", "screen20_1", "screen20_2", "screen20_3", "screen20_4", "screen20_5", "screen20_6", "screen20_7", "screen20_8", "screen20_9", "screen20_10", "sTotal_3"),
-                    array("13\"", "screen13_1", "screen13_2", "screen13_3", "screen13_4", "screen13_5", "screen13_6", "screen13_7", "screen13_8", "screen13_9", "screen13_10", "sTotal_4"),
-                    array("12\"", "screen12_1", "screen12_2", "screen12_3", "screen12_4", "screen12_5", "screen12_6", "screen12_7", "screen12_8", "screen12_9", "screen12_10", "sTotal_5"),
-                    array("10\"", "screen10_1", "screen10_2", "screen10_3", "screen10_4", "screen10_5", "screen10_6", "screen10_7", "screen10_8", "screen10_9", "screen10_10", "sTotal_6"),
-                    array("8\"", "screen8_1", "screen8_2", "screen8_3", "screen8_4", "screen8_5", "screen8_6", "screen8_7", "screen8_8", "screen8_9", "screen8_10", "sTotal_7"),
-                    array("6\"", "screen6_1", "screen6_2", "screen6_3", "screen6_4", "screen6_5", "screen6_6", "screen6_7", "screen6_8", "screen6_9", "screen6_10", "sTotal_8"),
-                    array("4\"", "screen4_1", "screen4_2", "screen4_3", "screen4_4", "screen4_5", "screen4_6", "screen4_7", "screen4_8", "screen4_9", "screen4_10", "sTotal_9"),
-                    array("3\"", "screen3_1", "screen3_2", "screen3_3", "screen3_4", "screen3_5", "screen3_6", "screen3_7", "screen3_8", "screen3_9", "screen3_10", "sTotal_10"),
-                    array("2\"", "screen2_1", "screen2_2", "screen2_3", "screen2_4", "screen2_5", "screen2_6", "screen2_7", "screen2_8", "screen2_9", "screen2_10", "sTotal_11"),
-                    array("1.5\"", "screen1p5_1", "screen1p5_2", "screen1p5_3", "screen1p5_4", "screen1p5_5", "screen1p5_6", "screen1p5_7", "screen1p5_8", "screen1p5_9", "screen1p5_10", "sTotal_12"),
-                    array("1\"", "screen1_1", "screen1_2", "screen1_3", "screen1_4", "screen1_5", "screen1_6", "screen1_7", "screen1_8", "screen1_9", "screen1_10", "sTotal_13"),
-                    array("3/4\"", "screen3p4_1", "screen3p4_2", "screen3p4_3", "screen3p4_4", "screen3p4_5", "screen3p4_6", "screen3p4_7", "screen3p4_8", "screen3p4_9", "screen3p4_10", "sTotal_14"),
-                    array("1/2\"", "screen1p2_1", "screen1p2_2", "screen1p2_3", "screen1p2_4", "screen1p2_5", "screen1p2_6", "screen1p2_7", "screen1p2_8", "screen1p2_9", "screen1p2_10", "sTotal_15"),
-                    array("3/8\"", "screen3p8_1", "screen3p8_2", "screen3p8_3", "screen3p8_4", "screen3p8_5", "screen3p8_6", "screen3p8_7", "screen3p8_8", "screen3p8_9", "screen3p8_10", "sTotal_16"),
-                    array("No4", "screenNo4_1", "screenNo4_2", "screenNo4_3", "screenNo4_4", "screenNo4_5", "screenNo4_6", "screenNo4_7", "screenNo4_8", "screenNo4_9", "screenNo4_10", "sTotal_17"),
-                    array("No20", "screenNo20_1", "screenNo20_2", "screenNo20_3", "screenNo20_4", "screenNo20_5", "screenNo20_6", "screenNo20_7", "screenNo20_8", "screenNo20_9", "screenNo20_10", "sTotal_18"),
-                    array("No200", "screenNo200_1", "screenNo200_2", "screenNo200_3", "screenNo200_4", "screenNo200_5", "screenNo200_6", "screenNo200_7", "screenNo200_8", "screenNo200_9", "screenNo200_10", "sTotal_19"),
-                    array("Pan", "screenPan_1", "screenPan_2", "screenPan_3", "screenPan_4", "screenPan_5", "screenPan_6", "screenPan_7", "screenPan_8", "screenPan_9", "screenPan_10", "sTotal_20"),
-                    // Puedes agregar más filas según sea necesario
-                  );
+                  $columnasBase = [
+                    "Screen40",
+                    "Screen30",
+                    "Screen20",
+                    "Screen13",
+                    "Screen12",
+                    "Screen10",
+                    "Screen8",
+                    "Screen6",
+                    "Screen4",
+                    "Screen3",
+                    "Screen2",
+                    "Screen1p5",
+                    "Screen1",
+                    "Screen3p4",
+                    "Screen1p2",
+                    "Screen3p8",
+                    "ScreenNo4",
+                    "ScreenNo20",
+                    "ScreenNo200",
+                    "ScreenPan"
+                  ];
 
+                  // Extraemos arrays de cada ScreenXX
+                  foreach ($columnasBase as $col) {
+                    $screenData[$col] = isset($Search[$col]) ? array_map('trim', explode(',', $Search[$col])) : [];
+                  }
+
+                  // Extraemos los totales
+                  $screenTotals = isset($Search["ScreenTotal"]) ? array_map('trim', explode(',', $Search["ScreenTotal"])) : [];
+
+                  $datos = [
+                    ["40\"", "screen40_1", "screen40_2", "screen40_3", "screen40_4", "screen40_5", "screen40_6", "screen40_7", "screen40_8", "screen40_9", "screen40_10", "sTotal_1"],
+                    ["30\"", "screen30_1", "screen30_2", "screen30_3", "screen30_4", "screen30_5", "screen30_6", "screen30_7", "screen30_8", "screen30_9", "screen30_10", "sTotal_2"],
+                    ["20\"", "screen20_1", "screen20_2", "screen20_3", "screen20_4", "screen20_5", "screen20_6", "screen20_7", "screen20_8", "screen20_9", "screen20_10", "sTotal_3"],
+                    ["13\"", "screen13_1", "screen13_2", "screen13_3", "screen13_4", "screen13_5", "screen13_6", "screen13_7", "screen13_8", "screen13_9", "screen13_10", "sTotal_4"],
+                    ["12\"", "screen12_1", "screen12_2", "screen12_3", "screen12_4", "screen12_5", "screen12_6", "screen12_7", "screen12_8", "screen12_9", "screen12_10", "sTotal_5"],
+                    ["10\"", "screen10_1", "screen10_2", "screen10_3", "screen10_4", "screen10_5", "screen10_6", "screen10_7", "screen10_8", "screen10_9", "screen10_10", "sTotal_6"],
+                    ["8\"", "screen8_1", "screen8_2", "screen8_3", "screen8_4", "screen8_5", "screen8_6", "screen8_7", "screen8_8", "screen8_9", "screen8_10", "sTotal_7"],
+                    ["6\"", "screen6_1", "screen6_2", "screen6_3", "screen6_4", "screen6_5", "screen6_6", "screen6_7", "screen6_8", "screen6_9", "screen6_10", "sTotal_8"],
+                    ["4\"", "screen4_1", "screen4_2", "screen4_3", "screen4_4", "screen4_5", "screen4_6", "screen4_7", "screen4_8", "screen4_9", "screen4_10", "sTotal_9"],
+                    ["3\"", "screen3_1", "screen3_2", "screen3_3", "screen3_4", "screen3_5", "screen3_6", "screen3_7", "screen3_8", "screen3_9", "screen3_10", "sTotal_10"],
+                    ["2\"", "screen2_1", "screen2_2", "screen2_3", "screen2_4", "screen2_5", "screen2_6", "screen2_7", "screen2_8", "screen2_9", "screen2_10", "sTotal_11"],
+                    ["1.5\"", "screen1p5_1", "screen1p5_2", "screen1p5_3", "screen1p5_4", "screen1p5_5", "screen1p5_6", "screen1p5_7", "screen1p5_8", "screen1p5_9", "screen1p5_10", "sTotal_12"],
+                    ["1\"", "screen1_1", "screen1_2", "screen1_3", "screen1_4", "screen1_5", "screen1_6", "screen1_7", "screen1_8", "screen1_9", "screen1_10", "sTotal_13"],
+                    ["3/4\"", "screen3p4_1", "screen3p4_2", "screen3p4_3", "screen3p4_4", "screen3p4_5", "screen3p4_6", "screen3p4_7", "screen3p4_8", "screen3p4_9", "screen3p4_10", "sTotal_14"],
+                    ["1/2\"", "screen1p2_1", "screen1p2_2", "screen1p2_3", "screen1p2_4", "screen1p2_5", "screen1p2_6", "screen1p2_7", "screen1p2_8", "screen1p2_9", "screen1p2_10", "sTotal_15"],
+                    ["3/8\"", "screen3p8_1", "screen3p8_2", "screen3p8_3", "screen3p8_4", "screen3p8_5", "screen3p8_6", "screen3p8_7", "screen3p8_8", "screen3p8_9", "screen3p8_10", "sTotal_16"],
+                    ["No4", "screenNo4_1", "screenNo4_2", "screenNo4_3", "screenNo4_4", "screenNo4_5", "screenNo4_6", "screenNo4_7", "screenNo4_8", "screenNo4_9", "screenNo4_10", "sTotal_17"],
+                    ["No20", "screenNo20_1", "screenNo20_2", "screenNo20_3", "screenNo20_4", "screenNo20_5", "screenNo20_6", "screenNo20_7", "screenNo20_8", "screenNo20_9", "screenNo20_10", "sTotal_18"],
+                    ["No200", "screenNo200_1", "screenNo200_2", "screenNo200_3", "screenNo200_4", "screenNo200_5", "screenNo200_6", "screenNo200_7", "screenNo200_8", "screenNo200_9", "screenNo200_10", "sTotal_19"],
+                    ["Pan", "screenPan_1", "screenPan_2", "screenPan_3", "screenPan_4", "screenPan_5", "screenPan_6", "screenPan_7", "screenPan_8", "screenPan_9", "screenPan_10", "sTotal_20"],
+                  ];
+
+                  // Aquí debes decidir qué fila imprimir, por ejemplo:
                   foreach ($datos as $fila) {
-                    echo '<tr>';
-                    foreach ($fila as $index => $valor) {
-                      if ($index < 1) {
-                        echo '<th scope="row">' . $valor . '</th>';
+                    echo "<tr>";
+                    foreach ($fila as $i => $campo) {
+                      if ($i == 0) {
+                        // Cabecera fila (el nombre del tamiz)
+                        echo "<th scope='row'>" . htmlspecialchars($campo) . "</th>";
                       } else {
-                        $readonly = ($index === count($fila) - 1) ? 'readonly tabindex="-1"' : '';
-                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '" ' . $readonly . '></td>';
+                        // Si es un campo total: sTotal_1, sTotal_2, etc.
+                        if (strpos($campo, 'sTotal_') === 0) {
+                          $indexTotal = intval(str_replace('sTotal_', '', $campo)) - 1;
+                          $valor = isset($screenTotals[$indexTotal]) ? $screenTotals[$indexTotal] : '';
+                        } else {
+                          // Extraemos pantalla e índice
+                          $partes = explode('_', $campo); // ej: screen40_3
+                          $pantallaLower = strtolower($partes[0]); // 'screen40'
+
+                          // Buscamos en $columnasBase el que coincida ignorando mayúsculas/minúsculas
+                          $pantallaKey = null;
+                          foreach ($columnasBase as $c) {
+                            if (strtolower($c) === $pantallaLower) {
+                              $pantallaKey = $c;
+                              break;
+                            }
+                          }
+
+                          $indice = isset($partes[1]) ? intval($partes[1]) - 1 : 0;
+
+                          $valor = '';
+                          if ($pantallaKey !== null && isset($screenData[$pantallaKey][$indice])) {
+                            $valor = $screenData[$pantallaKey][$indice];
+                          }
+                        }
+                        echo "<td><input type='text' style='border:none;' class='form-control' name='" . htmlspecialchars($campo) . "' id='" . htmlspecialchars($campo) . "' value='" . htmlspecialchars($valor) . "'></td>";
                       }
                     }
-                    echo '</tr>';
+                    echo "</tr>";
                   }
                   ?>
+
                 </tbody>
               </table>
               <!-- End Bordered Table -->
@@ -249,7 +307,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
         </div>
+        <!-- End Formato Extendido GS -->
 
+        <!-- Total Material Pasante <3" Humedo -->
         <div class="col-lg-6">
 
           <div class="card">
@@ -262,23 +322,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
 
                   <?php
-                  // Generar 11 filas
-                  $idCounter = 1; // Contador para los IDs
-                  for ($i = 1; $i <= 11; $i++) {
+                  $WtPassHumedoLess3 = explode(',', $Search["WtPassHumedoLess3"]);
+                  $idCounter = 1;
+
+                  for ($i = 0; $i < 11; $i++) {
                     echo '<tr>';
-                    // Generar las primeras 5 columnas con inputs
-                    for ($j = 1; $j <= 5; $j++) {
-                      $id = "WtPhumedo_" . $idCounter; // Generar un ID único para cada input
-                      echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '"></td>';
-                      $idCounter++; // Incrementar el contador de IDs
+                    for ($j = 0; $j < 5; $j++) {
+                      $index = ($i * 5) + $j; // Índice plano para recorrer todos los valores
+                      $WtPassHumedo = isset($WtPassHumedoLess3[$index]) ? htmlspecialchars(trim($WtPassHumedoLess3[$index])) : '';
+                      $id = "WtPhumedo_" . $idCounter;
+                      echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '" value="' . $WtPassHumedo . '"></td>';
+                      $idCounter++;
                     }
-                    // Generar la sexta columna solo en la primera fila con rowspan=11
-                    if ($i === 1) {
-                      echo '<td rowspan="11"><input type="text" style="border: none;" class="form-control" name="TDMPHumedo" id="TDMPHumedo"></td>';
+
+                    if ($i === 0) {
+                      $tdmp = isset($Search['TotalPassHumedoLess3']) ? htmlspecialchars($Search['TotalPassHumedoLess3']) : '';
+                      echo '<td rowspan="11"><input type="text" style="border: none;" class="form-control" name="TDMPHumedo" id="TDMPHumedo" value="' . $tdmp . '"></td>';
                     }
+
                     echo '</tr>';
                   }
                   ?>
+
 
 
                 </tbody>
@@ -290,7 +355,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         </div>
+        <!-- End Total Material Pasante <3" Humedo -->
 
+        <!-- Total Muestra Representativa <3" Seco Sucio -->
         <div class="col-lg-6">
 
           <div class="card">
@@ -303,23 +370,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
 
                   <?php
-                  // Generar 11 filas
-                  $idCounter = 1; // Contador para los IDs
-                  for ($i = 1; $i <= 4; $i++) {
+                  $WtPassSecoSucioLess3 = explode(',', $Search["WtPassSecoSucioLess3"]);
+                  $idCounter = 1;
+                  $index = 0; // Índice para recorrer el array
+
+                  for ($i = 0; $i < 4; $i++) {
                     echo '<tr>';
-                    // Generar las primeras 5 columnas con inputs
-                    for ($j = 1; $j <= 2; $j++) {
-                      $id = "WtReSecoSucio_" . $idCounter; // Generar un ID único para cada input
-                      echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '"></td>';
-                      $idCounter++; // Incrementar el contador de IDs
+                    for ($j = 0; $j < 2; $j++) {
+                      $WtReSecoSucio = isset($WtPassSecoSucioLess3[$index]) ? htmlspecialchars(trim($WtPassSecoSucioLess3[$index])) : '';
+                      $id = "WtReSecoSucio_" . $idCounter;
+                      echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '" value="' . $WtReSecoSucio . '"></td>';
+                      $idCounter++;
+                      $index++; // Avanzar al siguiente dato del array
                     }
-                    // Generar la sexta columna solo en la primera fila con rowspan=11
-                    if ($i === 1) {
-                      echo '<td rowspan="4"><input type="text" style="border: none;" class="form-control" name="TDMRSecoSucio" id="TDMRSecoSucio"></td>';
+
+                    // Columna combinada con rowspan=4, solo en la primera fila
+                    if ($i === 0) {
+                      $TDMRSecoSucio = isset($Search['TotalPassSecoSucioLess3']) ? htmlspecialchars($Search['TotalPassSecoSucioLess3']) : '';
+                      echo '<td rowspan="4"><input type="text" style="border: none;" class="form-control" name="TDMRSecoSucio" id="TDMRSecoSucio" value="' . $TDMRSecoSucio . '"></td>';
                     }
+
                     echo '</tr>';
                   }
                   ?>
+
 
                 </tbody>
               </table>
@@ -335,9 +409,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
 
                   <?php
+                  $columnasBase = [
+                    "More3p",
+                    "Lees3P",
+                    "TotalPesoSecoSucio",
+                    "TotalPesoLavado",
+                    "PerdidaPorLavado"
+                  ];
+
+                  // Extraer los valores del array $Search
+                  foreach ($columnasBase as $col) {
+                    // Aseguramos que sea un solo valor, no array
+                    $TMRSSData[$col] = isset($Search[$col]) ? trim($Search[$col]) : '';
+                  }
+
+                  // Estructura para mostrar en tabla
                   $datos = array(
-                    array("&gt;3&quot;", "More3Ex"),
-                    array("&lt;3&quot;", "Less3Ex"),
+                    array("&gt;3&quot;", "More3p"),
+                    array("&lt;3&quot;", "Lees3P"),
                     array("Total Peso Seco Sucio", "TotalPesoSecoSucio"),
                     array("Total Peso Lavado", "TotalPesoLavado"),
                     array("Perdida por Lavado", "PerdidaPorLavado"),
@@ -345,16 +434,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                   foreach ($datos as $fila) {
                     echo '<tr>';
-                    // Primera columna: texto
                     echo '<th scope="row">' . $fila[0] . '</th>';
 
-                    // Segunda columna: input con ID y name del segundo elemento
-                    $id = $fila[1]; // ID único tomado del array
-                    echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '"></td>';
+                    $id = $fila[1]; // Nombre/ID del input
+                    $valor = isset($TMRSSData[$id]) ? htmlspecialchars($TMRSSData[$id]) : '';
 
+                    // Opcional: convertir coma a punto para input numérico
+                    // $valor = str_replace(',', '.', $valor);
+
+                    echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '" value="' . $valor . '"></td>';
                     echo '</tr>';
                   }
                   ?>
+
 
 
                 </tbody>
@@ -366,8 +458,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         </div>
+        <!-- End Total Muestra Representativa <3" Seco Sucio -->
 
-
+        <!-- Menos % Humedad & GS -->
         <div class="col-lg-6">
 
           <div class="card">
@@ -393,7 +486,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Segunda columna: input con ID y name del segundo elemento
                     $id = $fila[1]; // ID único tomado del array
-                    echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '"></td>';
+                    echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '" value="' . $Search[$id] . '"></td>';
 
                     echo '</tr>';
                   }
@@ -421,6 +514,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
 
                   <?php
+                  $columnasBase = [
+                    "WtRet",
+                    "Ret",
+                    "CumRet",
+                    "Pass"
+                  ];
+
+                  foreach ($columnasBase as $col) {
+                    $screenData[$col] = isset($Search[$col]) ? array_map('trim', explode(',', $Search[$col])) : [];
+                  }
+
                   $datos = array(
                     array("40\"", "WtRet1", "Ret1", "CumRet1", "Pass1"),
                     array("30\"", "WtRet2", "Ret2", "CumRet2", "Pass2"),
@@ -450,8 +554,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       if ($index < 1) {
                         echo '<th scope="row">' . $valor . '</th>';
                       } else {
+                        // Extraer el prefijo para saber de qué columna viene
+                        preg_match('/^(WtRet|Ret|CumRet|Pass)(\d+)$/', $valor, $matches);
+                        $col = $matches[1];
+                        $i = intval($matches[2]) - 1;
+
+                        // Buscar valor si existe
+                        $val = isset($screenData[$col][$i]) ? htmlspecialchars($screenData[$col][$i]) : '';
+
+                        // Campos solo lectura
                         $readonly = ($index >= 3 && $index <= 8) ? 'readonly tabindex="-1"' : '';
-                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '" ' . $readonly . '></td>';
+
+                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '" value="' . $val . '" ' . $readonly . '></td>';
                       }
                     }
                     echo '</tr>';
@@ -483,7 +597,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         </div>
+        <!-- End Menos % Humedad & GS -->
 
+        <!-- Humedad & Clasificacion & Grafica -->
         <div class="col-lg-6">
 
           <div class="card">
@@ -503,6 +619,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
 
                   <?php
+                  $columnasBase = [
+                    "Container",
+                    "WtSoilTare",
+                    "WtSoilDry",
+                    "WtWater",
+                    "TareMC",
+                    "WtDrySoil",
+                    "MC"
+                  ];
+
+                  foreach ($columnasBase as $col) {
+                    $moistureData[$col] = isset($Search[$col]) ? array_map('trim', explode(',', $Search[$col])) : [];
+                  }
+
                   $datos = array(
                     array("(B) Container", "Container1", "Container2", "Container3", "Container4"),
                     array("(C) Wt Wet Soil + Tare, g", "WetSoil1", "WetSoil2", "WetSoil3", "WetSoil4"),
@@ -513,13 +643,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     array("(H) Moisture Content, % = (E/G)", "MoisturePercet1", "MoisturePercet2", "MoisturePercet3", "MoisturePercet4")
                   );
 
-                  foreach ($datos as $fila) {
+                  foreach ($datos as $filaIndex => $fila) {
                     echo '<tr>';
                     foreach ($fila as $index => $valor) {
                       if ($index < 1) {
                         echo '<th scope="row">' . $valor . '</th>';
                       } else {
-                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '"></td>';
+                        // Determinar a qué columna base corresponde esta fila
+                        $columnaBase = $columnasBase[$filaIndex];
+                        // Obtener el valor correspondiente si existe
+                        $valorInput = isset($moistureData[$columnaBase][$index - 1]) ? htmlspecialchars($moistureData[$columnaBase][$index - 1]) : '';
+                        echo '<td><input type="text" style="border: none;" class="form-control" name="' . $valor . '" id="' . $valor . '" value="' . $valorInput . '"></td>';
                       }
                     }
                     echo '</tr>';
@@ -535,7 +669,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <!-- end Grain Size Graph For the GrainSizeRockGraph -->
 
               <h5 class="card-title">Classification as per ASTM D2487:</h5>
-              <div><input type="text" class="form-control" name="classification" id="classification" readonly tabindex="-1"></div>
+              <div><input type="text" class="form-control" name="classification" id="classification" value="<?php echo ($Search['ClassificationUSCS1']); ?>" readonly tabindex="-1"></div>
 
             </div>
 
@@ -543,6 +677,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         </div>
+        <!-- End Humedad & Clasificacion & Grafica -->
 
         <!-- Sumary Grain Size Distribution Table -->
         <div class="col-lg-3">
@@ -554,47 +689,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
                   <tr>
                     <th scope="row">Coarser than Gravel%</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="CoarserGravel" id="CoarserGravel" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="CoarserGravel" id="CoarserGravel" value="<?php echo ($Search['Coarser_than_Gravel']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Gravel%</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Gravel" id="Gravel" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Gravel" id="Gravel" value="<?php echo ($Search['Gravel']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Sand%</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Sand" id="Sand" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Sand" id="Sand" value="<?php echo ($Search['Sand']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Fines%</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Fines" id="Fines" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Fines" id="Fines" value="<?php echo ($Search['Fines']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">D10 (mm) :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="D10" id="D10" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="D10" id="D10" value="<?php echo ($Search['D10']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">D15 (mm) :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="D15" id="D15" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="D15" id="D15" value="<?php echo ($Search['D15']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">D30 (mm) :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="D30" id="D30" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="D30" id="D30" value="<?php echo ($Search['D30']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">D60 (mm) :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="D60" id="D60" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="D60" id="D60" value="<?php echo ($Search['D60']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">D85 (mm) :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="D85" id="D85" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="D85" id="D85" value="<?php echo ($Search['D85']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Cc :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Cc" id="Cc" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Cc" id="Cc" value="<?php echo ($Search['Cc']); ?>" readonly tabindex="-1"></td>
                   </tr>
                   <tr>
                     <th scope="row">Cu :</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Cu" id="Cu" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Cu" id="Cu" value="<?php echo ($Search['Cu']); ?>" readonly tabindex="-1"></td>
                   </tr>
                 </tbody>
               </table>

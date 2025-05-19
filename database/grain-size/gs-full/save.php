@@ -35,7 +35,6 @@ if (isset($_POST['GSFull'])) {
         $Comments = $db->escape($_POST['Comments']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
-        $TestMethod = $db->escape($_POST['TestMethod']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "GS_TRF";
@@ -51,6 +50,12 @@ if (isset($_POST['GSFull'])) {
         $PesoSecoSucio = $db->escape($_POST['PesoSecoSucio']);
         $PesoLavado = $db->escape($_POST['PesoLavado']);
         $PanLavado = $db->escape($_POST['PanLavado']);
+
+        $PanWtRet = $db->escape($_POST['PanWtRet']);
+        $TotalWtRet = $db->escape($_POST['TotalWtRet']);
+        $TotalRet = $db->escape($_POST['TotalRet']);
+        $TotalCumRet = $db->escape($_POST['TotalCumRet']);
+        $TotalPass = $db->escape($_POST['TotalPass']);
 
         $CoarserGravel = $db->escape($_POST['CoarserGravel']);
         $Gravel = $db->escape($_POST['Gravel']);
@@ -95,12 +100,18 @@ if (isset($_POST['GSFull'])) {
         $combinedTareMC = "";
         $combinedWtDrySoil = "";
         $combinedMoisturePercet = "";
+        $combinedWtRet = "";
+        $combinedRet = "";
+        $combinedCumRet = "";
+        $combinedPass = "";
+
 
         for ($i = 1; $i <= 10; $i++) {
             ${"screen40_" . $i} = $db->escape($_POST["screen40_$i"]);
             ${"screen30_" . $i} = $db->escape($_POST["screen30_$i"]);
             ${"screen20_" . $i} = $db->escape($_POST["screen20_$i"]);
             ${"screen13_" . $i} = $db->escape($_POST["screen13_$i"]);
+            ${"screen12_" . $i} = $db->escape($_POST["screen12_$i"]);
             ${"screen10_" . $i} = $db->escape($_POST["screen10_$i"]);
             ${"screen8_" . $i} = $db->escape($_POST["screen8_$i"]);
             ${"screen6_" . $i} = $db->escape($_POST["screen6_$i"]);
@@ -231,11 +242,24 @@ if (isset($_POST['GSFull'])) {
             }
         }
 
-        for ($i = 11; $i <= 19; $i++) {
+        for ($i = 1; $i <= 19; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
             ${"CumRet" . $i} = $db->escape($_POST["CumRet$i"]);
             ${"Pass" . $i} = $db->escape($_POST["Pass$i"]);
+
+            if (!empty(${"WtRet" . $i})) {
+                $combinedWtRet .= ($combinedWtRet ? ", " : "") . ${"WtRet" . $i};
+            }
+            if (!empty(${"Ret" . $i})) {
+                $combinedRet .= ($combinedRet ? ", " : "") . ${"Ret" . $i};
+            }
+            if (!empty(${"CumRet" . $i})) {
+                $combinedCumRet .= ($combinedCumRet ? ", " : "") . ${"CumRet" . $i};
+            }
+            if (!empty(${"Pass" . $i})) {
+                $combinedPass .= ($combinedPass ? ", " : "") . ${"Pass" . $i};
+            }
         }
 
         $sql = "INSERT INTO grain_size_full (
@@ -266,7 +290,6 @@ if (isset($_POST['GSFull'])) {
             Comments,
             Preparation_Method,
             Split_Method,
-            Methods,
             Screen40,
             Screen30,
             Screen20,
@@ -307,7 +330,15 @@ if (isset($_POST['GSFull'])) {
             TareMC,
             WtDrySoil,
             MC,
-
+            PanWtRen,
+            TotalWtRet,
+            TotalRet,
+            TotalCumRet,
+            TotalPass,
+            WtRet,
+            Ret,
+            CumRet,
+            Pass,
             Coarser_than_Gravel,
             Gravel,
             Sand,
@@ -320,11 +351,6 @@ if (isset($_POST['GSFull'])) {
             Cc,
             Cu,
             ClassificationUSCS1";
-
-        // Add the dynamically generated fields to the query
-        for ($i = 1; $i <= 9; $i++) {
-            $sql .= ", WtRet$i, Ret$i, CumRet$i, Pass$i";
-        }
 
         $sql .= ") VALUES (
             '$id',
@@ -354,7 +380,6 @@ if (isset($_POST['GSFull'])) {
             '$Comments',
             '$PMethods',
             '$SMethods',
-            '$TestMethod',
             '$combinedScreen40',
             '$combinedScreen30',
             '$combinedScreen20',
@@ -380,7 +405,30 @@ if (isset($_POST['GSFull'])) {
             '$TDMPHumedo',
             '$combinedWtReSecoSucio',
             '$TDMRSecoSucio',
-
+            '$More3p',
+            '$Lees3P',
+            '$TotalPesoSecoSucio',
+            '$TotalPesoLavado',
+            '$PerdidaPorLavado',
+            '$PesoSecoSucio',
+            '$PesoLavado',
+            '$PanLavado',
+            '$combinedContainer',
+            '$combinedWetSoil',
+            '$combinedWetDry',
+            '$combinedWetWater',
+            '$combinedTareMC',
+            '$combinedWtDrySoil',
+            '$combinedMoisturePercet',
+            '$PanWtRet',
+            '$TotalWtRet',
+            '$TotalRet',
+            '$TotalCumRet',
+            '$TotalPass',
+            '$combinedWtRet',
+            '$combinedRet',
+            '$combinedCumRet',
+            '$combinedPass',
             '$CoarserGravel',
             '$Gravel',
             '$Sand',
@@ -393,11 +441,6 @@ if (isset($_POST['GSFull'])) {
             '$Cc',
             '$Cu',
             '$ClassificationUSCS1'";
-
-        // Add the dynamically generated values to the query
-        for ($i = 11; $i <= 19; $i++) {
-            $sql .= ", '${"WtRet$i"}', '${"Ret$i"}', '${"CumRet$i"}', '${"Pass$i"}'";
-        }
 
         $sql .= ")";
 

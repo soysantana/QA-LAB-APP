@@ -48,7 +48,7 @@ function TRF() {
     screenKeys.forEach((key, index) => {
         const totalInput = document.getElementById(`sTotal_${index + 1}`); // Mapear a sTotal_1, sTotal_2, etc.
         if (totalInput) {
-            totalInput.value = totals[key].toLocaleString("en-US"); // Formatea el total con separadores de miles
+            totalInput.value = totals[key].toFixed(1);
         }
     });
 
@@ -183,7 +183,7 @@ function moisture() {
     document.getElementById("TotalPesoLavado").value = TotalPesoLavado.toLocaleString('en-US');
     document.getElementById("PerdidaPorLavado").value = PerdidaPorLavado.toLocaleString('en-US');
 
-    document.getElementById("PanWtRet").value = FactorAplicadoArray[9]?.toLocaleString('en-US') || '';
+    document.getElementById("PanWtRet").value = FactorAplicadoArray[9]?.toFixed(1) || '';
 
     const TotalPanGS = PerdidaPorLavado + FactorAplicadoArray[9];
     const TotalRetGS = (TotalPanGS / TotalPesoSecoSucio) * 100;
@@ -192,11 +192,11 @@ function moisture() {
     
     for (let i = 1; i <= 19; i++) {
         if (i <= 10) {
-            document.getElementById("WtRet" + i).value = WtRetExtendidaArray[i - 1]?.toLocaleString('en-US') || '';
-            document.getElementById("Ret" + i).value = RetArray[i - 1]?.toLocaleString('en-US') || '';
+            document.getElementById("WtRet" + i).value = WtRetExtendidaArray[i - 1]?.toFixed(1) || '';
+            document.getElementById("Ret" + i).value = RetArray[i - 1]?.toFixed(2) || '';
         } else {
-            document.getElementById("WtRet" + i).value = FactorAplicadoArray[i - 11]?.toLocaleString('en-US') || '';
-            document.getElementById("Ret" + i).value = RetCorrectionArray[i - 11]?.toLocaleString('en-US') || '';
+            document.getElementById("WtRet" + i).value = FactorAplicadoArray[i - 11]?.toFixed(1) || '';
+            document.getElementById("Ret" + i).value = RetCorrectionArray[i - 11]?.toFixed(2) || '';
         }
     }
 for (let i = 1; i <= 19; i++) {
