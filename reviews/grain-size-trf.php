@@ -574,17 +574,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                   <tr>
                     <th scope="row">Pan</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="PanWtRet" id="PanWtRet" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="PanWtRet" id="PanWtRet" value="<?php echo ($Search['PanWtRen']); ?>" readonly tabindex="-1"></td>
                     <td></td>
                     <td></td>
                     <td></td>
                   </tr>
                   <tr>
                     <th scope="row">Total Pan</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="TotalWtRet" id="TotalWtRet" readonly tabindex="-1"></td>
-                    <td><input type="text" style="border: none;" class="form-control" name="TotalRet" id="TotalRet" readonly tabindex="-1"></td>
-                    <td><input type="text" style="border: none;" class="form-control" name="TotalCumRet" id="TotalCumRet" readonly tabindex="-1"></td>
-                    <td><input type="text" style="border: none;" class="form-control" name="TotalPass" id="TotalPass" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="TotalWtRet" id="TotalWtRet" value="<?php echo ($Search['TotalWtRet']); ?>" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="TotalRet" id="TotalRet" value="<?php echo ($Search['TotalRet']); ?>" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="TotalCumRet" id="TotalCumRet" value="<?php echo ($Search['TotalCumRet']); ?>" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="TotalPass" id="TotalPass" value="<?php echo ($Search['TotalPass']); ?>" readonly tabindex="-1"></td>
                   </tr>
 
                 </tbody>
@@ -747,7 +747,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <h5 class="card-title">Actions</h5>
               <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
-                <button type="submit" class="btn btn-success" name="GSFull">Save</button>
+                <button type="submit" class="btn btn-success" name="UpdateGSFull">Update</button>
+                <button type="submit" class="btn btn-danger" name="DeleteHY"><i class="bi bi-trash"></i></button>
+                <?php if (user_can_access(1)): ?>
+                  <button type="submit" class="btn btn-primary" name="RepeatGSFull">Repeat</button>
+                  <button type="submit" class="btn btn-primary" name="ReviewedGSFull">Reviewed</button>
+                <?php endif; ?>
               </div>
 
             </div>
