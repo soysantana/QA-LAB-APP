@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Grain Size Upstream Transition Fill';
+$page_title = 'Grain Size Full';
 require_once('../config/load.php');
 $Search = find_by_id('grain_size_full', $_GET['id']);
 ?>
@@ -24,19 +24,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main id="main" class="main">
 
   <div class="pagetitle">
-    <h1>Grain Size Upstream Transition Fill</h1>
+    <h1>Grain Size Full</h1>
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="home.php">Home</a></li>
         <li class="breadcrumb-item">Forms</li>
-        <li class="breadcrumb-item active">Grain Size Upstream Transition Fill</li>
+        <li class="breadcrumb-item active">Grain Size Full</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
     <div class="row">
 
-      <form class="row" action="grain-size-trf.php?id=<?php echo $Search['id']; ?>" method="post">
+      <form class="row" action="grain-size-full.php?id=<?php echo $Search['id']; ?>" method="post">
 
         <div class="col-md-4">
           <?php echo display_msg($msg); ?>
@@ -117,6 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="Elevation" class="form-label">Elevation</label>
                     <input type="text" class="form-control" name="Elev" id="Elevation" value="<?php echo ($Search['Elev']); ?>">
                   </div>
+                  <div class="col-md-12">
+                    <label for="FieldComment" class="form-label">Field Comment</label>
+                    <input type="text" class="form-control" name="FieldComment" id="FieldComment" value="<?php echo ($Search['FieldComment']); ?>">
+                  </div>
                 </div>
               </div>
             </div>
@@ -137,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
                     <option selected>Choose...</option>
-                    <option <?php if ($Search['Standard'] == 'ASTM-D6913') echo 'selected'; ?>>ASTM-D6913</option>
+                    <option <?php if ($Search['Standard'] == 'FM13-11 (ASTM-D6913 and D5519)') echo 'selected'; ?>>FM13-11 (ASTM-D6913 and D5519)</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -158,11 +162,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
                   </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                  <label for="materialSelect" class="form-label">Material</label>
+                  <select id="materialSelect" class="form-select" name="materialSelect">
+                    <option value="">-- Selecciona un material --</option>
+                    <option <?php if ($Search['Material_Type'] == 'TRF') echo 'selected'; ?>>TRF</option>
+                    <option <?php if ($Search['Material_Type'] == 'UFF') echo 'selected'; ?>>UFF</option>
+                    <option <?php if ($Search['Material_Type'] == 'FRF') echo 'selected'; ?>>FRF</option>
+                    <option <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
+                    <option <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
+                    <option <?php if ($Search['Material_Type'] == 'BF') echo 'selected'; ?>>BF</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
                 </div>
@@ -418,34 +434,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   ];
 
                   // Extraer los valores del array $Search
+                  $TMRSSData = [];
                   foreach ($columnasBase as $col) {
-                    // Aseguramos que sea un solo valor, no array
                     $TMRSSData[$col] = isset($Search[$col]) ? trim($Search[$col]) : '';
                   }
 
-                  // Estructura para mostrar en tabla
-                  $datos = array(
-                    array("&gt;3&quot;", "More3p"),
-                    array("&lt;3&quot;", "Lees3P"),
-                    array("Total Peso Seco Sucio", "TotalPesoSecoSucio"),
-                    array("Total Peso Lavado", "TotalPesoLavado"),
-                    array("Perdida por Lavado", "PerdidaPorLavado"),
-                  );
+                  // Estructura: [Etiqueta, nombre del input (HTML), clave del dato (PHP)]
+                  $datos = [
+                    [">3\"", "More3Ex", "More3p"],
+                    ["<3\"", "Less3Ex", "Lees3P"],
+                    ["Total Peso Seco Sucio", "TotalPesoSecoSucio", "TotalPesoSecoSucio"],
+                    ["Total Peso Lavado", "TotalPesoLavado", "TotalPesoLavado"],
+                    ["Pérdida por Lavado", "PerdidaPorLavado", "PerdidaPorLavado"],
+                  ];
 
+                  // Mostrar tabla
                   foreach ($datos as $fila) {
+                    $label = $fila[0];
+                    $inputName = $fila[1];
+                    $dataKey = $fila[2];
+
+                    $valor = isset($TMRSSData[$dataKey]) ? htmlspecialchars($TMRSSData[$dataKey]) : '';
+
                     echo '<tr>';
-                    echo '<th scope="row">' . $fila[0] . '</th>';
-
-                    $id = $fila[1]; // Nombre/ID del input
-                    $valor = isset($TMRSSData[$id]) ? htmlspecialchars($TMRSSData[$id]) : '';
-
-                    // Opcional: convertir coma a punto para input numérico
-                    // $valor = str_replace(',', '.', $valor);
-
-                    echo '<td><input type="text" style="border: none;" class="form-control" name="' . $id . '" id="' . $id . '" value="' . $valor . '"></td>';
+                    echo '<th scope="row">' . htmlspecialchars($label) . '</th>';
+                    echo '<td><input type="text" style="border: none;" class="form-control" name="' . $inputName . '" id="' . $inputName . '" value="' . $valor . '"></td>';
                     echo '</tr>';
                   }
                   ?>
+
 
 
 
@@ -605,7 +622,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">MOISTURE CONTENT</h5>
-              <!-- Bordered Table -->
+              <!-- Tabla the Moisture Content -->
               <table class="table table-bordered">
                 <thead>
                   <tr>
@@ -661,7 +678,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   ?>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Tabla the Moisture Content -->
 
               <!-- Grain Size Graph For the GrainSizeRockGraph -->
               <h5 class="card-title"></h5>
@@ -739,7 +756,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <!-- end Sumary Grain Size Distribution Table -->
 
+        <!-- Data hidden factor MCavg Correction -->
+        <input type="hidden" name="MoistureContentAvg" id="MoistureContentAvg" value="<?php echo ($Search['MoistureContentAvg']); ?>">
+        <input type="hidden" name="TotalDryWtSampleLess3g" id="TotalDryWtSampleLess3g" value="<?php echo ($Search['TotalDryWtSampleLess3g']); ?>">
+        <input type="hidden" name="ConvertionFactor" id="ConvertionFactor" value="<?php echo ($Search['ConvertionFactor']); ?>">
 
+        <?php
+        $specsArray = isset($Search['Specs']) ? explode(',', $Search['Specs']) : [];
+
+        for ($i = 0; $i < 8; $i++) {
+          $id = "Specs" . ($i + 1);
+          $value = isset($specsArray[$i]) ? htmlspecialchars(trim($specsArray[$i])) : '';
+          echo '<input type="hidden" id="' . $id . '" name="' . $id . '" value="' . $value . '">';
+        }
+        ?>
+        <!-- End Data hidden factor MCavg Correction -->
+
+        <!-- Buttons for realized actions -->
         <div class="col-lg-3">
 
           <div class="card">
@@ -748,6 +781,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="UpdateGSFull">Update</button>
+                <div class="btn-group dropup" role="group">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-printer"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" onclick="enviarImagenAlServidor()">Contruccion</a></li>
+                  </ul>
+                </div>
                 <button type="submit" class="btn btn-danger" name="DeleteHY"><i class="bi bi-trash"></i></button>
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="RepeatGSFull">Repeat</button>
@@ -759,6 +800,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
         </div>
+        <!-- End Buttons for realized actions -->
 
 
       </form>
@@ -768,6 +810,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/gs-trf.js"></script>
+<script src="../js/grain-size/specs.js"></script>
+<script src="../js/grain-size/gs-full.js"></script>
 <script src="../libs/graph/Grain-Size-Full.js"></script>
 <?php include_once('../components/footer.php');  ?>

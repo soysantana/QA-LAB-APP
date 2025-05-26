@@ -130,6 +130,9 @@ function moisture() {
 
     document.getElementById("TotalPesoSecoSucio").value = TotalPesoSecoSucio;
 
+    document.getElementById("MoistureContentAvg").value = promedio.toFixed(2);
+    document.getElementById("TotalDryWtSampleLess3g").value = CorrectionMC.toFixed(1);
+
     //Grain Size Reducida
     document.getElementById("PesoSecoSucio").value = totalSecoSucio;
     document.getElementById("PesoLavado").value = totalLess3;
@@ -140,6 +143,8 @@ function moisture() {
 
     // Factor de conversion
     const FactorConversion = (totalSecoSucio/CorrectionMC)*100;
+    document.getElementById("ConvertionFactor").value = FactorConversion.toFixed(2);
+    
 
     //GS Combinada & Factor aplicado
     const cumRetArray = [0];
@@ -496,11 +501,36 @@ function average(numbers) {
     enviarData();
   });
 
-      function enviarData() {
-        $.ajax({
-            url: "../libs/graph/Grain-Size-Full.js",
-            type: "GET",
-            data: $("#nopasonada").serialize(),
-            success: function(data) {}
-        });
+function enviarData() {
+  UpdateGraph();
+}
+
+function enviarImagenAlServidor() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sampleId = urlParams.get('id');
+    const material = document.getElementById('materialSelect').value;
+    if (!sampleId) {
+        alert("Falta el parámetro ID en la URL");
+        return;
     }
+
+    var GraphID = echarts.getInstanceByDom(document.getElementById('GrainSizeRockGraph'));
+    var ImageURL = GraphID.getDataURL({
+        pixelRatio: 1,
+        backgroundColor: '#fff'
+    });
+
+    fetch(`../../pdf/GS-${material}-Build.php?id=${encodeURIComponent(sampleId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagen: ImageURL })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url);
+        URL.revokeObjectURL(url);
+    })
+    .catch(console.error);
+}
+

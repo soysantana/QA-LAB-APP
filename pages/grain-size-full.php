@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Grain Size Upstream Transition Fill';
+$page_title = 'Grain Size Full';
 require_once('../config/load.php');
 ?>
 
@@ -17,19 +17,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main id="main" class="main">
 
   <div class="pagetitle">
-    <h1>Grain Size Upstream Transition Fill</h1>
+    <h1>Grain Size Full</h1>
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="home.php">Home</a></li>
         <li class="breadcrumb-item">Forms</li>
-        <li class="breadcrumb-item active">Grain Size Upstream Transition Fill</li>
+        <li class="breadcrumb-item active">Grain Size Full</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
     <div class="row">
 
-      <form class="row" action="grain-size-trf.php" method="post">
+      <form class="row" action="grain-size-full.php" method="post">
 
         <div class="col-md-4">
           <?php echo display_msg($msg); ?>
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-4">
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
-                    <option value="ASTM-D6913">ASTM-D6913</option>
+                    <option value="FM13-11 (ASTM-D6913 and D5519)">FM13-11 (ASTM-D6913 and D5519)</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -69,11 +69,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="Mechanical">Mechanical</option>
                   </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                  <label for="materialSelect" class="form-label">Material</label>
+                  <select id="materialSelect" class="form-select" name="materialSelect">
+                    <option value="">-- Selecciona un material --</option>
+                    <option value="TRF">TRF</option>
+                    <option value="UFF">UFF</option>
+                    <option value="FRF">FRF</option>
+                    <option value="IRF">IRF</option>
+                    <option value="RF">RF</option>
+                    <option value="BF">BF</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting">
                 </div>
@@ -517,6 +529,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <!-- end Sumary Grain Size Distribution Table -->
 
+        <!-- Data hidden factor MCavg Correction -->
+        <input type="hidden" name="MoistureContentAvg" id="MoistureContentAvg">
+        <input type="hidden" name="TotalDryWtSampleLess3g" id="TotalDryWtSampleLess3g">
+        <input type="hidden" name="ConvertionFactor" id="ConvertionFactor">
+
+        <?php
+        for ($i = 0; $i < 8; $i++) {
+          $id = "Specs" . ($i + 1);
+          echo '<input type="hidden" id="' . $id . '" name="' . $id . '">';
+        }
+        ?>
+        <!-- End Data hidden factor MCavg Correction -->
 
         <div class="col-lg-3">
 
@@ -541,6 +565,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/gs-trf.js"></script>
+<script src="../js/grain-size/specs.js"></script>
+<script src="../js/grain-size/gs-full.js"></script>
 <script src="../libs/graph/Grain-Size-Full.js"></script>
 <?php include_once('../components/footer.php');  ?>
