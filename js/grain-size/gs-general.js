@@ -330,8 +330,7 @@
         $.ajax({
             url: "../libs/graph/Grain-Size-General.js",
             type: "GET",
-            data: $("#nopasonada").serialize(),
-            success: function(data) {}
+            success: function() {}
         });
     }
 
