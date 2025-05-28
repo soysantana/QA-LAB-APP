@@ -173,7 +173,8 @@ $pdf->SetXY(293, 182);
 $pdf->MultiCell(59, 4, $Search['Comments'], 0, 'L');
 
 // Agregar imágenes al PDF
-function addImage($pdf, $base64, $x, $y, $w) {
+function addImage($pdf, $base64, $x, $y, $w)
+{
     $imageData = base64_decode($base64);
     $tempFile = tempnam(sys_get_temp_dir(), 'image');
     file_put_contents($tempFile, $imageData);
@@ -181,9 +182,8 @@ function addImage($pdf, $base64, $x, $y, $w) {
     unlink($tempFile);
 }
 
-addImage($pdf, $Search['Liquid_Limit_Plot'], 182, 100, 90);
-addImage($pdf, $Search['Plasticity_Chart'], 182, 175, 90);
+addImage($pdf, $Search['Liquid_Limit_Plot'], 182, 91, 88);
+addImage($pdf, $Search['Plasticity_Chart'], 182, 170, 88);
 
 // Salida del archivo PDF
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
-?>
