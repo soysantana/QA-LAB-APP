@@ -25,4 +25,4 @@ jobs:
           exclude: |
             **/.git*
             **/.github*
-          delete: true
+          dangerous-clean-slate: true
