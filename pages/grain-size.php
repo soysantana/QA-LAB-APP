@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="GrainSize()">
+    <div class="row" oninput="GrainSize();">
 
       <form class="row" action="grain-size.php" method="post">
 
@@ -333,6 +333,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/Grain-Size.js"></script>
+<script src="../js/grain-size/gs-general.js"></script>
 <script src="../libs/graph/Grain-Size-General.js"></script>
 <?php include_once('../components/footer.php');  ?>

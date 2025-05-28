@@ -54,7 +54,7 @@ include_once('../components/header.php');
                     'los_angeles_abrasion_coarse_filter' => 'LAA Small',
                     'los_angeles_abrasion_coarse_aggregate' => 'LAA Large',
                     'pinhole_test' => 'Pinhole',
-                    'Hydrometer' => 'Hydrometer',
+                    'hydrometer' => 'Hydrometer',
                     'reactivity' => 'Reactivity',
                 ]); ?>
             </div>
