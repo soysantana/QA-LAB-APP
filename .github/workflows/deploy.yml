@@ -30,7 +30,6 @@ jobs:
             libs/fpdf/**
             libs/fpdi/**
             user/**
-            pdf/**
             composer.lock
             composer.json
             composer.phar
