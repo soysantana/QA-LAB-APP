@@ -25,4 +25,17 @@ jobs:
           exclude: |
             **/.git*
             **/.github*
+            vendor/**
+            assets/vendor/**
+            libs/fpdf/**
+            libs/fpdi/**
+            user/**
+            pdf/**
+            composer.lock
+            composer.json
+            composer.phar
+            LICENSE
+            README.md
+            SECURITY.md
+            .htaccess
           dangerous-clean-slate: true
