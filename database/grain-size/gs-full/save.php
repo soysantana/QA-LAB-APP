@@ -30,6 +30,7 @@ if (isset($_POST['GSFull'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -37,7 +38,8 @@ if (isset($_POST['GSFull'])) {
         $SMethods = $db->escape($_POST['SMethods']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
-        $TestType = "GS_TRF";
+        $Material = $db->escape($_POST['materialSelect']);
+        $TestType = "GS-" . $Material;
         $id = uuid();
 
         $TDMPHumedo = $db->escape($_POST['TDMPHumedo']);
@@ -56,6 +58,10 @@ if (isset($_POST['GSFull'])) {
         $TotalRet = $db->escape($_POST['TotalRet']);
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
+
+        $MoistureContentAvg = $db->escape($_POST['MoistureContentAvg']);
+        $TotalDryWtSampleLess3g = $db->escape($_POST['TotalDryWtSampleLess3g']);
+        $ConvertionFactor = $db->escape($_POST['ConvertionFactor']);
 
         $CoarserGravel = $db->escape($_POST['CoarserGravel']);
         $Gravel = $db->escape($_POST['Gravel']);
@@ -104,6 +110,7 @@ if (isset($_POST['GSFull'])) {
         $combinedRet = "";
         $combinedCumRet = "";
         $combinedPass = "";
+        $combinedSpecs = "";
 
 
         for ($i = 1; $i <= 10; $i++) {
@@ -242,6 +249,13 @@ if (isset($_POST['GSFull'])) {
             }
         }
 
+        for ($i = 1; $i <= 8; $i++) {
+            ${"Specs" . $i} = $db->escape($_POST["Specs$i"]);
+            if (!empty(${"Specs" . $i})) {
+                $combinedSpecs .= ($combinedSpecs ? ", " : "") . ${"Specs" . $i};
+            }
+        }
+
         for ($i = 1; $i <= 19; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
@@ -285,6 +299,7 @@ if (isset($_POST['GSFull'])) {
             Register_By,
             Test_Type,
             Standard,
+            FieldComment,
             Technician,
             Test_Start_Date,
             Comments,
@@ -339,6 +354,7 @@ if (isset($_POST['GSFull'])) {
             Ret,
             CumRet,
             Pass,
+            Specs,
             Coarser_than_Gravel,
             Gravel,
             Sand,
@@ -350,6 +366,9 @@ if (isset($_POST['GSFull'])) {
             D85,
             Cc,
             Cu,
+            MoistureContentAvg,
+            TotalDryWtSampleLess3g,
+            ConvertionFactor,
             ClassificationUSCS1";
 
         $sql .= ") VALUES (
@@ -375,6 +394,7 @@ if (isset($_POST['GSFull'])) {
             '$RegisterBy',
             '$TestType',
             '$Standard',
+            '$FieldComment',
             '$Technician',
             '$DateTesting',
             '$Comments',
@@ -429,6 +449,7 @@ if (isset($_POST['GSFull'])) {
             '$combinedRet',
             '$combinedCumRet',
             '$combinedPass',
+            '$combinedSpecs',
             '$CoarserGravel',
             '$Gravel',
             '$Sand',
@@ -440,19 +461,22 @@ if (isset($_POST['GSFull'])) {
             '$D85',
             '$Cc',
             '$Cu',
+            '$MoistureContentAvg',
+            '$TotalDryWtSampleLess3g',
+            '$ConvertionFactor',
             '$ClassificationUSCS1'";
 
         $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Ensayo agregado con éxito.");
-            redirect('/pages/grain-size-trf.php', false);
+            redirect('/pages/grain-size-full.php', false);
         } else {
             $session->msg('w', 'Lo sentimos, el ensayo no se pudo agregar.');
-            redirect('/pages/grain-size-trf.php', false);
+            redirect('/pages/grain-size-full.php', false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('/pages/grain-size-trf.php', false);
+        redirect('/pages/grain-size-full.php', false);
     }
 }

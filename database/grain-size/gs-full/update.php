@@ -30,6 +30,7 @@ if (isset($_POST['UpdateGSFull'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -37,7 +38,8 @@ if (isset($_POST['UpdateGSFull'])) {
         $SMethods = $db->escape($_POST['SMethods']);
         $ModifiedDate = make_date();
         $ModifiedBy = $user['name'];
-        $TestType = "GS_TRF";
+        $Material = $db->escape($_POST['materialSelect']);
+        $TestType = "GS-" . $Material;
 
         $TDMPHumedo = $db->escape($_POST['TDMPHumedo']);
         $TDMRSecoSucio = $db->escape($_POST['TDMRSecoSucio']);
@@ -55,6 +57,10 @@ if (isset($_POST['UpdateGSFull'])) {
         $TotalRet = $db->escape($_POST['TotalRet']);
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
+
+        $MoistureContentAvg = $db->escape($_POST['MoistureContentAvg']);
+        $TotalDryWtSampleLess3g = $db->escape($_POST['TotalDryWtSampleLess3g']);
+        $ConvertionFactor = $db->escape($_POST['ConvertionFactor']);
 
         $CoarserGravel = $db->escape($_POST['CoarserGravel']);
         $Gravel = $db->escape($_POST['Gravel']);
@@ -103,6 +109,7 @@ if (isset($_POST['UpdateGSFull'])) {
         $combinedRet = "";
         $combinedCumRet = "";
         $combinedPass = "";
+        $combinedSpecs = "";
 
 
         for ($i = 1; $i <= 10; $i++) {
@@ -241,6 +248,13 @@ if (isset($_POST['UpdateGSFull'])) {
             }
         }
 
+        for ($i = 1; $i <= 8; $i++) {
+            ${"Specs" . $i} = $db->escape($_POST["Specs$i"]);
+            if (!empty(${"Specs" . $i})) {
+                $combinedSpecs .= ($combinedSpecs ? ", " : "") . ${"Specs" . $i};
+            }
+        }
+
         for ($i = 1; $i <= 19; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
@@ -280,6 +294,7 @@ if (isset($_POST['UpdateGSFull'])) {
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
@@ -288,69 +303,71 @@ if (isset($_POST['UpdateGSFull'])) {
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
-        $query .= "Test_Type = '{$TDMPHumedo}', ";
-        $query .= "Test_Type = '{$TDMRSecoSucio}', ";
-        $query .= "Test_Type = '{$More3p}', ";
-        $query .= "Test_Type = '{$Lees3P}', ";
-        $query .= "Test_Type = '{$TotalPesoSecoSucio}', ";
-        $query .= "Test_Type = '{$TotalPesoLavado}', ";
-        $query .= "Test_Type = '{$PerdidaPorLavado}', ";
-        $query .= "Test_Type = '{$PesoSecoSucio}', ";
-        $query .= "Test_Type = '{$PesoLavado}', ";
-        $query .= "Test_Type = '{$PanLavado}', ";
-        $query .= "Test_Type = '{$PanWtRet}', ";
-        $query .= "Test_Type = '{$TotalWtRet}', ";
-        $query .= "Test_Type = '{$TotalRet}', ";
-        $query .= "Test_Type = '{$TotalCumRet}', ";
-        $query .= "Test_Type = '{$TotalPass}', ";
-        $query .= "Test_Type = '{$CoarserGravel}', ";
-        $query .= "Test_Type = '{$Gravel}', ";
-        $query .= "Test_Type = '{$Sand}', ";
-        $query .= "Test_Type = '{$Fines}', ";
-        $query .= "Test_Type = '{$D10}', ";
-        $query .= "Test_Type = '{$D15}', ";
-        $query .= "Test_Type = '{$D30}', ";
-        $query .= "Test_Type = '{$D60}', ";
-        $query .= "Test_Type = '{$D85}', ";
-        $query .= "Test_Type = '{$Cc}', ";
-        $query .= "Test_Type = '{$Cu}', ";
-        $query .= "Test_Type = '{$ClassificationUSCS1}', ";
-        $query .= "Test_Type = '{$combinedScreen40}', ";
-        $query .= "Test_Type = '{$combinedScreen30}', ";
-        $query .= "Test_Type = '{$combinedScreen20}', ";
-        $query .= "Test_Type = '{$combinedScreen13}', ";
-        $query .= "Test_Type = '{$combinedScreen12}', ";
-        $query .= "Test_Type = '{$combinedScreen10}', ";
-        $query .= "Test_Type = '{$combinedScreen8}', ";
-        $query .= "Test_Type = '{$combinedScreen6}', ";
-        $query .= "Test_Type = '{$combinedScreen4}', ";
-        $query .= "Test_Type = '{$combinedScreen3}', ";
-        $query .= "Test_Type = '{$combinedScreen2}', ";
-        $query .= "Test_Type = '{$combinedScreen1p5}', ";
-        $query .= "Test_Type = '{$combinedScreen1}', ";
-        $query .= "Test_Type = '{$combinedScreen3p4}', ";
-        $query .= "Test_Type = '{$combinedScreen1p2}', ";
-        $query .= "Test_Type = '{$combinedScreen3p8}', ";
-        $query .= "Test_Type = '{$combinedScreenNo4}', ";
-        $query .= "Test_Type = '{$combinedScreenNo20}', ";
-        $query .= "Test_Type = '{$combinedScreenNo200}', ";
-        $query .= "Test_Type = '{$combinedScreenPan}', ";
-        $query .= "Test_Type = '{$combinedsTotal}', ";
-        $query .= "Test_Type = '{$combinedWtPhumedo}', ";
-        $query .= "Test_Type = '{$combinedWtReSecoSucio}', ";
-        $query .= "Test_Type = '{$combinedContainer}', ";
-        $query .= "Test_Type = '{$combinedWetSoil}', ";
-        $query .= "Test_Type = '{$combinedWetDry}', ";
-        $query .= "Test_Type = '{$combinedWetWater}', ";
-        $query .= "Test_Type = '{$combinedTareMC}', ";
-        $query .= "Test_Type = '{$combinedWtDrySoil}', ";
-        $query .= "Test_Type = '{$combinedMoisturePercet}', ";
-        $query .= "Test_Type = '{$combinedWtRet}', ";
-        $query .= "Test_Type = '{$combinedRet}', ";
-        $query .= "Test_Type = '{$combinedCumRet}', ";
-        $query .= "Test_Type = '{$combinedPass}', ";
-
-
+        $query .= "TotalPassHumedoLess3 = '{$TDMPHumedo}', ";
+        $query .= "TotalPassSecoSucioLess3 = '{$TDMRSecoSucio}', ";
+        $query .= "More3p = '{$More3p}', ";
+        $query .= "Lees3P = '{$Lees3P}', ";
+        $query .= "TotalPesoSecoSucio = '{$TotalPesoSecoSucio}', ";
+        $query .= "TotalPesoLavado = '{$TotalPesoLavado}', ";
+        $query .= "PerdidaPorLavado = '{$PerdidaPorLavado}', ";
+        $query .= "PesoSecoSucio = '{$PesoSecoSucio}', ";
+        $query .= "PesoLavado = '{$PesoLavado}', ";
+        $query .= "PanLavado = '{$PanLavado}', ";
+        $query .= "PanWtRen = '{$PanWtRet}', ";
+        $query .= "TotalWtRet = '{$TotalWtRet}', ";
+        $query .= "TotalRet = '{$TotalRet}', ";
+        $query .= "TotalCumRet = '{$TotalCumRet}', ";
+        $query .= "TotalPass = '{$TotalPass}', ";
+        $query .= "Coarser_than_Gravel = '{$CoarserGravel}', ";
+        $query .= "Gravel = '{$Gravel}', ";
+        $query .= "Sand = '{$Sand}', ";
+        $query .= "Fines = '{$Fines}', ";
+        $query .= "D10 = '{$D10}', ";
+        $query .= "D15 = '{$D15}', ";
+        $query .= "D30 = '{$D30}', ";
+        $query .= "D60 = '{$D60}', ";
+        $query .= "D85 = '{$D85}', ";
+        $query .= "Cc = '{$Cc}', ";
+        $query .= "Cu = '{$Cu}', ";
+        $query .= "ClassificationUSCS1 = '{$ClassificationUSCS1}', ";
+        $query .= "Screen40 = '{$combinedScreen40}', ";
+        $query .= "Screen30 = '{$combinedScreen30}', ";
+        $query .= "Screen20 = '{$combinedScreen20}', ";
+        $query .= "Screen13 = '{$combinedScreen13}', ";
+        $query .= "Screen12 = '{$combinedScreen12}', ";
+        $query .= "Screen10 = '{$combinedScreen10}', ";
+        $query .= "Screen8 = '{$combinedScreen8}', ";
+        $query .= "Screen6 = '{$combinedScreen6}', ";
+        $query .= "Screen4 = '{$combinedScreen4}', ";
+        $query .= "Screen3 = '{$combinedScreen3}', ";
+        $query .= "Screen2 = '{$combinedScreen2}', ";
+        $query .= "Screen1p5 = '{$combinedScreen1p5}', ";
+        $query .= "Screen1 = '{$combinedScreen1}', ";
+        $query .= "Screen3p4 = '{$combinedScreen3p4}', ";
+        $query .= "Screen1p2 = '{$combinedScreen1p2}', ";
+        $query .= "Screen3p8 = '{$combinedScreen3p8}', ";
+        $query .= "ScreenNo4 = '{$combinedScreenNo4}', ";
+        $query .= "ScreenNo20 = '{$combinedScreenNo20}', ";
+        $query .= "ScreenNo200 = '{$combinedScreenNo200}', ";
+        $query .= "ScreenPan = '{$combinedScreenPan}', ";
+        $query .= "ScreenTotal = '{$combinedsTotal}', ";
+        $query .= "WtPassHumedoLess3 = '{$combinedWtPhumedo}', ";
+        $query .= "WtPassSecoSucioLess3 = '{$combinedWtReSecoSucio}', ";
+        $query .= "Container = '{$combinedContainer}', ";
+        $query .= "WtSoilTare = '{$combinedWetSoil}', ";
+        $query .= "WtSoilDry = '{$combinedWetDry}', ";
+        $query .= "WtWater = '{$combinedWetWater}', ";
+        $query .= "TareMC = '{$combinedTareMC}', ";
+        $query .= "WtDrySoil = '{$combinedWtDrySoil}', ";
+        $query .= "MC = '{$combinedMoisturePercet}', ";
+        $query .= "WtRet = '{$combinedWtRet}', ";
+        $query .= "Ret = '{$combinedRet}', ";
+        $query .= "CumRet = '{$combinedCumRet}', ";
+        $query .= "Pass = '{$combinedPass}', ";
+        $query .= "Specs = '{$combinedSpecs}', ";
+        $query .= "MoistureContentAvg = '{$MoistureContentAvg}', ";
+        $query .= "TotalDryWtSampleLess3g = '{$TotalDryWtSampleLess3g}', ";
+        $query .= "ConvertionFactor = '{$ConvertionFactor}', ";
         $query .= "Graph = '{$Graph64}' ";
         $query .= "WHERE id = '{$Search}'";
 
@@ -358,13 +375,13 @@ if (isset($_POST['UpdateGSFull'])) {
 
         if ($result && $db->affected_rows() === 1) {
             $session->msg('s', 'La muestra ha sido actualizada');
-            redirect('/reviews/grain-size-trf.php?id=' . $Search, false);
+            redirect('/reviews/grain-size-full.php?id=' . $Search, false);
         } else {
             $session->msg('w', 'No se hicieron cambios');
-            redirect('/reviews/grain-size-trf.php?id=' . $Search, false);
+            redirect('/reviews/grain-size-full.php?id=' . $Search, false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('/reviews/grain-size-trf.php?id=' . $Search, false);
+        redirect('/reviews/grain-size-full.php?id=' . $Search, false);
     }
 }

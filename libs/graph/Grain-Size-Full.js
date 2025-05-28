@@ -1,9 +1,8 @@
-/**
- * * Graph GrainSizeRockGraph
- * */
+function UpdateGraph() {
+const chart = echarts.init(document.querySelector("#GrainSizeRockGraph"));
 
-echarts.init(document.querySelector("#GrainSizeRockGraph")).setOption({
-    xAxis: {
+chart.setOption({
+  xAxis: {
     type: 'log',
     inverse: true,
     min: 0.001,
@@ -49,7 +48,37 @@ echarts.init(document.querySelector("#GrainSizeRockGraph")).setOption({
         [0.075, document.getElementById("Pass19").value],
       ]
     },
-        {
+    {
+      data: [
+        [getSpecsValues(document.getElementById("Specs1").value).mm, getSpecsValues(document.getElementById("Specs1").value).left],
+        [getSpecsValues(document.getElementById("Specs2").value).mm, getSpecsValues(document.getElementById("Specs2").value).left],
+        [getSpecsValues(document.getElementById("Specs3").value).mm, getSpecsValues(document.getElementById("Specs3").value).left],
+        [getSpecsValues(document.getElementById("Specs4").value).mm, getSpecsValues(document.getElementById("Specs4").value).left],
+        [getSpecsValues(document.getElementById("Specs5").value).mm, getSpecsValues(document.getElementById("Specs5").value).left],
+        [getSpecsValues(document.getElementById("Specs6").value).mm, getSpecsValues(document.getElementById("Specs6").value).left],
+        [getSpecsValues(document.getElementById("Specs7").value).mm, getSpecsValues(document.getElementById("Specs7").value).left],
+        [getSpecsValues(document.getElementById("Specs8").value).mm, getSpecsValues(document.getElementById("Specs8").value).left]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false
+    },
+    {
+      data: [
+        [getSpecsValues(document.getElementById("Specs1").value).mm, getSpecsValues(document.getElementById("Specs1").value).right],
+        [getSpecsValues(document.getElementById("Specs2").value).mm, getSpecsValues(document.getElementById("Specs2").value).right],
+        [getSpecsValues(document.getElementById("Specs3").value).mm, getSpecsValues(document.getElementById("Specs3").value).right],
+        [getSpecsValues(document.getElementById("Specs4").value).mm, getSpecsValues(document.getElementById("Specs4").value).right],
+        [getSpecsValues(document.getElementById("Specs5").value).mm, getSpecsValues(document.getElementById("Specs5").value).right],
+        [getSpecsValues(document.getElementById("Specs6").value).mm, getSpecsValues(document.getElementById("Specs6").value).right],
+        [getSpecsValues(document.getElementById("Specs7").value).mm, getSpecsValues(document.getElementById("Specs7").value).right],
+        [getSpecsValues(document.getElementById("Specs8").value).mm, getSpecsValues(document.getElementById("Specs8").value).right]
+      ],
+      type: 'line',
+      color: 'black',
+      showSymbol: false
+    },
+    {
       data: [
         [300, 0],
         [300, 100]
@@ -129,66 +158,15 @@ echarts.init(document.querySelector("#GrainSizeRockGraph")).setOption({
       smooth: true
     }
   ],
-   graphic: [
-    {
-      type: 'text',
-      left: '17%',
-      top: '75%',
-      style: {
-        text: 'Cobbles',
-        fill: 'black',
-        fontSize: 13
-      }
-    },
-    {
-      type: 'text',
-      left: '29%',
-      top: '57%',
-      style: {
-        text: 'Gravel',
-        fill: 'black',
-        fontSize: 13
-      }
-    },
-    {
-      type: 'text',
-      left: '37%',
-      top: '60%',
-      style: {
-        text: 'Coarse',
-        fill: 'black',
-        fontSize: 13
-      }
-    },
-    {
-      type: 'text',
-      left: '41%',
-      top: '55%',
-      style: {
-        text: 'Sand',
-        fill: 'black',
-        fontSize: 13
-      }
-    },
-    {
-      type: 'text',
-      left: '44%',
-      top: '60%',
-      style: {
-        text: 'Medium',
-        fill: 'black',
-        fontSize: 13
-      }
-    },
-    {
-      type: 'text',
-      left: '51%',
-      top: '60%',
-      style: {
-        text: 'Fine',
-        fill: 'black',
-        fontSize: 13
-      }
-    }
+  graphic: [
+    { type: 'text', left: '17%', top: '75%', style: { text: 'Cobbles', fill: 'black', fontSize: 13 } },
+    { type: 'text', left: '29%', top: '57%', style: { text: 'Gravel', fill: 'black', fontSize: 13 } },
+    { type: 'text', left: '37%', top: '60%', style: { text: 'Coarse', fill: 'black', fontSize: 13 } },
+    { type: 'text', left: '41%', top: '55%', style: { text: 'Sand', fill: 'black', fontSize: 13 } },
+    { type: 'text', left: '44%', top: '60%', style: { text: 'Medium', fill: 'black', fontSize: 13 } },
+    { type: 'text', left: '51%', top: '60%', style: { text: 'Fine', fill: 'black', fontSize: 13 } }
   ]
 });
+};
+
+ UpdateGraph()

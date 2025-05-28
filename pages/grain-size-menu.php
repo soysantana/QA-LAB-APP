@@ -33,7 +33,12 @@ require_once('../config/load.php');
               <a href="grain-size-fine-filter.php" class="list-group-item list-group-item-action">FF</a>
               <a href="grain-size-lpf.php" class="list-group-item list-group-item-action">LPF</a>
               <a href="grain-size-upstream-transition-fill.php" class="list-group-item list-group-item-action">UTF</a>
-              <a href="grain-size-trf.php" class="list-group-item list-group-item-action">TRF</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">TRF</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">UFF</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">FRF</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">IRF</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">RF</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">BF</a>
               <a href="hydrometer.php" class="list-group-item list-group-item-action">Hydrometer</a>
             </div>
 

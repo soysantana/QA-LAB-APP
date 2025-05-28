@@ -548,6 +548,7 @@ if (!$session->isUserLoggedIn(true)) {
         </div>
 
         <!-- CANTIDAD DE ENSAYOS PENDIENTES -->
+        <?php /*
         <div class="col-12">
           <div class="card">
             <div class="card-body">
@@ -595,8 +596,8 @@ if (!$session->isUserLoggedIn(true)) {
 
         </div>
       </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
-
-    </div><!-- End Right side columns -->
+      */ ?>
+      </div><!-- End Right side columns -->
 
     </div>
   </section>

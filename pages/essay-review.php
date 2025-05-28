@@ -47,7 +47,7 @@ include_once('../components/header.php');
                 <?php displayAccordion([
                     'grain_size_upstream_transition_fill' => 'Grain Size UTF',
                     'grain_size_lpf' => 'Grain Size LPF',
-                    'grain_size_full' => 'Grain Size TRF',
+                    'grain_size_full' => 'Grain Size Full',
                     'point_load' => 'PLT',
                     'unixial_compressive' => 'UCS',
                     'brazilian' => 'BTS',
@@ -69,14 +69,14 @@ include_once('../components/header.php');
 <?php
 function fetchData($tableName, $applyDateFilter = false)
 {
-    $Reviewed = "(SELECT 1 FROM test_reviewed WHERE Tracking = p.id)";
-    $week = date('Y-m-d', strtotime('-7 days'));
+    $week = date('Y-m-d', strtotime('-14 days'));
     $query = $applyDateFilter
-        ? "SELECT * FROM {$tableName} p WHERE NOT EXISTS $Reviewed OR p.Registed_Date >= '$week'"
+        ? "SELECT * FROM {$tableName} p WHERE NOT EXISTS (SELECT 1 FROM test_reviewed WHERE Tracking = p.id) AND p.Registed_Date >= '$week'"
         : "SELECT * FROM {$tableName}";
 
     return find_by_sql($query);
 }
+
 
 function getTestLink($testType, $id)
 {
@@ -103,7 +103,12 @@ function getTestLink($testType, $id)
         'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
-        'GS_TRF' => '../reviews/grain-size-trf.php?id=',
+        'GS-TRF' => '../reviews/grain-size-full.php?id=',
+        'GS-UFF' => '../reviews/grain-size-full.php?id=',
+        'GS-FRF' => '../reviews/grain-size-full.php?id=',
+        'GS-IRF' => '../reviews/grain-size-full.php?id=',
+        'GS-RF' => '../reviews/grain-size-full.php?id=',
+        'GS-BF' => '../reviews/grain-size-full.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
         'AR-CF' => '../reviews/reactivity-coarse.php?id=',
         'AR-FF' => '../reviews/reactivity-fine.php?id=',

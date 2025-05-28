@@ -41,14 +41,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-body">
               <h5 class="card-title"></h5>
               <?php
-              $Requisition = find_all('lab_test_requisition_form');
+              $threeMonthsAgo = date('Y-m-d', strtotime('-2 months'));
+
+              $query = "SELECT * FROM lab_test_requisition_form WHERE Registed_Date >= '$threeMonthsAgo'";
+              $Requisition = find_by_sql($query);
+
 
               // Obtener todos los resultados de entregas en una sola consulta
-              $sample_ids = array_column($Requisition, 'Sample_ID');
-              $sample_numbers = array_column($Requisition, 'Sample_Number');
+              $sample_ids = array_unique(array_column($Requisition, 'Sample_ID'));
+              $sample_numbers = array_unique(array_column($Requisition, 'Sample_Number'));
 
-              $query = "SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery WHERE Sample_Name IN ('" . implode("','", $sample_ids) . "') AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
-              $result = $db->query($query);
+              if (!empty($sample_ids) && !empty($sample_numbers)) {
+                $query = "SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery WHERE Sample_Name IN ('" . implode("','", $sample_ids) . "') AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
+                $result = $db->query($query);
+              }
 
               // Crear un arreglo con las entregas
               $entregas = [];
@@ -77,22 +83,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $count_solicitados = 0;
                     $count_entregados = 0;
 
+                    // Alias para simplificar acceso a las entregas
+                    $entregados = $entregas[$Requisition['Sample_ID']][$Requisition['Sample_Number']] ?? [];
+
                     for ($i = 1; $i <= 20; $i++) {
-                      $column_name = 'Test_Type' . $i;
-                      if (!empty($Requisition[$column_name])) {
+                      $testType = $Requisition["Test_Type{$i}"] ?? null;
+
+                      if ($testType) {
                         $count_solicitados++;
-                        // Verificar si el ensayo ha sido entregado
-                        if (
-                          isset($entregas[$Requisition['Sample_ID']][$Requisition['Sample_Number']]) &&
-                          in_array($Requisition[$column_name], $entregas[$Requisition['Sample_ID']][$Requisition['Sample_Number']])
-                        ) {
+                        if (in_array($testType, $entregados)) {
                           $count_entregados++;
                         }
                       }
                     }
 
-                    $porce_entregados = ($count_solicitados > 0) ? round(($count_entregados / $count_solicitados) * 100) : 0;
+                    $porce_entregados = $count_solicitados > 0
+                      ? round(($count_entregados / $count_solicitados) * 100)
+                      : 0;
                     ?>
+
 
                     <tr>
                       <th scope="row"><?php echo count_id(); ?></th>
