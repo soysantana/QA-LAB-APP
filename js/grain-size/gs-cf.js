@@ -1,111 +1,3 @@
-  function initSpecsUpdater() {
-    // Array para almacenar los IDs de los elementos del DOM
-    const specElements = [
-        "Specs7",
-        "Specs8",
-        "Specs9",
-        "Specs11",
-        "Specs12",
-        "Specs13",
-        "Specs15",
-        "Specs18",
-    ];
-
-    const specsType = document.getElementById("specsType");
-
-    // Especificaciones de investigación y agregado
-    const specs = {
-        I: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "80-100",
-            Specs11: "50-100",
-            Specs12: "15-60",
-            Specs13: "2-15",
-            Specs15: "0-7",
-            Specs18: "0-2",
-        },
-        C: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "70-100",
-            Specs11: "33-100",
-            Specs12: "7-60",
-            Specs13: "0-15",
-            Specs15: "0-7",
-            Specs18: "0-5",
-        },
-        N: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "80-100",
-            Specs11: "40-100",
-            Specs12: "7-60",
-            Specs13: "0-15",
-            Specs15: "0-7",
-            Specs18: "0-1.7",
-        },
-        A: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "80-100",
-            Specs11: "50-100",
-            Specs12: "15-60",
-            Specs13: "2-15",
-            Specs15: "0-7",
-            Specs18: "0-2",
-        },
-    };
-
-    // Función que actualiza los valores de las especificaciones dinámicamente
-    function updateSpecs(selectedType) {
-        const selectedSpecs = specs[selectedType];
-        specElements.forEach((id) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.value = selectedSpecs[id];
-            }
-        });
-    }
-
-    // Evento que detecta cambios en el select
-    if (specsType) {
-        specsType.addEventListener("change", function () {
-            const selectedValue = specsType.value;
-            updateSpecs(selectedValue);
-        });
-    }
-}
-
-function validateSpecs(PassArray, selectedType) {
-    const selectedSpecs = specs[selectedType];
-
-    for (let i = 0; i < specElements.length; i++) {
-        const id = specElements[i];
-        const range = selectedSpecs[id];
-        const value = PassArray[i];
-
-        if (range.includes("-")) {
-            const [min, max] = range.split("-").map(Number);
-            if (value < min || value > max) return "Failed";
-        } else {
-            if (Number(value) !== Number(range)) return "Failed";
-        }
-    }
-
-    return "Passed";
-}
-
-const passArray = specElements.map(id => parseFloat(document.getElementById(id).value));
-const selectedType = document.getElementById("specsType").value;
-
-const result = validateSpecs(passArray, selectedType);
-console.log(result); // "Passed" o "Failed"
-
-
-
-  
-
   /**
    * Function Grain Size Coarse Aggregate
    */
@@ -117,6 +9,82 @@ console.log(result); // "Passed" o "Failed"
     let gravel;
     let sand;
     let fines;
+
+     // Array para almacenar los IDs de los elementos del DOM
+  const specElements = [
+    "Specs7",
+    "Specs8",
+    "Specs9",
+    "Specs11",
+    "Specs12",
+    "Specs13",
+    "Specs15",
+    "Specs18"
+  ];
+
+  const specsType = document.getElementById("specsType");
+
+  // Especificaciones de investigación, agregado, naranjo y acopio
+  const specs = {
+    AGGINV: {
+        Specs7: "100",
+        Specs8: "87-100",
+        Specs9: "80-100",
+        Specs11: "50-100",
+        Specs12: "15-60",
+        Specs13: "2-15",
+        Specs15: "0-7",
+        Specs18: "0-2",
+    },
+    Build: {
+        Specs7: "100",
+        Specs8: "87-100",
+        Specs9: "70-100",
+        Specs11: "33-100",
+        Specs12: "7-60",
+        Specs13: "0-15",
+        Specs15: "0-7",
+        Specs18: "0-5",
+    },
+    Naranjo: {
+        Specs7: "100",
+        Specs8: "87-100",
+        Specs9: "80-100",
+        Specs11: "40-100",
+        Specs12: "7-60",
+        Specs13: "0-15",
+        Specs15: "0-7",
+        Specs18: "0-1.7",
+    },
+    Acopio: {
+        Specs7: "100",
+        Specs8: "87-100",
+        Specs9: "80-100",
+        Specs11: "40-100",
+        Specs12: "7-60",
+        Specs13: "0-15",
+        Specs15: "0-7",
+        Specs18: "0-1.7",
+    },
+  };
+
+  // Función que actualiza los valores de las especificaciones dinámicamente
+  function updateSpecs(selectedType) {
+    const selectedSpecs = specs[selectedType];
+
+    specElements.forEach((id) => {
+      document.getElementById(id).value = selectedSpecs[id];
+    });
+  }
+
+  // Evento que detecta cambios en el select
+  specsType.addEventListener("change", function () {
+    // Obtener el valor seleccionado ("Investigacion" o "agregado")
+    const selectedValue = specsType.value;
+
+    // Llamar a la función para actualizar las especificaciones
+    updateSpecs(selectedValue);
+  });
 
     for (let i = 1; i <= 18; i++) {
         // Obtener los valores
