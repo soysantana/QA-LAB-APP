@@ -591,8 +591,8 @@ if (!$session->isUserLoggedIn(true)) {
 
         </div>
       </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
-
-    </div><!-- End Right side columns -->
+      */ ?>
+      </div><!-- End Right side columns -->
 
     </div>
   </section>
