@@ -30,12 +30,15 @@ page_require_level(3);
             </thead>
             <tbody>
               <?php
-              $query = "SELECT r.*, i.sample_length, i.sample_weight, i.store_in, i.comment
-                        FROM lab_test_requisition_form r
-                        LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
-                        WHERE (r.Sample_Type IN ('Shelby', 'Mazier', 'Lexan', 'Ring', 'Rock') 
-                        OR r.envio IS NOT NULL AND r.envio != '')
-                        ORDER BY r.Sample_Date DESC";
+             $fecha_limite = date('Y-m-d', strtotime('-2 month'));
+
+$query = "SELECT r.*, i.sample_length, i.sample_weight, i.store_in, i.comment
+          FROM lab_test_requisition_form r
+          LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
+          WHERE (r.Sample_Type IN ('Shelby', 'Mazier', 'Lexan', 'Ring', 'Rock') 
+              OR (r.envio IS NOT NULL AND r.envio != ''))
+            AND r.Sample_Date >= '{$fecha_limite}'
+          ORDER BY r.Sample_Date DESC";
 
               $result = $db->query($query);
               $i = 1;
