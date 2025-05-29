@@ -555,18 +555,22 @@ if (!$session->isUserLoggedIn(true)) {
       <ul class="list-group">
         <?php
         $typeCount = [];
+        $alreadyCounted = [];
 
-        // Asume que $testTypes es un array PLANO: array de muestras
         foreach ($testTypes as $sample) {
+          $key = $sample['Sample_ID'] . '_' . $sample['Sample_Number'] . '_' . $sample['Test_Type'];
+
+          if (in_array($key, $alreadyCounted)) continue;
+          $alreadyCounted[] = $key;
+
           $testType = $sample['Test_Type'];
           $status = getStatus($sample['Sample_ID'], $sample['Sample_Number'], $sample['Test_Type'], $testDataByTable);
 
           if ($status === 'NoStatusFound') {
-            if (isset($typeCount[$testType])) {
-              $typeCount[$testType]++;
-            } else {
-              $typeCount[$testType] = 1;
+            if (!isset($typeCount[$testType])) {
+              $typeCount[$testType] = 0;
             }
+            $typeCount[$testType]++;
           }
         }
 
@@ -583,6 +587,7 @@ if (!$session->isUserLoggedIn(true)) {
 </div>
 
 
+
 </div>
 
               </ul>
@@ -591,7 +596,7 @@ if (!$session->isUserLoggedIn(true)) {
 
         </div>
       </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
-      */ ?>
+   
       </div><!-- End Right side columns -->
 
     </div>
