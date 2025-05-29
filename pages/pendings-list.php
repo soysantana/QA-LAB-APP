@@ -47,8 +47,11 @@
 // Obtener datos de la base de datos en una sola consulta optimizada
 $Requisition = find_all("lab_test_requisition_form");
 $Preparation = find_all("test_preparation");
-$Entrega = find_all("test_delivery");
-$Review = find_all("test_review");
+$Entrega     = find_all("test_delivery");
+$Review      = find_all("test_review");
+$Repeat      = find_all("test_repeat");
+$Realization = find_all("test_realization");
+
 
 // Indexar Preparation, Entrega y Review en un solo array asociativo para acceso rápido
 $indexedStatus = []; 
@@ -71,6 +74,16 @@ foreach ($Review as $rev) {
     $key = normalize($rev["Sample_Name"]) . "|" . normalize($rev["Sample_Number"]) . "|" . normalize($rev["Test_Type"]);
     $indexedStatus[$key] = true;
 }
+foreach ($Repeat as $rpt) {
+    $key = normalize($rpt["Sample_Name"]) . "|" . normalize($rpt["Sample_Number"]) . "|" . normalize($rpt["Test_Type"]);
+    $indexedStatus[$key] = true;
+}
+
+foreach ($Realization as $rz) {
+    $key = normalize($rz["Sample_Name"]) . "|" . normalize($rz["Sample_Number"]) . "|" . normalize($rz["Test_Type"]);
+    $indexedStatus[$key] = true;
+}
+
 
 $testTypes = [];
 
