@@ -348,9 +348,9 @@
         return "GP-Poorly graded gravel";
     } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand < 15) {
         return "GP-Poorly graded gravel";
-    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
+    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc >= 1 && Cc <= 3 && sand >= 15) {
         return "GP-Poorly graded gravel with sand";
-    } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand >= 15) {
+    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc > 3 && sand >= 15) {
         return "GP-Poorly graded gravel with sand";
     } else if (gravel > sand && fines >= 5 && fines <= 12 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
         return "GW-GM Well graded gravel with silt";
