@@ -555,36 +555,59 @@ if (!$session->isUserLoggedIn(true)) {
       <ul class="list-group">
         <?php
         $typeCount = [];
-        $alreadyCounted = [];
+        $checkedKeys = [];
 
-        foreach ($testTypes as $sample) {
-          $key = $sample['Sample_ID'] . '_' . $sample['Sample_Number'] . '_' . $sample['Test_Type'];
+        foreach ($Requisitions as $requisition) {
+          for ($i = 1; $i <= 20; $i++) {
+            $testKey = 'Test_Type' . $i;
+            if (empty($requisition[$testKey])) continue;
 
-          if (in_array($key, $alreadyCounted)) continue;
-          $alreadyCounted[] = $key;
+            $sampleID = $requisition['Sample_ID'];
+            $sampleNumber = $requisition['Sample_Number'];
+            $testType = $requisition[$testKey];
+            $uniqueKey = $sampleID . '_' . $sampleNumber . '_' . $testType;
 
-          $testType = $sample['Test_Type'];
-          $status = getStatus($sample['Sample_ID'], $sample['Sample_Number'], $sample['Test_Type'], $testDataByTable);
+            if (in_array($uniqueKey, $checkedKeys)) continue;
+            $checkedKeys[] = $uniqueKey;
 
-          if ($status === 'NoStatusFound') {
-            if (!isset($typeCount[$testType])) {
-              $typeCount[$testType] = 0;
+            // Verificamos si está en alguna tabla
+            $found = false;
+            foreach ($testDataByTable as $tableData) {
+              foreach ($tableData as $row) {
+                if (
+                  $row['Sample_Name'] === $sampleID &&
+                  $row['Sample_Number'] === $sampleNumber &&
+                  $row['Test_Type'] === $testType
+                ) {
+                  $found = true;
+                  break 2; // salir de ambos foreach
+                }
+              }
             }
-            $typeCount[$testType]++;
+
+            if (!$found) {
+              if (!isset($typeCount[$testType])) $typeCount[$testType] = 0;
+              $typeCount[$testType]++;
+            }
           }
         }
 
-        foreach ($typeCount as $testType => $count) :
+        if (empty($typeCount)) {
+          echo '<li class="list-group-item">✅ No hay ensayos pendientes</li>';
+        } else {
+          foreach ($typeCount as $testType => $count) {
+            echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
+            echo '<h5><code>' . $testType . '</code></h5>';
+            echo '<span class="badge bg-primary rounded-pill">' . $count . '</span>';
+            echo '</li>';
+          }
+        }
         ?>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <h5><code><?php echo $testType; ?></code></h5>
-            <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
-          </li>
-        <?php endforeach; ?>
       </ul>
     </div>
   </div>
 </div>
+
 
 
 
