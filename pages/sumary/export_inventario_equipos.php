@@ -10,7 +10,7 @@ $products = join_product_table();
 
 // Crear nuevo libro
 $spreadsheet = new Spreadsheet();
-$sheet = $spreadsheet->getActiveSheet();
+$sheet = $spreadsheet->getActiveSheet(); 
 $sheet->setTitle('Inventario Equipos');
 
 // Establecer encabezados

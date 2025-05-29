@@ -14,7 +14,7 @@ page_require_level(3);
   <section class="section">
     <div class="card shadow-sm">
       <div class="card-body pt-4">
-        <div class="mb-3 d-flex justify-content-end">
+        <div class="mb-3 d-flex justify-content-end"> 
   <a href="../pages/sumary/export_inventario_muestras.php" class="btn btn-success">
     <i class="bi bi-file-earmark-excel"></i> Exportar Inventario
   </a>

@@ -3,7 +3,7 @@ $page_title = 'Lista de productos';
 require_once('../config/load.php');
 page_require_level(3);
 
-$products = join_product_table();
+$products = join_product_table(); 
 ?>
 <?php include_once('../components/header.php');  ?>
 
