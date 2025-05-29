@@ -32,6 +32,8 @@ if (isset($_POST['specific-gravity'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethod']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -83,6 +85,8 @@ if (isset($_POST['specific-gravity'])) {
             Register_By,
             Test_Type,
             Standard,
+            SMethods,
+            PMethods,
             Technician,
             Test_Start_Date,
             Comments,
@@ -129,6 +133,8 @@ if (isset($_POST['specific-gravity'])) {
             '$TestType',
             '$Standard',
             '$Technician',
+            '$Splitmethod',
+            '$prepa',
             '$DateTesting',
             '$Comments',
             '$FieldComment',
@@ -198,6 +204,8 @@ if (isset($_POST['update-sg'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -243,6 +251,8 @@ if (isset($_POST['update-sg'])) {
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "SMethods = '{$Splitmethod}', ";
+        $query .= "PMethods = '{$prepa}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
@@ -463,6 +473,8 @@ if (isset($_POST['specific-gravity-coarse'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethod']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -508,6 +520,8 @@ if (isset($_POST['specific-gravity-coarse'])) {
             Register_By,
             Test_Type,
             Standard,
+            SMethods,
+            PMethods,
             Technician,
             Test_Start_Date,
             Comments,
@@ -545,6 +559,8 @@ if (isset($_POST['specific-gravity-coarse'])) {
             '$RegisterBy',
             '$TestType',
             '$Standard',
+            '$Splitmethod',
+            '$prepa',
             '$Technician',
             '$DateTesting',
             '$Comments',
@@ -607,6 +623,8 @@ if (isset($_POST['update-sg-coarse'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -649,6 +667,8 @@ if (isset($_POST['update-sg-coarse'])) {
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "SMethods = '{$Splitmethod}', ";
+        $query .= "PMethods = '{$prepa}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
@@ -856,6 +876,8 @@ if (isset($_POST['specific-gravity-fine'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -904,6 +926,8 @@ if (isset($_POST['specific-gravity-fine'])) {
             Register_By,
             Test_Type,
             Standard,
+            SMethods,
+            PMethods,
             Technician,
             Test_Start_Date,
             Comments,
@@ -944,6 +968,8 @@ if (isset($_POST['specific-gravity-fine'])) {
             '$RegisterBy',
             '$TestType',
             '$Standard',
+            '$Splitmethod',
+            '$prepa',
             '$Technician',
             '$DateTesting',
             '$Comments',
@@ -1009,6 +1035,8 @@ if (isset($_POST['update-sg-fine'])) {
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -1050,6 +1078,8 @@ if (isset($_POST['update-sg-fine'])) {
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "SMethods = '{$Splitmethod}', ";
+        $query .= "PMethods = '{$prepa}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";

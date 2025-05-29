@@ -57,6 +57,24 @@
               <input type="text" class="form-control" name="TestMethod" id="TestMethod">
             </div>
             <div class="col-md-6">
+              <label for="PMethods" class="form-label">Preparation Methods</label>
+              <select id="PMethods" class="form-select" name="PMethods">
+                <option selected>Choose...</option>
+                <option value="Oven Dried">Oven Dried</option>
+                <option value="Air Dried">Air Dried</option>
+                <option value="Microwave Dried">Microwave Dried</option>
+                <option value="Wet">Wet</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="SMethods" class="form-label">Split Methods</label>
+              <select id="SMethods" class="form-select" name="SMethods">
+                <option selected>Choose...</option>
+                <option value="Manual">Manual</option>
+                <option value="Mechanical">Mechanical</option>
+              </select>
+            </div>
+            <div class="col-md-6">
               <label for="Technician" class="form-label">Technician</label>
               <input type="text" class="form-control" name="Technician" id="Technician">
             </div>
