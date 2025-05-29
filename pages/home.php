@@ -547,48 +547,44 @@ if (!$session->isUserLoggedIn(true)) {
           </div>
         </div>
 
-        <!-- CANTIDAD DE ENSAYOS PENDIENTES -->
-        <div class="col-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
-              <ul class="list-group">
-                <?php
-                $columnas_tipo_prueba = array();
-                for ($i = 1; $i <= 20; $i++) {
-                  $columnas_tipo_prueba[] = "Test_Type" . $i;
-                }
+<!-- CANTIDAD DE ENSAYOS PENDIENTES -->
+<div class="col-12">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
+      <ul class="list-group">
+        <?php
+        $typeCount = [];
 
-                $columnas_por_tipo = array();
-                foreach ($Requisition as $requisition) {
-                  foreach ($columnas_tipo_prueba as $columna) {
-                    $testTypeValue = $requisition[$columna];
-                    if ($testTypeValue !== null && $testTypeValue !== "") {
-                      $columnas_por_tipo[$testTypeValue] = $columna;
-                    }
-                  }
-                }
+        // Asume que $testTypes es un array PLANO: array de muestras
+        foreach ($testTypes as $sample) {
+          $testType = $sample['Test_Type'];
+          $status = getStatus($sample['Sample_ID'], $sample['Sample_Number'], $sample['Test_Type'], $testDataByTable);
 
-                $typeCount = [];
-                foreach ($testTypes as $sample) {
-                  $testType = $sample['Test_Type'];
-                  if (isset($typeCount[$testType])) {
-                    $typeCount[$testType]++;
-                  } else {
-                    $typeCount[$testType] = 1;
-                  }
-                }
-                foreach ($typeCount as $testType => $count) :
-                ?>
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <h5><code><?php echo $testType; ?></code></h5>
-                    <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
-                    <?php if (isset($columnas_por_tipo[$testType])) : ?>
-                    <?php else : ?>
-                      <span class="badge bg-danger rounded-pill">Opps</span>
-                    <?php endif; ?>
-                  </li>
-                <?php endforeach; ?>
+          if ($status === 'NoStatusFound') {
+            if (isset($typeCount[$testType])) {
+              $typeCount[$testType]++;
+            } else {
+              $typeCount[$testType] = 1;
+            }
+          }
+        }
+
+        foreach ($typeCount as $testType => $count) :
+        ?>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <h5><code><?php echo $testType; ?></code></h5>
+            <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+</div>
+
               </ul>
             </div>
           </div>

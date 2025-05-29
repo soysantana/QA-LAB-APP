@@ -69,6 +69,12 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         </li>
       </ul>
     </li><!-- End Tracking Nav -->
+       <li class="nav-item">
+      <a class="nav-link <?php echo $requisition_form ; ?>" href="/components/menu_inventarios.php">
+        <i class="bi bi-box"></i>
+        <span>Inventarios</span>
+      </a>
+    
 
     <li class="nav-heading">paginas</li>
 

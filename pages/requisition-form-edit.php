@@ -98,8 +98,8 @@
               <label for="MType" class="form-label">Tipo de material</label>
               <select id="MType" class="form-select" name="MType">
                 <option selected>Elegir...</option>
-                <option <?php if ($Search['Material_Type'] == 'Soil') echo 'selected'; ?>>Soil</option>
-                <option <?php if ($Search['Material_Type'] == 'Rock') echo 'selected'; ?>>Rock</option>
+                <option <?php if ($Search['Material_Type'] == 'Soil') echo 'selected'; ?>>Suelo</option>
+                <option <?php if ($Search['Material_Type'] == 'Rock') echo 'selected'; ?>>Roca</option>
                 <option <?php if ($Search['Material_Type'] == 'Crudo') echo 'selected'; ?>>Crudo</option>
                 <option <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
                 <option <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
@@ -123,8 +123,10 @@
                 <option <?php if ($Search['Sample_Type'] == 'Grab') echo 'selected'; ?>>Grab</option>
                 <option <?php if ($Search['Sample_Type'] == 'Bulk') echo 'selected'; ?>>Bulk</option>
                 <option <?php if ($Search['Sample_Type'] == 'Truck') echo 'selected'; ?>>Truck</option>
+                <option <?php if ($Search['Sample_Type'] == 'Rock') echo 'selected'; ?>>Roca</option>
                 <option <?php if ($Search['Sample_Type'] == 'Shelby') echo 'selected'; ?>>Shelby</option>
                 <option <?php if ($Search['Sample_Type'] == 'Lexan') echo 'selected'; ?>>Lexan</option>
+                <option <?php if ($Search['Sample_Type'] == 'Mazier') echo 'selected'; ?>>Mazier</option>
                 <option <?php if ($Search['Sample_Type'] == 'Ring') echo 'selected'; ?>>Ring</option>
               </select>
             </div>
@@ -329,6 +331,13 @@
                 <input class="form-check-input" type="checkbox" name="TestType20" id="CRUMBS" value="CRUMBS" <?php if ($Search['Test_Type20'] == 'CRUMBS') echo 'checked'; ?>>
                 <label class="form-check-label" for="CRUMBS">
                   Crumbs
+                </label>
+              </div>
+
+               <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="envio" id="envio" value="envio" <?php if ($Search['envio'] == 'envio') echo 'checked'; ?>>
+                <label class="form-check-label" for="envio">
+                 Envio
                 </label>
               </div>
 

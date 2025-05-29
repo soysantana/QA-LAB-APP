@@ -97,8 +97,8 @@
               <label for="MType" class="form-label">Tipo de material</label>
               <select id="MType" class="form-select" name="MType">
                 <option selected>Elegir...</option>
-                <option value="Soil">Soil</option>
-                <option value="Rock">Rock</option>
+                <option value="Soil">Suelo</option>
+                <option value="Rock">Roca</option>
                 <option value="Crudo">Crudo</option>
                 <option value="RF">RF</option>
                 <option value="IRF">IRF</option>
@@ -122,8 +122,10 @@
                 <option value="Grab">Grab</option>
                 <option value="Bulk">Bulk</option>
                 <option value="Truck">Truck</option>
+                <option value="Rock">Rock</option>
                 <option value="Shelby">Shelby</option>
                 <option value="Lexan">Lexan</option>
+                <option value="Mazier">Mazier</option>
                 <option value="Ring">Ring</option>
               </select>
             </div>
@@ -328,6 +330,13 @@
                 <input class="form-check-input" type="checkbox" name="TestType20" id="CRUMBS" value="CRUMBS">
                 <label class="form-check-label" for="CRUMBS">
                   Crumbs
+                </label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="envio" id="envio" value="envio">
+                <label class="form-check-label" for="envio">
+                  Envio
                 </label>
               </div>
 

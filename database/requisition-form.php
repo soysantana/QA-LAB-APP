@@ -34,6 +34,8 @@
         $Comments = $db->escape($_POST['Comments']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
+        $envio = $db->escape($_POST['envio']);
+
 
         for ($i = 1; $i <= 20; $i++) {
             ${"TestType" . $i} = $db->escape($_POST["TestType$i"]);
@@ -83,7 +85,8 @@
             Test_Type17,
             Test_Type18,
             Test_Type19,
-            Test_Type20
+            Test_Type20,
+            envio
         )
         VALUES (
             '$id',
@@ -128,7 +131,8 @@
             '$TestType17',
             '$TestType18',
             '$TestType19',
-            '$TestType20'
+            '$TestType20',
+            '$envio'
         )";
 
         if ($db->query($sql)) {
@@ -176,6 +180,7 @@
         $Cviaje = $db->escape($_POST['Cviaje']);
         $SampleBy = $db->escape($_POST['SampleBy']);
         $Comments = $db->escape($_POST['Comments']);
+        $envio = $db->escape($_POST['envio']);
 
         for ($i = 1; $i <= 20; $i++) {
             ${"TestType" . $i} = $db->escape($_POST["TestType$i"]);
@@ -221,8 +226,8 @@
         $query .= "Test_Type17 = '{$TestType17}', ";
         $query .= "Test_Type18 = '{$TestType18}', ";
         $query .= "Test_Type19 = '{$TestType19}', ";
-        $query .= "Test_Type20 = '{$TestType20}' ";
-
+        $query .= "Test_Type20 = '{$TestType20}', ";
+        $query .= "envio = '{$envio}' ";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);
