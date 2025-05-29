@@ -29,16 +29,11 @@ require_once('../config/load.php');
 
             <div class="list-group">
               <a href="grain-size.php" class="list-group-item list-group-item-action">General</a>
-              <a href="grain-size-coarse-filter.php" class="list-group-item list-group-item-action">CF</a>
-              <a href="grain-size-fine-filter.php" class="list-group-item list-group-item-action">FF</a>
-              <a href="grain-size-lpf.php" class="list-group-item list-group-item-action">LPF</a>
-              <a href="grain-size-upstream-transition-fill.php" class="list-group-item list-group-item-action">UTF</a>
-              <a href="grain-size-full.php" class="list-group-item list-group-item-action">TRF</a>
-              <a href="grain-size-full.php" class="list-group-item list-group-item-action">UFF</a>
-              <a href="grain-size-full.php" class="list-group-item list-group-item-action">FRF</a>
-              <a href="grain-size-full.php" class="list-group-item list-group-item-action">IRF</a>
-              <a href="grain-size-full.php" class="list-group-item list-group-item-action">RF</a>
-              <a href="grain-size-full.php" class="list-group-item list-group-item-action">BF</a>
+              <a href="grain-size-coarse-filter.php" class="list-group-item list-group-item-action">Coarse Filter (CF)</a>
+              <a href="grain-size-fine-filter.php" class="list-group-item list-group-item-action">Fine Filter (FF)</a>
+              <a href="grain-size-lpf.php" class="list-group-item list-group-item-action">Low Permeability Fill (LPF)</a>
+              <a href="grain-size-upstream-transition-fill.php" class="list-group-item list-group-item-action">Upstream Transition Fill (UTF)</a>
+              <a href="grain-size-full.php" class="list-group-item list-group-item-action">Full Grain Size</a>         
               <a href="hydrometer.php" class="list-group-item list-group-item-action">Hydrometer</a>
             </div>
 
