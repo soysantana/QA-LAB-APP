@@ -6,6 +6,15 @@ $repeat = 'active';
 require_once('../config/load.php');
 ?>
 
+<?php
+// Manejo de los formularios
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['send-delivery'])) {
+    include('../database/sample-tracking/repeat/entregar_muestra.php');
+  }
+}
+?>
+
 <?php page_require_level(3); ?>
 <?php include_once('../components/header.php'); ?>
 <main id="main" class="main">
@@ -57,7 +66,7 @@ require_once('../config/load.php');
                   <td><?php echo date('Y-m-d', strtotime($item['Start_Date'])); ?></td>
                   <td><?php echo htmlspecialchars($item['Comment'] ?? ''); ?></td>
                   <td>
-                    <form method="POST" action="../database/sample-tracking/repeat/entregar_muestra.php">
+                    <form method="POST" action="test-repeat.php">
                       <input type="hidden" name="Sample_Name" value="<?php echo htmlspecialchars($item['Sample_Name']); ?>">
                       <input type="hidden" name="Sample_Number" value="<?php echo htmlspecialchars($item['Sample_Number']); ?>">
                       <input type="hidden" name="Test_Type" value="<?php echo htmlspecialchars($item['Test_Type']); ?>">

@@ -1,5 +1,4 @@
 <?php
-require_once('../../../config/load.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
     $nombre     = $db->escape($_POST['Sample_Name']);
@@ -10,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
 
     $uuid = uniqid('td_', true);
     $fecha_registro = date('Y-m-d H:i:s');
-    $estado = 'Entregado';
+    $estado = 'Delivery';
 
     // Verificar si ya existe una entrega con esa muestra
     $check_query = "SELECT id FROM test_delivery 
@@ -56,24 +55,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
 
         if ($delete_result) {
             $session->msg("s", "✅ Muestra entregada y sincronizada correctamente.");
-           redirect('../../pages/test-repeat.php', false);
+           redirect('/pages/test-repeat.php', false);
 
             exit;
         } else {
             $session->msg("w", "⚠️ Actualizado, pero no eliminado de test_repeat.");
-            redirect('../../pages/test-repeat.php', false);
+            redirect('/pages/test-repeat.php', false);
 
             exit;
         }
     } else {
         $session->msg("d", "❌ Error al insertar o actualizar la entrega.");
-        redirect('../../pages/test-repeat.php', false);
+        redirect('/pages/test-repeat.php', false);
 
         exit;
     }
 } else {
     $session->msg("d", "❌ Solicitud inválida.");
-  redirect('../../pages/test-repeat.php', false);
+  redirect('/pages/test-repeat.php', false);
 
     exit;
 }
