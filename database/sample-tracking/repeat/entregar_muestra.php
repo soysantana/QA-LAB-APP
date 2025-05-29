@@ -57,17 +57,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
         if ($delete_result) {
             $session->msg("s", "✅ Muestra entregada y sincronizada correctamente.");
             redirect('/pages/test-repeat.php', false);
+            exit;
         } else {
             $session->msg("w", "⚠️ Actualizado, pero no eliminado de test_repeat.");
-              redirect('/pages/test-repeat.php', false);
+            redirect('/pages/test-repeat.php', false);
+            exit;
         }
     } else {
         $session->msg("d", "❌ Error al insertar o actualizar la entrega.");
-          redirect('/pages/test-repeat.php', false);
+        redirect('/pages/test-repeat.php', false);
+        exit;
     }
 } else {
     $session->msg("d", "❌ Solicitud inválida.");
-      redirect('/pages/test-repeat.php', false);
+    redirect('/pages/test-repeat.php', false);
+    exit;
 }
 
-redirect($_SERVER['HTTP_REFERER'], false);
