@@ -586,6 +586,20 @@ if (!$session->isUserLoggedIn(true)) {
   </div>
 </div>
 
+
+
+</div>
+
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
+   
+      </div><!-- End Right side columns -->
+
+    </div>
   </section>
 
 </main><!-- End #main -->
