@@ -554,40 +554,47 @@ if (!$session->isUserLoggedIn(true)) {
       <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
       <ul class="list-group">
         <?php
+        function normalize($v) {
+          return strtoupper(trim($v));
+        }
+
+        $tables_to_check = [
+          'test_preparation',
+          'test_delivery',
+          'test_realization',
+          'test_repeat',
+          'test_review',
+          'test_reviewed'
+        ];
+
+        $indexed_status = [];
+
+        foreach ($tables_to_check as $table) {
+          $rows = find_all($table);
+          foreach ($rows as $row) {
+            $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+            $indexed_status[$key] = true;
+          }
+        }
+
         $typeCount = [];
-        $checkedKeys = [];
+        $seen = [];
 
         foreach ($Requisitions as $requisition) {
           for ($i = 1; $i <= 20; $i++) {
             $testKey = 'Test_Type' . $i;
             if (empty($requisition[$testKey])) continue;
 
-            $sampleID = $requisition['Sample_ID'];
-            $sampleNumber = $requisition['Sample_Number'];
-            $testType = $requisition[$testKey];
-            $uniqueKey = $sampleID . '_' . $sampleNumber . '_' . $testType;
+            $sampleID = normalize($requisition['Sample_ID']);
+            $sampleNumber = normalize($requisition['Sample_Number']);
+            $testType = normalize($requisition[$testKey]);
 
-            if (in_array($uniqueKey, $checkedKeys)) continue;
-            $checkedKeys[] = $uniqueKey;
+            $uniqueKey = $sampleID . "|" . $sampleNumber . "|" . $testType;
+            if (isset($seen[$uniqueKey])) continue;
+            $seen[$uniqueKey] = true;
 
-            // Verificamos si está en alguna tabla
-            $found = false;
-            foreach ($testDataByTable as $tableData) {
-              foreach ($tableData as $row) {
-                if (
-                  $row['Sample_Name'] === $sampleID &&
-                  $row['Sample_Number'] === $sampleNumber &&
-                  $row['Test_Type'] === $testType
-                ) {
-                  $found = true;
-                  break 2; // salir de ambos foreach
-                }
-              }
-            }
-
-            if (!$found) {
-              if (!isset($typeCount[$testType])) $typeCount[$testType] = 0;
-              $typeCount[$testType]++;
+            if (!isset($indexed_status[$uniqueKey])) {
+              $typeCount[$testType] = ($typeCount[$testType] ?? 0) + 1;
             }
           }
         }
@@ -597,7 +604,7 @@ if (!$session->isUserLoggedIn(true)) {
         } else {
           foreach ($typeCount as $testType => $count) {
             echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            echo '<h5><code>' . $testType . '</code></h5>';
+            echo '<h5><code>' . htmlspecialchars($testType) . '</code></h5>';
             echo '<span class="badge bg-primary rounded-pill">' . $count . '</span>';
             echo '</li>';
           }
