@@ -28,8 +28,8 @@ require_once('../config/load.php');
             <h5 class="card-title">Inventarios</h5>
 
             <div class="list-group">
-              <a href="../pages/inventario_inalterada.php" class="list-group-item list-group-item-action">Inventarios de Muestras Inalteradas</a>
-              <a href="reactivity-fine.php" class="list-group-item list-group-item-action">Inventarios de Muestras a Granel</a>
+              <a href="../pages/inventario_inalterada.php" class="list-group-item list-group-item-action">Inventarios de Muestras</a>
+             
               <a href="reactivity-fine.php" class="list-group-item list-group-item-action">Inventarios de Equipos y Herramientas</a>
             </div>
 

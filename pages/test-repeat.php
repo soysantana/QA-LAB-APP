@@ -57,7 +57,7 @@ require_once('../config/load.php');
                   <td><?php echo date('Y-m-d', strtotime($item['Start_Date'])); ?></td>
                   <td><?php echo htmlspecialchars($item['Comment'] ?? ''); ?></td>
                   <td>
-                    <form method="POST" action="../Database/sample-tracking/repeat/entregar_muestra.php">
+                    <form method="POST" action="../database/sample-tracking/repeat/entregar_muestra.php">
                       <input type="hidden" name="Sample_Name" value="<?php echo htmlspecialchars($item['Sample_Name']); ?>">
                       <input type="hidden" name="Sample_Number" value="<?php echo htmlspecialchars($item['Sample_Number']); ?>">
                       <input type="hidden" name="Test_Type" value="<?php echo htmlspecialchars($item['Test_Type']); ?>">
