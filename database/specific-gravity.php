@@ -32,6 +32,8 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethod']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -82,6 +84,8 @@
             Register_By,
             Test_Type,
             Standard,
+            SMethods,
+            PMethods,
             Technician,
             Test_Start_Date,
             Comments,
@@ -127,6 +131,8 @@
             '$TestType',
             '$Standard',
             '$Technician',
+            '$Splitmethod',
+            '$prepa',
             '$DateTesting',
             '$Comments',
             '$TestMethod',
@@ -195,6 +201,8 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -239,6 +247,8 @@
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "SMethods = '{$Splitmethod}', ";
+        $query .= "PMethods = '{$prepa}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
@@ -458,6 +468,8 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethod']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -503,6 +515,8 @@
             Register_By,
             Test_Type,
             Standard,
+            SMethods,
+            PMethods,
             Technician,
             Test_Start_Date,
             Comments,
@@ -540,6 +554,8 @@
             '$RegisterBy',
             '$TestType',
             '$Standard',
+            '$Splitmethod',
+            '$prepa',
             '$Technician',
             '$DateTesting',
             '$Comments',
@@ -602,6 +618,8 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -644,6 +662,8 @@
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "SMethods = '{$Splitmethod}', ";
+        $query .= "PMethods = '{$prepa}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
@@ -851,6 +871,8 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -899,6 +921,8 @@
             Register_By,
             Test_Type,
             Standard,
+            SMethods,
+            PMethods,
             Technician,
             Test_Start_Date,
             Comments,
@@ -939,6 +963,8 @@
             '$RegisterBy',
             '$TestType',
             '$Standard',
+            '$Splitmethod',
+            '$prepa',
             '$Technician',
             '$DateTesting',
             '$Comments',
@@ -1004,6 +1030,8 @@
         $SampleBy = $db->escape($_POST['SampleBy']);
         // ohters
         $Standard = $db->escape($_POST['Standard']);
+        $Splitmethod = $db->escape($_POST['SMethods']);
+        $prepa = $db->escape($_POST['PMethods']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
@@ -1045,6 +1073,8 @@
         $query .= "Elev = '{$Elev}', ";
         $query .= "Sample_By = '{$SampleBy}', ";
         $query .= "Standard = '{$Standard}', ";
+        $query .= "SMethods = '{$Splitmethod}', ";
+        $query .= "PMethods = '{$prepa}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";

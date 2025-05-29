@@ -30,7 +30,7 @@ page_require_level(3);
             </thead>
             <tbody>
               <?php
-             $fecha_limite = date('Y-m-d', strtotime('-2 month'));
+             $fecha_limite = date('Y-m-d', strtotime('-12 month'));
 
 $query = "SELECT r.*, i.sample_length, i.sample_weight, i.store_in, i.comment
           FROM lab_test_requisition_form r

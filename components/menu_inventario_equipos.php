@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Menu de Inventarios';
+$page_title = 'Menu de Inventario de Equipos';
 require_once('../config/load.php');
 ?>
 
@@ -25,12 +25,12 @@ require_once('../config/load.php');
 
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Inventarios</h5>
+            <h5 class="card-title">Inventarios de Equipos y Herramientas</h5>
 
             <div class="list-group">
-              <a href="../pages/inventario_inalterada.php" class="list-group-item list-group-item-action">Inventarios de Muestras</a>
-             
-              <a href="menu_inventario_equipos.php" class="list-group-item list-group-item-action">Inventarios de Equipos y Herramientas</a>
+              <a href="../pages/categories.php" class="list-group-item list-group-item-action">Categorias</a>
+               <a href="../pages/product.php" class="list-group-item list-group-item-action">Articulos</a>             
+              <a href="../pages/media.php" class="list-group-item list-group-item-action">Imagenes</a>
             </div>
 
           </div>
