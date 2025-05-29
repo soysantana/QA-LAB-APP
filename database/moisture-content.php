@@ -1,8 +1,8 @@
 <!-- Moisture Oven -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['moisture-oven'])) {
+if (isset($_POST['moisture-oven'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -38,6 +38,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "MC_Oven";
@@ -49,7 +50,7 @@
         $Tare = $db->escape($_POST['Tare']);
         $DrySoilWs = $db->escape($_POST['DrySoilWs']);
         $Moisture = $db->escape($_POST['Moisture']);
-        
+
 
         $sql = "INSERT INTO moisture_oven (
             id,
@@ -79,6 +80,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Tare_Name,
             Tare_Plus_Wet_Soil,
             Tare_Plus_Dry_Soil,
@@ -115,6 +117,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$TareName',
             '$WetSoil',
             '$DrySoil',
@@ -135,13 +138,13 @@
         $session->msg("d", $errors);
         redirect('../pages/moisture-oven.php', false);
     }
- }
+}
 ?>
 
 <!-- Update MC Oven -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-mc-oven'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-mc-oven'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -236,12 +239,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/moisture-oven.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat MC Oven -->
 <?php
- if (isset($_POST["repeat-mc-oven"])) {
+if (isset($_POST["repeat-mc-oven"])) {
     $Search =  $_GET["id"];
     $Rcomment = $db->escape($_POST['Rcomment']);
 
@@ -301,12 +304,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed MC Oven -->
 <?php
- if (isset($_POST["reviewed-mc-oven"])) {
+if (isset($_POST["reviewed-mc-oven"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -367,12 +370,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete MC Oven -->
 <?php
- if (isset($_POST['delete_mc_oven']) && isset($_GET['id'])) {
+if (isset($_POST['delete_mc_oven']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('moisture_oven', $delete);
@@ -384,12 +387,12 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>
 
 <!-- Moisture Microwave -->
 <?php
- if (isset($_POST['moisture-microwave'])) {
+if (isset($_POST['moisture-microwave'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -530,13 +533,13 @@
         $session->msg("d", $errors);
         redirect('../pages/moisture-microwave.php', false);
     }
- }
+}
 ?>
 
 <!-- Update Microwave -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-microwave'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-microwave'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -636,12 +639,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/moisture-microwave.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat MC Microwave -->
 <?php
- if (isset($_POST["repeat-mc-microwave"])) {
+if (isset($_POST["repeat-mc-microwave"])) {
     $Search =  $_GET["id"];
 
     if (!empty($Search)) {
@@ -696,12 +699,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed MC Microwave -->
 <?php
- if (isset($_POST["reviewed-mc-microwave"])) {
+if (isset($_POST["reviewed-mc-microwave"])) {
     $Search =  $_GET["id"];
 
     if (!empty($Search)) {
@@ -762,12 +765,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete MC Microwave -->
 <?php
- if (isset($_POST['delete_mc_microwave']) && isset($_GET['id'])) {
+if (isset($_POST['delete_mc_microwave']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('moisture_microwave', $delete);
@@ -779,12 +782,12 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>
 
 <!-- Moisture Constant Mass -->
 <?php
- if (isset($_POST['moisture-constant-mass'])) {
+if (isset($_POST['moisture-constant-mass'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -925,13 +928,13 @@
         $session->msg("d", $errors);
         redirect('../pages/moisture-microwave.php', false);
     }
- }
+}
 ?>
 
 <!-- Update MC Constant Mass -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-mc-constant-mass'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-mc-constant-mass'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -1031,12 +1034,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/moisture-constant-mass.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat MC Constant Mass -->
 <?php
- if (isset($_POST["repeat-mc-constant-mass"])) {
+if (isset($_POST["repeat-mc-constant-mass"])) {
     $Search =  $_GET["id"];
 
     if (!empty($Search)) {
@@ -1091,12 +1094,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed MC Constant Mass -->
 <?php
- if (isset($_POST["reviewed-mc-constant-mass"])) {
+if (isset($_POST["reviewed-mc-constant-mass"])) {
     $Search =  $_GET["id"];
 
     if (!empty($Search)) {
@@ -1157,12 +1160,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete MC Constant Mass -->
 <?php
- if (isset($_POST['delete_mc_constant_mass']) && isset($_GET['id'])) {
+if (isset($_POST['delete_mc_constant_mass']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('moisture_constant_mass', $delete);
@@ -1174,5 +1177,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

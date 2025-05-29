@@ -1,8 +1,8 @@
 <?php
- $user = current_user();
+$user = current_user();
 
- $Search = $_GET['id'];
- if (isset($_POST['update_mc_scale'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update_mc_scale'])) {
     $req_fields = array(
         'SampleName',
         'Technician',
@@ -33,6 +33,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ModifiedBy = $user['name'];
         $ModifiedDate = make_date();
         $TestType = "MC_Scale";
@@ -62,6 +63,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
@@ -82,5 +84,4 @@
         $session->msg("d", $errors);
         redirect('/reviews/moisture-scale.php?id=' . $Search, false);
     }
- }
-?>
+}

@@ -33,6 +33,7 @@ if (isset($_POST['UpdateHydrometer'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $DispersionDevice = $db->escape($_POST['DispersionDevice']);
         $HydrometerType = $db->escape($_POST['HydrometerType']);
@@ -221,6 +222,7 @@ if (isset($_POST['UpdateHydrometer'])) {
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";

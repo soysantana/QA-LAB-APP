@@ -1,8 +1,8 @@
 <!-- UCS -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['unixial-compressive'])) {
+if (isset($_POST['unixial-compressive'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CutterEquip = $db->escape($_POST['CutterEquip']);
         $TestDevice = $db->escape($_POST['TestDevice']);
@@ -67,13 +68,14 @@
             $imagen_tmp_before = $_FILES['SpecimenBefore']['tmp_name'];
             $imagen_data_before = file_get_contents($imagen_tmp_before);
             $imagen_data_before = $db->escape($imagen_data_before);
-        
+
             // Manejar SpecimenAfter
             $imagen_tmp_after = $_FILES['SpecimenAfter']['tmp_name'];
             $imagen_data_after = file_get_contents($imagen_tmp_after);
             $imagen_data_after = $db->escape($imagen_data_after);
-        } else {}
-        
+        } else {
+        }
+
         $sql = "INSERT INTO unixial_compressive (
             id,
             Project_Name,
@@ -97,6 +99,7 @@
             Cutter_Equipment,
             Test_Device,
             Comments,
+            FieldComment,
             Test_Start_Date,
             Registed_Date,
             Standard,
@@ -118,8 +121,8 @@
             SpecimenBefore,
             SpecimenAfter,
             Test_Type";
-            
-            $sql .= ") 
+
+        $sql .= ") 
             
             VALUES (
             '$id',
@@ -144,6 +147,7 @@
             '$CutterEquip',
             '$TestDevice',
             '$Comments',
+            '$FieldComment',
             '$DateTesting',
             '$RegistedDate',
             '$Standard',
@@ -165,8 +169,8 @@
             '$imagen_data_before',
             '$imagen_data_after',
             '$TestType'";
-        
-        $sql .= ")";        
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -179,13 +183,13 @@
         $session->msg("d", $errors);
         redirect('../pages/unixial-compressive.php', false);
     }
- }
+}
 ?>
 
 <!-- Update UCS -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['Update_UCS'])) {
+$Search = $_GET['id'];
+if (isset($_POST['Update_UCS'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -217,6 +221,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CutterEquip = $db->escape($_POST['CutterEquip']);
         $TestDevice = $db->escape($_POST['TestDevice']);
@@ -248,12 +253,13 @@
             $imagen_tmp_before = $_FILES['SpecimenBefore']['tmp_name'];
             $imagen_data_before = file_get_contents($imagen_tmp_before);
             $imagen_data_before = $db->escape($imagen_data_before);
-        
+
             // Manejar SpecimenAfter
             $imagen_tmp_after = $_FILES['SpecimenAfter']['tmp_name'];
             $imagen_data_after = file_get_contents($imagen_tmp_after);
             $imagen_data_after = $db->escape($imagen_data_after);
-        } else {}
+        } else {
+        }
 
         $query = "UPDATE unixial_compressive SET ";
         $query .= "Project_Name = '{$ProjectName}',";
@@ -277,6 +283,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
@@ -314,12 +321,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/unixial-compressive.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat UCS -->
 <?php
- if (isset($_POST["Repeat_UCS"])) {
+if (isset($_POST["Repeat_UCS"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -377,12 +384,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed UCS -->
 <?php
- if (isset($_POST["Reviewed_UCS"])) {
+if (isset($_POST["Reviewed_UCS"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -443,11 +450,11 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <?php
- if (isset($_POST['delete_ucs']) && isset($_GET['id'])) {
+if (isset($_POST['delete_ucs']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('unixial_compressive', $delete);
@@ -459,5 +466,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

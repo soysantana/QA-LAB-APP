@@ -35,6 +35,7 @@ if (isset($_POST['SaveReactivity'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         if ($method === "FM13-007") {
@@ -104,7 +105,8 @@ if (isset($_POST['SaveReactivity'])) {
             AcidReactivityResult,
             Technician,
             Test_Start_Date,
-            Comments";
+            Comments,
+            FieldComment";
 
         $sql .= ") VALUES (
             '$id',
@@ -140,7 +142,8 @@ if (isset($_POST['SaveReactivity'])) {
             '$AcidResult',
             '$Technician',
             '$DateTesting',
-            '$Comments'";
+            '$Comments',
+            '$FieldComment'";
 
         $sql .= ")";
 

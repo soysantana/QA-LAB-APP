@@ -33,6 +33,7 @@ if (isset($_POST['update_gs_lpf'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -106,6 +107,7 @@ if (isset($_POST['update_gs_lpf'])) {
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";

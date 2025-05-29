@@ -33,6 +33,7 @@ if (isset($_POST['SaveHydrometer'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $DispersionDevice = $db->escape($_POST['DispersionDevice']);
         $HydrometerType = $db->escape($_POST['HydrometerType']);
@@ -221,6 +222,7 @@ if (isset($_POST['SaveHydrometer'])) {
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Preparation_Method,
             DispersionDevice,
             HydrometerType,
@@ -322,6 +324,7 @@ if (isset($_POST['SaveHydrometer'])) {
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$PMethods',
             '$DispersionDevice',
             '$HydrometerType',

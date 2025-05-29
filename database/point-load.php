@@ -1,8 +1,8 @@
 <!-- Point Load -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['point-load'])) {
+if (isset($_POST['point-load'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CuttEquip = $db->escape($_POST['CuttEquip']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -67,13 +68,14 @@
             $imagen_tmp_before = $_FILES['SpecimenBefore']['tmp_name'];
             $imagen_data_before = file_get_contents($imagen_tmp_before);
             $imagen_data_before = $db->escape($imagen_data_before);
-        
+
             // Manejar SpecimenAfter
             $imagen_tmp_after = $_FILES['SpecimenAfter']['tmp_name'];
             $imagen_data_after = file_get_contents($imagen_tmp_after);
             $imagen_data_after = $db->escape($imagen_data_after);
-        } else {}
-        
+        } else {
+        }
+
         $sql = "INSERT INTO point_load (
             id,
             Project_Name,
@@ -100,6 +102,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Extraction_Equipment,
             Cutter_Equipment,
             Methods,
@@ -122,8 +125,8 @@
             Classification,
             SpecimenBefore,
             SpecimenAfter";
-            
-            $sql .= ") 
+
+        $sql .= ") 
             
             VALUES (
             '$id',
@@ -151,6 +154,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$ExEquip',
             '$CuttEquip',
             '$TestMethod',
@@ -173,8 +177,8 @@
             '$Classification',
             '$imagen_data_before',
             '$imagen_data_after'";
-        
-        $sql .= ")";        
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -187,13 +191,13 @@
         $session->msg("d", $errors);
         redirect('../pages/point-load.php', false);
     }
- }
+}
 ?>
 
 <!-- Update Point Load -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['Update_PLT'])) {
+$Search = $_GET['id'];
+if (isset($_POST['Update_PLT'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -225,6 +229,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CuttEquip = $db->escape($_POST['CuttEquip']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -256,12 +261,13 @@
             $imagen_tmp_before = $_FILES['SpecimenBefore']['tmp_name'];
             $imagen_data_before = file_get_contents($imagen_tmp_before);
             $imagen_data_before = $db->escape($imagen_data_before);
-        
+
             // Manejar SpecimenAfter
             $imagen_tmp_after = $_FILES['SpecimenAfter']['tmp_name'];
             $imagen_data_after = file_get_contents($imagen_tmp_after);
             $imagen_data_after = $db->escape($imagen_data_after);
-        } else {}
+        } else {
+        }
 
         $query = "UPDATE point_load SET ";
         $query .= "Project_Name = '{$ProjectName}',";
@@ -285,6 +291,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Methods = '{$TestMethod}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
@@ -326,12 +333,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/point-load.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat Point Load -->
 <?php
- if (isset($_POST["Repeat_PLT"])) {
+if (isset($_POST["Repeat_PLT"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -389,12 +396,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed PLT -->
 <?php
- if (isset($_POST["Reviewed_PLT"])) {
+if (isset($_POST["Reviewed_PLT"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -455,12 +462,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete PLT -->
 <?php
- if (isset($_POST['delete_plt']) && isset($_GET['id'])) {
+if (isset($_POST['delete_plt']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('point_load', $delete);
@@ -472,5 +479,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

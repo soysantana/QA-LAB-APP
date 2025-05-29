@@ -1,8 +1,8 @@
 <!-- LAA Coarse Filter -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['LAA_Coarse_Filter'])) {
+if (isset($_POST['LAA_Coarse_Filter'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $TestMethod = $db->escape($_POST['TestMethod']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
@@ -48,7 +49,7 @@
         $FinalWeig = $db->escape($_POST['FinalWeig']);
         $WeigLoss = $db->escape($_POST['WeigLoss']);
         $WeigLossPorce = $db->escape($_POST['WeigLossPorce']);
-        
+
         $sql = "INSERT INTO los_angeles_abrasion_coarse_filter (
             id,
             Project_Name,
@@ -75,6 +76,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Methods,
             Grading,
             Weight_Spheres,
@@ -83,8 +85,8 @@
             Final_Weight,
             Weight_Loss,
             Weight_Loss_Porce";
-            
-            $sql .= ") 
+
+        $sql .= ") 
             
             VALUES (
             '$id',
@@ -112,6 +114,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$TestMethod',
             '$SelectGrading',
             '$WeigSpheres',
@@ -120,8 +123,8 @@
             '$FinalWeig',
             '$WeigLoss',
             '$WeigLossPorce'";
-        
-        $sql .= ")";        
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -134,13 +137,13 @@
         $session->msg("d", $errors);
         redirect('../pages/LAA-Small.php', false);
     }
- }
+}
 ?>
 
 <!-- Update LAA Coarse Filter -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['Update_LAA_Coarse_Filter'])) {
+$Search = $_GET['id'];
+if (isset($_POST['Update_LAA_Coarse_Filter'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -233,12 +236,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/LAA-Small.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat LAA Coarse Filter -->
 <?php
- if (isset($_POST["Repeat_LAA_Coarse_Filter"])) {
+if (isset($_POST["Repeat_LAA_Coarse_Filter"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -296,12 +299,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed LAA Coarse Filter -->
 <?php
- if (isset($_POST["Reviewed_LAA_Coarse_Filter"])) {
+if (isset($_POST["Reviewed_LAA_Coarse_Filter"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -362,12 +365,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete LAA Coarse Filter -->
 <?php
- if (isset($_POST['delete_LAA_Coarse_Filter']) && isset($_GET['id'])) {
+if (isset($_POST['delete_LAA_Coarse_Filter']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('los_angeles_abrasion_coarse_filter', $delete);
@@ -379,15 +382,15 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>
 
 <!-- LAA Coarse Aggregate -->
 <?php
- require_once('../config/load.php');
- $user = current_user();
+require_once('../config/load.php');
+$user = current_user();
 
- if (isset($_POST['LAA_Coarse_Aggregate'])) {
+if (isset($_POST['LAA_Coarse_Aggregate'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -431,7 +434,7 @@
         $FinalWeig = $db->escape($_POST['FinalWeig']);
         $WeigLoss = $db->escape($_POST['WeigLoss']);
         $WeigLossPorce = $db->escape($_POST['WeigLossPorce']);
-        
+
         $sql = "INSERT INTO los_angeles_abrasion_coarse_aggregate (
             id,
             Project_Name,
@@ -464,8 +467,8 @@
             Final_Weight,
             Weight_Loss,
             Weight_Loss_Porce";
-            
-            $sql .= ")
+
+        $sql .= ")
             
             VALUES (
             '$id',
@@ -499,7 +502,7 @@
             '$FinalWeig',
             '$WeigLoss',
             '$WeigLossPorce'";
-        
+
         $sql .= ")";
 
         if ($db->query($sql)) {
@@ -513,13 +516,13 @@
         $session->msg("d", $errors);
         redirect('../pages/LAA-Large.php', false);
     }
- }
+}
 ?>
 
 <!-- Update LAA Coarse Aggregate -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['Update_LAA_Coarse_Aggregate'])) {
+$Search = $_GET['id'];
+if (isset($_POST['Update_LAA_Coarse_Aggregate'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -608,12 +611,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/LAA-Large.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat LAA Coarse Aggregate -->
 <?php
- if (isset($_POST["Repeat_LAA_Coarse_Aggregate"])) {
+if (isset($_POST["Repeat_LAA_Coarse_Aggregate"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -671,12 +674,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed LAA Coarse Aggregate -->
 <?php
- if (isset($_POST["Reviewed_LAA_Coarse_Aggregate"])) {
+if (isset($_POST["Reviewed_LAA_Coarse_Aggregate"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -737,12 +740,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete LAA Coarse Aggregate -->
 <?php
- if (isset($_POST['delete_LAA_Coarse_Aggregate']) && isset($_GET['id'])) {
+if (isset($_POST['delete_LAA_Coarse_Aggregate']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('los_angeles_abrasion_coarse_aggregate', $delete);
@@ -754,5 +757,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

@@ -34,6 +34,7 @@ if (isset($_POST['gs_utf'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -119,6 +120,7 @@ if (isset($_POST['gs_utf'])) {
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Preparation_Method,
             Split_Method,
             Methods,
@@ -192,6 +194,7 @@ if (isset($_POST['gs_utf'])) {
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$PMethods',
             '$SMethods',
             '$TestMethod',

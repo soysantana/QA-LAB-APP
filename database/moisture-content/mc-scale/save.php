@@ -1,7 +1,7 @@
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['save_mc_scale'])) {
+if (isset($_POST['save_mc_scale'])) {
     $req_fields = array(
         'SampleName',
         'Technician',
@@ -34,13 +34,14 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "MC_Scale";
 
         $TareName = $db->escape($_POST['TareName']);
         $Moisture = $db->escape($_POST['Moisture']);
-        
+
 
         $sql = "INSERT INTO moisture_scale (
             id,
@@ -68,6 +69,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Tare_Name,
             Moisture_Content_Porce
         )
@@ -97,6 +99,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$TareName',
             '$Moisture'
         )";
@@ -112,5 +115,4 @@
         $session->msg("d", $errors);
         redirect('/pages/moisture-scale.php', false);
     }
- }
-?>
+}

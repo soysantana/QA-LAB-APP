@@ -1,8 +1,8 @@
 <!-- Atterberg Limit -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['atterberg-limit'])) {
+if (isset($_POST['atterberg-limit'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $NatMc = $db->escape($_POST['NatMc']);
@@ -101,7 +102,7 @@
         $PlotLimit64 = str_replace('data:image/png;base64,', '', $PlotLimit);
         $PlotPlasticity64 = str_replace('data:image/png;base64,', '', $PlotPlasticity);
         $Rsquared = $db->escape($_POST['Rsquared']);
-        
+
 
         $sql = "INSERT INTO atterberg_limit (
             id,
@@ -129,6 +130,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Preparation_Method,
             Split_Method,
             Nat_Mc,
@@ -213,6 +215,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$PMethods',
             '$SMethods',
             '$NatMc',
@@ -283,13 +286,13 @@
         $session->msg("d", $errors);
         redirect('../pages/atterberg-limit.php', false);
     }
- }
+}
 ?>
 
 <!-- Update -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-atterberg-limit'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-atterberg-limit'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -321,6 +324,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $NatMc = $db->escape($_POST['NatMc']);
@@ -409,6 +413,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Nat_Mc = '{$NatMc}', ";
@@ -488,12 +493,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/atterberg-limit.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat -->
 <?php
- if (isset($_POST["repeat-atterberg-limit"])) {
+if (isset($_POST["repeat-atterberg-limit"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -551,12 +556,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed -->
 <?php
- if (isset($_POST["reviewed-atterberg-limit"])) {
+if (isset($_POST["reviewed-atterberg-limit"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -617,12 +622,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete -->
 <?php
- if (isset($_POST['delete_al']) && isset($_GET['id'])) {
+if (isset($_POST['delete_al']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('atterberg_limit', $delete);
@@ -634,5 +639,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

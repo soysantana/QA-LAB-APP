@@ -35,6 +35,7 @@ if (isset($_POST['grain-size-general'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -108,6 +109,7 @@ if (isset($_POST['grain-size-general'])) {
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Preparation_Method,
             Split_Method,
             Methods,
@@ -170,6 +172,7 @@ if (isset($_POST['grain-size-general'])) {
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$PMethods',
             '$SMethods',
             '$TestMethod',
@@ -257,6 +260,7 @@ if (isset($_POST['update-gs-general'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -329,6 +333,7 @@ if (isset($_POST['update-gs-general'])) {
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";

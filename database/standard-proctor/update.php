@@ -1,8 +1,8 @@
 <?php
- $user = current_user();
+$user = current_user();
 
- $Search = $_GET['id'];
- if (isset($_POST['update_sp'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update_sp'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -34,6 +34,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -102,6 +103,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
@@ -137,5 +139,4 @@
         $session->msg("d", $errors);
         redirect('/reviews/standard-proctor.php?id=' . $Search, false);
     }
- }
-?>
+}

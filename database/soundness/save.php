@@ -34,6 +34,7 @@ if (isset($_POST['Soundness'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "SND";
@@ -138,6 +139,7 @@ if (isset($_POST['Soundness'])) {
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             WtDrySoil,
             WtWashed,
             WtRetPan,
@@ -216,6 +218,7 @@ if (isset($_POST['Soundness'])) {
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$WtDrySoil',
             '$WtWashed',
             '$WtRetPan',

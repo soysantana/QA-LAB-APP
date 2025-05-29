@@ -35,6 +35,7 @@ if (isset($_POST['UpdateReactivity'])) {
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ModifiedDate = make_date();
         $ModifiedBy = $user['name'];
         if ($method === "FM13-007") {
@@ -103,6 +104,7 @@ if (isset($_POST['UpdateReactivity'])) {
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}' ";

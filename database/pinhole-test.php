@@ -1,8 +1,8 @@
 <!-- PH -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['Pinhole'])) {
+if (isset($_POST['Pinhole'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $TestMethod = $db->escape($_POST['TestMethod']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
@@ -88,7 +89,7 @@
             ${"From_Top_" . $i} = $db->escape($_POST["From_Top_$i"]);
             ${"Observation_" . $i} = $db->escape($_POST["Observation_$i"]);
         }
-        
+
         $sql = "INSERT INTO pinhole_test (
             id,
             Project_Name,
@@ -115,6 +116,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Methods,
             MC_Before_Test,
             Specific_Gravity,
@@ -149,12 +151,12 @@
             Hole_Size_After,
             Dispersive_Classification,
             Graph";
-        
+
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 22; $i++) {
             $sql .= ", ML_$i, Seg_$i, Flow_Rate_$i, From_Side_$i, From_Top_$i, Observation_$i";
         }
-        
+
         $sql .= ") VALUES (
             '$id',
             '$ProjectName',
@@ -181,6 +183,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$TestMethod',
             '$mcBefore',
             '$sgEM',
@@ -215,13 +218,13 @@
             '$Hole_Size_After',
             '$Dispersive_Classification',
             '$Graph64'";
-        
+
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 22; $i++) {
             $sql .= ", '${"ML_$i"}', '${"Seg_$i"}', '${"Flow_Rate_$i"}', '${"From_Side_$i"}', '${"From_Top_$i"}', '${"Observation_$i"}'";
         }
-        
-        $sql .= ")";        
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -234,13 +237,13 @@
         $session->msg("d", $errors);
         redirect('../pages/pinhole-test.php', false);
     }
- }
+}
 ?>
 
 <!-- Update PH -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['Update_PH'])) {
+$Search = $_GET['id'];
+if (isset($_POST['Update_PH'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -272,6 +275,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $TestMethod = $db->escape($_POST['TestMethod']);
         $ModifiedDate = make_date();
         $ModifiedBy = $user['name'];
@@ -351,6 +355,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Methods = '{$TestMethod}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
@@ -408,12 +413,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/pinhole-test.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat PH -->
 <?php
- if (isset($_POST["Repeat_PH"])) {
+if (isset($_POST["Repeat_PH"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -471,12 +476,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed PH -->
 <?php
- if (isset($_POST["Reviewed_PH"])) {
+if (isset($_POST["Reviewed_PH"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -537,12 +542,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete PH -->
 <?php
- if (isset($_POST['delete_ph']) && isset($_GET['id'])) {
+if (isset($_POST['delete_ph']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('pinhole_test', $delete);
@@ -554,5 +559,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

@@ -1,8 +1,8 @@
 <!-- Specific Gravity -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['specific-gravity'])) {
+if (isset($_POST['specific-gravity'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $TestMethod = $db->escape($_POST['TestMethod']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
@@ -58,7 +59,7 @@
         $TempCoefficent = $db->escape($_POST['TempCoefficent']);
         $SgSolid = $db->escape($_POST['SgSolid']);
 
-        
+
         $sql = "INSERT INTO specific_gravity (
             id,
             Project_Name,
@@ -85,6 +86,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Methods,
             Pycnometer_Used,
             Pycnometer_Number,
@@ -129,6 +131,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$TestMethod',
             '$PycnUsed',
             '$PycnNumber',
@@ -146,8 +149,8 @@
             '$SgSoilTemp',
             '$TempCoefficent',
             '$SgSolid'";
-        
-        $sql .= ")";        
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -160,13 +163,13 @@
         $session->msg("d", $errors);
         redirect('../pages/specific-gravity.php', false);
     }
- }
+}
 ?>
 
 <!-- Update SG -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-sg'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-sg'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -198,6 +201,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $TestMethod = $db->escape($_POST['TestMethod']);
         $ModifiedDate = make_date();
         $ModifiedBy = $user['name'];
@@ -242,6 +246,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Methods = '{$TestMethod}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
@@ -277,12 +282,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/specific-gravity.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat SG -->
 <?php
- if (isset($_POST["repeat-sg"])) {
+if (isset($_POST["repeat-sg"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -340,12 +345,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed SG -->
 <?php
- if (isset($_POST["reviewed-sg"])) {
+if (isset($_POST["reviewed-sg"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -406,12 +411,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete SG -->
 <?php
- if (isset($_POST['delete_sg']) && isset($_GET['id'])) {
+if (isset($_POST['delete_sg']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('specific_gravity', $delete);
@@ -423,12 +428,12 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>
 
 <!-- Specific Gravity Coarse -->
 <?php
- if (isset($_POST['specific-gravity-coarse'])) {
+if (isset($_POST['specific-gravity-coarse'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -479,7 +484,7 @@
         }
 
 
-        
+
         $sql = "INSERT INTO specific_gravity_coarse (
             id,
             Project_Name,
@@ -511,11 +516,11 @@
             Specific_Gravity_SSD,
             Apparent_Specific_Gravity,
             Percent_Absortion";
-            
-            // Add the dynamically generated fields to the query
-            for ($i = 1; $i <= 10; $i++) {
-                $sql .= ", Oven_Dry_$i, Surface_Dry_$i, Samp_Immers_$i";
-            }
+
+        // Add the dynamically generated fields to the query
+        for ($i = 1; $i <= 10; $i++) {
+            $sql .= ", Oven_Dry_$i, Surface_Dry_$i, Samp_Immers_$i";
+        }
 
         $sql .= ") VALUES (
             '$id',
@@ -549,12 +554,12 @@
             '$ApparentSpecificGravity',
             '$PercentAbsortion'";
 
-            // Add the dynamically generated values to the query
-            for ($i = 1; $i <= 10; $i++) {
-                $sql .= ", '${"OvenDry$i"}', '${"SurfaceDry$i"}', '${"SampImmers$i"}'";
-            }
-        
-        $sql .= ")";        
+        // Add the dynamically generated values to the query
+        for ($i = 1; $i <= 10; $i++) {
+            $sql .= ", '${"OvenDry$i"}', '${"SurfaceDry$i"}', '${"SampImmers$i"}'";
+        }
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -567,13 +572,13 @@
         $session->msg("d", $errors);
         redirect('../pages/specific-gravity-coarse-aggregates.php', false);
     }
- }
+}
 ?>
 
 <!-- Update SG Coarse -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-sg-coarse'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-sg-coarse'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -670,12 +675,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/specific-gravity-coarse-aggregates.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat SG Coarse -->
 <?php
- if (isset($_POST["repeat-sg-coarse"])) {
+if (isset($_POST["repeat-sg-coarse"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -733,12 +738,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed SG Coarse -->
 <?php
- if (isset($_POST["reviewed-sg-coarse"])) {
+if (isset($_POST["reviewed-sg-coarse"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -799,12 +804,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete SG Coarse -->
 <?php
- if (isset($_POST['delete_sg_coarse']) && isset($_GET['id'])) {
+if (isset($_POST['delete_sg_coarse']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('specific_gravity_coarse', $delete);
@@ -816,12 +821,12 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>
 
 <!-- Specific Gravity Fine -->
 <?php
- if (isset($_POST['specific-gravity-fine'])) {
+if (isset($_POST['specific-gravity-fine'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -875,7 +880,7 @@
         $CalibrationPycno = $db->escape($_POST['CalibrationPycno']);
 
 
-        
+
         $sql = "INSERT INTO specific_gravity_fine (
             id,
             Project_Name,
@@ -969,13 +974,13 @@
         $session->msg("d", $errors);
         redirect('../pages/specific-gravity-fine-aggregate.php', false);
     }
- }
+}
 ?>
 
 <!-- Update SG Fine -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-sg-fine'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-sg-fine'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -1079,12 +1084,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/specific-gravity-fine-aggregate.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat SG Fine -->
 <?php
- if (isset($_POST["repeat-sg-fine"])) {
+if (isset($_POST["repeat-sg-fine"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -1142,12 +1147,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed SG Fine -->
 <?php
- if (isset($_POST["reviewed-sg-fine"])) {
+if (isset($_POST["reviewed-sg-fine"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -1208,12 +1213,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete SG Fine -->
 <?php
- if (isset($_POST['delete_sg_fine']) && isset($_GET['id'])) {
+if (isset($_POST['delete_sg_fine']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('specific_gravity_fine', $delete);
@@ -1225,5 +1230,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>

@@ -1,8 +1,8 @@
 <!-- Standard Proctor -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['standard-proctor'])) {
+if (isset($_POST['standard-proctor'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -77,7 +78,7 @@
             ${"MoisturePorce" . $i} = $db->escape($_POST["MoisturePorce$i"]);
             ${"MCcorrected" . $i} = $db->escape($_POST["MCcorrected$i"]);
         }
-        
+
         $sql = "INSERT INTO standard_proctor (
             id,
             Project_Name,
@@ -104,6 +105,7 @@
             Technician,
             Test_Start_Date,
             Comments,
+            FieldComment,
             Preparation_Method,
             Split_Method,
             Methods,
@@ -121,7 +123,7 @@
             Corrected_Dry_Unit_Weigt,
             Corrected_Water_Content_Finer,
             Graph";
-        
+
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 6; $i++) {
             $sql .= ", WetSoilMod$i, WtMold$i, WtSoil$i, VolMold$i,
@@ -129,7 +131,7 @@
             WetSoilTare$i, WetDryTare$i, WtWater$i, Tare$i, DrySoil$i, MoisturePorce$i,
             MCcorrected$i";
         }
-        
+
         $sql .= ") VALUES (
             '$id',
             '$ProjectName',
@@ -156,6 +158,7 @@
             '$Technician',
             '$DateTesting',
             '$Comments',
+            '$FieldComment',
             '$PMethods',
             '$SMethods',
             '$TestMethod',
@@ -173,15 +176,15 @@
             '$CorrectedDryUnitWeigt',
             '$CorrectedWaterContentFiner',
             '$Graph64'";
-        
+
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 6; $i++) {
             $sql .= ", '${"WetSoilMod$i"}', '${"WtMold$i"}', '${"WtSoil$i"}', '${"VolMold$i"}',
             '${"WetDensity$i"}', '${"DryDensity$i"}', '${"DensyCorrected$i"}', '${"Container$i"}', '${"WetSoilTare$i"}',
             '${"WetDryTare$i"}', '${"WtWater$i"}', '${"Tare$i"}', '${"DrySoil$i"}', '${"MoisturePorce$i"}', '${"MCcorrected$i"}'";
         }
-        
-        $sql .= ")";      
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -194,13 +197,13 @@
         $session->msg("d", $errors);
         redirect('../pages/standard-proctor.php', false);
     }
- }
+}
 ?>
 
 <!-- Update -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['update-sp'])) {
+$Search = $_GET['id'];
+if (isset($_POST['update-sp'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -232,6 +235,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
         $SMethods = $db->escape($_POST['SMethods']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -300,6 +304,7 @@
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
         $query .= "Split_Method = '{$SMethods}', ";
         $query .= "Methods = '{$TestMethod}', ";
@@ -335,12 +340,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/standard-proctor.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat -->
 <?php
- if (isset($_POST["repeat-sp"])) {
+if (isset($_POST["repeat-sp"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -395,12 +400,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed -->
 <?php
- if (isset($_POST["reviewed-sp"])) {
+if (isset($_POST["reviewed-sp"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -458,5 +463,5 @@
         }
     } else {
     }
- }
+}
 ?>

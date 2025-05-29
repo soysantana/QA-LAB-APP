@@ -1,8 +1,8 @@
 <!-- Brazilian -->
 <?php
- $user = current_user();
+$user = current_user();
 
- if (isset($_POST['brazilian'])) {
+if (isset($_POST['brazilian'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -35,6 +35,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CutterEquip = $db->escape($_POST['CutterEquip']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -48,12 +49,13 @@
             $imagen_tmp_before = $_FILES['SpecimenBefore']['tmp_name'];
             $imagen_data_before = file_get_contents($imagen_tmp_before);
             $imagen_data_before = $db->escape($imagen_data_before);
-        
+
             // Manejar SpecimenAfter
             $imagen_tmp_after = $_FILES['SpecimenAfter']['tmp_name'];
             $imagen_data_after = file_get_contents($imagen_tmp_after);
             $imagen_data_after = $db->escape($imagen_data_after);
-        } else {}
+        } else {
+        }
 
         $DcmNoAvge = $db->escape($_POST['DcmNoAvge']);
         $TcmNoAvge = $db->escape($_POST['TcmNoAvge']);
@@ -74,7 +76,7 @@
             ${"TensStrNo" . $i} = $db->escape($_POST["TensStrNo$i"]);
             ${"FailureNo" . $i} = $db->escape($_POST["FailureNo$i"]);
         }
-        
+
         $sql = "INSERT INTO brazilian (
             id,
             Project_Name,
@@ -98,6 +100,7 @@
             Cutter_Equipment,
             Methods,
             Comments,
+            FieldComment,
             Test_Start_Date,
             Registed_Date,
             Standard,
@@ -115,12 +118,12 @@
             SpecimenBefore,
             SpecimenAfter";
 
-            // Add the dynamically generated fields to the query
-            for ($i = 1; $i <= 10; $i++) {
-                $sql .= ", DcmNo$i, TcmNo$i, ReltdNo$i, LoandNo$i, TimeFaiNo$i, MaxKnNo$i, TensStrNo$i, FailureNo$i";
-            }
-            
-            $sql .= ") 
+        // Add the dynamically generated fields to the query
+        for ($i = 1; $i <= 10; $i++) {
+            $sql .= ", DcmNo$i, TcmNo$i, ReltdNo$i, LoandNo$i, TimeFaiNo$i, MaxKnNo$i, TensStrNo$i, FailureNo$i";
+        }
+
+        $sql .= ") 
             
             VALUES (
             '$id',
@@ -145,6 +148,7 @@
             '$CutterEquip',
             '$TestMethod',
             '$Comments',
+            '$FieldComment',
             '$DateTesting',
             '$RegistedDate',
             '$Standard',
@@ -162,12 +166,12 @@
             '$imagen_data_before',
             '$imagen_data_after'";
 
-            // Add the dynamically generated values to the query
-            for ($i = 1; $i <= 10; $i++) {
-                $sql .= ", '${"DcmNo$i"}', '${"TcmNo$i"}', '${"ReltdNo$i"}', '${"LoandNo$i"}', '${"TimeFaiNo$i"}', '${"MaxKnNo$i"}', '${"TensStrNo$i"}', '${"FailureNo$i"}'";
-            }
-        
-        $sql .= ")";        
+        // Add the dynamically generated values to the query
+        for ($i = 1; $i <= 10; $i++) {
+            $sql .= ", '${"DcmNo$i"}', '${"TcmNo$i"}', '${"ReltdNo$i"}', '${"LoandNo$i"}', '${"TimeFaiNo$i"}', '${"MaxKnNo$i"}', '${"TensStrNo$i"}', '${"FailureNo$i"}'";
+        }
+
+        $sql .= ")";
 
         if ($db->query($sql)) {
             $session->msg('s', "Essay added successfully.");
@@ -180,13 +184,13 @@
         $session->msg("d", $errors);
         redirect('../pages/brazilian.php', false);
     }
- }
+}
 ?>
 
 <!-- Update Brazilian -->
 <?php
- $Search = $_GET['id'];
- if (isset($_POST['Update_Brazilian'])) {
+$Search = $_GET['id'];
+if (isset($_POST['Update_Brazilian'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -218,6 +222,7 @@
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
+        $FieldComment = $db->escape($_POST['FieldComment']);
         $ExEquip = $db->escape($_POST['ExEquip']);
         $CutterEquip = $db->escape($_POST['CutterEquip']);
         $TestMethod = $db->escape($_POST['TestMethod']);
@@ -230,12 +235,13 @@
             $imagen_tmp_before = $_FILES['SpecimenBefore']['tmp_name'];
             $imagen_data_before = file_get_contents($imagen_tmp_before);
             $imagen_data_before = $db->escape($imagen_data_before);
-        
+
             // Manejar SpecimenAfter
             $imagen_tmp_after = $_FILES['SpecimenAfter']['tmp_name'];
             $imagen_data_after = file_get_contents($imagen_tmp_after);
             $imagen_data_after = $db->escape($imagen_data_after);
-        } else {}
+        } else {
+        }
 
         $DcmNoAvge = $db->escape($_POST['DcmNoAvge']);
         $TcmNoAvge = $db->escape($_POST['TcmNoAvge']);
@@ -286,10 +292,10 @@
         $query .= "Standard = '{$Standard}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
         $query .= "Comments = '{$Comments}', ";
+        $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Test_Type = '{$TestType}', ";
-
         $query .= "DcmNoAvge = '{$DcmNoAvge}', ";
         $query .= "TcmNoAvge = '{$TcmNoAvge}', ";
         $query .= "ReltdNoAvge = '{$ReltdNoAvge}', ";
@@ -315,12 +321,12 @@
         $session->msg("d", $errors);
         redirect('../reviews/brazilian.php?id=' . $Search, false);
     }
- }
+}
 ?>
 
 <!-- Repeat Brazilian -->
 <?php
- if (isset($_POST["Repeat_Brazilian"])) {
+if (isset($_POST["Repeat_Brazilian"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -378,12 +384,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Reviewed Brazilian -->
 <?php
- if (isset($_POST["Reviewed_Brazilian"])) {
+if (isset($_POST["Reviewed_Brazilian"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -444,12 +450,12 @@
         }
     } else {
     }
- }
+}
 ?>
 
 <!-- Delete -->
 <?php
- if (isset($_POST['delete_bts']) && isset($_GET['id'])) {
+if (isset($_POST['delete_bts']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('brazilian', $delete);
@@ -461,5 +467,5 @@
     }
 
     redirect('/pages/essay.php');
- }
+}
 ?>
