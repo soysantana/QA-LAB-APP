@@ -278,9 +278,9 @@ $pdf->Cell(22, 7, $Search['Cu'], 0, 1, 'C');
 
 //Coarse Grained Classification using the USCS
 $pdf->SetXY(27, 253);
-$pdf->Cell(78, 6, "", 0, 1, 'C');
+$pdf->Cell(78, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
 $pdf->SetXY(27, 260);
-$pdf->Cell(78, 6, "", 0, 1, 'C');
+$pdf->Cell(78, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Comparison Information
 $pdf->SetFont('Arial', '', 10);
@@ -318,13 +318,13 @@ $pdf->Cell(53, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(28, 345);
 $pdf->MultiCell(105, 4, utf8_decode($Search['Comments']), 0, 'L');
-/*
+
 // GRAFICAS
 $imageBase64 = $Search['Graph'];
 $imageData = base64_decode($imageBase64);
 $tempFile = tempnam(sys_get_temp_dir(), 'image');
 file_put_contents($tempFile, $imageData);
-$pdf->Image($tempFile, 30, 320, 230, 170, 'PNG');
+$pdf->Image($tempFile, 140, 230, 180, 90, 'PNG');
 unlink($tempFile);
-*/
+
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');

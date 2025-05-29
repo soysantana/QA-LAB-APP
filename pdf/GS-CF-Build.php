@@ -7,7 +7,8 @@ $Search = find_by_id('grain_size_coarse', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
+class PDF extends Fpdi
+{
     function Header() {}
 
     function Footer() {}
@@ -332,9 +333,9 @@ $pdf->Cell(43, 4, $Search['Cu'], 0, 1, 'C');
 
 //Coarse Grained Classification using the USCS
 $pdf->SetXY(260, 357);
-$pdf->Cell(152, 6, "", 0, 1, 'C');
+$pdf->Cell(152, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
 $pdf->SetXY(339, 383);
-$pdf->Cell(73, 6, "", 0, 1, 'C');
+$pdf->Cell(73, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 $pdf->SetXY(52, 532);
 $pdf->MultiCell(145, 4, $Search['Comments'], 0, 'L');
@@ -348,4 +349,3 @@ $pdf->Image($tempFile, 30, 320, 230, 170, 'PNG');
 unlink($tempFile);
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
-?>

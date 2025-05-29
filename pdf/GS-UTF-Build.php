@@ -302,9 +302,9 @@ $pdf->Cell(43, 4, $Search['Cu'], 0, 1, 'C');
 
 //Coarse Grained Classification using the USCS
 $pdf->SetXY(285, 360);
-$pdf->Cell(152, 6, '', 0, 1, 'C');
+$pdf->Cell(152, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
 $pdf->SetXY(285, 365);
-$pdf->Cell(152, 6, '', 0, 1, 'C');
+$pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Grain Size Test Results
 $pdf->SetXY(367, 383);

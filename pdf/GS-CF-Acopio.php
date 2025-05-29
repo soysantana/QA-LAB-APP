@@ -23,6 +23,32 @@ $pdf->setSourceFile('template/PV-F-83828_Laboratory sieve Grain size Coarse Aggr
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
+$pass1p5 = $Search['Pass7'];
+$pass1 = $Search['Pass8'];
+$pass3p4 = $Search['Pass9'];
+$pass3p8 = $Search['Pass11'];
+$passn4 = $Search['Pass12'];
+$passn10 = $Search['Pass13'];
+$passn20 = $Search['Pass15'];
+$passn200 = $Search['Pass18'];
+
+// Condición para "Acepted"
+if (
+    $pass1p5 == 100 &&
+    $pass1 >= 87 && $pass1 <= 100 &&
+    $pass3p4 >= 80 && $pass3p4 <= 100 &&
+    $pass3p8 >= 50 && $pass3p8 <= 100 &&
+    $passn4 >= 15 && $passn4 <= 60 &&
+    $passn10 >= 2 && $passn10 <= 15 &&
+    $passn20 >= 0 && $passn20 <= 7 &&
+    $passn200 >= 0 && $passn200 <= 2
+) {
+    $resultado = 'Acepted';
+} else {
+    $resultado = 'Rejected';
+}
+
+
 $pdf->SetFont('Arial', 'B', 10);
 
 //Information for the essay
@@ -343,13 +369,13 @@ $pdf->Cell(43, 3, $Search['Cu'], 0, 1, 'C');
 
 //Coarse Grained Classification using the USCS
 $pdf->SetXY(280, 367);
-$pdf->Cell(152, 6, '', 0, 1, 'C');
+$pdf->Cell(152, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
 $pdf->SetXY(280, 373);
-$pdf->Cell(152, 6, '', 0, 1, 'C');
+$pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Grain Size Test Results
 $pdf->SetXY(323, 394);
-$pdf->Cell(152, 4, '', 0, 1, 'C');
+$pdf->Cell(152, 4, $resultado, 0, 1, 'C');
 
 // Comments and Observations
 $pdf->SetXY(54, 425);

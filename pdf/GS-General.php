@@ -7,7 +7,8 @@ $Search = find_by_id('grain_size_general', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
+class PDF extends Fpdi
+{
     function Header() {}
 
     function Footer() {}
@@ -376,6 +377,12 @@ $pdf->Cell(19, 6, $Search['Cu'], 0, 1, 'C');
 $pdf->SetXY(41, 180);
 $pdf->MultiCell(107, 4, $Search['Comments'], 0, 'L');
 
+// Classification as per ASTM-D2487
+$pdf->SetXY(285, 358);
+$pdf->Cell(19, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
+$pdf->SetXY(285, 363);
+$pdf->Cell(19, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
+
 // GRAFICAS
 $imageBase64 = $Search['Graph'];
 $imageData = base64_decode($imageBase64);
@@ -385,4 +392,3 @@ $pdf->Image($tempFile, 20, 280, 230, 0, 'PNG');
 unlink($tempFile);
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
-?>
