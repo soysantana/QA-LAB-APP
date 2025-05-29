@@ -4,8 +4,8 @@ require_once('../config/load.php');
 page_require_level(3);
 
 $products = join_product_table();
-include_once('../components/header.php');
 ?>
+<?php include_once('../components/header.php');  ?>
 
 <main id="main" class="main">
   <div class="pagetitle">
@@ -15,14 +15,21 @@ include_once('../components/header.php');
   <?php echo display_msg($msg); ?>
 
   <section class="section">
-    <div class="card shadow-sm">
-      <div class="card-body pt-4">
-        <div class="d-flex justify-content-between mb-3">
-          <h5 class="card-title">Listado de Articulos</h5>
-          <a href="add_product.php" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Agregar Articulo
-          </a>
-        </div>
+<div class="card shadow-sm">
+  <div class="card-body pt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title mb-0">Listado de Artículos</h5>
+      <div class="d-flex">
+        <a href="add_product.php" class="btn btn-primary me-2">
+          <i class="bi bi-plus-circle"></i> Agregar Artículo
+        </a>
+        <a href="../pages/sumary/export_inventario_equipos.php" class="btn btn-success">
+          <i class="bi bi-file-earmark-excel"></i> Exportar Inventario
+        </a>
+      </div>
+    </div>
+
+
 
         <div class="table-responsive">
           <table class="table table-striped table-hover align-middle">
@@ -47,9 +54,9 @@ include_once('../components/header.php');
                 <td><?= $index + 1; ?></td>
                 <td>
                   <?php if ($product['media_id'] === '0' || empty($product['image'])): ?>
-                    <img src="uploads/products/no_image.jpg" class="rounded-circle" style="width: 40px; height: 40px;" alt="No Image">
+                    <img src="../uploads/products/no_image.jpg" class="rounded-circle" style="width: 40px; height: 40px;" alt="No Image">
                   <?php else: ?>
-                    <img src="uploads/products/<?= htmlspecialchars($product['image']); ?>" class="rounded-circle" style="width: 40px; height: 40px;" alt="Imagen">
+                    <img src="../uploads/products/<?= htmlspecialchars($product['image']); ?>" class="rounded-circle" style="width: 40px; height: 40px;" alt="Imagen">
                   <?php endif; ?>
                 </td>
                 <td><?= remove_junk($product['name']); ?></td>
