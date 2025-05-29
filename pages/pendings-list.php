@@ -107,27 +107,48 @@ include_once('../components/header.php');
           </div>
         </div>
 
-        <div class="col-lg-3">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Conteo</h5>
-              <ul class="list-group">
-                <?php
-                $typeCount = [];
-                foreach ($testTypes as $s) {
-                  $t = $s['Test_Type'];
-                  $typeCount[$t] = ($typeCount[$t] ?? 0) + 1;
-                }
-                foreach ($typeCount as $t => $count): ?>
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <code><?php echo $t; ?></code>
-                    <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
-                  </li>
-                <?php endforeach; ?>
-              </ul>
+       <div class="col-lg-3">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Conteo</h5>
+      <ul class="list-group">
+        <?php
+        $typeCount = [];
+        $columnaTipo = [];
+
+        foreach ($requisitions as $req) {
+          for ($i = 1; $i <= 20; $i++) {
+            $tk = 'Test_Type' . $i;
+            if (!empty($req[$tk])) {
+              $columnaTipo[$req[$tk]] = $tk;
+            }
+          }
+        }
+
+        foreach ($testTypes as $s) {
+          $t = $s['Test_Type'];
+          $typeCount[$t] = ($typeCount[$t] ?? 0) + 1;
+        }
+
+        foreach ($typeCount as $t => $count): ?>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <code><?php echo $t; ?></code>
+              <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
             </div>
-          </div>
-        </div>
+            <?php if (isset($columnaTipo[$t])): ?>
+              <a href="../pdf/pendings.php?columna=<?php echo urlencode($columnaTipo[$t]); ?>&type=<?php echo urlencode($t); ?>"
+                 class="btn btn-secondary btn-sm ms-2" title="Generar PDF"><i class="bi bi-printer"></i></a>
+            <?php else: ?>
+              <span class="badge bg-danger">Err</span>
+            <?php endif; ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  </div>
+</div>
+
       </form>
     </div>
   </section>
