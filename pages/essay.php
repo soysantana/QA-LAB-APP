@@ -19,36 +19,38 @@ include_once('../components/header.php');
 
     <?php echo display_msg($msg); ?>
 
+
     <section class="section">
         <div class="row">
             <?php
             $tables = [
                 'atterberg_limit',
-                'moisture_oven',
+                'brazilian',
+                'grain_size_coarse',
+                'grain_size_coarse_filter',
+                'grain_size_coarsethan',
+                'grain_size_fine',
+                'grain_size_fine_filter',
+                'grain_size_full',
+                'grain_size_general',
+                'grain_size_lpf',
+                'grain_size_upstream_transition_fill',
+                'hydrometer',
+                'los_angeles_abrasion_coarse_aggregate',
+                'los_angeles_abrasion_coarse_filter',
                 'moisture_constant_mass',
                 'moisture_microwave',
+                'moisture_oven',
                 'moisture_scale',
-                'grain_size_general',
-                'grain_size_coarse',
-                'grain_size_fine',
-                'grain_size_coarsethan',
+                'pinhole_test',
+                'point_load',
+                'reactivity',
                 'soundness',
                 'specific_gravity',
                 'specific_gravity_coarse',
                 'specific_gravity_fine',
                 'standard_proctor',
-                'grain_size_upstream_transition_fill',
-                'grain_size_lpf',
-                'grain_size_fine_filter',
-                'grain_size_coarse_filter',
-                'point_load',
-                'unixial_compressive',
-                'brazilian',
-                'los_angeles_abrasion_coarse_filter',
-                'los_angeles_abrasion_coarse_aggregate',
-                'pinhole_test',
-                'hydrometer',
-                'reactivity'
+                'unixial_compressive'
             ];
 
             $allData = array_reduce($tables, function ($carry, $tableName) {
@@ -189,6 +191,12 @@ function get_test_link($testType, $id)
         'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
         'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
         'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
+        'GS-TRF' => '../reviews/grain-size-full.php?id=',
+        'GS-UFF' => '../reviews/grain-size-full.php?id=',
+        'GS-FRF' => '../reviews/grain-size-full.php?id=',
+        'GS-IRF' => '../reviews/grain-size-full.php?id=',
+        'GS-RF' => '../reviews/grain-size-full.php?id=',
+        'GS-BF' => '../reviews/grain-size-full.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
         'AR-CF' => '../reviews/reactivity-coarse.php?id=',
         'AR-FF' => '../reviews/reactivity-fine.php?id='
