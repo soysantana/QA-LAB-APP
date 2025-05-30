@@ -7,13 +7,30 @@ page_require_level(3);
 <?php include_once('../components/header.php'); ?>
 
 <main id="main" class="main">
+
+<div class="pagetitle">
+  <h1>Inventarios</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="../pages/home.php">Home</a></li>
+      <li class="breadcrumb-item">Pages</li>
+      <li class="breadcrumb-item active" ><a href="../components/menu_inventarios.php">Inventarios</a></li>
+    </ol>
+  </nav>
+</div><!-- End Page Title -->
   <div class="pagetitle mb-3">
-    <h1><i class="bi bi-box-seam"></i> Inventario de Muestras</h1>
+    <h1><i class="bi bi-box-seam"></i> Inventario de Muestras</h1> 
   </div>
 
   <section class="section">
     <div class="card shadow-sm">
       <div class="card-body pt-4">
+        <div class="mb-3 d-flex justify-content-end"> 
+  <a href="../pages/sumary/export_inventario_muestras.php" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel"></i> Exportar Inventario
+  </a>
+</div>
+
         <div class="table-responsive">
           <table class="table table-hover table-bordered datatable">
             <thead class="table-light">
