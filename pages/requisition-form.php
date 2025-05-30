@@ -51,7 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-md-3">
                   <label for="Client" class="form-label">Cliente</label>
-                  <input type="text" class="form-control" name="Client" id="Client">
+                  <select id="Client" class="form-select" name="Client">
+                    <option selected>Elegir...</option>
+                    <option value="TSF LLagal">TSF LLagal</option>
+                    <option value="TSF Naranjo">TSF Naranjo</option>
+                    <option value="Capital Project">Capital Project</option>
+                    <option value="MRM">MRM</option>
+                    <option value="Geotecnia">Geotecnia</option>
+                    <option value="Hidrogeologia">Hidrogeologia</option>
+                  </select>
                 </div>
                 <div class="col-md-3">
                   <label for="ProjectNumber" class="form-label">Numero del Proyecto</label>
@@ -261,6 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
+<!-- Custom Script to Duplicate Samples and Lab Tests -->
 <script>
   let sampleCount = 1;
   let labTestCount = 1;
@@ -334,8 +343,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     container.appendChild(clone);
   }
 </script>
-
-
-
+<!-- End Custom Script to Duplicate Samples and Lab Tests -->
 
 <?php include_once('../components/footer.php');  ?>
