@@ -30,15 +30,18 @@ page_require_level(3);
             </thead>
             <tbody>
               <?php
-             $fecha_limite = date('Y-m-d', strtotime('-12 month'));
+              $fecha_limite = date('Y-m-d', strtotime('-12 month'));
 
-$query = "SELECT r.*, i.sample_length, i.sample_weight, i.store_in, i.comment
-          FROM lab_test_requisition_form r
-          LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
-          WHERE (r.Sample_Type IN ('Shelby', 'Mazier', 'Lexan', 'Ring', 'Rock') 
-              OR (r.envio IS NOT NULL AND r.envio != ''))
-            AND r.Sample_Date >= '{$fecha_limite}'
-          ORDER BY r.Sample_Date DESC";
+              $query = "SELECT r.*, i.sample_length, i.sample_weight, i.store_in, i.comment
+    FROM lab_test_requisition_form r
+    LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
+    WHERE (
+        r.Sample_Type IN ('Shelby', 'Mazier', 'Lexan', 'Ring', 'Rock') 
+        OR FIND_IN_SET('Envio', r.Test_Type)
+    )
+    AND r.Sample_Date >= '{$fecha_limite}'
+    ORDER BY r.Sample_Date DESC";
+
 
               $result = $db->query($query);
               $i = 1;
@@ -65,69 +68,69 @@ $query = "SELECT r.*, i.sample_length, i.sample_weight, i.store_in, i.comment
                     <?php endif; ?>
                   </td>
                 </tr>
-              <?php
+                <?php
                 ob_start();
-              ?>
-              <div class="modal fade" id="modalEditar<?= $row['id'] ?>" tabindex="-1" aria-labelledby="modalEditarLabel<?= $row['id'] ?>" aria-hidden="true">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <form action="../database/inventario/guardar_inalterada.php" method="POST">
-                      <input type="hidden" name="requisition_id" value="<?= $row['id'] ?>">
+                ?>
+                <div class="modal fade" id="modalEditar<?= $row['id'] ?>" tabindex="-1" aria-labelledby="modalEditarLabel<?= $row['id'] ?>" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form action="../database/inventario/guardar_inalterada.php" method="POST">
+                        <input type="hidden" name="requisition_id" value="<?= $row['id'] ?>">
 
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="modalEditarLabel<?= $row['id'] ?>">Editar Información de Muestra</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                      </div>
-                      <div class="modal-body">
-                        <div class="form-group mb-2">
-                          <label for="Sample_ID">Nombre de Muestra</label>
-                          <input type="text" class="form-control" name="Sample_ID" value="<?= $row['Sample_ID'] ?>" readonly>
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="modalEditarLabel<?= $row['id'] ?>">Editar Información de Muestra</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
-                        <div class="form-group mb-2">
-                          <label for="Sample_Number">Número de Muestra</label>
-                          <input type="text" class="form-control" name="Sample_Number" value="<?= $row['Sample_Number'] ?>" readonly>
+                        <div class="modal-body">
+                          <div class="form-group mb-2">
+                            <label for="Sample_ID">Nombre de Muestra</label>
+                            <input type="text" class="form-control" name="Sample_ID" value="<?= $row['Sample_ID'] ?>" readonly>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Sample_Number">Número de Muestra</label>
+                            <input type="text" class="form-control" name="Sample_Number" value="<?= $row['Sample_Number'] ?>" readonly>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Sample_Type">Tipo de Muestra</label>
+                            <input type="text" class="form-control" name="Sample_Type" value="<?= $row['Sample_Type'] ?>" readonly>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Depth_From">Profundidad Desde (m)</label>
+                            <input type="text" class="form-control" name="Depth_From" value="<?= $row['Depth_From'] ?>" readonly>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Depth_To">Profundidad Hasta (m)</label>
+                            <input type="text" class="form-control" name="Depth_To" value="<?= $row['Depth_To'] ?>" readonly>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Sample_Length">Longitud (m)</label>
+                            <input type="number" step="0.01" class="form-control" name="Sample_Length" value="<?= htmlspecialchars($row['sample_length']) ?>">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Sample_Weight">Peso (kg)</label>
+                            <input type="number" step="0.01" class="form-control" name="Sample_Weight" value="<?= htmlspecialchars($row['sample_weight']) ?>">
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Store_In">Ubicación</label>
+                            <select class="form-control" name="Store_In">
+                              <option value="Stored_PVLab" <?= $row['store_in'] === 'Stored_PVLab' ? 'selected' : '' ?>>Almacenado en PVLab</option>
+                              <option value="Sended_To" <?= $row['store_in'] === 'Sended_To' ? 'selected' : '' ?>>Muestra Enviada</option>
+                            </select>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label for="Comment">Comentario</label>
+                            <input type="text" class="form-control" name="Comment" value="<?= htmlspecialchars($row['Comment']) ?>">
+                          </div>
+                          <input type="hidden" name="Sample_Date" value="<?= $row['Sample_Date'] ?>">
                         </div>
-                        <div class="form-group mb-2">
-                          <label for="Sample_Type">Tipo de Muestra</label>
-                          <input type="text" class="form-control" name="Sample_Type" value="<?= $row['Sample_Type'] ?>" readonly>
+                        <div class="modal-footer">
+                          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                         </div>
-                        <div class="form-group mb-2">
-                          <label for="Depth_From">Profundidad Desde (m)</label>
-                          <input type="text" class="form-control" name="Depth_From" value="<?= $row['Depth_From'] ?>" readonly>
-                        </div>
-                        <div class="form-group mb-2">
-                          <label for="Depth_To">Profundidad Hasta (m)</label>
-                          <input type="text" class="form-control" name="Depth_To" value="<?= $row['Depth_To'] ?>" readonly>
-                        </div>
-                        <div class="form-group mb-2">
-                          <label for="Sample_Length">Longitud (m)</label>
-                          <input type="number" step="0.01" class="form-control" name="Sample_Length" value="<?= htmlspecialchars($row['sample_length']) ?>">
-                        </div>
-                        <div class="form-group mb-2">
-                          <label for="Sample_Weight">Peso (kg)</label>
-                          <input type="number" step="0.01" class="form-control" name="Sample_Weight" value="<?= htmlspecialchars($row['sample_weight']) ?>">
-                        </div>
-                        <div class="form-group mb-2">
-                          <label for="Store_In">Ubicación</label>
-                          <select class="form-control" name="Store_In">
-                            <option value="Stored_PVLab" <?= $row['store_in'] === 'Stored_PVLab' ? 'selected' : '' ?>>Almacenado en PVLab</option>
-                            <option value="Sended_To" <?= $row['store_in'] === 'Sended_To' ? 'selected' : '' ?>>Muestra Enviada</option>
-                          </select>
-                        </div>
-                        <div class="form-group mb-2">
-                          <label for="Comment">Comentario</label>
-                          <input type="text" class="form-control" name="Comment" value="<?= htmlspecialchars($row['comment']) ?>">
-                        </div>
-                        <input type="hidden" name="Sample_Date" value="<?= $row['Sample_Date'] ?>">
-                      </div>
-                      <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                      </div>
-                    </form>
+                      </form>
+                    </div>
                   </div>
                 </div>
-              </div>
               <?php
                 $modals .= ob_get_clean();
               endwhile;
