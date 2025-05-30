@@ -706,9 +706,9 @@ function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
 
           // Posibles nombres de columna para 'bandeja'
           $posiblesBandejas = [
-            'Tare', 'Tare_Name', 'Container', 'Container1', 'Container2',
+            'Tare1','Tare2','Tare3', 'Tare4' , 'Tare5', 'Tare6','Tare_Name', 'Container', 'Container1', 'Container2',
             'Container3', 'Container4', 'Container5', 'Container6',
-            'TareMc', 'Tare_Mc_Before', 'Tare_Mc_After'
+            'TareMc', 'Tare_Name_MC_Before', 'Tare_Name_MC_After'
           ];
 
           $colBandeja = null;
