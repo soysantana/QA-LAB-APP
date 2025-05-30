@@ -64,6 +64,10 @@ $pdf->SetXY(230, 44);
 $pdf->Cell(23, 5, $Search['Client'], 0, 1, 'C');
 $pdf->SetXY(230, 66);
 $pdf->Cell(21, 5, $Search['Methods'], 0, 1, 'C');
+$pdf->SetXY(230, 72);
+$pdf->Cell(21, 5, $Search['PMethods'], 0, 1, 'C');
+$pdf->SetXY(230, 80);
+$pdf->Cell(21, 5, $Search['SMethods'], 0, 1, 'C');
 $pdf->SetXY(230, 104);
 $pdf->Cell(21, 5, $Search['Depth_From'], 0, 1, 'C');
 $pdf->SetXY(230, 112);
@@ -122,5 +126,8 @@ $pdf->Cell(53, 8, $texto, 0, 1, 'C');
 $pdf->SetFont('Arial', '', 12);
 $pdf->SetXY(27, 260);
 $pdf->MultiCell(114, 4, $Search['Comments'], 0, 'L');
+
+$pdf->SetXY(143, 260);
+$pdf->MultiCell(114, 4, $Search['FieldComment'], 0, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');

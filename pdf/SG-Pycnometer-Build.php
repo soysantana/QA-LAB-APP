@@ -64,6 +64,10 @@ $pdf->SetXY(270, 41);
 $pdf->Cell(30, 6, $Search['Client'], 0, 1, 'C');
 $pdf->SetXY(270, 61);
 $pdf->Cell(30, 6, $Search['Methods'], 0, 1, 'C');
+$pdf->SetXY(270, 69);
+$pdf->Cell(30, 6, $Search['PMethods'], 0, 1, 'C');
+$pdf->SetXY(270, 78);
+$pdf->Cell(30, 6, $Search['SMethods'], 0, 1, 'C');
 $pdf->SetXY(270, 96);
 $pdf->Cell(30, 6, $Search['Depth_From'], 0, 1, 'C');
 $pdf->SetXY(270, 104);
@@ -122,5 +126,8 @@ $pdf->Cell(36, 5, $Search['Specific_Gravity_Soil_Solid'], 0, 1, 'C');
 // Comments and Observations
 $pdf->SetXY(17, 293);
 $pdf->MultiCell(154, 4.2, $Search['Comments'], 0, 'L');
+
+$pdf->SetXY(172, 293);
+$pdf->MultiCell(130, 4.2, $Search['FieldComment'], 0, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');

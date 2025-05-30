@@ -8,13 +8,13 @@ $Search = find_by_id('specific_gravity', $_GET['id']);
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['update-sg'])) {
-    include('../database/specific-gravity.php');
+    include('../database/specific-gravity/general/update.php');
   } elseif (isset($_POST['repeat-sg'])) {
-    include('../database/specific-gravity.php');
+    include('../database/specific-gravity/general/repeat.php');
   } elseif (isset($_POST['reviewed-sg'])) {
-    include('../database/specific-gravity.php');
+    include('../database/specific-gravity/general/reviewed.php');
   } elseif (isset($_POST['delete_sg'])) {
-    include('../database/specific-gravity.php');
+    include('../database/specific-gravity/general/delete.php');
   }
 }
 ?>
@@ -66,22 +66,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="TestMethod" class="form-label">Test Method</label>
                   <input type="text" class="form-control" name="TestMethod" id="TestMethod" value="<?php echo ($Search['Methods']); ?>">
                 </div>
-                  <div class="col-md-6">
+                <div class="col-md-6">
                   <label for="PMethods" class="form-label">Preparation Methods</label>
                   <select id="PMethods" class="form-select" name="PMethods">
                     <option selected>Choose...</option>
-                    <option <?php if ($Search['Preparation_Method'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
-                    <option <?php if ($Search['Preparation_Method'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
-                    <option <?php if ($Search['Preparation_Method'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
-                    <option <?php if ($Search['Preparation_Method'] == 'Wet') echo 'selected'; ?>>Wet</option>
+                    <option <?php if ($Search['PMethods'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
+                    <option <?php if ($Search['PMethods'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
+                    <option <?php if ($Search['PMethods'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
+                    <option <?php if ($Search['PMethods'] == 'Wet') echo 'selected'; ?>>Wet</option>
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label for="SMethods" class="form-label">Split Methods</label>
                   <select id="SMethods" class="form-select" name="SMethods">
                     <option selected>Choose...</option>
-                    <option <?php if ($Search['Split_Method'] == 'Manual') echo 'selected'; ?>>Manual</option>
-                    <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
+                    <option <?php if ($Search['SMethods'] == 'Manual') echo 'selected'; ?>>Manual</option>
+                    <option <?php if ($Search['SMethods'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
                   </select>
                 </div>
                 <div class="col-md-6">
