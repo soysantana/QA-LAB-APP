@@ -17,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     include('../database/sample-tracking/realization/save.php');
   } elseif (isset($_POST['update_technician'])) {
     include('../database/sample-tracking/preparation/update.php');
+  } elseif (isset($_POST['SendMultipleRealization'])) {
+    include('../database/sample-tracking/realization/send-multiple.php');
   }
 }
 ?>
@@ -58,8 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
               <div class="col-md-12">
                 <label for="Ttype" class="form-label">Tipo de prueba</label>
-                <select id="Ttype" class="form-select" name="Ttype">
-                  <option selected disabled>Elegir...</option>
+                <select id="Ttype" class="form-select" size="20" name="Ttype[]" multiple>
                   <option value="MC">MC</option>
                   <option value="AL">AL</option>
                   <option value="GS">GS</option>
@@ -74,13 +75,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <option value="SCT">SCT</option>
                   <option value="LAA">LAA</option>
                   <option value="SND">SND</option>
-                  <option value="Consolidation">Consolidacion</option>
+                  <option value="Consolidation">Consolidación</option>
                   <option value="PH">PH</option>
                   <option value="Permeability">Permeabilidad</option>
-                  <option value="SHAPE">Formas de Particulas</option>
+                  <option value="SHAPE">Formas de Partículas</option>
                   <option value="DENSITY">Densidad</option>
                   <option value="CRUMBS">CRUMBS</option>
                 </select>
+                <small class="text-muted">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples opciones.</small>
               </div>
               <div class="col-md-12">
                 <label for="Technician" class="form-label">Técnico/a</label>
@@ -100,44 +102,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="card-body">
             <h5 class="card-title">LISTA DE MUESTRAS EN PREPARACIÓN</h5>
 
-            <?php $week = date('Y-m-d', strtotime('-21 days')); ?>
+            <?php $week = date('Y-m-d', strtotime('-14 days')); ?>
             <?php $realization = "(SELECT 1 FROM test_realization WHERE sample_name = p.sample_name AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
-            <?php $Seach = find_by_sql("SELECT * FROM test_preparation p WHERE Start_Date >= '{$week}' AND NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
+            <?php $Seach = find_by_sql("SELECT id, Sample_Name, Sample_Number, Test_Type, Technician, Start_Date FROM test_preparation p WHERE Start_Date >= '{$week}' AND NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
 
             <!-- Preparation -->
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Nombre de la muestra</th>
-                  <th scope="col">Numero de muestra</th>
-                  <th scope="col">Tipo de prueba</th>
-                  <th scope="col">Técnico/a</th>
-                  <th scope="col">Fecha de inicio</th>
-                  <th scope="col">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($Seach as $Seach): ?>
+            <form id="multiple-send-form" method="post" action="test-preparation.php">
+              <table class="table datatable">
+                <thead>
                   <tr>
-                    <td><?php echo count_id(); ?></td>
-                    <td><?php echo $Seach['Sample_Name']; ?></td>
-                    <td><?php echo $Seach['Sample_Number']; ?></td>
-                    <td><?php echo $Seach['Test_Type']; ?></td>
-                    <td><?php echo $Seach['Technician']; ?></td>
-                    <td><?php echo $Seach['Start_Date']; ?></td>
-                    <td>
-                      <div class="btn-group" role="group" aria-label="Basic example">
-                        <a class="btn btn-success open-modal-btn" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true" data-sample-name="<?php echo $Seach['Sample_Name']; ?>" data-sample-number="<?php echo $Seach['Sample_Number']; ?>" data-test-type="<?php echo $Seach['Test_Type']; ?>" data-technician="<?php echo $Seach['Technician']; ?>" data-start-date="<?php echo $Seach['Start_Date']; ?>"><i class="bi bi-send me-1"></i></a>
-                        <button type="button" class="btn btn-primary" onclick="modalEdit('<?php echo $Seach['id']; ?>', '<?php echo $Seach['Technician']; ?>')"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-danger" onclick="modaldelete('<?php echo $Seach['id']; ?>')"><i class="bi bi-trash"></i></button>
-                      </div>
-                    </td>
+                    <th scope="col">#</th>
+                    <th scope="col">Select</th>
+                    <th scope="col">Nombre de la muestra</th>
+                    <th scope="col">Numero de muestra</th>
+                    <th scope="col">Tipo de prueba</th>
+                    <th scope="col">Técnico/a</th>
+                    <th scope="col">Fecha de inicio</th>
+                    <th scope="col">Acciones</th>
                   </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-            <!-- End Table -->
+                </thead>
+                <tbody>
+                  <?php foreach ($Seach as $Seach): ?>
+                    <tr>
+                      <td><?php echo count_id(); ?></td>
+                      <td>
+                        <input type="checkbox" name="selected_samples[]" value="<?php echo $Seach['id']; ?>">
+                      </td>
+                      <td><?php echo $Seach['Sample_Name']; ?></td>
+                      <td><?php echo $Seach['Sample_Number']; ?></td>
+                      <td><?php echo $Seach['Test_Type']; ?></td>
+                      <td><?php echo $Seach['Technician']; ?></td>
+                      <td><?php echo $Seach['Start_Date']; ?></td>
+                      <td>
+                        <div class="btn-group" role="group" aria-label="Basic example">
+                          <a class="btn btn-success open-modal-btn" data-bs-toggle="modal" data-bs-target="#disablebackdrop" data-first-visit="true" data-sample-name="<?php echo $Seach['Sample_Name']; ?>" data-sample-number="<?php echo $Seach['Sample_Number']; ?>" data-test-type="<?php echo $Seach['Test_Type']; ?>" data-technician="<?php echo $Seach['Technician']; ?>" data-start-date="<?php echo $Seach['Start_Date']; ?>"><i class="bi bi-send me-1"></i></a>
+                          <button type="button" class="btn btn-primary" onclick="modalEdit('<?php echo $Seach['id']; ?>', '<?php echo $Seach['Technician']; ?>')"><i class="bi bi-pencil"></i></button>
+                          <button type="button" class="btn btn-danger" onclick="modaldelete('<?php echo $Seach['id']; ?>')"><i class="bi bi-trash"></i></button>
+                        </div>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+              <!-- End Table -->
+
+              <button type="submit" class="btn btn-primary mt-2" name="SendMultipleRealization">
+                <i class="bi bi-send-check me-1"></i> Enviar seleccionadas a realización
+              </button>
+            </form>
+            <!-- End Preparation -->
+
 
           </div>
         </div>
