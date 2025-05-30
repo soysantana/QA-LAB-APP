@@ -62,7 +62,7 @@ if (!$session->isUserLoggedIn(true)) {
                     <?php
                     $week = date('Y-m-d', strtotime('-14 days'));
                     //$Requisitions = find_all('lab_test_requisition_form');
-                    $Requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date >= '{$week}' ORDER BY Registed_Date DESC");
+                    $Requisitions = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM lab_test_requisition_form WHERE Registed_Date >= '{$week}' ORDER BY Registed_Date DESC");
                     $testTypes = [];
                     $statusCounts = [
                       'Preparation' => 0,
@@ -90,18 +90,21 @@ if (!$session->isUserLoggedIn(true)) {
                     ];
 
                     foreach ($Requisitions as $requisition) {
-                      for ($i = 1; $i <= 20; $i++) {
-                        $testTypeKey = 'Test_Type' . $i;
+                      if (!empty($requisition['Test_Type'])) {
+                        // Separar los tipos de prueba por comas
+                        $testTypesArray = array_map('trim', explode(',', $requisition['Test_Type']));
 
-                        if (!empty($requisition[$testTypeKey])) {
-                          $testTypes[$requisition[$testTypeKey]][] = [
+                        foreach ($testTypesArray as $type) {
+                          $type = normalize($type); // Normaliza si es necesario
+                          $testTypes[$type][] = [
                             'Sample_ID' => $requisition['Sample_ID'],
                             'Sample_Number' => $requisition['Sample_Number'],
-                            'Test_Type' => $requisition[$testTypeKey],
+                            'Test_Type' => $type,
                           ];
                         }
                       }
                     }
+
 
                     foreach ($testTypes as $testType => $data) {
                       foreach ($data as $item) {
@@ -208,7 +211,7 @@ if (!$session->isUserLoggedIn(true)) {
               <div class="card-body">
                 <h5 class="card-title">Ensayos en Repeticion <span>| Hoy</span></h5>
                 <?php $week = date('Y-m-d', strtotime('-7 days')); ?>
-                <?php $Seach = find_by_sql("SELECT * FROM test_repeat WHERE Start_Date >= '{$week}'"); ?>
+                <?php $Seach = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type, Start_Date, Send_By FROM test_repeat WHERE Start_Date >= '{$week}'"); ?>
                 <table class="table table-borderless datatable">
                   <thead>
                     <tr>
@@ -216,7 +219,6 @@ if (!$session->isUserLoggedIn(true)) {
                       <th scope="col">Numero de muestra</th>
                       <th scope="col">Tipo de prueba</th>
                       <th scope="col">Fecha</th>
-                      <th scope="col">Tecnico</th>
                       <th scope="col">Enviado Por</th>
                     </tr>
                   </thead>
@@ -227,8 +229,7 @@ if (!$session->isUserLoggedIn(true)) {
                         <td><?php echo $Seach['Sample_Number']; ?></td>
                         <td><?php echo $Seach['Test_Type']; ?></td>
                         <td><?php echo date('Y-m-d', strtotime($Seach['Start_Date'])); ?></td>
-                        <td></td>
-                        <td><?php echo $Seach['Register_By']; ?></td>
+                        <td><?php echo $Seach['Send_By']; ?></td>
                       </tr>
                     <?php endforeach; ?>
                   </tbody>
@@ -238,7 +239,8 @@ if (!$session->isUserLoggedIn(true)) {
               </div>
 
             </div>
-          </div><!-- End Method Proctor -->
+          </div>
+          <!-- End Method Proctor -->
 
           <!-- Method Proctor -->
           <div class="col-12">
@@ -392,6 +394,8 @@ if (!$session->isUserLoggedIn(true)) {
             </div>
           </div><!-- End Method Proctor -->
 
+          <!-- Muestras Registradas -->
+          <?php /*
           <div class="col-lg-12">
             <div class="card">
               <div class="card-body">
@@ -422,15 +426,17 @@ if (!$session->isUserLoggedIn(true)) {
                       }
 
                       // Contar los ensayos solicitados y entregados
-                      for ($i = 1; $i <= 20; $i++) {
-                        $column_name = 'Test_Type' . $i;
-                        if (!empty($ReqViews[$column_name])) {
+                      if (!empty($ReqViews['Test_Type'])) {
+                        $testTypesArray = array_map('trim', explode(',', $ReqViews['Test_Type']));
+
+                        foreach ($testTypesArray as $type) {
                           $count_solicitados++;
-                          if (in_array($ReqViews[$column_name], $entregados)) {
+                          if (in_array($type, $entregados)) {
                             $count_entregados++;
                           }
                         }
                       }
+
 
                       // Calcular el porcentaje de ensayos entregados
                       $porce_entregados = ($count_solicitados > 0) ? round(($count_entregados / $count_solicitados) * 100) : 0;
@@ -524,6 +530,8 @@ if (!$session->isUserLoggedIn(true)) {
               </div>
             </div>
           </div>
+          */ ?>
+          <!-- End Muestras Registradas -->
 
         </div>
       </div><!-- End Left side columns -->
@@ -531,10 +539,11 @@ if (!$session->isUserLoggedIn(true)) {
       <!-- Right side columns -->
       <div class="col-lg-4">
 
+        <!-- Cantidades en Proceso -->
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Cantidades en Proceso</h5>
-            <!-- List group With badges -->
+
             <ul class="list-group">
               <?php foreach ($statusCounts as $status => $count): ?>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -542,92 +551,87 @@ if (!$session->isUserLoggedIn(true)) {
                   <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
                 </li>
               <?php endforeach; ?>
-            </ul><!-- End List With badges -->
+            </ul>
 
           </div>
         </div>
+        <!-- End Cantidades en Proceso -->
 
-<!-- CANTIDAD DE ENSAYOS PENDIENTES -->
-<div class="col-12">
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
-      <ul class="list-group">
-        <?php
-        function normalize($v) {
-          return strtoupper(trim($v));
-        }
+        <!-- CANTIDAD DE ENSAYOS PENDIENTES -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
+              <ul class="list-group">
+                <?php
+                function normalize($v)
+                {
+                  return strtoupper(trim($v));
+                }
 
-        $tables_to_check = [
-          'test_preparation',
-          'test_delivery',
-          'test_realization',
-          'test_repeat',
-          'test_review',
-          'test_reviewed'
-        ];
+                $tables_to_check = [
+                  'test_preparation',
+                  'test_delivery',
+                  'test_realization',
+                  'test_repeat',
+                  'test_review',
+                  'test_reviewed'
+                ];
 
-        $indexed_status = [];
+                $indexed_status = [];
 
-        foreach ($tables_to_check as $table) {
-          $rows = find_all($table);
-          foreach ($rows as $row) {
-            $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-            $indexed_status[$key] = true;
-          }
-        }
+                foreach ($tables_to_check as $table) {
+                  $rows = find_all($table);
+                  foreach ($rows as $row) {
+                    $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+                    $indexed_status[$key] = true;
+                  }
+                }
 
-        $typeCount = [];
-        $seen = [];
+                $typeCount = [];
+                $seen = [];
 
-        foreach ($Requisitions as $requisition) {
-          for ($i = 1; $i <= 20; $i++) {
-            $testKey = 'Test_Type' . $i;
-            if (empty($requisition[$testKey])) continue;
+                foreach ($Requisitions as $requisition) {
+                  if (empty($requisition['Test_Type'])) continue;
 
-            $sampleID = normalize($requisition['Sample_ID']);
-            $sampleNumber = normalize($requisition['Sample_Number']);
-            $testType = normalize($requisition[$testKey]);
+                  $sampleID = normalize($requisition['Sample_ID']);
+                  $sampleNumber = normalize($requisition['Sample_Number']);
 
-            $uniqueKey = $sampleID . "|" . $sampleNumber . "|" . $testType;
-            if (isset($seen[$uniqueKey])) continue;
-            $seen[$uniqueKey] = true;
+                  $testTypesArray = array_map('trim', explode(',', $requisition['Test_Type']));
 
-            if (!isset($indexed_status[$uniqueKey])) {
-              $typeCount[$testType] = ($typeCount[$testType] ?? 0) + 1;
-            }
-          }
-        }
+                  foreach ($testTypesArray as $testTypeRaw) {
+                    $testType = normalize($testTypeRaw);
+                    $uniqueKey = $sampleID . "|" . $sampleNumber . "|" . $testType;
 
-        if (empty($typeCount)) {
-          echo '<li class="list-group-item">✅ No hay ensayos pendientes</li>';
-        } else {
-          foreach ($typeCount as $testType => $count) {
-            echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            echo '<h5><code>' . htmlspecialchars($testType) . '</code></h5>';
-            echo '<span class="badge bg-primary rounded-pill">' . $count . '</span>';
-            echo '</li>';
-          }
-        }
-        ?>
-      </ul>
-    </div>
-  </div>
-</div>
+                    if (isset($seen[$uniqueKey])) continue;
+                    $seen[$uniqueKey] = true;
+
+                    if (!isset($indexed_status[$uniqueKey])) {
+                      $typeCount[$testType] = ($typeCount[$testType] ?? 0) + 1;
+                    }
+                  }
+                }
 
 
-
-
-</div>
-
+                if (empty($typeCount)) {
+                  echo '<li class="list-group-item">✅ No hay ensayos pendientes</li>';
+                } else {
+                  foreach ($typeCount as $testType => $count) {
+                    echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
+                    echo '<h5><code>' . htmlspecialchars($testType) . '</code></h5>';
+                    echo '<span class="badge bg-primary rounded-pill">' . $count . '</span>';
+                    echo '</li>';
+                  }
+                }
+                ?>
               </ul>
             </div>
           </div>
-
         </div>
-      </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
-   
-      </div><!-- End Right side columns -->
+        <!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
+
+      </div>
+      <!-- End Right side columns -->
 
     </div>
   </section>
