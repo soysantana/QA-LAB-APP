@@ -35,7 +35,7 @@
   <?php echo display_msg($msg); ?>
   </div>
 
-  <div id="product_info"></div>
+  <div id="product_info"></div> 
 
     <div class="col-lg-12">
 

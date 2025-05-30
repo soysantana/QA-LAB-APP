@@ -28,9 +28,9 @@
           <h5 class="card-title"></h5>
           
           <div class="list-group">
-            <a href="specific-gravity.php" class="list-group-item list-group-item-action">General</a>
-            <a href="specific-gravity-coarse-aggregates.php" class="list-group-item list-group-item-action">CF</a>
-            <a href="specific-gravity-fine-aggregate.php" class="list-group-item list-group-item-action">FF</a>
+            <a href="specific-gravity.php" class="list-group-item list-group-item-action">Soil</a>
+            <a href="specific-gravity-coarse-aggregates.php" class="list-group-item list-group-item-action">Coarse Particles</a>
+            <a href="specific-gravity-fine-aggregate.php" class="list-group-item list-group-item-action">Fine Particles</a>
           </div>
 
         </div>
