@@ -43,7 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php
               $threeMonthsAgo = date('Y-m-d', strtotime('-2 months'));
 
-              $query = "SELECT * FROM lab_test_requisition_form WHERE Registed_Date >= '$threeMonthsAgo'";
+              $query = "SELECT id, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
+              FROM lab_test_requisition_form WHERE Registed_Date >= '$threeMonthsAgo' ORDER BY Registed_Date DESC";
               $Requisition = find_by_sql($query);
 
 
@@ -86,16 +87,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Alias para simplificar acceso a las entregas
                     $entregados = $entregas[$Requisition['Sample_ID']][$Requisition['Sample_Number']] ?? [];
 
-                    for ($i = 1; $i <= 20; $i++) {
-                      $testType = $Requisition["Test_Type{$i}"] ?? null;
+                    $testType = $Requisition["Test_Type"] ?? '';  // Ejemplo: "MC,HY,SND"
+                    $count_solicitados = 0;
+                    $count_entregados = 0;
 
-                      if ($testType) {
-                        $count_solicitados++;
-                        if (in_array($testType, $entregados)) {
+                    if ($testType !== '') {
+                      // Convertimos el string en array, eliminando espacios por si acaso
+                      $testTypesArray = array_map('trim', explode(',', $testType));
+
+                      $count_solicitados = count($testTypesArray);
+
+                      foreach ($testTypesArray as $type) {
+                        if (in_array($type, $entregados)) {
                           $count_entregados++;
                         }
                       }
                     }
+
 
                     $porce_entregados = $count_solicitados > 0
                       ? round(($count_entregados / $count_solicitados) * 100)
@@ -142,12 +150,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="card-body">
                                   <h5 class="card-title">Ensayos solicitados</h5>
                                   <ul class="list-group">
-                                    <?php for ($i = 1; $i <= 20; $i++) {
-                                      $testTypeValue = $Requisition['Test_Type' . $i];
-                                      if (!empty($testTypeValue)) { ?>
-                                        <li class="list-group-item"><?php echo $testTypeValue; ?></li>
-                                    <?php }
-                                    } ?>
+                                    <?php
+                                    $testType = $Requisition['Test_Type'] ?? '';
+
+                                    if (!empty($testType)) {
+                                      // Convertimos el string a array, eliminando espacios
+                                      $testTypesArray = array_map('trim', explode(',', $testType));
+
+                                      foreach ($testTypesArray as $testTypeValue) {
+                                        if (!empty($testTypeValue)) {
+                                          echo '<li class="list-group-item">' . htmlspecialchars($testTypeValue) . '</li>';
+                                        }
+                                      }
+                                    }
+                                    ?>
+
                                   </ul>
                                 </div>
                               </div>
