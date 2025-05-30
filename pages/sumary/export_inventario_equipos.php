@@ -6,7 +6,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 // Cargar productos desde la base de datos
-$products = join_product_table();
+$products = join_product_table(); 
 
 // Crear nuevo libro
 $spreadsheet = new Spreadsheet();

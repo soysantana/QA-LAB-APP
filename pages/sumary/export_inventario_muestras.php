@@ -9,7 +9,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 $spreadsheet = new Spreadsheet();
 $spreadsheet->removeSheetByIndex(0); // Eliminar hoja inicial vacía
 
-function agregarHoja($spreadsheet, $db, $tituloHoja, $storeIn) {
+function agregarHoja($spreadsheet, $db, $tituloHoja, $storeIn) { 
     $sheet = $spreadsheet->createSheet();
     $sheet->setTitle($tituloHoja);
 
