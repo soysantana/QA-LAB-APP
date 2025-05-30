@@ -554,47 +554,40 @@ if (!$session->isUserLoggedIn(true)) {
       <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
       <ul class="list-group">
         <?php
-        function normalize($v) {
-          return strtoupper(trim($v));
-        }
-
-        $tables_to_check = [
-          'test_preparation',
-          'test_delivery',
-          'test_realization',
-          'test_repeat',
-          'test_review',
-          'test_reviewed'
-        ];
-
-        $indexed_status = [];
-
-        foreach ($tables_to_check as $table) {
-          $rows = find_all($table);
-          foreach ($rows as $row) {
-            $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-            $indexed_status[$key] = true;
-          }
-        }
-
         $typeCount = [];
-        $seen = [];
+        $checkedKeys = [];
 
         foreach ($Requisitions as $requisition) {
           for ($i = 1; $i <= 20; $i++) {
             $testKey = 'Test_Type' . $i;
             if (empty($requisition[$testKey])) continue;
 
-            $sampleID = normalize($requisition['Sample_ID']);
-            $sampleNumber = normalize($requisition['Sample_Number']);
-            $testType = normalize($requisition[$testKey]);
+            $sampleID = $requisition['Sample_ID'];
+            $sampleNumber = $requisition['Sample_Number'];
+            $testType = $requisition[$testKey];
+            $uniqueKey = $sampleID . '_' . $sampleNumber . '_' . $testType;
 
-            $uniqueKey = $sampleID . "|" . $sampleNumber . "|" . $testType;
-            if (isset($seen[$uniqueKey])) continue;
-            $seen[$uniqueKey] = true;
+            if (in_array($uniqueKey, $checkedKeys)) continue;
+            $checkedKeys[] = $uniqueKey;
 
-            if (!isset($indexed_status[$uniqueKey])) {
-              $typeCount[$testType] = ($typeCount[$testType] ?? 0) + 1;
+            // Verificamos si está en alguna tabla
+            $found = false;
+            foreach ($testDataByTable as $tableData) {
+              foreach ($tableData as $row) {
+                if (
+                  $row['Sample_Name'] === $sampleID &&
+                  $row['Sample_Number'] === $sampleNumber &&
+                  $row['Test_Type'] === $testType
+                ) {
+                  $found = true;
+                  break 2; // salir de ambos foreach
+                }
+              }
+            }
+
+            if (!$found) {
+              if (!isset($typeCount[$testType])) $typeCount[$testType] = 0;
+              $typeCount[$testType]++;
             }
           }
         }
@@ -604,7 +597,7 @@ if (!$session->isUserLoggedIn(true)) {
         } else {
           foreach ($typeCount as $testType => $count) {
             echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
-            echo '<h5><code>' . htmlspecialchars($testType) . '</code></h5>';
+            echo '<h5><code>' . $testType . '</code></h5>';
             echo '<span class="badge bg-primary rounded-pill">' . $count . '</span>';
             echo '</li>';
           }
@@ -629,170 +622,8 @@ if (!$session->isUserLoggedIn(true)) {
    
       </div><!-- End Right side columns -->
 
-
-
-
-      
     </div>
- 
-  
+  </section>
 
-<?php
-function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
-    $muestras = [];
-    foreach ($tablas as $tabla) {
-        $columns = "id, Sample_ID, Sample_Number, test_type";
-
-        $checkColumnQuery = "SHOW COLUMNS FROM $tabla LIKE 'Tare_Name'";
-        $checkColumnResult = mysqli_query($conexion, $checkColumnQuery);
-        if (mysqli_num_rows($checkColumnResult) > 0) {
-            $columns .= ", Tare_Name";
-        }
-
-        $checkMaterialTypeQuery = "SHOW COLUMNS FROM $tabla LIKE 'Material_Type'";
-        $checkMaterialTypeResult = mysqli_query($conexion, $checkMaterialTypeQuery);
-        if (mysqli_num_rows($checkMaterialTypeResult) > 0) {
-            $columns .= ", Material_Type";
-        }
-
-        $query = "SELECT $columns FROM $tabla WHERE Test_Start_Date >= '$fechaLimite'";
-        $result = mysqli_query($conexion, $query);
-        if ($result) {
-            while ($row = mysqli_fetch_assoc($result)) {
-                $muestras[] = $row;
-            }
-        }
-    }
-
-    $queryEnsayos = "SELECT Sample_ID, Sample_Number, test_type FROM ensayos_en_revision WHERE Test_Start_Date >= '$fechaLimite'";
-    $resultEnsayos = mysqli_query($conexion, $queryEnsayos);
-    if ($resultEnsayos) {
-        while ($row = mysqli_fetch_assoc($resultEnsayos)) {
-            $muestras[] = $row;
-        }
-    }
-
-    return $muestras;
-}
-?>
-
-<div class="row">
-  <div class="col-md-8">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <strong><i class="bi bi-trash"></i> Listado de muestras a Botar</strong>
-        <a href="../pdf/exportar_muestra_botar.php" target="_blank" class="btn btn-outline-danger btn-sm">
-          <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
-        </a>
-      </div>
-      <div class="card-body">
-        <!-- Barra de búsqueda -->
-        <input type="text" id="buscarMuestras" class="form-control mb-3" placeholder="Buscar muestra...">
-
-        <?php
-        $fechaLimite = date('Y-m-d H:i:s', strtotime('-7 days'));
-        $muestras = [];
-
-        $result = $db->query("SHOW TABLES");
-        $tablas = [];
-        while ($row = $result->fetch_row()) {
-          $tablas[] = $row[0];
-        }
-
-        foreach ($tablas as $tabla) {
-          $columns = "id, Sample_ID, Sample_Number, test_type";
-
-          // Posibles nombres de columna para 'bandeja'
-          $posiblesBandejas = [
-            'Tare_Name', 'Container', 'Container1', 'Container2','LL_Container_1', 'LL_Container_2', 'LL_Container_3', 'PL_Container_1', 'PL_Container_2', 'PL_Container_3',
-            'Container3', 'Container4', 'Container5', 'Container6',
-            'TareMc', 'Tare_Name_MC_Before', 'Tare_Name_MC_After'
-          ];
-
-          $colBandeja = null;
-          foreach ($posiblesBandejas as $col) {
-            $check = $db->query("SHOW COLUMNS FROM `$tabla` LIKE '$col'");
-            if ($check && $check->num_rows > 0) {
-              $colBandeja = $col;
-              break;
-            }
-          }
-
-          if ($colBandeja) {
-            $columns .= ", `$colBandeja` AS Bandeja";
-          }
-
-          // Detectar columnas adicionales
-          $hasMat = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'Material_Type'");
-          if ($hasMat && $hasMat->num_rows > 0) $columns .= ", Material_Type";
-
-          $hasDate = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'Test_Start_Date'");
-          $hasDiscarded = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'discarded'");
-
-          if ($hasDate && $hasDate->num_rows > 0) {
-            $query = "SELECT $columns FROM `$tabla` WHERE Test_Start_Date >= '$fechaLimite'";
-            if ($hasDiscarded && $hasDiscarded->num_rows > 0) {
-              $query .= " AND (discarded IS NULL OR discarded = 0)";
-            }
-            $res = $db->query($query);
-            while ($row = $res->fetch_assoc()) {
-              $row['tabla'] = $tabla;
-              $muestras[] = $row;
-            }
-          }
-        }
-        ?>
-
-        <div class="table-responsive">
-          <table class="table table-striped table-hover" id="tablaMuestras">
-            <thead class="table-light">
-              <tr>
-                <th>Nombre de Muestra</th>
-                <th>Número</th>
-                <th>Tipo de Material</th>
-                <th>Tipo de Ensayo</th>
-                <th>Número de Bandeja</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($muestras)): ?>
-                <tr>
-                  <td colspan="5" class="text-center text-success">✅ No hay muestras a botar</td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($muestras as $muestra): ?>
-                  <tr>
-                    <td><?= htmlspecialchars($muestra['Sample_ID'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($muestra['Sample_Number'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($muestra['Material_Type'] ?? 'N/A') ?></td>
-                    <td><?= htmlspecialchars($muestra['test_type'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($muestra['Bandeja'] ?? 'N/A') ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
- </section>
 </main><!-- End #main -->
-</script>
-
-
-
-
-<!-- Búsqueda instantánea -->
-<script>
-document.getElementById('buscarMuestras').addEventListener('keyup', function () {
-  const filtro = this.value.toLowerCase();
-  const filas = document.querySelectorAll('#tablaMuestras tbody tr');
-  filas.forEach(fila => {
-    const textoFila = fila.textContent.toLowerCase();
-    fila.style.display = textoFila.includes(filtro) ? '' : 'none';
-  });
-});
 <?php include_once('../components/footer.php'); ?>
