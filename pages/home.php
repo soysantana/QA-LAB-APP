@@ -638,7 +638,9 @@ if (!$session->isUserLoggedIn(true)) {
 
       
     </div>
-  </section>
+ 
+  
+
 <?php
 function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
     $muestras = [];
@@ -780,6 +782,13 @@ function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
   </div>
 </div>
 
+ </section>
+</main><!-- End #main -->
+</script>
+
+
+
+
 <!-- Búsqueda instantánea -->
 <script>
 document.getElementById('buscarMuestras').addEventListener('keyup', function () {
@@ -790,9 +799,4 @@ document.getElementById('buscarMuestras').addEventListener('keyup', function () 
     fila.style.display = textoFila.includes(filtro) ? '' : 'none';
   });
 });
-</script>
-
-
-
-</main><!-- End #main -->
 <?php include_once('../components/footer.php'); ?>
