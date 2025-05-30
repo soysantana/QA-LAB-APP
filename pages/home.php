@@ -678,7 +678,6 @@ function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
 }
 ?>
 
-
 <div class="row">
   <div class="col-md-8">
     <div class="card">
@@ -704,12 +703,34 @@ function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
 
         foreach ($tablas as $tabla) {
           $columns = "id, Sample_ID, Sample_Number, test_type";
-          $hasTare = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'Tare_Name'");
-          if ($hasTare && $hasTare->num_rows > 0) $columns .= ", Tare_Name";
+
+          // Posibles nombres de columna para 'bandeja'
+          $posiblesBandejas = [
+            'Tare', 'Tare_Name', 'Container', 'Container1', 'Container2',
+            'Container3', 'Container4', 'Container5', 'Container6',
+            'TareMc', 'Tare_Mc_Before', 'Tare_Mc_After'
+          ];
+
+          $colBandeja = null;
+          foreach ($posiblesBandejas as $col) {
+            $check = $db->query("SHOW COLUMNS FROM `$tabla` LIKE '$col'");
+            if ($check && $check->num_rows > 0) {
+              $colBandeja = $col;
+              break;
+            }
+          }
+
+          if ($colBandeja) {
+            $columns .= ", `$colBandeja` AS Bandeja";
+          }
+
+          // Detectar columnas adicionales
           $hasMat = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'Material_Type'");
           if ($hasMat && $hasMat->num_rows > 0) $columns .= ", Material_Type";
+
           $hasDate = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'Test_Start_Date'");
           $hasDiscarded = $db->query("SHOW COLUMNS FROM `$tabla` LIKE 'discarded'");
+
           if ($hasDate && $hasDate->num_rows > 0) {
             $query = "SELECT $columns FROM `$tabla` WHERE Test_Start_Date >= '$fechaLimite'";
             if ($hasDiscarded && $hasDiscarded->num_rows > 0) {
@@ -747,7 +768,7 @@ function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
                     <td><?= htmlspecialchars($muestra['Sample_Number'] ?? '-') ?></td>
                     <td><?= htmlspecialchars($muestra['Material_Type'] ?? 'N/A') ?></td>
                     <td><?= htmlspecialchars($muestra['test_type'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($muestra['Tare_Name'] ?? 'N/A') ?></td>
+                    <td><?= htmlspecialchars($muestra['Bandeja'] ?? 'N/A') ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -759,6 +780,7 @@ function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite) {
   </div>
 </div>
 
+<!-- Búsqueda instantánea -->
 <script>
 document.getElementById('buscarMuestras').addEventListener('keyup', function () {
   const filtro = this.value.toLowerCase();
