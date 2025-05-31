@@ -23,6 +23,29 @@ $pdf->setSourceFile('template/PV-F-01710 Laboratory sieve Grain size and acid re
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
+$pass3p8 = $Search['Pass11'];
+$passn4 = $Search['Pass12'];
+$passn10 = $Search['Pass13'];
+$passn16 = $Search['Pass14'];
+$passn50 = $Search['Pass16'];
+$passn60 = $Search['Pass17'];
+$passn200 = $Search['Pass18'];
+
+// Condición para "Acepted"
+if (
+    $pass3p8 == 100 &&
+    $passn4 >= 95 && $passn4 <= 100 &&
+    $passn10 >= 65 && $passn10 <= 100 &&
+    $passn16 >= 50 && $passn16 <= 85 &&
+    $passn50 >= 5 && $passn50 <= 30 &&
+    $passn60 >= 0 && $passn60 <= 25 &&
+    $passn200 >= 0 && $passn200 <= 5
+) {
+    $resultado = 'Acepted';
+} else {
+    $resultado = 'Rejected';
+}
+
 $pdf->SetFont('Arial', 'B', 10);
 
 //Information for the essay
@@ -359,7 +382,7 @@ $pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Grain Size Test Result
 $pdf->SetXY(375, 406);
-$pdf->Cell(40, 4, 'Passed', 0, 1, 'C');
+$pdf->Cell(40, 4, $resultado, 0, 1, 'C');
 
 // Comments and Observations
 $pdf->SetXY(40, 505);
