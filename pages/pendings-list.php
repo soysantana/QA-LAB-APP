@@ -141,7 +141,7 @@ include_once('../components/header.php');
                       <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
                     </div>
                     <?php if (isset($columnaTipo[$t])): ?>
-                      <a href="../pdf/pendings.php?columna=<?php echo urlencode($columnaTipo[$t]); ?>&type=<?php echo urlencode($t); ?>"
+                      <a href="../pdf/pendings.php?type=<?php echo urlencode($t); ?>"
                         class="btn btn-secondary btn-sm ms-2" title="Generar PDF"><i class="bi bi-printer"></i></a>
                     <?php else: ?>
                       <span class="badge bg-danger">Err</span>

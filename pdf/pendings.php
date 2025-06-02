@@ -3,24 +3,23 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
-$columna = isset($_GET['columna']) ? $_GET['columna'] : '';
-$type = isset($_GET['type']) ? $_GET['type'] : '';
+$type = isset($_GET['type']) ? strtoupper(trim($_GET['type'])) : '';
 
-// Obtener datos de la base de datos en una sola consulta optimizada
+// Obtener datos
 $data = [
-    "Requisition" => find_all("lab_test_requisition_form"),
-    "Preparation" => find_all("test_preparation"),
-    "Delivery" => find_all("test_delivery"),
-    "Review" => find_all("test_review")
+    "Requisition" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date FROM lab_test_requisition_form"),
+    "Preparation" => find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_preparation"),
+    "Delivery" => find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery"),
+    "Review" => find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_review")
 ];
 
-// Función para normalizar valores (evitar espacios extra y diferencias de mayúsculas/minúsculas)
+// Normalizar
 function normalize($value)
 {
     return strtoupper(trim($value));
 }
 
-// Indexar Preparation y Review en un array asociativo para acceso rápido
+// Indexar Preparation, Delivery y Review
 $indexedStatus = [];
 
 foreach (["Preparation", "Delivery", "Review"] as $category) {
@@ -31,23 +30,31 @@ foreach (["Preparation", "Delivery", "Review"] as $category) {
 }
 
 $testTypes = [];
+$seen = [];
 
 foreach ($data["Requisition"] as $requisition) {
-    if (!empty($requisition[$columna])) {
-        $key = normalize($requisition["Sample_ID"]) . "|" . normalize($requisition["Sample_Number"]) . "|" . normalize($requisition[$columna]);
+    if (!empty($requisition["Test_Type"])) {
+        $sampleID = normalize($requisition["Sample_ID"]);
+        $sampleNumber = normalize($requisition["Sample_Number"]);
+        $testList = array_map('normalize', explode(",", $requisition["Test_Type"]));
 
-        // Si la muestra NO está en Preparation o Review, agregar a testTypes
-        if (empty($indexedStatus[$key])) {
-            $testTypes[] = [
-                "Sample_ID" => $requisition["Sample_ID"],
-                "Sample_Number" => $requisition["Sample_Number"],
-                "Sample_Date" => $requisition["Sample_Date"],
-                "Test_Type" => $requisition[$columna],
-            ];
+        // Si la muestra tiene el tipo solicitado (por ejemplo GS)
+        if (in_array($type, $testList)) {
+            $key = $sampleID . "|" . $sampleNumber . "|" . $type;
+
+            // Solo si no está hecho y no lo hemos visto antes
+            if (empty($indexedStatus[$key]) && !isset($seen[$key])) {
+                $testTypes[] = [
+                    "Sample_ID" => $requisition["Sample_ID"],
+                    "Sample_Number" => $requisition["Sample_Number"],
+                    "Sample_Date" => $requisition["Sample_Date"],
+                    "Test_Type" => $type, // Solo el que se pidió
+                ];
+                $seen[$key] = true;
+            }
         }
     }
 }
-
 
 use setasign\Fpdi\Fpdi;
 
@@ -142,7 +149,7 @@ foreach ($testTypes as $index => $sample) {
         $pdf->SetX($tableX);
         $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
         $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-        $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
+        $pdf->Cell(45, 10, $sample['Test_Type'], 1, 0, 'C');
         $pdf->Cell(45, 10, '', 1, 1, 'C'); // Método en blanco
     }
 }
