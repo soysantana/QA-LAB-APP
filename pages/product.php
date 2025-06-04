@@ -123,10 +123,10 @@ $products = join_product_table();
                 <td class="text-end"><?= number_format($product['buy_price'], 2); ?></td>
                 <td class="text-center"><?= read_date($product['date']); ?></td>
                 <td class="text-center">
-                  <a href="edit_product.php?id=<?= (int)$product['id']; ?>" class="btn btn-sm btn-warning" title="Editar">
+                  <a href="../pages/edit_product.php?id=<?= (int)$product['id']; ?>" class="btn btn-sm btn-warning" title="Editar">
                     <i class="bi bi-pencil-square"></i>
                   </a>
-                  <a href="delete_product.php?id=<?= (int)$product['id']; ?>" class="btn btn-sm btn-danger" title="Eliminar">
+                  <a href="../pages/delete_product.php?id=<?= (int)$product['id']; ?>" class="btn btn-sm btn-danger" title="Eliminar">
                     <i class="bi bi-trash"></i>
                   </a>
                 </td>
