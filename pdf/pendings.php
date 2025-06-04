@@ -98,8 +98,8 @@ $pdf->SetXY($tableX, $tableY);
 $pdf->SetFillColor(200, 220, 255); // Color de fondo
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(45, 10, 'Sample Date', 1, 0, 'C', true);
-$pdf->Cell(45, 10, 'Sample Name', 1, 0, 'C', true);
-$pdf->Cell(45, 10, 'Sample Number', 1, 0, 'C', true);
+$pdf->Cell(45, 10, 'Sample ID', 1, 0, 'C', true);
+$pdf->Cell(45, 10, 'Test Type', 1, 0, 'C', true);
 $pdf->Cell(45, 10, 'Metodo', 1, 1, 'C', true);
 
 // Tipo Letra
@@ -131,8 +131,8 @@ foreach ($testTypes as $index => $sample) {
 
                     $pdf->SetX($tableX);
                     $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
-                    $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-                    $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
+                    $pdf->Cell(45, 10, $sample['Sample_ID'] . '-' . $sample['Sample_Number'], 1, 0, 'C');
+                    $pdf->Cell(45, 10, $sample['Test_Type'], 1, 0, 'C');
                     $pdf->Cell(45, 10, $resultado, 1, 1, 'C');
                 }
             }
@@ -140,15 +140,15 @@ foreach ($testTypes as $index => $sample) {
             // Si no hay resultados de Grain Size
             $pdf->SetX($tableX);
             $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
-            $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
-            $pdf->Cell(45, 10, $sample['Sample_Number'], 1, 0, 'C');
+            $pdf->Cell(45, 10, $sample['Sample_ID'] . '-' . $sample['Sample_Number'], 1, 0, 'C');
+            $pdf->Cell(45, 10, $sample['Test_Type'], 1, 0, 'C');
             $pdf->Cell(45, 10, 'No data', 1, 1, 'C'); // Colocamos "No data" si no hay tamaño de grano
         }
     } else {
         // Si no es tipo SP
         $pdf->SetX($tableX);
         $pdf->Cell(45, 10, $sample['Sample_Date'], 1, 0, 'C');
-        $pdf->Cell(45, 10, $sample['Sample_ID'], 1, 0, 'C');
+        $pdf->Cell(45, 10, $sample['Sample_ID'] . '-' . $sample['Sample_Number'], 1, 0, 'C');
         $pdf->Cell(45, 10, $sample['Test_Type'], 1, 0, 'C');
         $pdf->Cell(45, 10, '', 1, 1, 'C'); // Método en blanco
     }

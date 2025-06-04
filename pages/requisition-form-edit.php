@@ -52,7 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-md-3">
                   <label for="Client" class="form-label">Cliente</label>
-                  <input type="text" class="form-control" name="Client" id="Client" value="<?php echo ($Search['Client']); ?>">
+                  <select id="Client" class="form-select" name="Client">
+                    <option selected>Elegir...</option>
+                    <option <?php if ($Search['Client'] == 'TSF LLagal') echo 'selected'; ?>>TSF LLagal</option>
+                    <option <?php if ($Search['Client'] == 'TSF Naranjo') echo 'selected'; ?>>TSF Naranjo</option>
+                    <option <?php if ($Search['Client'] == 'Capital Project') echo 'selected'; ?>>Capital Project</option>
+                    <option <?php if ($Search['Client'] == 'MRM') echo 'selected'; ?>>MRM</option>
+                    <option <?php if ($Search['Client'] == 'Geotecnia') echo 'selected'; ?>>Geotecnia</option>
+                    <option <?php if ($Search['Client'] == 'Hidrogeologia') echo 'selected'; ?>>Hidrogeologia</option>
+                  </select>
                 </div>
                 <div class="col-md-3">
                   <label for="ProjectNumber" class="form-label">Numero del Proyecto</label>
@@ -205,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   "SHAPE" => "Formas de Particulas (SHAPE)",
                   "DENSITY" => "Densidad",
                   "CRUMBS" => "Crumbs",
+                  "Actividad" => "Actividad",
                   "Envio" => "Envio",
                 ];
                 ?>

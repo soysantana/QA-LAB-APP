@@ -212,6 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   "SHAPE" => "Formas de Particulas (SHAPE)",
                   "DENSITY" => "Densidad",
                   "CRUMBS" => "Crumbs",
+                  "Actividad" => "Actividad",
                   "Envio" => "Envio",
                 ];
                 ?>
