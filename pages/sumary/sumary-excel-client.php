@@ -1,0 +1,455 @@
+<?php
+require_once('../../config/load.php');
+require_once('../../vendor/autoload.php');
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+// Verificar si se ha proporcionado un Material_Type y Client
+$Material_Type = trim($_GET['Material_Type'] ?? '');
+$Client = trim($_GET['Client'] ?? '');
+
+if (!$Material_Type || !$Client) {
+    die("Error: Material_Type y Client no proporcionados.");
+}
+
+// Definir las tablas a consultar y sus encabezados personalizados
+$tables = [
+    'atterberg_limit' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Nat_Mc' => 'Moisture Natural',
+        'Liquid_Limit_Porce' => 'Liquid Limit (%)',
+        'Plastic_Limit_Porce' => 'Plastic Limit (%)',
+        'Plasticity_Index_Porce' => 'Plasticity Index (%)',
+        'Liquidity_Index_Porce' => 'Liquidity Index (%)',
+        'Classification' => 'ASTM-UCS Soil Classification',
+        'Comments' => 'Comments'
+    ],
+    'standard_proctor' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Methods' => 'Proctor Type (A-B-C)',
+        'Spec_Gravity' => 'Specific Gravity (Gs-Ss) gs/cm3',
+        'DryDensity1' => 'Dry Density pt1 (kg/m³)',
+        'MoisturePorce1' => 'Moisture Content pt1 (%)',
+        'DryDensity2' => 'Dry Density pt2 (kg/m³)',
+        'MoisturePorce2' => 'Moisture Content pt2 (%)',
+        'DryDensity3' => 'Dry Density pt3 (kg/m³)',
+        'MoisturePorce3' => 'Moisture Content pt3 (%)',
+        'DryDensity4' => 'Dry Density pt4 (kg/m³)',
+        'MoisturePorce4' => 'Moisture Content pt4 (%)',
+        'DryDensity5' => 'Dry Density pt5 (kg/m³)',
+        'MoisturePorce5' => 'Moisture Content pt5 (%)',
+        'DryDensity6' => 'Dry Density pt6 (kg/m³)',
+        'MoisturePorce6' => 'Moisture Content pt6 (%)',
+        'Max_Dry_Density_kgm3' => 'Max Dry Density (Kg/m3) Proctor',
+        'Optimun_MC_Porce' => 'Opt moisture content (%) Proctor',
+        'Comments' => 'Comments',
+    ],
+    'grain_size_general' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Pass1' => '8"',
+        'Pass2' => '6"',
+        'Pass3' => '5"',
+        'Pass4' => '4"',
+        'Pass5' => '3.5"',
+        'Pass6' => '3"',
+        'Pass7' => '2.5"',
+        'Pass8' => '2"',
+        'Pass9' => '1.5"',
+        'Pass10' => '1"',
+        'Pass11' => '3/4"',
+        'Pass12' => '1/2"',
+        'Pass13' => '3/8"',
+        'Pass14' => 'No. 4',
+        'Pass15' => 'No. 10',
+        'Pass16' => 'No. 16',
+        'Pass17' => 'No. 20',
+        'Pass18' => 'No. 50',
+        'Pass19' => 'No. 60',
+        'Pass20' => 'No. 100',
+        'Pass21' => 'No. 140',
+        'Pass22' => 'No. 200',
+        'Comments' => 'Comments',
+    ],
+    'grain_size_fine' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Pass1' => '5"',
+        'Pass2' => '4"',
+        'Pass3' => '3.5"',
+        'Pass4' => '3"',
+        'Pass5' => '2.5"',
+        'Pass6' => '2"',
+        'Pass7' => '1.5"',
+        'Pass8' => '1"',
+        'Pass9' => '3/4"',
+        'Pass10' => '1/2"',
+        'Pass11' => '3/8"',
+        'Pass12' => 'No. 4',
+        'Pass13' => 'No. 10',
+        'Pass14' => 'No. 16',
+        'Pass15' => 'No. 20',
+        'Pass16' => 'No. 50',
+        'Pass17' => 'No. 60',
+        'Pass18' => 'No. 200',
+        'Comments' => 'Comments',
+    ],
+    'grain_size_coarse' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Pass1' => '5"',
+        'Pass2' => '4"',
+        'Pass3' => '3.5"',
+        'Pass4' => '3"',
+        'Pass5' => '2.5"',
+        'Pass6' => '2"',
+        'Pass7' => '1.5"',
+        'Pass8' => '1"',
+        'Pass9' => '3/4"',
+        'Pass10' => '3/8"',
+        'Pass11' => 'No. 4',
+        'Pass12' => 'No. 10',
+        'Pass13' => 'No. 16',
+        'Pass14' => 'No. 20',
+        'Pass15' => 'No. 50',
+        'Pass16' => 'No. 60',
+        'Pass17' => 'No. 200',
+        'Comments' => 'Comments',
+    ],
+    'grain_size_coarsethan' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Pass1' => '5"',
+        'Pass2' => '4"',
+        'Pass3' => '3.5"',
+        'Pass4' => '3"',
+        'Pass5' => '2.5"',
+        'Pass6' => '2"',
+        'Pass7' => '1.5"',
+        'Pass8' => '1"',
+        'Pass9' => '3/4"',
+        'Pass10' => '3/8"',
+        'Pass11' => 'No. 4',
+        'Pass12' => 'No. 10',
+        'Pass13' => 'No. 200',
+        'Comments' => 'Comments',
+    ],
+    'los_angeles_abrasion_coarse_aggregate' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Grading' => 'Grading',
+        'Initial_Weight' => 'Initial Weight',
+        'Final_Weight' => 'Final Weight',
+        'Weight_Loss' => 'Weight Loss',
+        'Weight_Loss_Porce' => 'Weight Loss Porce',
+        'Comments' => 'Comments',
+    ],
+    'los_angeles_abrasion_coarse_filter' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Grading' => 'Grading',
+        'Weight_Spheres' => 'Weight Spheres',
+        'Revolutions' => 'Revolutions',
+        'Initial_Weight' => 'Initial Weight',
+        'Final_Weight' => 'Final Weight',
+        'Weight_Loss' => 'Weight Loss',
+        'Weight_Loss_Porce' => 'Weight Loss Porce',
+        'Comments' => 'Comments',
+    ],
+    'moisture_oven' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Moisture_Content_Porce' => 'Oven Moisture Content %',
+        'Comments' => 'Comments',
+    ],
+    'moisture_microwave' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Moisture_Content_Porce' => 'Oven Moisture Content %',
+        'Comments' => 'Comments',
+    ],
+    'moisture_constant_mass' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Moisture_Content_Porce' => 'Oven Moisture Content %',
+        'Comments' => 'Comments',
+    ],
+    'moisture_scale' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Moisture_Content_Porce' => 'Oven Moisture Content %',
+        'Comments' => 'Comments',
+    ],
+    'point_load' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'Depth_From' => 'Depth From',
+        'Depth_To' => 'Depth To',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Methods' => 'Test Type',
+        'DimensionL' => 'Sample Length (mm)',
+        'DimensionD' => 'Sample Width (mm)',
+        'PlattensSeparation' => 'Distance Between Platens (mm)',
+        'LoadDirection' => 'Load Direction',
+        'GaugeReading' => 'Gauge Reading',
+        'FailureLoad' => 'Failure Load',
+        'Comments' => 'Comments',
+    ],
+    'unixial_compressive' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'Depth_From' => 'Depth From',
+        'Depth_To' => 'Depth To',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'DimensionD' => 'Diameter (cm)',
+        'DimensionH' => 'Specimen Length (cm)',
+        'AreaM2' => 'Area (m^2)',
+        'VolM3' => 'Volume (m^3)',
+        'WeightKg' => 'Weight of the Core (kg)',
+        'UnitWeigKgm3' => 'Unit Weight of the core (Kg/m³)',
+        'FailLoadKn' => 'Failure Load (kN)',
+        'TestTimingS' => 'Test Timing (s)',
+        'LoadpMpas' => 'Load Proportion (Mpa/s)',
+        'UCSMpa' => 'Uniaxial Compressive Strength (MPa)',
+        'FailureType' => 'Failure Mode',
+        'Comments' => 'Comments',
+    ],
+    'specific_gravity' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'Depth_From' => 'Depth From',
+        'Depth_To' => 'Depth To',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Specific_Gravity_Soil_Solid' => 'Specific Gravity',
+        'Comments' => 'Comments',
+    ],
+    'specific_gravity_coarse' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'Depth_From' => 'Depth From',
+        'Depth_To' => 'Depth To',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Specific_Gravity_OD' => 'Specific Gravity OD',
+        'Specific_Gravity_SSD' => 'Specific Gravity SSD',
+        'Apparent_Specific_Gravity' => 'Apparent Specific Gravity',
+        'Percent_Absortion' => 'Percent Absortion',
+        'Comments' => 'Comments',
+    ],
+    'specific_gravity_fine' => [
+        'Structure' => 'Structure',
+        'Area' => 'Work Area',
+        'Sample_Date' => 'Sample Date',
+        'Sample_ID' => 'Sample Name',
+        'Sample_Number' => 'Sample Number',
+        'Material_Type' => 'Material Type',
+        'Technician' => 'Technicians',
+        'Depth_From' => 'Depth From',
+        'Depth_To' => 'Depth To',
+        'North' => 'North',
+        'East' => 'East',
+        'Elev' => 'Elev',
+        'Specific_Gravity_OD' => 'Specific Gravity OD',
+        'Specific_Gravity_SSD' => 'Specific Gravity SSD',
+        'Apparent_Specific_Gravity' => 'Apparent Specific Gravity',
+        'Percent_Absortion' => 'Percent Absortion',
+        'Comments' => 'Comments',
+    ],
+];
+
+// Definir un array de mapeo para los títulos de las hojas
+$titles = [
+    'atterberg_limit' => 'AL',
+    'standard_proctor' => 'SP',
+    'grain_size_general' => 'GS',
+    'grain_size_fine' => 'GS_Fine',
+    'grain_size_coarse' => 'GS_Coarse',
+    'grain_size_coarsethan' => 'GS_Coarsethan',
+    'los_angeles_abrasion_coarse_aggregate' => 'LAA_Coarse_Aggregate',
+    'los_angeles_abrasion_coarse_filter' => 'LAA_Coarse_Filter',
+    'moisture_oven' => 'MC',
+    'moisture_microwave' => 'MC_Microwave',
+    'moisture_constant_mass' => 'MC_Constant_Mass',
+    'moisture_scale' => 'MC_Scale',
+    'point_load' => 'PLT',
+    'unixial_compressive' => 'UCS',
+    'specific_gravity' => 'SG',
+    'specific_gravity_coarse' => 'SG_Coarse',
+    'specific_gravity_fine' => 'SG_Fine',
+];
+
+// Crear un nuevo archivo Excel
+$spreadsheet = new Spreadsheet();
+$spreadsheet->removeSheetByIndex(0); // Eliminar la hoja inicial que crea por defecto
+
+// Crear una hoja para cada tabla
+foreach ($tables as $table => $columns) {
+    // Crear una nueva hoja
+    $sheet = $spreadsheet->createSheet();
+
+    // Asignar el título de la hoja usando el array de mapeo
+    $sheetTitle = $titles[$table] ?? $table;
+    $sheet->setTitle($sheetTitle);
+
+    // Escribir encabezados personalizados
+    $headers = array_values($columns);
+    $sheet->fromArray($headers, null, 'A1');
+
+    // Filtrar por Material_Type y Client
+    $query = "SELECT * FROM $table WHERE LOWER(TRIM(Material_Type)) = LOWER(TRIM('$Material_Type')) AND LOWER(TRIM(Client)) = LOWER(TRIM('$Client'))";
+
+    $result = $db->query($query);
+
+    if ($db->num_rows($result) > 0) {
+        // Escribir los datos en la hoja
+        $rowIndex = 2;
+        while ($row = $db->fetch_assoc($result)) {
+            $rowData = [];
+            foreach ($columns as $db_column => $header) {
+                $rowData[] = $row[$db_column] ?? '';
+            }
+            $sheet->fromArray($rowData, null, 'A' . $rowIndex);
+            $rowIndex++;
+        }
+    } else {
+        $sheet->setCellValue('A2', "No se encontraron datos para Material_Type: $Material_Type y Client: $Client");
+    }
+}
+
+// Configurar headers para forzar descarga
+header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+header('Content-Disposition: attachment; filename="Sumary-' . $Client . '-' . $Material_Type . '.xlsx"');
+header('Cache-Control: max-age=0');
+
+// Crear el escritor y enviar la salida directo al navegador
+$writer = new Xlsx($spreadsheet);
+$writer->save('php://output');
+
+// Terminar el script para que no imprima nada más
+exit;
