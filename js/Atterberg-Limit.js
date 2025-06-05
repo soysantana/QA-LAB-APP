@@ -105,11 +105,11 @@ function LLyPL() {
     let classify = "error";
     if (!isNaN(LLPorce) && !isNaN(PLIndexPorce)) {
       if (LLPorce < 50) {
-        if (PLIndexPorce > 7 && (0.73 * (LLPorce - 30)) <= PLIndexPorce) {
+        if (PLIndexPorce > 7 && (0.73 * (LLPorce - 20)) <= PLIndexPorce) {
           classify = "CL OR OL";
-        } else if (PLIndexPorce >= 4 && (0.73 * (LLPorce - 30)) <= PLIndexPorce) {
+        } else if (PLIndexPorce >= 4 && (0.73 * (LLPorce - 20)) <= PLIndexPorce) {
           classify = "CL OR ML";
-        } else if (PLIndexPorce < 4 || (0.73 * (LLPorce - 30)) > PLIndexPorce) {
+        } else if (PLIndexPorce < 4 || (0.73 * (LLPorce - 20)) > PLIndexPorce) {
           classify = "ML OR OL";
         }
       } else {
