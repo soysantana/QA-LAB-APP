@@ -113,9 +113,9 @@ function LLyPL() {
           classify = "ML OR OL";
         }
       } else {
-        if ((0.73 * (LLPorce - 30)) <= PLIndexPorce) {
+        if ((0.73 * (LLPorce - 20)) <= PLIndexPorce) {
           classify = "CH OR OH";
-        } else {
+        } else if ((0.73 * (LLPorce - 20)) > PLIndexPorce) {
           classify = "MH OR OH";
         }
       }
