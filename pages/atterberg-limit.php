@@ -1,107 +1,105 @@
 <?php
-  $page_title = 'Atterberg Limit';
-  $class_form = ' ';
-  $form_show = 'show';
-  require_once('../config/load.php');
+$page_title = 'Atterberg Limit';
+$class_form = ' ';
+$form_show = 'show';
+require_once('../config/load.php');
 ?>
 
-<?php 
-  // Manejo de los formularios
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['atterberg-limit'])) {
-        include('../database/atterberg-limit.php');
-    } 
+<?php
+// Manejo de los formularios
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['atterberg-limit'])) {
+    include('../database/atterberg-limit.php');
   }
+}
 ?>
 
 <?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
-<div class="pagetitle">
-  <h1>Atterberg Limit</h1>
-  <nav>
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-      <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Atterberg Limit</li>
-    </ol>
-  </nav>
-</div><!-- End Page Title -->
-<section class="section">
+  <div class="pagetitle">
+    <h1>Atterberg Limit</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
+        <li class="breadcrumb-item">Forms</li>
+        <li class="breadcrumb-item active">Atterberg Limit</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+  <section class="section">
 
-  <form class="row" action="atterberg-limit.php" method="post">
+    <form class="row" action="atterberg-limit.php" method="post">
 
-  <div class="row" oninput="LLyPL()">
+      <div class="row" oninput="LLyPL()">
 
-  <div id="product_info"></div>
+        <div id="product_info"></div>
 
-  <div class="col-md-4">
-  <?php echo display_msg($msg); ?>
-  </div>
-  
-    <div class="col-lg-12">
+        <div class="col-md-4">
+          <?php echo display_msg($msg); ?>
+        </div>
 
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Trial Information</h5>
+        <!-- Test Information -->
+        <div class="col-lg-12">
 
-          <!-- Multi Columns Form -->
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="Standard" class="form-label">Standard</label>
-              <select id="Standard" class="form-select" name="Standard">
-                <option selected>Choose...</option>
-                <option value="ASTM-D4318">ASTM-D4318</option>
-              </select>
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Trial Information</h5>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="Standard" class="form-label">Standard</label>
+                  <select id="Standard" class="form-select" name="Standard">
+                    <option selected>Choose...</option>
+                    <option value="ASTM-D4318">ASTM-D4318</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="PMethods" class="form-label">Preparation Methods</label>
+                  <select id="PMethods" class="form-select" name="PMethods">
+                    <option selected>Choose...</option>
+                    <option value="Oven Dried">Oven Dried</option>
+                    <option value="Air Dried">Air Dried</option>
+                    <option value="Microwave Dried">Microwave Dried</option>
+                    <option value="Wet">Wet</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="SMethods" class="form-label">Split Methods</label>
+                  <select id="SMethods" class="form-select" name="SMethods">
+                    <option selected>Choose...</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Mechanical">Mechanical</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="NatMc" class="form-label">Natural Mc %</label>
+                  <input type="text" class="form-control" name="NatMc" id="NatMc">
+                </div>
+                <div class="col-md-6">
+                  <label for="Technician" class="form-label">Technician</label>
+                  <input type="text" class="form-control" name="Technician" id="Technician">
+                </div>
+                <div class="col-md-6">
+                  <label for="DateTesting" class="form-label">Date of Testing</label>
+                  <input type="date" class="form-control" name="DateTesting" id="DateTesting">
+                </div>
+                <div class="col-12">
+                  <label for="Comments" class="form-label">Comments</label>
+                  <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"></textarea>
+                </div>
+              </div>
+
             </div>
-            <div class="col-md-6">
-              <label for="PMethods" class="form-label">Preparation Methods</label>
-              <select id="PMethods" class="form-select" name="PMethods">
-                <option selected>Choose...</option>
-                <option value="Oven Dried">Oven Dried</option>
-                <option value="Air Dried">Air Dried</option>
-                <option value="Microwave Dried">Microwave Dried</option>
-                <option value="Wet">Wet</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="SMethods" class="form-label">Split Methods</label>
-              <select id="SMethods" class="form-select" name="SMethods">
-                <option selected>Choose...</option>
-                <option value="Manual">Manual</option>
-                <option value="Mechanical">Mechanical</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="NatMc" class="form-label">Natural Mc %</label>
-              <input type="text" class="form-control" name="NatMc" id="NatMc">
-            </div>
-            <div class="col-md-6">
-              <label for="Technician" class="form-label">Technician</label>
-              <input type="text" class="form-control" name="Technician" id="Technician">
-            </div>
-            <div class="col-md-6">
-              <label for="DateTesting" class="form-label">Date of Testing</label>
-              <input type="date" class="form-control" name="DateTesting" id="DateTesting">
-            </div>
-            <div class="col-12">
-              <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"></textarea>
-            </div>
-            <div class="col-12">
-              <textarea hidden class="form-control" name="PlotLimit" id="PlotLimit" style="height: 100px;"></textarea>
-              <textarea hidden class="form-control" name="PlotPlasticity" id="PlotPlasticity" style="height: 100px;"></textarea>
-            </div>
-          </div><!-- End Multi Columns Form -->
+          </div>
 
         </div>
-      </div>
+        <!-- End Test Information -->
 
-    </div>
-
-    <div class="col-lg-5">
-    <div class="card">
+        <!-- Liquid Limit and Plastic Limit -->
+        <div class="col-lg-5">
+          <div class="card">
             <div class="card-body">
               <h5 class="card-title">Liquid Limit</h5>
               <!-- Bordered Table -->
@@ -229,96 +227,99 @@
               <!-- End Bordered Table -->
             </div>
           </div>
-    </div>
+        </div>
+        <!-- End Liquid Limit and Plastic Limit -->
 
-    <div class="col-lg-4">
+        <div class="col-lg-4">
 
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title"></h5>
-        
-        <!-- Multi Point Liquid Limit Plot Chart -->
-        <div id="liquid-limit" style="min-height: 400px;" class="echart"></div>
-        <!-- End Multi Point Liquid Limit Plot Chart -->
-    
-      </div>
-    </div>
-          
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title"></h5>
-              
-        <!-- Plasticity Chart -->
-        <div id="PlasticityChart" style="min-height: 400px;" class="echart"></div>
-        <!-- End Plasticity Chart -->
-            
-      </div>
-    </div>
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title"></h5>
 
-    </div>
-    
-    <div class="col-lg-3">
-      
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Summary Atteberg Limit Parameter</h5>
-        <!-- Summary Atteberg Limit Parameter -->
-        <table class="table table-bordered">
-          <tbody>
-            <tr>
-              <th scope="row" style="width: 175px;">Liquid Limit (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="LLPorce" id="LLPorce" readonly tabindex="-1"></td>
-            </tr>
-            <tr>
-              <th scope="row">Plastic Limit (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="PLPorce" id="PLPorce" readonly tabindex="-1"></td>
-            </tr>
-            <tr>
-              <th scope="row">Plasticity Index (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="PLIndexPorce" id="PLIndexPorce" readonly tabindex="-1"></td>
-            </tr>
-            <tr>
-              <th scope="row">Liquidity Index (%):</th>
-              <td><input type="text" style="border: none;" class="form-control" name="LLIndexPorce" id="LLIndexPorce" readonly tabindex="-1"></td>
-              <input hidden style="border: none;" class="form-control" name="Rsquared" id="Rsquared" readonly tabindex="-1">
-            </tr>
-          </tbody>
-        </table>
-        <!-- End Default Table Example -->
-        <!-- Summary Atteberg Limit Parameter -->
-        <table class="table table-bordered">
-          <tbody>
-            <tr>
-              <th scope="row" style="width: 160px;">Soil Classification as per Unified Soil Classification System, ASTM designation D2487-06</th>
-              <td><input type="text" style="border: none;" class="form-control" name="classifysoil" id="classifysoil" readonly tabindex="-1"></td>
-            </tr>
-          </tbody>
-        </table>
-        <!-- End Default Table Example -->
-      </div>
-    </div>
+              <!-- Multi Point Liquid Limit Plot Chart -->
+              <div id="liquid-limit" style="min-height: 400px;" class="echart"></div>
+              <!-- End Multi Point Liquid Limit Plot Chart -->
 
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Actions</h5>
-        <!-- Actions Buttons -->
-        <div class="d-grid gap-2 mt-3">
-          <button type="submit" class="btn btn-success" name="atterberg-limit">Save Essay</button>
-          <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
-          <div id="mensaje-container"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title"></h5>
+
+              <!-- Plasticity Chart -->
+              <div id="PlasticityChart" style="min-height: 400px;" class="echart"></div>
+              <!-- End Plasticity Chart -->
+
+            </div>
+          </div>
+
         </div>
 
-      </div>
+        <div class="col-lg-3">
+
+          <!-- Summary Atteberg Limit Parameter -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Summary Atteberg Limit Parameter</h5>
+
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row" style="width: 175px;">Liquid Limit (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLPorce" id="LLPorce" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Plastic Limit (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLPorce" id="PLPorce" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Plasticity Index (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="PLIndexPorce" id="PLIndexPorce" readonly tabindex="-1"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Liquidity Index (%):</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="LLIndexPorce" id="LLIndexPorce" readonly tabindex="-1"></td>
+                    <input hidden style="border: none;" class="form-control" name="Rsquared" id="Rsquared" readonly tabindex="-1">
+                  </tr>
+                </tbody>
+              </table>
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row" style="width: 160px;">Soil Classification as per Unified Soil Classification System, ASTM designation D2487-06</th>
+                    <td><input type="text" style="border: none;" class="form-control" name="classifysoil" id="classifysoil" readonly tabindex="-1"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- End Summary Atteberg Limit Parameter -->
+
+          <!-- Actions Buttons -->
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Actions</h5>
+              <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-success" name="atterberg-limit">Save Essay</button>
+                <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
+                <div id="mensaje-container"></div>
+              </div>
+
+            </div>
+          </div>
+          <!-- End Actions Buttons -->
+
+        </div>
+
+    </form>
+    <!-- End Form -->
+
     </div>
-  
-  </div>
+  </section>
 
-  </form><!-- End Form -->
-
-  </div>
-</section>
-
-</main><!-- End #main -->
+</main>
+<!-- End #main -->
 
 <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
 <script src="../js/Atterberg-Limit.js"></script>

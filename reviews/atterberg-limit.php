@@ -96,11 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
                 </div>
-                <div class="col-12">
-                  <textarea hidden class="form-control" name="PlotLimit" id="PlotLimit" style="height: 100px;"><?php echo ($Search['Liquid_Limit_Plot']); ?></textarea>
-                  <textarea hidden class="form-control" name="PlotPlasticity" id="PlotPlasticity" style="height: 100px;"><?php echo ($Search['Plasticity_Chart']); ?></textarea>
-                </div>
-              </div><!-- End Multi Columns Form -->
+              </div>
+              <!-- End Multi Columns Form -->
 
             </div>
           </div>
@@ -317,8 +314,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="../pdf/AL-Naranjo.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
-                    <li><a class="dropdown-item" href="../pdf/AL-Build.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
+                    <li><a class="dropdown-item" onclick="enviarImagenAlServidor('AL-Naranjo')">Naranjo</a></li>
+                    <li><a class="dropdown-item" onclick="enviarImagenAlServidor('AL-Build')">Contruccion</a></li>
                   </ul>
                 </div>
 

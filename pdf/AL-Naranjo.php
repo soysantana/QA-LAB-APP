@@ -5,6 +5,11 @@ require_once('../config/load.php');
 
 use setasign\Fpdi\Fpdi;
 
+// Leer JSON recibido
+$input = json_decode(file_get_contents('php://input'), true);
+$liquidlimit = $input['liquidlimit'] ?? null;
+$plasticity = $input['plasticity'] ?? null;
+
 // Obtener datos de la base de datos
 $Search = find_by_id('atterberg_limit', $_GET['id']);
 
@@ -172,18 +177,24 @@ $pdf->SetFont('Arial', '', 10);
 $pdf->SetXY(293, 182);
 $pdf->MultiCell(59, 4, $Search['Comments'], 0, 'L');
 
-// Agregar imágenes al PDF
-function addImage($pdf, $base64, $x, $y, $w)
+// Function to insert base64 image into PDF
+function insertarImagenBase64($pdf, $base64Str, $x, $y, $w, $h)
 {
-    $imageData = base64_decode($base64);
-    $tempFile = tempnam(sys_get_temp_dir(), 'image');
-    file_put_contents($tempFile, $imageData);
-    $pdf->Image($tempFile, $x, $y, $w, 0, 'PNG');
-    unlink($tempFile);
+    if ($base64Str) {
+        $base64Str = preg_replace('#^data:image/\w+;base64,#i', '', $base64Str);
+        $imageData = base64_decode($base64Str);
+        $tmpFile = tempnam(sys_get_temp_dir(), 'img') . '.png';
+        file_put_contents($tmpFile, $imageData);
+        $pdf->Image($tmpFile, $x, $y, $w, $h);
+        unlink($tmpFile);
+    }
 }
 
-addImage($pdf, $Search['Liquid_Limit_Plot'], 182, 91, 88);
-addImage($pdf, $Search['Plasticity_Chart'], 182, 170, 88);
+// Insertar imagen de límite líquido
+insertarImagenBase64($pdf, $liquidlimit, 182, 91, 88, 0); // ajusta X, Y, ancho, alto
+
+// Insertar imagen de índice de plasticidad
+insertarImagenBase64($pdf, $plasticity, 182, 170, 88, 0); // ajusta X, Y, ancho, alto
 
 // Salida del archivo PDF
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');

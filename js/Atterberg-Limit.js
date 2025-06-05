@@ -186,24 +186,50 @@ function LLyPL() {
   function enviarData() {
     $.ajax({
       url: "../libs/graph/Liquid-Limit-Plot.js",
-      type: "GET",
-      data: $("#nopasonada").serialize(),
-      success: function(data) {}
     });
     $.ajax({
       url: "../libs/graph/Plasticity-Chart.js",
-      type: "GET",
-      data: $("#nopasonada").serialize(),
-      success: function(data) {}
     });
   }
 
+  // Función para enviar las imágenes de los gráficos al servidor
+  function enviarImagenAlServidor(tipoReporte) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sampleId = urlParams.get('id');
+    if (!sampleId) {
+        alert("Falta el parámetro ID en la URL");
+        return;
+    }
+
+    var LiquidLimitChart= echarts.getInstanceByDom(document.getElementById('liquid-limit'));
+    var PlasticityChart = echarts.getInstanceByDom(document.getElementById('PlasticityChart'));
+    var LiquidLimitImageURL = LiquidLimitChart.getDataURL({
+        pixelRatio: 1,
+        backgroundColor: '#fff'
+    });
+    var PlasticityImageURL = PlasticityChart.getDataURL({
+        pixelRatio: 1,
+        backgroundColor: '#fff'
+    });
+
+    fetch(`../../pdf/${tipoReporte}.php?id=${encodeURIComponent(sampleId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ liquidlimit: LiquidLimitImageURL, plasticity: PlasticityImageURL })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url);
+        URL.revokeObjectURL(url);
+    })
+    .catch(console.error);
+}
+
+  // Función para buscar la humedad natural y mostrarla en el input correspondiente
   function search() {
     var ID = $('#SampleName').val();
     var Number = $('#SampleNumber').val();
-
-    console.log("ID:", ID); // Imprime el valor de ID en la consola
-    console.log("Number:", Number); 
 
     $.ajax({
       type: 'POST',
@@ -229,48 +255,3 @@ function LLyPL() {
       }
     });
   }
-
-
-  function actualizarImagen() {
-    var liquidLimit = echarts.getInstanceByDom(document.getElementById('liquid-limit'));
-    var plasticityChart = echarts.getInstanceByDom(document.getElementById('PlasticityChart'));
-  
-    var liquidLimitImageURL = liquidLimit.getDataURL({
-      pixelRatio: 1,
-      backgroundColor: '#fff'
-    });
-  
-    var plasticityChartImageURL = plasticityChart.getDataURL({
-      pixelRatio: 1,
-      backgroundColor: '#fff'
-    });
-  
-    Promise.all([
-        fetch(liquidLimitImageURL).then(response => response.blob()),
-        fetch(plasticityChartImageURL).then(response => response.blob())
-      ])
-      .then(([liquidLimitBlob, plasticityChartBlob]) => {
-        return Promise.all([
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(liquidLimitBlob);
-          }),
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(plasticityChartBlob);
-          })
-        ]);
-      })
-      .then(([liquidLimitBase64, plasticityChartBase64]) => {
-        document.getElementById('PlotLimit').value = liquidLimitBase64;
-        document.getElementById('PlotPlasticity').value = plasticityChartBase64;
-      })
-      .catch(error => console.error('Error al convertir la imagen a Base64:', error));
-  }
-  document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('blur', actualizarImagen);
-  });
