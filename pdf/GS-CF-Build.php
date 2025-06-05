@@ -332,13 +332,16 @@ $pdf->SetXY(392, 377);
 $pdf->Cell(43, 4, $Search['Cu'], 0, 1, 'C');
 
 //Coarse Grained Classification using the USCS
-$pdf->SetXY(260, 357);
-$pdf->Cell(152, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
-$pdf->SetXY(339, 383);
-$pdf->Cell(73, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
+$pdf->SetXY(300, 394);
+$pdf->Cell(165, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
+$pdf->SetXY(300, 401);
+$pdf->Cell(165, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 $pdf->SetXY(52, 532);
 $pdf->MultiCell(145, 4, $Search['Comments'], 0, 'L');
+
+$pdf->SetXY(200, 532);
+$pdf->MultiCell(145, 4, $Search['FieldComment'], 0, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];
