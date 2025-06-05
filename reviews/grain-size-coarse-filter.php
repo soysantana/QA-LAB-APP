@@ -59,10 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="specsType" class="form-label">Especificaciones</label>
                   <select id="specsType" class="form-select" name="specsType">
                     <option selected>Choose...</option>
-                    <option value="I">Agregado Investigacion</option>
-                    <option value="C">Contruccion</option>
-                    <option value="N">Naranjo</option>
-                    <option value="A">Acopio</option>
+                    <option value="AGGINV">Agregado Investigacion</option>
+                    <option value="Build">Contruccion</option>
+                    <option value="Naranjo">Naranjo</option>
+                    <option value="Acopio">Acopio</option>
                   </select>
                 </div>
                 <div class="col-md-4">
