@@ -102,7 +102,7 @@ function LLyPL() {
 
   // Clasificacion Suelo
   function classifysoil() {
-    let classify = "error";
+    let classify = "-";
     if (!isNaN(LLPorce) && !isNaN(PLIndexPorce)) {
       if (LLPorce < 50) {
         if (PLIndexPorce > 7 && (0.73 * (LLPorce - 20)) <= PLIndexPorce) {
@@ -170,9 +170,9 @@ function LLyPL() {
 
   document.getElementById("PLAvgMcPorce").value = isNaN(PLAvgMcPorce) ? "" : PLAvgMcPorce.toFixed(2);
 
-  document.getElementById("LLPorce").value = LLPorce.toFixed(0);
-  document.getElementById("PLPorce").value = PLPorce.toFixed(0);
-  document.getElementById("PLIndexPorce").value = PLIndexPorce.toFixed(0);
+  document.getElementById("LLPorce").value = isNaN(LLPorce) ? "" : LLPorce.toFixed(0);
+  document.getElementById("PLPorce").value = isNaN(PLPorce) ? "" : PLPorce.toFixed(0);
+  document.getElementById("PLIndexPorce").value = isNaN(PLIndexPorce) ? "" : PLIndexPorce.toFixed(0);
   document.getElementById("LLIndexPorce").value = isNaN(LLIndexPorce) ? "" : LLIndexPorce.toFixed(4);
   document.getElementById("classifysoil").value = classifysoil();
   document.getElementById("Rsquared").value = rSquare.toFixed(4);
