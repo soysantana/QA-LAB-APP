@@ -128,37 +128,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-2">
                   <label for="MType_1" class="form-label">Material</label>
                   <select id="MType_1" class="form-select" name="MType_1">
-                    <option selected>Elegir...</option>
-                    <option <?php if ($Search['Material_Type'] == 'Soil') echo 'selected'; ?>>Suelo</option>
-                    <option <?php if ($Search['Material_Type'] == 'Rock') echo 'selected'; ?>>Roca</option>
-                    <option <?php if ($Search['Material_Type'] == 'Crudo') echo 'selected'; ?>>Crudo</option>
-                    <option <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
-                    <option <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
-                    <option <?php if ($Search['Material_Type'] == 'FRF') echo 'selected'; ?>>FRF</option>
-                    <option <?php if ($Search['Material_Type'] == 'UTF') echo 'selected'; ?>>UTF</option>
-                    <option <?php if ($Search['Material_Type'] == 'TRF') echo 'selected'; ?>>TRF</option>
-                    <option <?php if ($Search['Material_Type'] == 'FF') echo 'selected'; ?>>FF</option>
-                    <option <?php if ($Search['Material_Type'] == 'CF') echo 'selected'; ?>>CF</option>
-                    <option <?php if ($Search['Material_Type'] == 'LPF') echo 'selected'; ?>>LPF</option>
-                    <option <?php if ($Search['Material_Type'] == 'RS') echo 'selected'; ?>>RS</option>
-                    <option <?php if ($Search['Material_Type'] == 'EMF') echo 'selected'; ?>>EMF</option>
-                    <option <?php if ($Search['Material_Type'] == 'GF') echo 'selected'; ?>>GF</option>
-                    <option <?php if ($Search['Material_Type'] == 'UFF') echo 'selected'; ?>>UFF</option>
-                    <option <?php if ($Search['Material_Type'] == 'EF') echo 'selected'; ?>>EF</option>
+                    <option value="" selected>Elegir...</option>
+                    <option value="Soil" <?php if ($Search['Material_Type'] == 'Soil') echo 'selected'; ?>>Suelo</option>
+                    <option value="Rock" <?php if ($Search['Material_Type'] == 'Rock') echo 'selected'; ?>>Roca</option>
+                    <option value="Crudo" <?php if ($Search['Material_Type'] == 'Crudo') echo 'selected'; ?>>Crudo</option>
+                    <option value="RF" <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
+                    <option value="IRF" <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
+                    <option value="FRF" <?php if ($Search['Material_Type'] == 'FRF') echo 'selected'; ?>>FRF</option>
+                    <option value="UTF" <?php if ($Search['Material_Type'] == 'UTF') echo 'selected'; ?>>UTF</option>
+                    <option value="TRF" <?php if ($Search['Material_Type'] == 'TRF') echo 'selected'; ?>>TRF</option>
+                    <option value="FF" <?php if ($Search['Material_Type'] == 'FF') echo 'selected'; ?>>FF</option>
+                    <option value="CF" <?php if ($Search['Material_Type'] == 'CF') echo 'selected'; ?>>CF</option>
+                    <option value="LPF" <?php if ($Search['Material_Type'] == 'LPF') echo 'selected'; ?>>LPF</option>
+                    <option value="RS" <?php if ($Search['Material_Type'] == 'RS') echo 'selected'; ?>>RS</option>
+                    <option value="EMF" <?php if ($Search['Material_Type'] == 'EMF') echo 'selected'; ?>>EMF</option>
+                    <option value="GF" <?php if ($Search['Material_Type'] == 'GF') echo 'selected'; ?>>GF</option>
+                    <option value="UFF" <?php if ($Search['Material_Type'] == 'UFF') echo 'selected'; ?>>UFF</option>
+                    <option value="EF" <?php if ($Search['Material_Type'] == 'EF') echo 'selected'; ?>>EF</option>
                   </select>
                 </div>
                 <div class="col-md-3">
                   <label for="SType_1" class="form-label">Tipo de muestra</label>
                   <select id="SType_1" class="form-select" name="SType_1">
-                    <option selected>Elegir...</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Grab') echo 'selected'; ?>>Grab</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Bulk') echo 'selected'; ?>>Bulk</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Truck') echo 'selected'; ?>>Truck</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Rock') echo 'selected'; ?>>Rock</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Shelby') echo 'selected'; ?>>Shelby</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Lexan') echo 'selected'; ?>>Lexan</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Mazier') echo 'selected'; ?>>Mazier</option>
-                    <option <?php if ($Search['Sample_Type'] == 'Ring') echo 'selected'; ?>>Ring</option>
+                    <option value="" selected>Elegir...</option>
+                    <option value="Grab" <?php if ($Search['Sample_Type'] == 'Grab') echo 'selected'; ?>>Grab</option>
+                    <option value="Bulk" <?php if ($Search['Sample_Type'] == 'Bulk') echo 'selected'; ?>>Bulk</option>
+                    <option value="Truck" <?php if ($Search['Sample_Type'] == 'Truck') echo 'selected'; ?>>Truck</option>
+                    <option value="Rock" <?php if ($Search['Sample_Type'] == 'Rock') echo 'selected'; ?>>Rock</option>
+                    <option value="Shelby" <?php if ($Search['Sample_Type'] == 'Shelby') echo 'selected'; ?>>Shelby</option>
+                    <option value="Lexan" <?php if ($Search['Sample_Type'] == 'Lexan') echo 'selected'; ?>>Lexan</option>
+                    <option value="Mazier" <?php if ($Search['Sample_Type'] == 'Mazier') echo 'selected'; ?>>Mazier</option>
+                    <option value="Ring" <?php if ($Search['Sample_Type'] == 'Ring') echo 'selected'; ?>>Ring</option>
                   </select>
                 </div>
                 <div class="col-md-3">

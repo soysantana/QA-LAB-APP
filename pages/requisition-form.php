@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-3">
                   <label for="Client" class="form-label">Cliente</label>
                   <select id="Client" class="form-select" name="Client">
-                    <option selected>Elegir...</option>
+                    <option value="" selected>Elegir...</option>
                     <option value="TSF LLagal">TSF LLagal</option>
                     <option value="TSF Naranjo">TSF Naranjo</option>
                     <option value="Capital Project">Capital Project</option>
