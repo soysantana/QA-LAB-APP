@@ -23,6 +23,29 @@ $pdf->setSourceFile('template/PV-F-80695 Laboratory sieve Grain size for Fine FI
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
+$pass3p8 = $Search['Pass11'];
+$passn4 = $Search['Pass12'];
+$passn10 = $Search['Pass13'];
+$passn16 = $Search['Pass14'];
+$passn50 = $Search['Pass16'];
+$passn60 = $Search['Pass17'];
+$passn200 = $Search['Pass18'];
+
+// Condición para "Acepted"
+if (
+    $pass3p8 == 100 &&
+    $passn4 >= 95 && $passn4 <= 100 &&
+    $passn10 >= 75 && $passn10 <= 100 &&
+    $passn16 >= 60 && $passn16 <= 85 &&
+    $passn50 >= 10 && $passn50 <= 30 &&
+    $passn60 >= 5 && $passn60 <= 35 &&
+    $passn200 >= 0 && $passn200 <= 2
+) {
+    $resultado = 'Acepted';
+} else {
+    $resultado = 'Rejected';
+}
+
 $pdf->SetFont('Arial', 'B', 10);
 
 //Information for the essay
@@ -356,11 +379,13 @@ $pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Grain Size Test Results
 $pdf->SetXY(310, 430);
-$pdf->Cell(152, 4, '', 0, 1, 'C');
+$pdf->Cell(152, 4, $resultado, 0, 1, 'C');
 
 // Comments and Observations
 $pdf->SetXY(54, 480);
 $pdf->Cell(360, 4, $Search['Comments'], 0, 1, 'L');
+$pdf->SetXY(54, 520);
+$pdf->Cell(360, 4, $Search['FieldComment'], 0, 1, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];

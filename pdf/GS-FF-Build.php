@@ -388,7 +388,7 @@ $pdf->Cell(40, 4, $resultado, 0, 1, 'C');
 $pdf->SetXY(40, 505);
 $pdf->MultiCell(145, 4, $Search['Comments'], 0, 'L');
 $pdf->SetXY(192, 505);
-$pdf->MultiCell(145, 4, '', 0, 'L');
+$pdf->MultiCell(145, 4, $Search['FieldComment'], 0, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];
