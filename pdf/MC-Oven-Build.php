@@ -7,7 +7,8 @@ $Search = find_by_id('moisture_oven', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
 
-class PDF extends Fpdi {
+class PDF extends Fpdi
+{
     function Header() {}
 
     function Footer() {}
@@ -96,7 +97,18 @@ $pdf->Cell(25, 1, $Search['Moisture_Content_Porce'], 0, 1, 'C');
 
 // Test Results
 $pdf->SetXY(198, 172.5);
-$pdf->Cell(25, 1, ($Search['Material_Type'] == "LPF" && $Search['Moisture_Content_Porce'] >= 14.5 && $Search['Moisture_Content_Porce'] <= 27.4) ? "Passed" : "Failed", 0, 1, 'C');
+$pdf->Cell(
+    25,
+    1,
+    ($Search['Material_Type'] != "LPF" ||
+        ($Search['Moisture_Content_Porce'] >= 14.5 && $Search['Moisture_Content_Porce'] <= 27.4))
+        ? "Passed" : "Failed",
+    0,
+    1,
+    'C'
+);
+
+
 
 // Comparasion Information
 $pdf->SetXY(72, 189.5);
@@ -108,4 +120,3 @@ $pdf->SetXY(19, 210);
 $pdf->MultiCell(50, 1, $Search['Comments'], 0, 'C');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
-?>
