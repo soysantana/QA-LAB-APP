@@ -104,7 +104,7 @@ function FineFilter() {
     const TotalWtRet = PanWtRen + WashPan;
     const TotalRet = (TotalWtRet / DrySoil) * 100;
     const TotalCumRet = cumRetArray[18] + TotalRet;
-    const TotalPass = 100 - TotalCumRet;
+    const TotalPass = Math.abs(100 - TotalCumRet);
 
     // Summary Grain Size Distribution Parameter
     PassArray.push(Pass);
