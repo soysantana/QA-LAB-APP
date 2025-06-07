@@ -320,6 +320,8 @@ $pdf->Cell(39, 10, $Search['Optimun_MC_Porce'], 0, 1, 'C');
 // Comments and Observations
 $pdf->SetXY(46, 410);
 $pdf->MultiCell(160, 4, $Search['Comments'], 0, 'L');
+$pdf->SetXY(210, 410);
+$pdf->MultiCell(160, 4, $Search['FieldComment'], 0, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];
