@@ -97,7 +97,6 @@ foreach ($requisitions as $requisition) {
 
 class PDF extends FPDF {
   public $fecha_en;
-  private $headerShown = false;
 
   function Header() {
     if ($this->PageNo() > 1) return;
@@ -132,9 +131,9 @@ class PDF extends FPDF {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
       $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
       if ($week_number % 2 === 0) {
-        $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia", 0, 'L');
+        $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Frandy Espinal", 0, 'L');
       } else {
-        $this->MultiCell(0, 6, "Lab Document Control: Frandy Epsinal", 0, 'L');
+        $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
       }
       $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
       $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
@@ -142,7 +141,7 @@ class PDF extends FPDF {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
       $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
       if ($week_number % 2 === 0) {
-        $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Wendin De Jesus", 0, 'L');
+        $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Arturo Santana", 0, 'L');
       } else {
         $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
       }
