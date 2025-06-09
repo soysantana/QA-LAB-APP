@@ -111,7 +111,7 @@ class PDF extends FPDF {
     $this->SetFont('Arial', '', 12);
     $this->SetXY(150, 20);
     $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-    $this->Ln(20);
+    $this->Ln(15);
 
     $timestamp = strtotime($this->fecha_en);
     $day_of_week = date('w', $timestamp);
