@@ -36,7 +36,7 @@ for ($i = 0; $i < 7; $i++) {
                 <td><?= $i++ ?></td>
                 <td><?= date('d-m-Y', strtotime($fecha)) ?></td>
                 <td>
-                  <a href="../pdf/generar_reporte_pdf.php?fecha=<?= $fecha ?>" target="_blank" class="btn btn-danger btn-sm">
+                  <a href="../pages/generar_reporte_pdf.php?fecha=<?= $fecha ?>" target="_blank" class="btn btn-danger btn-sm">
                     <i class="bi bi-file-earmark-pdf"></i> Generar PDF
                   </a>
                 </td>
