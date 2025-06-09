@@ -31,12 +31,12 @@ $tablas = [
 ];
 
 foreach ($tablas as $tabla => $col_fecha) {
-  $results = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type, Technician, Status FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'");
+  $results = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type, Register_By, Status FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'");
   foreach ($results as $row) {
     $test_details[] = [
       'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
       'type' => $row['Test_Type'],
-      'tech' => $row['Technician'],
+      'tech' => $row['Register_By'],
       'status' => $row['Status']
     ];
   }
