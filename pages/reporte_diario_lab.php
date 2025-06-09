@@ -14,7 +14,7 @@ $una_semana_atras = date('Y-m-d', strtotime("$fecha -7 days"));
 // Consulta optimizada para muestras creadas en la última semana
 $query = "
 SELECT 
-  r.Sample_Name,
+ 
   r.Sample_Number,
   r.Project_Name,
   d.Register_Date AS delivery_date,
@@ -79,9 +79,8 @@ $results = $db->query($query);
           <table class="table table-bordered table-hover">
             <thead class="table-light">
               <tr>
-                <th>#</th>
+                <th>#</th>           
                 <th>Nombre Muestra</th>
-                <th>Número</th>
                 <th>Proyecto</th>
                 <th>Estado</th>
                 <th>Último Registro</th>
@@ -91,7 +90,7 @@ $results = $db->query($query);
               <?php $i = 1; while ($row = $results->fetch_assoc()): ?>
                 <tr>
                   <td><?= $i++ ?></td>
-                  <td><?= $row['Sample_Name'] ?></td>
+            
                   <td><?= $row['Sample_Number'] ?></td>
                   <td><?= $row['Project_Name'] ?></td>
                   <td><?= $row['estado'] ?: '-' ?></td>
