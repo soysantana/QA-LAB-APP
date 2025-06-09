@@ -2,6 +2,14 @@
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 
+// Mostrar errores y registrar log
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/error_log.txt');
+
+// Validar fecha
 if (!isset($_GET['fecha'])) {
   die('Fecha no especificada.');
 }
@@ -16,27 +24,33 @@ $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
 // Resumen de actividades
 $requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$preparation = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$realization = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$delivery = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$reviewed = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 
 // Detalles de ensayos
 $test_details = [];
 $tablas = [
   'test_preparation' => 'Register_Date',
   'test_realization' => 'Register_Date',
-  'test_delivery' => 'Register_Date',
-  'test_reviewed' => 'Start_Date'
+  'test_delivery'    => 'Register_Date',
+  'test_reviewed'    => 'Start_Date'
 ];
 
 foreach ($tablas as $tabla => $col_fecha) {
-  $results = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type, Register_By, Status FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'");
+  $query = "SELECT Sample_Name, Sample_Number, Test_Type, Status";
+  $has_tech = in_array($tabla, ['test_preparation', 'test_realization', 'test_delivery']);
+  if ($has_tech) $query .= ", Technician";
+
+  $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
+  $results = find_by_sql($query);
+
   foreach ($results as $row) {
     $test_details[] = [
       'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
-      'type' => $row['Test_Type'],
-      'tech' => $row['Register_By'],
+      'type'   => $row['Test_Type'],
+      'tech'   => $has_tech ? $row['Technician'] : 'N/A',
       'status' => $row['Status']
     ];
   }
@@ -73,7 +87,7 @@ $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
 
-// Título: Summary
+// RESUMEN
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
 
@@ -97,10 +111,8 @@ $pdf->Cell(30, 8, $delivery, 1, 1);
 $pdf->Cell(90, 8, 'Reviewed', 1, 0);
 $pdf->Cell(30, 8, $reviewed, 1, 1);
 
-// Línea de separación
+// DETALLES
 $pdf->Ln(10);
-
-// Título: Test Details
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
 
@@ -121,4 +133,3 @@ foreach ($test_details as $detail) {
 
 // Salida del PDF
 $pdf->Output("I", "Daily_Report_{$fecha}.pdf");
-
