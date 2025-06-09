@@ -15,7 +15,7 @@ class PDF extends FPDF {
 
   function Header() {
     // Logo en la esquina superior izquierda
-    if (file_exists($this->logo_path)) {
+    if (file_exists($this->logo_path)) { 
       $this->Image($this->logo_path, 10, 10, 30); // ancho 30 mm
     }
 

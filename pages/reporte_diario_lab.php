@@ -13,7 +13,7 @@ for ($i = 0; $i < 7; $i++) {
 }
 ?>
 
-<main id="main" class="main">
+<main id="main" class="main"> 
   <div class="pagetitle mb-3">
     <h1><i class="bi bi-calendar-week"></i> Lista de Reportes Semanales</h1>
     <p>Seleccione un día para generar el reporte en PDF</p>
