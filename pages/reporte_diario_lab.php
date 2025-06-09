@@ -37,7 +37,7 @@ $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : null;
 
         $query = "
         SELECT 
-          r.Sample_Name,
+         
           r.Sample_Number,
           r.Project_Name,
           d.Register_Date AS delivery_date,
@@ -84,8 +84,7 @@ $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : null;
               <tbody>
                 <?php $i = 1; while ($row = $results->fetch_assoc()): ?>
                   <tr>
-                    <td><?= $i++ ?></td>
-                    <td><?= $row['Sample_Name'] ?></td>
+                    <td><?= $i++ ?></td>             
                     <td><?= $row['Sample_Number'] ?></td>
                     <td><?= $row['Project_Name'] ?></td>
                     <td><?= $row['estado'] ?: '-' ?></td>
