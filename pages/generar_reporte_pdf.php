@@ -55,7 +55,7 @@ function normalize($v) {
   return strtoupper(trim($v));
 }
 
-$requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+$requisitions = find_all("lab_test_requisition_form");
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -173,5 +173,8 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
 }
+
+// Salida PDF
+
 
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
