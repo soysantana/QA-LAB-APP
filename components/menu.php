@@ -223,6 +223,14 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
       </a>
     </li><!-- End Review Page Nav -->
 
+   <li class="nav-item">
+  <a class="nav-link" href="/pages/reporte_diario_lab.php">
+    <i class="bi bi-calendar-event"></i>
+    <span>Reporte Diario</span>
+  </a>
+</li><!-- End Review Page Nav -->
+
+
     <li class="nav-item">
       <a class="nav-link <?php echo $user_group; ?>" href="../pages/users-group.php">
         <i class="bi bi-people"></i>
