@@ -19,13 +19,14 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
+// Resumen
 $requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 
-// ========== DETALLES ==========
+// Detalles de ensayos realizados
 $test_details = [];
 $tablas = [
   'test_preparation' => 'Register_Date',
@@ -50,7 +51,7 @@ foreach ($tablas as $tabla => $col_fecha) {
   }
 }
 
-// ========== PENDING TESTS ==========
+// Ensayos pendientes
 function normalize($v) {
   return strtoupper(trim($v));
 }
@@ -97,6 +98,7 @@ foreach ($requisitions as $requisition) {
   }
 }
 
+// PDF
 class PDF extends FPDF {
   public $fecha_en;
 
@@ -136,7 +138,7 @@ $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1)
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
-// DETALLES
+// DETALLES DE ENSAYOS
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
@@ -154,7 +156,7 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
-// PENDING TESTS
+// ENSAYOS PENDIENTES
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
@@ -174,7 +176,5 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Ln();
 }
 
-// Salida PDF
-
-
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
+
