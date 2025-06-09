@@ -102,18 +102,54 @@ foreach ($requisitions as $requisition) {
 class PDF extends FPDF {
   public $fecha_en;
 
-  function Header() {
-    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
-      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
-    }
-    $this->SetFont('Arial', 'B', 14);
-    $this->SetXY(150, 10);
-    $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
-    $this->SetFont('Arial', '', 12);
-    $this->SetXY(150, 20);
-    $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-    $this->Ln(10);
+function Header() {
+  if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
+    $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
   }
+  $this->SetFont('Arial', 'B', 14);
+  $this->SetXY(150, 10);
+  $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
+
+  $this->SetFont('Arial', '', 12);
+  $this->SetXY(150, 20);
+  $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
+  $this->Ln(25);
+
+  // Determinar día de la semana
+  $day_of_week = date('w', strtotime($this->fecha_en)); // 0=Sunday ... 6=Saturday
+
+  $this->SetFont('Arial', 'B', 11);
+  $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
+
+  $this->SetFont('Arial', '', 10);
+
+  if ($day_of_week == 3) {
+    // Miércoles - mostrar todos
+    $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+    $this->MultiCell(0, 6, "PV Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
+    $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Frandy Epsinal, Arturo Santana", 0, 'L');
+    $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta, Victor Mercedes", 0, 'L');
+     $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
+    $this->Ln(2);
+    $this->SetFont('Arial', 'I', 10);
+    $this->Cell(0, 8, "Report Reviewed by Wendin De Jesus", 0, 1);
+  } elseif ($day_of_week >= 0 && $day_of_week <= 3) {
+    // Domingo a miércoles
+    $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+    $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
+    $this->MultiCell(0, 6, "Lab Document Control: Frandy Epsinal", 0, 'L');
+    $this->MultiCell(0, 6, "Field Technicians: Adelqui Acosta, Jordany Amparo", 0, 'L');
+  } else {
+    // Jueves a sábado
+    $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+    $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
+     $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
+    $this->MultiCell(0, 6, "Field Technicians: Victor Mercedes, Luis Monegro", 0, 'L');
+  }
+
+  $this->Ln(5);
+}
+
 
   function Footer() {
     $this->SetY(-15);
