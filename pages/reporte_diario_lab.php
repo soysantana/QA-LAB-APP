@@ -5,14 +5,16 @@ include_once('../components/header.php');
 
 $reporte_diario = "active";
 
-// Fecha seleccionada
+// Fecha seleccionada o por defecto hoy
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $desde = "$fecha 06:00:00";
 $hasta = "$fecha 18:00:00";
+$una_semana_atras = date('Y-m-d', strtotime("$fecha -7 days"));
 
-// Consulta SQL usando solo Sample_Number como clave de unión
+// Consulta optimizada para muestras creadas en la última semana
 $query = "
 SELECT 
+  r.Sample_Name,
   r.Sample_Number,
   r.Project_Name,
   d.Register_Date AS delivery_date,
@@ -29,26 +31,23 @@ SELECT
      IF(d.Register_Date BETWEEN '$desde' AND '$hasta', 'Entregado',
      IF(r.Registed_Date BETWEEN '$desde' AND '$hasta', 'Solicitado', NULL))))))) AS estado
 FROM lab_test_requisition_form r
-LEFT JOIN test_delivery d 
-  ON r.Sample_Number = d.Sample_Number
-LEFT JOIN test_preparation p 
-  ON r.Sample_Number = p.Sample_Number
-LEFT JOIN test_realization z 
-  ON r.Sample_Number = z.Sample_Number
-LEFT JOIN test_repeat rep 
-  ON r.Sample_Number = rep.Sample_Number
-LEFT JOIN test_review rv 
-  ON r.Sample_Number = rv.Sample_Number
-LEFT JOIN test_reviewed rd 
-  ON r.Sample_Number = rd.Sample_Number
+LEFT JOIN test_delivery d ON r.Sample_Number = d.Sample_Number
+LEFT JOIN test_preparation p ON r.Sample_Number = p.Sample_Number
+LEFT JOIN test_realization z ON r.Sample_Number = z.Sample_Number
+LEFT JOIN test_repeat rep ON r.Sample_Number = rep.Sample_Number
+LEFT JOIN test_review rv ON r.Sample_Number = rv.Sample_Number
+LEFT JOIN test_reviewed rd ON r.Sample_Number = rd.Sample_Number
 WHERE 
-  (r.Registed_Date BETWEEN '$desde' AND '$hasta' OR
-   d.Register_Date BETWEEN '$desde' AND '$hasta' OR
-   p.Register_Date BETWEEN '$desde' AND '$hasta' OR
-   z.Register_Date BETWEEN '$desde' AND '$hasta' OR
-   rep.Start_Date BETWEEN '$desde' AND '$hasta' OR
-   rv.Start_Date BETWEEN '$desde' AND '$hasta' OR
-   rd.Start_Date BETWEEN '$desde' AND '$hasta')
+  r.Registed_Date BETWEEN '$una_semana_atras' AND '$fecha'
+  AND (
+    r.Registed_Date BETWEEN '$desde' AND '$hasta' OR
+    d.Register_Date BETWEEN '$desde' AND '$hasta' OR
+    p.Register_Date BETWEEN '$desde' AND '$hasta' OR
+    z.Register_Date BETWEEN '$desde' AND '$hasta' OR
+    rep.Start_Date BETWEEN '$desde' AND '$hasta' OR
+    rv.Start_Date BETWEEN '$desde' AND '$hasta' OR
+    rd.Start_Date BETWEEN '$desde' AND '$hasta'
+  )
 ORDER BY r.Sample_Number;
 ";
 
@@ -58,7 +57,7 @@ $results = $db->query($query);
 <main id="main" class="main">
   <div class="pagetitle mb-3">
     <h1><i class="bi bi-journal-text"></i> Reporte Diario del Laboratorio</h1>
-    <p>Fecha seleccionada: <strong><?= date('d-m-Y', strtotime($fecha)) ?></strong> (6:00 AM a 6:00 PM)</p>
+    <p>Fecha seleccionada: <strong><?= date('d-m-Y', strtotime($fecha)) ?></strong> (de 6:00 AM a 6:00 PM)</p>
   </div>
 
   <section class="section">
