@@ -19,14 +19,12 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-// Resumen
 $requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 
-// Detalles de ensayos realizados
 $test_details = [];
 $tablas = [
   'test_preparation' => 'Register_Date',
@@ -51,12 +49,11 @@ foreach ($tablas as $tabla => $col_fecha) {
   }
 }
 
-// Ensayos pendientes
 function normalize($v) {
   return strtoupper(trim($v));
 }
 
-$requisitions = find_all("lab_test_requisition_form");
+$requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -98,58 +95,66 @@ foreach ($requisitions as $requisition) {
   }
 }
 
-// PDF
 class PDF extends FPDF {
   public $fecha_en;
+  private $headerShown = false;
 
-function Header() {
-  if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
-    $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
-  }
-  $this->SetFont('Arial', 'B', 14);
-  $this->SetXY(150, 10);
-  $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
+  function Header() {
+    if ($this->PageNo() > 1) return;
 
-  $this->SetFont('Arial', '', 12);
-  $this->SetXY(150, 20);
-  $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-  $this->Ln(25);
+    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
+    }
 
-  // Determinar día de la semana
-  $day_of_week = date('w', strtotime($this->fecha_en)); // 0=Sunday ... 6=Saturday
+    $this->SetFont('Arial', 'B', 14);
+    $this->SetXY(150, 10);
+    $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
+    $this->SetFont('Arial', '', 12);
+    $this->SetXY(150, 20);
+    $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
+    $this->Ln(25);
 
-  $this->SetFont('Arial', 'B', 11);
-  $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
+    $timestamp = strtotime($this->fecha_en);
+    $day_of_week = date('w', $timestamp);
+    $week_number = (int) date('W', $timestamp);
 
-  $this->SetFont('Arial', '', 10);
+    $this->SetFont('Arial', 'B', 11);
+    $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
+    $this->SetFont('Arial', '', 10);
 
-  if ($day_of_week == 3) {
-    // Miércoles - mostrar todos
-    $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
-    $this->MultiCell(0, 6, "PV Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
-    $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Frandy Epsinal, Arturo Santana", 0, 'L');
-    $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta, Victor Mercedes", 0, 'L');
-     $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
+    if ($day_of_week == 3) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Frandy Epsinal, Arturo Santana", 0, 'L');
+      $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta, Victor Mercedes", 0, 'L');
+      $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
+    } elseif (in_array($day_of_week, [0, 1, 2, 3])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+      $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
+      if ($week_number % 2 === 0) {
+        $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia", 0, 'L');
+      } else {
+        $this->MultiCell(0, 6, "Lab Document Control: Frandy Epsinal", 0, 'L');
+      }
+      $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
+      $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
+    } else {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+      $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
+      if ($week_number % 2 === 0) {
+        $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Wendin De Jesus", 0, 'L');
+      } else {
+        $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
+      }
+      $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
+      $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
+    }
+
     $this->Ln(2);
     $this->SetFont('Arial', 'I', 10);
     $this->Cell(0, 8, "Report Reviewed by Wendin De Jesus", 0, 1);
-  } elseif ($day_of_week >= 0 && $day_of_week <= 3) {
-    // Domingo a miércoles
-    $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
-    $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
-    $this->MultiCell(0, 6, "Lab Document Control: Frandy Epsinal", 0, 'L');
-    $this->MultiCell(0, 6, "Field Technicians: Adelqui Acosta, Jordany Amparo", 0, 'L');
-  } else {
-    // Jueves a sábado
-    $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
-    $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
-     $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
-    $this->MultiCell(0, 6, "Field Technicians: Victor Mercedes, Luis Monegro", 0, 'L');
+    $this->Ln(5);
   }
-
-  $this->Ln(5);
-}
-
 
   function Footer() {
     $this->SetY(-15);
@@ -162,7 +167,6 @@ $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
 
-// RESUMEN
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
 $pdf->SetFont('Arial', 'B', 11);
@@ -174,7 +178,6 @@ $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1)
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
-// DETALLES DE ENSAYOS
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
@@ -192,7 +195,6 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
-// ENSAYOS PENDIENTES
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
@@ -213,4 +215,3 @@ foreach ($pending_tests as $i => $row) {
 }
 
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
-
