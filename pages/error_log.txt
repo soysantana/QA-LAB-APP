@@ -95,3 +95,11 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 174
+[10-Jun-2025 19:23:02 UTC] PHP Fatal error:  Uncaught TypeError: Cannot access offset of type string on string in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php:174
+Stack trace:
+#0 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 174
+[10-Jun-2025 19:23:03 UTC] PHP Fatal error:  Uncaught TypeError: Cannot access offset of type string on string in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php:174
+Stack trace:
+#0 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 174
