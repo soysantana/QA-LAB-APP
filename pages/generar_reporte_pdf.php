@@ -188,7 +188,7 @@ $pdf->Cell(45, 8, 'Technician', 1, 0, 'C');
 $pdf->Cell(35, 8, 'Status', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
 foreach ($test_details as $detail) {
-  $pdf->Cell(60, 8, $detail['sample'], 1);
+  $pdf->Cell(60, 8, $detail['sample'], 1); 
   $pdf->Cell(40, 8, $detail['type'], 1);
   $pdf->Cell(45, 8, $detail['tech'], 1);
   $pdf->Cell(35, 8, $detail['status'], 1);
