@@ -49,46 +49,55 @@ foreach ($tablas as $tabla => $col_fecha) {
   }
 }
 
-function normalize($value) {
-  return strtoupper(trim((string)$value));
+function normalize($v) {
+  return strtoupper(trim((string)$v));
 }
 
-$data = [
-  "Requisition" => find_all("lab_test_requisition_form"),
-  "Preparation" => find_all("test_preparation"),
-  "Delivery" => find_all("test_delivery"),
-  "Review" => find_all("test_review"),
-  "Realization" => find_all("test_realization"),
-  "Repeat" => find_all("test_repeat"),
-  "Reviewed" => find_all("test_reviewed")
+$requisitions = find_all("lab_test_requisition_form");
+$tables_to_check = [
+  'test_preparation',
+  'test_delivery',
+  'test_realization',
+  'test_repeat',
+  'test_review',
+  'test_reviewed'
 ];
 
-$indexedStatus = [];
-foreach (["Preparation", "Delivery", "Review", "Realization", "Repeat", "Reviewed"] as $category) {
-  foreach ($data[$category] as $entry) {
-    $key = normalize($entry["Sample_Name"] ?? '') . "|" . normalize($entry["Sample_Number"] ?? '') . "|" . normalize($entry["Test_Type"] ?? '');
-    $indexedStatus[$key] = true;
+$indexed_status = [];
+foreach ($tables_to_check as $table) {
+  $data = find_all($table);
+  foreach ($data as $row) {
+    if (!isset($row['Sample_ID'], $row['Sample_Number'], $row['Test_Type'])) continue;
+    $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+    $indexed_status[$key] = true;
   }
 }
 
-$testTypes = [];
-foreach ($data["Requisition"] as $requisition) {
+$pending_tests = [];
+foreach ($requisitions as $requisition) {
+  $sample_id = normalize($requisition['Sample_ID']);
+  $sample_num = normalize($requisition['Sample_Number']);
+  $sample_date = $requisition['Sample_Date'];
+
   for ($i = 1; $i <= 20; $i++) {
     $testKey = "Test_Type" . $i;
-    if (!empty($requisition[$testKey])) {
-      $key = normalize($requisition["Sample_ID"] ?? '') . "|" . normalize($requisition["Sample_Number"] ?? '') . "|" . normalize($requisition[$testKey]);
+    if (empty($requisition[$testKey])) continue;
 
-      if (empty($indexedStatus[$key])) {
-        $testTypes[] = [
-          "Sample_ID" => $requisition["Sample_ID"],
-          "Sample_Number" => $requisition["Sample_Number"],
-          "Sample_Date" => $requisition["Sample_Date"],
-          "Test_Type" => $requisition[$testKey],
-        ];
-      }
+    $test_type = normalize($requisition[$testKey]);
+    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+
+    if (!isset($indexed_status[$key])) {
+      $pending_tests[] = [
+        'Sample_ID' => $requisition['Sample_ID'],
+        'Sample_Number' => $requisition['Sample_Number'],
+        'Test_Type' => $requisition[$testKey],
+        'Sample_Date' => $sample_date
+      ];
     }
   }
 }
+
+usort($pending_tests, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
 
 class PDF extends FPDF {
   public $fecha_en;
@@ -156,7 +165,7 @@ $pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
-foreach ($testTypes as $i => $row) {
+foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
   $pdf->Cell(40, 8, $row['Sample_ID'], 1);
   $pdf->Cell(40, 8, $row['Sample_Number'], 1);
@@ -166,4 +175,3 @@ foreach ($testTypes as $i => $row) {
 }
 
 $pdf->Output("I", "Reporte_Diario_{$fecha}.pdf");
-
