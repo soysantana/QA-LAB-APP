@@ -1,64 +1,15 @@
 <?php
-ob_start();
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/error_log.txt');
-
-if (!isset($_GET['fecha'])) {
-  die('Fecha no especificada.');
-}
-
-date_default_timezone_set('America/Santo_Domingo');
-
-$fecha = $_GET['fecha'];
-$fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
-$fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
-
-$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
-$end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
-
-$requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-
-$test_details = [];
-$tablas = [
-  'test_preparation' => 'Register_Date',
-  'test_realization' => 'Register_Date',
-  'test_delivery'    => 'Register_Date',
-  'test_reviewed'    => 'Start_Date'
-];
-
-foreach ($tablas as $tabla => $col_fecha) {
-  $query = "SELECT Sample_Name, Sample_Number, Test_Type, Status";
-  $has_tech = in_array($tabla, ['test_preparation', 'test_realization', 'test_delivery']);
-  if ($has_tech) $query .= ", Technician";
-  $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
-  $results = find_by_sql($query);
-  foreach ($results as $row) {
-    $test_details[] = [
-      'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
-      'type'   => $row['Test_Type'],
-      'tech'   => $has_tech ? $row['Technician'] : 'N/A',
-      'status' => $row['Status']
-    ];
-  }
-}
+// Evita errores HTML que interfieran con el PDF
+ob_clean();
 
 function normalize($v) {
   return strtoupper(trim((string)$v));
 }
 
-// ✅ Cargar TODAS las requisiciones (sin filtro de fecha)
 $requisitions = find_all("lab_test_requisition_form");
-
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -68,6 +19,7 @@ $tables_to_check = [
   'test_reviewed'
 ];
 
+// Recolectar las combinaciones ya procesadas
 $indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
@@ -78,104 +30,62 @@ foreach ($tables_to_check as $table) {
   }
 }
 
+// Buscar las pendientes
 $pending_tests = [];
-foreach ($requisitions as $requisition) {
+foreach ($requisitions as $req) {
   for ($i = 1; $i <= 20; $i++) {
-    $testKey = "Test_Type" . $i;
-    if (empty($requisition[$testKey])) continue;
+    $testKey = "Test_Type{$i}";
+    if (empty($req[$testKey])) continue;
 
-    $sample_name = isset($requisition['Sample_ID']) ? normalize($requisition['Sample_ID']) : '';
-    $sample_num  = isset($requisition['Sample_Number']) ? normalize($requisition['Sample_Number']) : '';
-    $test_type   = isset($requisition[$testKey]) ? normalize($requisition[$testKey]) : '';
-    $date        = $requisition['Sample_Date'];
-
-    $key = $sample_name . "|" . $sample_num . "|" . $test_type;
+    $sample_name = normalize($req['Sample_ID']); // Usamos Sample_ID como Sample_Name
+    $sample_number = normalize($req['Sample_Number']);
+    $test_type = normalize($req[$testKey]);
+    $key = "{$sample_name}|{$sample_number}|{$test_type}";
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
-        'Sample_Name'   => $requisition['Sample_ID'],
-        'Sample_Number' => $requisition['Sample_Number'],
-        'Test_Type'     => $requisition[$testKey],
-        'Sample_Date'   => $date
+        'Sample_ID' => $req['Sample_ID'],
+        'Sample_Number' => $req['Sample_Number'],
+        'Test_Type' => $req[$testKey],
+        'Sample_Date' => $req['Sample_Date']
       ];
     }
   }
 }
 
+// Generar PDF
 class PDF extends FPDF {
-  public $fecha_en;
-
   function Header() {
-    if ($this->PageNo() > 1) return;
-    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
-      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
-    }
-    $this->SetFont('Arial', 'B', 14);
-    $this->SetXY(150, 10);
-    $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
-    $this->SetFont('Arial', '', 12);
-    $this->SetXY(150, 20);
-    $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-    $this->Ln(15);
+    $this->SetFont('Arial','B',12);
+    $this->Cell(0,10,'Listado de Ensayos Pendientes',0,1,'C');
+    $this->Ln(5);
   }
-
   function Footer() {
     $this->SetY(-15);
-    $this->SetFont('Arial', 'I', 8);
-    $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
+    $this->SetFont('Arial','I',8);
+    $this->Cell(0,10,'Pagina '.$this->PageNo(),0,0,'C');
   }
 }
 
 $pdf = new PDF();
-$pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
-
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
-$pdf->SetFont('Arial', 'B', 11);
-$pdf->Cell(90, 8, 'Test Process', 1, 0, 'C');
-$pdf->Cell(30, 8, 'Quantity', 1, 1, 'C');
-$pdf->SetFont('Arial', '', 11);
-$pdf->Cell(90, 8, 'Requisitioned', 1, 0); $pdf->Cell(30, 8, $requisitioned, 1, 1);
-$pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1);
-$pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
-$pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
-
-$pdf->Ln(10);
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Test Details', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 8, 'Sample Number', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Test Type', 1, 0, 'C');
-$pdf->Cell(45, 8, 'Technician', 1, 0, 'C');
-$pdf->Cell(35, 8, 'Status', 1, 1, 'C');
-$pdf->SetFont('Arial', '', 9);
-foreach ($test_details as $detail) {
-  $pdf->Cell(60, 8, $detail['sample'], 1);
-  $pdf->Cell(40, 8, $detail['type'], 1);
-  $pdf->Cell(45, 8, $detail['tech'], 1);
-  $pdf->Cell(35, 8, $detail['status'], 1);
-  $pdf->Ln();
-}
+$pdf->Cell(10, 8, '#', 1);
+$pdf->Cell(40, 8, 'Sample ID', 1);
+$pdf->Cell(40, 8, 'Sample Number', 1);
+$pdf->Cell(60, 8, 'Test Type', 1);
+$pdf->Cell(40, 8, 'Sample Date', 1);
+$pdf->Ln();
 
-$pdf->Ln(10);
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Pending Tests', 0, 1);
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
-$pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
 foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
-  $pdf->Cell(40, 8, $row['Sample_Name'], 1);
+  $pdf->Cell(40, 8, $row['Sample_ID'], 1);
   $pdf->Cell(40, 8, $row['Sample_Number'], 1);
   $pdf->Cell(60, 8, $row['Test_Type'], 1);
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
 }
 
-ob_end_clean();
-$pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
+$pdf->Output("I", "Lista_Ensayos_Pendientes.pdf");
+?>
