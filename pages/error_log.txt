@@ -103,3 +103,12 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 174
+[10-Jun-2025 19:52:13 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 180
+[10-Jun-2025 19:52:13 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 180
+[10-Jun-2025 19:52:13 UTC] PHP Fatal error:  Uncaught Exception: FPDF error: Some data has already been output, can't send PDF file in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php:267
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1058): FPDF->Error('Some data has a...')
+#1 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1004): FPDF->_checkoutput()
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(187): FPDF->Output('I', 'Reporte_Diario_...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
