@@ -12,18 +12,23 @@ if (!isset($_GET['fecha'])) {
   die('Fecha no especificada.');
 }
 
-$fecha = $_GET['fecha']; 
+$fecha = $_GET['fecha'];
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-$requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+function safe_count($query) {
+  $res = find_by_sql($query);
+  return isset($res[0]['total']) ? (int)$res[0]['total'] : 0;
+}
+
+$requisitioned = safe_count("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+$preparation   = safe_count("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
+$realization   = safe_count("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
+$delivery      = safe_count("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
+$reviewed      = safe_count("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'");
 
 $test_details = [];
 $tablas = [
@@ -39,13 +44,15 @@ foreach ($tablas as $tabla => $col_fecha) {
   if ($has_tech) $query .= ", Technician";
   $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
   $results = find_by_sql($query);
-  foreach ($results as $row) {
-    $test_details[] = [
-      'sample' => trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? '')),
-      'type'   => $row['Test_Type'] ?? '',
-      'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
-      'status' => $row['Status'] ?? ''
-    ];
+  if (is_array($results)) {
+    foreach ($results as $row) {
+      $test_details[] = [
+        'sample' => trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? '')),
+        'type'   => $row['Test_Type'] ?? '',
+        'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
+        'status' => $row['Status'] ?? ''
+      ];
+    }
   }
 }
 
@@ -54,6 +61,8 @@ function normalize($v) {
 }
 
 $requisitions = find_all("lab_test_requisition_form");
+if (!is_array($requisitions)) $requisitions = [];
+
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -66,6 +75,7 @@ $tables_to_check = [
 $indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
+  if (!is_array($data)) continue;
   foreach ($data as $row) {
     if (!isset($row['Sample_ID'], $row['Sample_Number'], $row['Test_Type'])) continue;
     $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
