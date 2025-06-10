@@ -87,7 +87,7 @@ foreach ($requisitions as $requisition) {
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
-        'Sample_ID' => $requisition['Sample_Name'],
+        'Sample_Name' => $requisition['Sample_Name'],
         'Sample_Number' => $requisition['Sample_Number'],
         'Test_Type' => $requisition[$testKey],
         'Sample_Date' => $date
@@ -188,7 +188,7 @@ $pdf->Cell(45, 8, 'Technician', 1, 0, 'C');
 $pdf->Cell(35, 8, 'Status', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
 foreach ($test_details as $detail) {
-  $pdf->Cell(60, 8, $detail['sample'], 1); 
+  $pdf->Cell(60, 8, $detail['sample'], 1);
   $pdf->Cell(40, 8, $detail['type'], 1);
   $pdf->Cell(45, 8, $detail['tech'], 1);
   $pdf->Cell(35, 8, $detail['status'], 1);
@@ -200,17 +200,15 @@ $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');  
 $pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
 foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
-  $pdf->Cell(40, 8, $row['Sample_ID'], 1);
+  $pdf->Cell(40, 8, $row['Sample_Name'], 1);
   $pdf->Cell(40, 8, $row['Sample_Number'], 1);
-  $pdf->Cell(60, 8, $row['Test_Type'], 
-);
   $pdf->Cell(60, 8, $row['Test_Type'], 1);
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
