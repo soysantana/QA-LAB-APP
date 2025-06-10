@@ -1,19 +1,11 @@
 <?php
 require_once('../config/load.php');
-require_once('../libs/fpdf/fpdf.php');
-
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-ob_clean();
 
 function normalize($v) {
   return strtoupper(trim((string)($v ?? '')));
 }
 
-// Cargar requisiciones
 $requisitions = find_all("lab_test_requisition_form");
-
-// Cargar todas las tablas de seguimiento
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -24,6 +16,8 @@ $tables_to_check = [
 ];
 
 $indexed_status = [];
+
+// Cargar claves existentes desde tablas de seguimiento
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
   foreach ($data as $row) {
@@ -33,60 +27,27 @@ foreach ($tables_to_check as $table) {
   }
 }
 
-// Verificar pendientes
-$pending_tests = [];
-foreach ($requisitions as $req) {
+// Mostrar claves generadas por requisiciones
+echo "<h2>CLAVES GENERADAS DESDE REQUISICIONES</h2><ul>";
+foreach ($requisitions as $requisition) {
   for ($i = 1; $i <= 20; $i++) {
-    $testKey = "Test_Type" . $i;
-    if (empty($req[$testKey])) continue;
+    $testKey = "Test_Type{$i}";
+    if (empty($requisition[$testKey])) continue;
 
-    $sample_name = normalize($req['Sample_ID']);
-    $sample_number = normalize($req['Sample_Number']);
-    $test_type = normalize($req[$testKey]);
-    $date = $req['Sample_Date'];
-    $key = "$sample_name|$sample_number|$test_type";
+    $sample_id = normalize($requisition['Sample_ID']);
+    $sample_number = normalize($requisition['Sample_Number']);
+    $test_type = normalize($requisition[$testKey]);
+    $key = $sample_id . "|" . $sample_number . "|" . $test_type;
 
-    if (!isset($indexed_status[$key])) {
-      $pending_tests[] = [
-        'Sample_Name' => $req['Sample_ID'],
-        'Sample_Number' => $req['Sample_Number'],
-        'Test_Type' => $req[$testKey],
-        'Sample_Date' => $date
-      ];
-    }
+    echo "<li style='color:blue;'>$key</li>";
   }
 }
+echo "</ul>";
 
-// Crear PDF
-class PDF extends FPDF {
-  function Header() {
-    $this->SetFont('Arial', 'B', 12);
-    $this->Cell(0, 10, 'Listado de Ensayos Pendientes', 0, 1, 'C');
-    $this->Ln(5);
-  }
-  function Footer() {
-    $this->SetY(-15);
-    $this->SetFont('Arial', 'I', 8);
-    $this->Cell(0, 10, 'Pagina ' . $this->PageNo(), 0, 0, 'C');
-  }
+// Mostrar claves encontradas ya procesadas
+echo "<h2>CLAVES YA PROCESADAS EN OTRAS TABLAS</h2><ul>";
+foreach ($indexed_status as $key => $_) {
+  echo "<li style='color:green;'>$key</li>";
 }
-
-$pdf = new PDF();
-$pdf->AddPage();
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
-$pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
-$pdf->SetFont('Arial', '', 9);
-foreach ($pending_tests as $i => $row) {
-  $pdf->Cell(10, 8, $i + 1, 1);
-  $pdf->Cell(40, 8, $row['Sample_Name'], 1);
-  $pdf->Cell(40, 8, $row['Sample_Number'], 1);
-  $pdf->Cell(60, 8, $row['Test_Type'], 1);
-  $pdf->Cell(40, 8, $row['Sample_Date'], 1);
-  $pdf->Ln();
-}
-$pdf->Output('I', 'Ensayos_Pendientes.pdf');
+echo "</ul>";
 ?>
