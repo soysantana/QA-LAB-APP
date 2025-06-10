@@ -1,0 +1,16 @@
+[10-Jun-2025 10:40:24 UTC] PHP Warning:  Undefined variable $requisitioned in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 176
+[10-Jun-2025 10:40:24 UTC] PHP Fatal error:  Uncaught Exception: FPDF error: Some data has already been output, can't send PDF file in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php:267
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1058): FPDF->Error('Some data has a...')
+#1 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1004): FPDF->_checkoutput()
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(217): FPDF->Output('I', 'Daily_Laborator...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[10-Jun-2025 11:15:23 UTC] PHP Warning:  Undefined variable $requisitioned in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 176
+[10-Jun-2025 11:15:23 UTC] PHP Fatal error:  Uncaught Exception: FPDF error: Some data has already been output, can't send PDF file in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php:267
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1058): FPDF->Error('Some data has a...')
+#1 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1004): FPDF->_checkoutput()
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(217): FPDF->Output('I', 'Daily_Laborator...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
