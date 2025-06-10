@@ -41,10 +41,10 @@ foreach ($tablas as $tabla => $col_fecha) {
   $results = find_by_sql($query);
   foreach ($results as $row) {
     $test_details[] = [
-      'sample' => trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? '')),
-      'type'   => $row['Test_Type'] ?? '',
-      'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
-      'status' => $row['Status'] ?? ''
+      'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
+      'type'   => $row['Test_Type'],
+      'tech'   => $has_tech ? $row['Technician'] : 'N/A',
+      'status' => $row['Status']
     ];
   }
 }
@@ -53,6 +53,7 @@ function normalize($v) {
   return strtoupper(trim((string)$v));
 }
 
+// Buscar todas las requisiciones sin filtro de fecha
 $requisitions = find_all("lab_test_requisition_form");
 $tables_to_check = [
   'test_preparation',
@@ -63,30 +64,30 @@ $tables_to_check = [
   'test_reviewed'
 ];
 
-$indexed_status = [];
+$seguimiento_keys = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
   foreach ($data as $row) {
-    if (!isset($row['Sample_ID'], $row['Sample_Number'], $row['Test_Type'])) continue;
-    $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-    $indexed_status[$key] = true;
+    if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
+    $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+    $seguimiento_keys[$key] = true;
   }
 }
 
 $pending_tests = [];
 foreach ($requisitions as $requisition) {
-  $sample_id = normalize($requisition['Sample_ID']);
-  $sample_num = normalize($requisition['Sample_Number']);
-  $sample_date = $requisition['Sample_Date'];
-
   for ($i = 1; $i <= 20; $i++) {
     $testKey = "Test_Type" . $i;
     if (empty($requisition[$testKey])) continue;
 
+    $sample_id = normalize($requisition['Sample_ID']);
+    $sample_num = normalize($requisition['Sample_Number']);
     $test_type = normalize($requisition[$testKey]);
+    $sample_date = $requisition['Sample_Date'];
+
     $key = $sample_id . "|" . $sample_num . "|" . $test_type;
 
-    if (!isset($indexed_status[$key])) {
+    if (!isset($seguimiento_keys[$key])) {
       $pending_tests[] = [
         'Sample_ID' => $requisition['Sample_ID'],
         'Sample_Number' => $requisition['Sample_Number'],
@@ -97,16 +98,16 @@ foreach ($requisitions as $requisition) {
   }
 }
 
-usort($pending_tests, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
-
 class PDF extends FPDF {
   public $fecha_en;
 
   function Header() {
     if ($this->PageNo() > 1) return;
+
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
       $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
     }
+
     $this->SetFont('Arial', 'B', 14);
     $this->SetXY(150, 10);
     $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
@@ -174,4 +175,4 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Ln();
 }
 
-$pdf->Output("I", "Reporte_Diario_{$fecha}.pdf");
+$pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
