@@ -20,7 +20,7 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-$requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$requisitions = find_all("lab_test_requisition_form");
 $preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
