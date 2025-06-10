@@ -14,3 +14,16 @@ Stack trace:
 #2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(217): FPDF->Output('I', 'Daily_Laborator...')
 #3 {main}
   thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[10-Jun-2025 15:31:31 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 83
+[10-Jun-2025 15:31:31 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 53
+[10-Jun-2025 15:31:31 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
+[10-Jun-2025 15:31:31 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 83
+[10-Jun-2025 15:31:31 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 53
+[10-Jun-2025 15:31:31 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
+[10-Jun-2025 15:31:32 UTC] PHP Fatal error:  Uncaught Exception: FPDF error: Some data has already been output, can't send PDF file in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php:267
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1058): FPDF->Error('Some data has a...')
+#1 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1004): FPDF->_checkoutput()
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(219): FPDF->Output('I', 'Daily_Laborator...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
