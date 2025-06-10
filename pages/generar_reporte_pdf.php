@@ -41,10 +41,10 @@ foreach ($tablas as $tabla => $col_fecha) {
   $results = find_by_sql($query);
   foreach ($results as $row) {
     $test_details[] = [
-      'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
-      'type'   => $row['Test_Type'],
-      'tech'   => $has_tech ? $row['Technician'] : 'N/A',
-      'status' => $row['Status']
+      'sample' => trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? '')),
+      'type'   => $row['Test_Type'] ?? '',
+      'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
+      'status' => $row['Status'] ?? ''
     ];
   }
 }
@@ -53,7 +53,7 @@ function normalize($v) {
   return strtoupper(trim((string)$v));
 }
 
-// Buscar todas las requisiciones sin filtro de fecha
+// --- PENDING TESTS ---
 $requisitions = find_all("lab_test_requisition_form");
 $tables_to_check = [
   'test_preparation',
@@ -64,31 +64,31 @@ $tables_to_check = [
   'test_reviewed'
 ];
 
-$seguimiento_keys = [];
+$indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
   foreach ($data as $row) {
     if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
     $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-    $seguimiento_keys[$key] = true;
+    $indexed_status[$key] = true;
   }
 }
 
-$pending_tests = [];
+$testTypes = [];
 foreach ($requisitions as $requisition) {
   for ($i = 1; $i <= 20; $i++) {
     $testKey = "Test_Type" . $i;
     if (empty($requisition[$testKey])) continue;
 
-    $sample_id = normalize($requisition['Sample_ID']);
+    $sample_id = normalize($requisition['Sample_ID']); // Sample_ID en requisition
     $sample_num = normalize($requisition['Sample_Number']);
     $test_type = normalize($requisition[$testKey]);
     $sample_date = $requisition['Sample_Date'];
 
     $key = $sample_id . "|" . $sample_num . "|" . $test_type;
 
-    if (!isset($seguimiento_keys[$key])) {
-      $pending_tests[] = [
+    if (!isset($indexed_status[$key])) {
+      $testTypes[] = [
         'Sample_ID' => $requisition['Sample_ID'],
         'Sample_Number' => $requisition['Sample_Number'],
         'Test_Type' => $requisition[$testKey],
@@ -97,17 +97,17 @@ foreach ($requisitions as $requisition) {
     }
   }
 }
+usort($testTypes, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
 
+// --- PDF ---
 class PDF extends FPDF {
   public $fecha_en;
 
   function Header() {
     if ($this->PageNo() > 1) return;
-
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
       $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
     }
-
     $this->SetFont('Arial', 'B', 14);
     $this->SetXY(150, 10);
     $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
@@ -128,6 +128,7 @@ $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
 
+// Summary
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
 $pdf->SetFont('Arial', 'B', 11);
@@ -138,7 +139,9 @@ $pdf->Cell(90, 8, 'Requisitioned', 1, 0); $pdf->Cell(30, 8, $requisitioned, 1, 1
 $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1);
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
+$pdf->Cell(90, 8, 'Reviewed', 1, 0); $pdf->Cell(30, 8, $reviewed, 1, 1);
 
+// Details
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
@@ -156,6 +159,7 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
+// Pending
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
@@ -166,7 +170,7 @@ $pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
-foreach ($pending_tests as $i => $row) {
+foreach ($testTypes as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
   $pdf->Cell(40, 8, $row['Sample_ID'], 1);
   $pdf->Cell(40, 8, $row['Sample_Number'], 1);
@@ -175,4 +179,4 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Ln();
 }
 
-$pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
+$pdf->Output("I", "Reporte_Diario_{$fecha}.pdf");

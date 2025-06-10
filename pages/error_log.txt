@@ -82,3 +82,16 @@ Stack trace:
 #2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(216): FPDF->Output('I', 'Daily_Laborator...')
 #3 {main}
   thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[10-Jun-2025 18:56:10 UTC] PHP Warning:  Undefined variable $pending_tests in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 172
+[10-Jun-2025 18:56:10 UTC] PHP Warning:  foreach() argument must be of type array|object, null given in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 172
+[10-Jun-2025 18:56:10 UTC] PHP Fatal error:  Uncaught Exception: FPDF error: Some data has already been output, can't send PDF file in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php:267
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1058): FPDF->Error('Some data has a...')
+#1 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1004): FPDF->_checkoutput()
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(181): FPDF->Output('I', 'Reporte_Diario_...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[10-Jun-2025 18:59:42 UTC] PHP Fatal error:  Uncaught TypeError: Cannot access offset of type string on string in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php:174
+Stack trace:
+#0 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 174
