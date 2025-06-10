@@ -67,6 +67,7 @@ $indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
   foreach ($data as $row) {
+    if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
     $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
     $indexed_status[$key] = true;
   }
@@ -78,15 +79,15 @@ foreach ($requisitions as $requisition) {
     $testKey = "Test_Type" . $i;
     if (empty($requisition[$testKey])) continue;
 
-    $sample_id = normalize($requisition['Sample_ID']);
+    $sample_name = normalize($requisition['Sample_Name']);
     $sample_num = normalize($requisition['Sample_Number']);
     $test_type = normalize($requisition[$testKey]);
     $date = $requisition['Sample_Date'];
-    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+    $key = $sample_name . "|" . $sample_num . "|" . $test_type;
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
-        'Sample_ID' => $requisition['Sample_ID'],
+        'Sample_ID' => $requisition['Sample_Name'],
         'Sample_Number' => $requisition['Sample_Number'],
         'Test_Type' => $requisition[$testKey],
         'Sample_Date' => $date
@@ -177,7 +178,6 @@ $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1)
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
-
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
@@ -200,7 +200,7 @@ $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample ID', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
@@ -209,6 +209,8 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
   $pdf->Cell(40, 8, $row['Sample_ID'], 1);
   $pdf->Cell(40, 8, $row['Sample_Number'], 1);
+  $pdf->Cell(60, 8, $row['Test_Type'], 
+);
   $pdf->Cell(60, 8, $row['Test_Type'], 1);
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
