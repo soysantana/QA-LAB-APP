@@ -32,3 +32,6 @@ Stack trace:
 [10-Jun-2025 15:38:12 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
 [10-Jun-2025 15:38:12 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
 [10-Jun-2025 15:46:00 UTC] PHP Warning:  Undefined variable $requisitioned in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 135
+[10-Jun-2025 15:47:13 UTC] PHP Warning:  Undefined variable $requisitioned in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 135
+[10-Jun-2025 11:55:00 America/Santo_Domingo] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 96
+[10-Jun-2025 11:55:00 America/Santo_Domingo] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 96
