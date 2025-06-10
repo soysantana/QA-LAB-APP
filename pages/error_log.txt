@@ -27,3 +27,7 @@ Stack trace:
 #2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(219): FPDF->Output('I', 'Daily_Laborator...')
 #3 {main}
   thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[10-Jun-2025 15:36:26 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
+[10-Jun-2025 15:36:26 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
+[10-Jun-2025 15:38:12 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92
+[10-Jun-2025 15:38:12 UTC] PHP Warning:  Undefined array key "Sample_Name" in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 92

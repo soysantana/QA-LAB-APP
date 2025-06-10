@@ -80,7 +80,7 @@ foreach ($requisitions as $requisition) {
     $testKey = "Test_Type" . $i;
     if (empty($requisition[$testKey])) continue;
 
-    $sample_name = isset($requisition['Sample_Name']) ? normalize($requisition['Sample_Name']) : '';
+    $sample_name = isset($requisition['Sample_ID']) ? normalize($requisition['Sample_ID']) : '';
     $sample_num  = isset($requisition['Sample_Number']) ? normalize($requisition['Sample_Number']) : '';
     $test_type   = isset($requisition[$testKey]) ? normalize($requisition[$testKey]) : '';
     $date = $requisition['Sample_Date'];
@@ -89,7 +89,7 @@ foreach ($requisitions as $requisition) {
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
-        'Sample_Name' => $requisition['Sample_Name'],
+        'Sample_Name' => $requisition['Sample_ID'],
         'Sample_Number' => $requisition['Sample_Number'],
         'Test_Type' => $requisition[$testKey],
         'Sample_Date' => $date
@@ -104,7 +104,7 @@ class PDF extends FPDF {
   function Header() {
     if ($this->PageNo() > 1) return;
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
-      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 40);
     }
     $this->SetFont('Arial', 'B', 14);
     $this->SetXY(150, 10);
