@@ -53,7 +53,6 @@ function normalize($v) {
   return strtoupper(trim((string)$v));
 }
 
-// --- PENDING TESTS ---
 $requisitions = find_all("lab_test_requisition_form");
 $tables_to_check = [
   'test_preparation',
@@ -68,7 +67,6 @@ $indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
   foreach ($data as $row) {
-    if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
     $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
     $indexed_status[$key] = true;
   }
@@ -80,26 +78,26 @@ foreach ($requisitions as $requisition) {
     $testKey = "Test_Type" . $i;
     if (empty($requisition[$testKey])) continue;
 
-    $sample_id = normalize($requisition['Sample_ID']); // Sample_ID en requisition
+    $sample_id = normalize($requisition['Sample_ID']);
+    $sample_name = normalize($requisition['Sample_Name'] ?? '');
     $sample_num = normalize($requisition['Sample_Number']);
     $test_type = normalize($requisition[$testKey]);
-    $sample_date = $requisition['Sample_Date'];
+    $date = $requisition['Sample_Date'];
 
-    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+    $key1 = $sample_id . "|" . $sample_num . "|" . $test_type;
+    $key2 = $sample_name . "|" . $sample_num . "|" . $test_type;
 
-    if (!isset($indexed_status[$key])) {
+    if (!isset($indexed_status[$key1]) && !isset($indexed_status[$key2])) {
       $testTypes[] = [
         'Sample_ID' => $requisition['Sample_ID'],
         'Sample_Number' => $requisition['Sample_Number'],
         'Test_Type' => $requisition[$testKey],
-        'Sample_Date' => $sample_date
+        'Sample_Date' => $date
       ];
     }
   }
 }
-usort($testTypes, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
 
-// --- PDF ---
 class PDF extends FPDF {
   public $fecha_en;
 
@@ -128,7 +126,6 @@ $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
 
-// Summary
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
 $pdf->SetFont('Arial', 'B', 11);
@@ -139,9 +136,7 @@ $pdf->Cell(90, 8, 'Requisitioned', 1, 0); $pdf->Cell(30, 8, $requisitioned, 1, 1
 $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1);
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
-$pdf->Cell(90, 8, 'Reviewed', 1, 0); $pdf->Cell(30, 8, $reviewed, 1, 1);
 
-// Details
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
@@ -159,7 +154,6 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
-// Pending
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
