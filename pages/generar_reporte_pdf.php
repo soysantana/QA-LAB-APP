@@ -8,7 +8,9 @@ error_reporting(E_ALL);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error_log.txt');
 
-// Validar parámetro de fecha
+if (ob_get_length()) ob_end_clean();
+ob_start();
+
 if (!isset($_GET['fecha'])) {
   die('Fecha no especificada.');
 }
@@ -20,9 +22,12 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-// Funciones auxiliares
 function normalize($v) {
   return strtoupper(trim((string)$v));
+}
+
+function normalize_test_type($v) {
+  return preg_replace('/[^A-Z0-9]/', '', strtoupper(trim((string)$v)));
 }
 
 function safe_trim($value) {
@@ -31,11 +36,10 @@ function safe_trim($value) {
 
 function safe_count($query) {
   $res = find_by_sql($query);
-  if (!is_array($res) || !isset($res[0]['total'])) return 0;
-  return (int)$res[0]['total'];
+  return (is_array($res) && isset($res[0]['total'])) ? (int)$res[0]['total'] : 0;
 }
 
-// Conteos generales
+// Conteo general
 $requisitioned = safe_count("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 $preparation   = safe_count("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
 $realization   = safe_count("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
@@ -52,17 +56,21 @@ $tablas = [
 ];
 
 foreach ($tablas as $tabla => $col_fecha) {
-  $query = "SELECT Sample_Name, Sample_Number, Test_Type, Status";
-  $has_tech = in_array($tabla, ['test_preparation', 'test_realization', 'test_delivery']);
+  $query = "SELECT Sample_Number, Test_Type, Status";
+  $has_name = in_array($tabla, ['test_preparation', 'test_realization', 'test_delivery']);
+  $has_tech = $has_name;
+
+  if ($has_name) $query .= ", Sample_Name";
   if ($has_tech) $query .= ", Technician";
+
   $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
   $results = find_by_sql($query);
+
   if (is_array($results)) {
     foreach ($results as $row) {
-      $sample_name = safe_trim($row['Sample_Name'] ?? '');
-      $sample_number = safe_trim($row['Sample_Number'] ?? '');
+      $sample = safe_trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? ''));
       $test_details[] = [
-        'sample' => "{$sample_name} {$sample_number}",
+        'sample' => $sample,
         'type'   => $row['Test_Type'] ?? '',
         'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
         'status' => $row['Status'] ?? ''
@@ -71,10 +79,7 @@ foreach ($tablas as $tabla => $col_fecha) {
   }
 }
 
-// Muestra pendientes
-$requisitions = find_all("lab_test_requisition_form");
-if (!is_array($requisitions)) $requisitions = [];
-
+// Índice de ensayos ya realizados
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -89,24 +94,28 @@ foreach ($tables_to_check as $table) {
   $data = find_all($table);
   if (!is_array($data)) continue;
   foreach ($data as $row) {
-    if (!isset($row['Sample_ID'], $row['Sample_Number'], $row['Test_Type'])) continue;
-    $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+    if (!isset($row['Sample_Number'], $row['Test_Type'])) continue;
+    $key = normalize($row['Sample_Number']) . "|" . normalize_test_type($row['Test_Type']);
     $indexed_status[$key] = true;
   }
 }
 
+// Ensayos pendientes
 $pending_tests = [];
+$requisitions = find_all("lab_test_requisition_form");
+if (!is_array($requisitions)) $requisitions = [];
+
 foreach ($requisitions as $requisition) {
-  $sample_id = normalize($requisition['Sample_ID'] ?? '');
-  $sample_num = normalize($requisition['Sample_Number'] ?? '');
+  $sample_id   = normalize($requisition['Sample_ID'] ?? '');
+  $sample_num  = normalize($requisition['Sample_Number'] ?? '');
   $sample_date = $requisition['Sample_Date'] ?? '';
 
   for ($i = 1; $i <= 20; $i++) {
-    $testKey = "Test_Type" . $i;
+    $testKey = "Test_Type{$i}";
     if (empty($requisition[$testKey])) continue;
 
-    $test_type = normalize($requisition[$testKey]);
-    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+    $test_type = normalize_test_type($requisition[$testKey]);
+    $key = $sample_num . "|" . $test_type;
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
@@ -120,7 +129,7 @@ foreach ($requisitions as $requisition) {
 }
 usort($pending_tests, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
 
-// Generar PDF
+// PDF
 class PDF extends FPDF {
   public $fecha_en;
 
@@ -198,6 +207,5 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Ln();
 }
 
-// Limpiar buffer antes del PDF
-if (ob_get_length()) ob_end_clean();
+ob_end_clean();
 $pdf->Output("I", "Reporte_Diario_{$fecha}.pdf");

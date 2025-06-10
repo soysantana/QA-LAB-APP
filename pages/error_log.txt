@@ -112,3 +112,59 @@ Stack trace:
 #2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(187): FPDF->Output('I', 'Reporte_Diario_...')
 #3 {main}
   thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[10-Jun-2025 20:03:54 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:04:08 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:05:09 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:05:11 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:05:39 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:05:40 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:09:11 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[10-Jun-2025 20:09:13 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Sample_ID' in 'field list' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT Sample_I...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT Sample_I...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(65): find_by_sql('SELECT Sample_I...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
