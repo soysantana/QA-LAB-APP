@@ -2,12 +2,18 @@
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+ob_clean();
+
 function normalize($v) {
   return strtoupper(trim((string)($v ?? '')));
 }
 
+// Cargar requisiciones
 $requisitions = find_all("lab_test_requisition_form");
 
+// Cargar todas las tablas de seguimiento
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -27,17 +33,18 @@ foreach ($tables_to_check as $table) {
   }
 }
 
+// Verificar pendientes
 $pending_tests = [];
 foreach ($requisitions as $req) {
   for ($i = 1; $i <= 20; $i++) {
     $testKey = "Test_Type" . $i;
     if (empty($req[$testKey])) continue;
 
-    $sample_name = normalize($req['Sample_ID']); // usamos Sample_ID como nombre
-    $sample_num = normalize($req['Sample_Number']);
-    $test_type  = normalize($req[$testKey]);
-    $date       = $req['Sample_Date'];
-    $key        = $sample_name . "|" . $sample_num . "|" . $test_type;
+    $sample_name = normalize($req['Sample_ID']);
+    $sample_number = normalize($req['Sample_Number']);
+    $test_type = normalize($req[$testKey]);
+    $date = $req['Sample_Date'];
+    $key = "$sample_name|$sample_number|$test_type";
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
@@ -50,17 +57,17 @@ foreach ($requisitions as $req) {
   }
 }
 
+// Crear PDF
 class PDF extends FPDF {
   function Header() {
-    $this->SetFont('Arial', 'B', 14);
-    $this->Cell(0, 10, 'Pending Tests Report', 0, 1, 'C');
+    $this->SetFont('Arial', 'B', 12);
+    $this->Cell(0, 10, 'Listado de Ensayos Pendientes', 0, 1, 'C');
     $this->Ln(5);
   }
-
   function Footer() {
     $this->SetY(-15);
     $this->SetFont('Arial', 'I', 8);
-    $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
+    $this->Cell(0, 10, 'Pagina ' . $this->PageNo(), 0, 0, 'C');
   }
 }
 
@@ -72,7 +79,6 @@ $pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
-
 $pdf->SetFont('Arial', '', 9);
 foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
@@ -82,6 +88,5 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
 }
-
-$pdf->Output("I", "pending_tests_report.pdf");
+$pdf->Output('I', 'Ensayos_Pendientes.pdf');
 ?>
