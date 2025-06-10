@@ -12,7 +12,7 @@ if (!isset($_GET['fecha'])) {
   die('Fecha no especificada.');
 }
 
-$fecha = $_GET['fecha'];
+$fecha = $_GET['fecha']; 
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 
