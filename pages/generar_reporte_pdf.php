@@ -53,7 +53,9 @@ function normalize($v) {
   return strtoupper(trim($v));
 }
 
-$requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+// ===== DETECCIÓN DE ENSAYOS PENDIENTES =====
+$requisitions = find_all("lab_test_requisition_form");
+
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -67,7 +69,6 @@ $indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
   foreach ($data as $row) {
-    if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
     $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
     $indexed_status[$key] = true;
   }
@@ -83,6 +84,7 @@ foreach ($requisitions as $requisition) {
     $sample_num = normalize($requisition['Sample_Number']);
     $test_type = normalize($requisition[$testKey]);
     $date = $requisition['Sample_Date'];
+
     $key = $sample_name . "|" . $sample_num . "|" . $test_type;
 
     if (!isset($indexed_status[$key])) {
@@ -200,7 +202,7 @@ $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');  
+$pdf->Cell(40, 8, 'Sample Name', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
 $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
