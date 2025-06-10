@@ -13,14 +13,16 @@ if (!isset($_GET['fecha'])) {
   die('Fecha no especificada.');
 }
 
+date_default_timezone_set('America/Santo_Domingo');
+
 $fecha = $_GET['fecha'];
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
-$end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
+$end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-$requisitions = find_all("lab_test_requisition_form");
+$requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
@@ -54,7 +56,9 @@ function normalize($v) {
   return strtoupper(trim((string)$v));
 }
 
+// ✅ Cargar TODAS las requisiciones (sin filtro de fecha)
 $requisitions = find_all("lab_test_requisition_form");
+
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -80,19 +84,19 @@ foreach ($requisitions as $requisition) {
     $testKey = "Test_Type" . $i;
     if (empty($requisition[$testKey])) continue;
 
-    $sample_name = isset($requisition['Sample_ID']) ? normalize($requisition['Sample_ID']) : '';
+    $sample_name = isset($requisition['Sample_Name']) ? normalize($requisition['Sample_Name']) : '';
     $sample_num  = isset($requisition['Sample_Number']) ? normalize($requisition['Sample_Number']) : '';
     $test_type   = isset($requisition[$testKey]) ? normalize($requisition[$testKey]) : '';
-    $date = $requisition['Sample_Date'];
+    $date        = $requisition['Sample_Date'];
 
     $key = $sample_name . "|" . $sample_num . "|" . $test_type;
 
     if (!isset($indexed_status[$key])) {
       $pending_tests[] = [
-        'Sample_Name' => $requisition['Sample_ID'],
+        'Sample_Name'   => $requisition['Sample_Name'],
         'Sample_Number' => $requisition['Sample_Number'],
-        'Test_Type' => $requisition[$testKey],
-        'Sample_Date' => $date
+        'Test_Type'     => $requisition[$testKey],
+        'Sample_Date'   => $date
       ];
     }
   }
@@ -104,7 +108,7 @@ class PDF extends FPDF {
   function Header() {
     if ($this->PageNo() > 1) return;
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
-      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 40);
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
     }
     $this->SetFont('Arial', 'B', 14);
     $this->SetXY(150, 10);
