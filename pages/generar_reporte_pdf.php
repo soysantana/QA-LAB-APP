@@ -40,7 +40,7 @@ foreach ($tablas as $tabla => $col_fecha) {
   $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
   $results = find_by_sql($query);
   foreach ($results as $row) {
-    $test_details[] = [
+    $test_details[] = [ 
       'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
       'type'   => $row['Test_Type'],
       'tech'   => $has_tech ? $row['Technician'] : 'N/A',
