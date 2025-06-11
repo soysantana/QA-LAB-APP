@@ -1,157 +1,187 @@
 <?php
-$page_title = 'Lista de Pendientes';
-$Pending_List = 'show';
 require_once('../config/load.php');
-page_require_level(3);
-include_once('../components/header.php');
-?>
+require_once('../libs/fpdf/fpdf.php');
 
-<main id="main" class="main">
-  <div class="pagetitle">
-    <h1>Lista de Pendientes</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-        <li class="breadcrumb-item">Paginas</li>
-        <li class="breadcrumb-item active">Lista de Pendientes</li>
-      </ol>
-    </nav>
-  </div>
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/error_log.txt');
 
-  <div class="col-md-4">
-    <?php echo display_msg($msg); ?>
-  </div>
+if (!isset($_GET['fecha'])) {
+  die('Fecha no especificada.');
+}
 
-  <section class="section">
-    <div class="row">
-      <form class="row">
-        <div class="col-lg-9">
-          <div class="card">
-            <div class="card-body">
-              <table class="table datatable">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Muestra</th>
-                    <th>Numero</th>
-                    <th>Tipo de prueba</th>
-                    <th>Fecha de muestra</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php
-                  function normalize($v) {
-                    return strtoupper(trim($v));
-                  }
+$fecha = $_GET['fecha'];
+$fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
+$fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 
-                  $requisitions = find_all("lab_test_requisition_form");
-                  $tables_to_check = [
-                    'test_preparation',
-                    'test_delivery',
-                    'test_realization',
-                    'test_repeat',
-                    'test_review',
-                    'test_reviewed'
-                  ];
+$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
+$end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-                  $indexed_status = [];
+function safe_count($query) {
+  $res = find_by_sql($query);
+  return isset($res[0]['total']) ? (int)$res[0]['total'] : 0;
+}
 
-                  // Cargar todas las tablas de seguimiento
-                  foreach ($tables_to_check as $table) {
-                    $data = find_all($table);
-                    foreach ($data as $row) {
-                      $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-                      $indexed_status[$key] = true;
-                    }
-                  }
+$requisitioned = safe_count("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+$preparation   = safe_count("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
+$realization   = safe_count("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
+$delivery      = safe_count("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
+$reviewed      = safe_count("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'");
 
-                  $testTypes = [];
+$test_details = [];
+$tablas = [
+  'test_preparation' => 'Register_Date',
+  'test_realization' => 'Register_Date',
+  'test_delivery'    => 'Register_Date',
+  'test_reviewed'    => 'Start_Date'
+];
 
-                  foreach ($requisitions as $requisition) {
-                    for ($i = 1; $i <= 20; $i++) {
-                      $testKey = "Test_Type" . $i;
-                      if (empty($requisition[$testKey])) continue;
+foreach ($tablas as $tabla => $col_fecha) {
+  $query = "SELECT Sample_Name, Sample_Number, Test_Type, Status";
+  $has_tech = in_array($tabla, ['test_preparation', 'test_realization', 'test_delivery']);
+  if ($has_tech) $query .= ", Technician";
+  $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
+  $results = find_by_sql($query);
+  if (is_array($results)) {
+    foreach ($results as $row) {
+      $test_details[] = [
+        'sample' => trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? '')),
+        'type'   => $row['Test_Type'] ?? '',
+        'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
+        'status' => $row['Status'] ?? ''
+      ];
+    }
+  }
+}
 
-                      $sample_id = normalize($requisition['Sample_ID']);
-                      $sample_num = normalize($requisition['Sample_Number']);
-                      $test_type = normalize($requisition[$testKey]);
-                      $date = $requisition['Sample_Date'];
+function normalize($v) {
+  return strtoupper(trim((string)$v));
+}
 
-                      $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+$requisitions = find_all("lab_test_requisition_form");
+if (!is_array($requisitions)) $requisitions = [];
 
-                      if (!isset($indexed_status[$key])) {
-                        $testTypes[] = [
-                          'Sample_ID' => $requisition['Sample_ID'],
-                          'Sample_Number' => $requisition['Sample_Number'],
-                          'Test_Type' => $requisition[$testKey],
-                          'Sample_Date' => $date
-                        ];
-                      }
-                    }
-                  }
+$tables_to_check = [
+  'test_preparation',
+  'test_delivery',
+  'test_realization',
+  'test_repeat',
+  'test_review',
+  'test_reviewed'
+];
 
-                  usort($testTypes, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
+$indexed_status = [];
+foreach ($tables_to_check as $table) {
+  $data = find_all($table);
+  if (!is_array($data)) continue;
+  foreach ($data as $row) {
+    if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
+    $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+    $indexed_status[$key] = true;
+  }
+}
 
-                  foreach ($testTypes as $index => $sample): ?>
-                    <tr>
-                      <td><?php echo $index + 1; ?></td>
-                      <td><?php echo htmlspecialchars($sample['Sample_ID']); ?></td>
-                      <td><?php echo htmlspecialchars($sample['Sample_Number']); ?></td>
-                      <td><?php echo htmlspecialchars($sample['Test_Type']); ?></td>
-                      <td><?php echo htmlspecialchars($sample['Sample_Date']); ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+$pending_tests = [];
+foreach ($requisitions as $requisition) {
+  $sample_id = normalize($requisition['Sample_ID']);
+  $sample_num = normalize($requisition['Sample_Number']);
+  $sample_date = $requisition['Sample_Date'];
 
-       <div class="col-lg-3">
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">Conteo</h5>
-      <ul class="list-group">
-        <?php
-        $typeCount = [];
-        $columnaTipo = [];
+  for ($i = 1; $i <= 20; $i++) {
+    $testKey = "Test_Type" . $i;
+    if (empty($requisition[$testKey])) continue;
 
-        foreach ($requisitions as $req) {
-          for ($i = 1; $i <= 20; $i++) {
-            $tk = 'Test_Type' . $i;
-            if (!empty($req[$tk])) {
-              $columnaTipo[$req[$tk]] = $tk;
-            }
-          }
-        }
+    $test_type = normalize($requisition[$testKey]);
+    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
 
-        foreach ($testTypes as $s) {
-          $t = $s['Test_Type'];
-          $typeCount[$t] = ($typeCount[$t] ?? 0) + 1;
-        }
+    if (!isset($indexed_status[$key])) {
+      $pending_tests[] = [
+        'Sample_Name' => $requisition['Sample_ID'],
+        'Sample_Number' => $requisition['Sample_Number'],
+        'Test_Type' => $requisition[$testKey],
+        'Sample_Date' => $sample_date
+      ];
+    }
+  }
+}
 
-        foreach ($typeCount as $t => $count): ?>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <code><?php echo $t; ?></code>
-              <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
-            </div>
-            <?php if (isset($columnaTipo[$t])): ?>
-              <a href="../pdf/pendings.php?columna=<?php echo urlencode($columnaTipo[$t]); ?>&type=<?php echo urlencode($t); ?>"
-                 class="btn btn-secondary btn-sm ms-2" title="Generar PDF"><i class="bi bi-printer"></i></a>
-            <?php else: ?>
-              <span class="badge bg-danger">Err</span>
-            <?php endif; ?>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-    </div>
-  </div>
-</div>
+usort($pending_tests, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
 
-      </form>
-    </div>
-  </section>
-</main>
+class PDF extends FPDF {
+  public $fecha_en;
 
-<?php include_once('../components/footer.php'); ?>
+  function Header() {
+    if ($this->PageNo() > 1) return;
+    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
+    }
+    $this->SetFont('Arial', 'B', 14);
+    $this->SetXY(150, 10);
+    $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
+    $this->SetFont('Arial', '', 12);
+    $this->SetXY(150, 20);
+    $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
+    $this->Ln(15);
+  }
+
+  function Footer() {
+    $this->SetY(-15);
+    $this->SetFont('Arial', 'I', 8);
+    $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
+  }
+}
+
+$pdf = new PDF();
+$pdf->fecha_en = $fecha_en;
+$pdf->AddPage();
+
+$pdf->SetFont('Arial', 'B', 12);
+$pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
+$pdf->SetFont('Arial', 'B', 11);
+$pdf->Cell(90, 8, 'Test Process', 1, 0, 'C');
+$pdf->Cell(30, 8, 'Quantity', 1, 1, 'C');
+$pdf->SetFont('Arial', '', 11);
+$pdf->Cell(90, 8, 'Requisitioned', 1, 0); $pdf->Cell(30, 8, $requisitioned, 1, 1);
+$pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1);
+$pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
+$pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
+
+$pdf->Ln(10);
+$pdf->SetFont('Arial', 'B', 12);
+$pdf->Cell(0, 10, 'Test Details', 0, 1);
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(60, 8, 'Sample Number', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Test Type', 1, 0, 'C');
+$pdf->Cell(45, 8, 'Technician', 1, 0, 'C');
+$pdf->Cell(35, 8, 'Status', 1, 1, 'C');
+$pdf->SetFont('Arial', '', 9);
+foreach ($test_details as $detail) {
+  $pdf->Cell(60, 8, $detail['sample'], 1);
+  $pdf->Cell(40, 8, $detail['type'], 1);
+  $pdf->Cell(45, 8, $detail['tech'], 1);
+  $pdf->Cell(35, 8, $detail['status'], 1);
+  $pdf->Ln();
+}
+
+$pdf->Ln(10);
+$pdf->SetFont('Arial', 'B', 12);
+$pdf->Cell(0, 10, 'Pending Tests', 0, 1);
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(10, 8, '#', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Sample ID', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
+$pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
+$pdf->SetFont('Arial', '', 9);
+foreach ($pending_tests as $i => $row) {
+  $pdf->Cell(10, 8, $i + 1, 1);
+  $pdf->Cell(40, 8, $row['Sample_Name'], 1);
+  $pdf->Cell(40, 8, $row['Sample_Number'], 1);
+  $pdf->Cell(60, 8, $row['Test_Type'], 1);
+  $pdf->Cell(40, 8, $row['Sample_Date'], 1);
+  $pdf->Ln();
+}
+
+$pdf->Output("I", "Reporte_Diario_{$fecha}.pdf");
