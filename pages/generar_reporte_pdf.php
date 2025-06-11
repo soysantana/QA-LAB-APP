@@ -19,16 +19,11 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-function safe_count($query) {
-  $res = find_by_sql($query);
-  return isset($res[0]['total']) ? (int)$res[0]['total'] : 0;
-}
-
-$requisitioned = safe_count("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
-$preparation   = safe_count("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
-$realization   = safe_count("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
-$delivery      = safe_count("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'");
-$reviewed      = safe_count("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'");
+$requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+$reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 
 $test_details = [];
 $tablas = [
@@ -44,25 +39,21 @@ foreach ($tablas as $tabla => $col_fecha) {
   if ($has_tech) $query .= ", Technician";
   $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
   $results = find_by_sql($query);
-  if (is_array($results)) {
-    foreach ($results as $row) {
-      $test_details[] = [
-        'sample' => trim(($row['Sample_Name'] ?? '') . ' ' . ($row['Sample_Number'] ?? '')),
-        'type'   => $row['Test_Type'] ?? '',
-        'tech'   => $has_tech ? ($row['Technician'] ?? 'N/A') : 'N/A',
-        'status' => $row['Status'] ?? ''
-      ];
-    }
+  foreach ($results as $row) {
+    $test_details[] = [
+      'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
+      'type'   => $row['Test_Type'],
+      'tech'   => $has_tech ? $row['Technician'] : 'N/A',
+      'status' => $row['Status']
+    ];
   }
 }
 
 function normalize($v) {
-  return strtoupper(trim((string)$v));
+  return strtoupper(trim($v));
 }
 
-$requisitions = find_all("lab_test_requisition_form");
-if (!is_array($requisitions)) $requisitions = [];
-
+$requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form");
 $tables_to_check = [
   'test_preparation',
   'test_delivery',
@@ -75,9 +66,7 @@ $tables_to_check = [
 $indexed_status = [];
 foreach ($tables_to_check as $table) {
   $data = find_all($table);
-  if (!is_array($data)) continue;
   foreach ($data as $row) {
-    if (!isset($row['Sample_Name'], $row['Sample_Number'], $row['Test_Type'])) continue;
     $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
     $indexed_status[$key] = true;
   }
@@ -86,28 +75,24 @@ foreach ($tables_to_check as $table) {
 $pending_tests = [];
 foreach ($requisitions as $requisition) {
   $sample_id = normalize($requisition['Sample_ID']);
-  $sample_num = normalize($requisition['Sample_Number']);
-  $sample_date = $requisition['Sample_Date'];
+$sample_num = normalize($requisition['Sample_Number']);
+$test_types = explode(',', $requisition['Test_Type'] ?? '');
+$date = $requisition['Sample_Date'];
 
-  for ($i = 1; $i <= 20; $i++) {
-    $testKey = "Test_Type" . $i;
-    if (empty($requisition[$testKey])) continue;
+foreach ($test_types as $test_type_raw) {
+  $test_type = normalize($test_type_raw);
+  $key = $sample_id . "|" . $sample_num . "|" . $test_type;
 
-    $test_type = normalize($requisition[$testKey]);
-    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
-
-    if (!isset($indexed_status[$key])) {
-      $pending_tests[] = [
-        'Sample_Name' => $requisition['Sample_ID'],
-        'Sample_Number' => $requisition['Sample_Number'],
-        'Test_Type' => $requisition[$testKey],
-        'Sample_Date' => $sample_date
-      ];
-    }
+  if (!isset($indexed_status[$key])) {
+    $pending_tests[] = [
+      'Sample_ID' => $requisition['Sample_ID'],
+      'Sample_Number' => $requisition['Sample_Number'],
+      'Test_Type' => trim($test_type_raw),
+      'Sample_Date' => $date
+    ];
   }
 }
-
-usort($pending_tests, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
+}
 
 class PDF extends FPDF {
   public $fecha_en;
@@ -124,6 +109,39 @@ class PDF extends FPDF {
     $this->SetXY(150, 20);
     $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
     $this->Ln(15);
+
+    $timestamp = strtotime($this->fecha_en);
+    $day_of_week = date('w', $timestamp);
+    $week_number = (int) date('W', $timestamp);
+
+    $this->SetFont('Arial', 'B', 11);
+    $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
+    $this->SetFont('Arial', '', 10);
+
+    if ($day_of_week == 3) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Frandy Epsinal, Arturo Santana", 0, 'L');
+      $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta, Victor Mercedes", 0, 'L');
+      $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
+    } elseif (in_array($day_of_week, [0, 1, 2, 3])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+      $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: " . ($week_number % 2 === 0 ? "Jamilexi Mejia, Frandy Espinal" : "Frandy Espinal"), 0, 'L');
+      $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
+      $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
+    } else {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+      $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: " . ($week_number % 2 === 0 ? "Jamilexi Mejia, Arturo Santana" : "Arturo Santana"), 0, 'L');
+      $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
+      $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
+    }
+
+    $this->Ln(2);
+    $this->SetFont('Arial', 'I', 10);
+    $this->Cell(0, 8, "Report prepared by Wendin De Jesus", 0, 1);
+    $this->Ln(5);
   }
 
   function Footer() {
@@ -132,7 +150,6 @@ class PDF extends FPDF {
     $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
   }
 }
-
 $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
@@ -165,6 +182,10 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
+$pdf->SetFont('Arial', 'B', 7);
+$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SP= Standard Proctor, SG= Specific Gravity, SCT= Sand Castle, LAA= Los Angeles Abrasion, Shape= Particle Shape', 0, 1);
+$pdf->Cell(0, 5, 'SND= Soundness, PH= Pinhole, AL=Atterberg Limits, MP= Modified Proctor, Mc= Moisture Constent, PLT= Point Load, UCS= Simple Compresion, BTS= Bazilian', 0, 1);
+
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
@@ -177,11 +198,12 @@ $pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
 $pdf->SetFont('Arial', '', 9);
 foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
-  $pdf->Cell(40, 8, $row['Sample_Name'], 1);
+  $pdf->Cell(40, 8, $row['Sample_ID'], 1);
   $pdf->Cell(40, 8, $row['Sample_Number'], 1);
   $pdf->Cell(60, 8, $row['Test_Type'], 1);
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
 }
 
-$pdf->Output("I", "Reporte_Diario_{$fecha}.pdf");
+$pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
+
