@@ -35,11 +35,17 @@ for ($i = 0; $i < 7; $i++) {
               <tr>
                 <td><?= $i++ ?></td>
                 <td><?= date('d-m-Y', strtotime($fecha)) ?></td>
-                <td>
-                  <a href="../pages/generar_reporte_pdf.php?fecha=<?= $fecha ?>" target="_blank" class="btn btn-danger btn-sm">
-                    <i class="bi bi-file-earmark-pdf"></i> Generar PDF
-                  </a>
-                </td>
+               <td class="d-flex gap-2">
+  <a href="../pages/generar_reporte_pdf.php?fecha=<?= $fecha ?>" target="_blank" class="btn btn-danger btn-sm">
+    <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+  </a>
+
+
+
+
+
+</td>
+
               </tr>
             <?php endforeach; ?>
           </tbody>

@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   $session->msg('s', 'Todas las muestras fueron guardadas exitosamente.');
-  redirect('../pages/reporteDiario.php', false);
+  redirect('../pages/reporte_diario_lab.php', false);
 }
 
 ?>
