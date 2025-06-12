@@ -1,4 +1,5 @@
 <?php
+ob_start(); // ← Esto habilita el buffer de salida
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 
@@ -234,5 +235,6 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Ln();
 }
 
-ob_clean();
+
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
+exit;
