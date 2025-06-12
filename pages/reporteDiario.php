@@ -107,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $test_type       = $db->escape($test_types[$i]);
     $test_condition  = $db->escape($test_conditions[$i]);
     $comments        = $db->escape($comments_list[$i]);
+    $report_date     = $db->escape($report_date[$i]);
 
     $sql = "INSERT INTO ensayos_reporte (
               Sample_Number, Sample_Name, Structure, Material_Type,
