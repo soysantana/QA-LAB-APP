@@ -96,8 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $test_types       = $_POST['Test_Type'] ?? [];
   $test_conditions  = $_POST['Test_Condition'] ?? [];
   $comments_list    = $_POST['Comments'] ?? [];
-
-  $report_date = $_POST['Date'] ?? [];
+  $report_dates     = $_POST['Date'] ?? [];
 
   for ($i = 0; $i < count($sample_names); $i++) {
     $sample_name     = $db->escape($sample_names[$i]);
@@ -107,14 +106,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $test_type       = $db->escape($test_types[$i]);
     $test_condition  = $db->escape($test_conditions[$i]);
     $comments        = $db->escape($comments_list[$i]);
-    $report_date     = $db->escape($report_date[$i]);
+    $date            = $db->escape($report_dates[$i]);
 
     $sql = "INSERT INTO ensayos_reporte (
               Sample_Number, Sample_Name, Structure, Material_Type,
               Test_Type, Test_Condition, Comments, Report_Date
             ) VALUES (
               '{$sample_number}', '{$sample_name}', '{$structure}', '{$material_type}',
-              '{$test_type}', '{$test_condition}', '{$comments}', '{$report_date}'
+              '{$test_type}', '{$test_condition}', '{$comments}', '{$date}'
             )";
 
     $db->query($sql);
@@ -123,4 +122,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $session->msg('s', 'Todas las muestras fueron guardadas exitosamente.');
   redirect('../pages/reporteDiario.php', false);
 }
+
 ?>
