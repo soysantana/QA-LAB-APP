@@ -178,7 +178,7 @@ $pdf->SetFont('Arial', 'B', 9);
 $pdf->Cell(35, 8, 'Sample ID', 1);
 $pdf->Cell(25, 8, 'Structure', 1);
 $pdf->Cell(20, 8, 'Mat. Type', 1);
-$pdf->Cell(20, 8, 'Test Type', 1);
+$pdf->Cell(25, 8, 'Test Type', 1);
 $pdf->Cell(20, 8, 'Condition', 1);
 $pdf->Cell(70, 8, 'Comments', 1, 1);
 $pdf->SetFont('Arial', '', 9);
@@ -186,7 +186,7 @@ foreach ($ensayos_reporte as $row) {
   $pdf->Cell(35, 8, $row['Sample_Name'] . '-' . $row['Sample_Number'], 1);
   $pdf->Cell(25, 8, $row['Structure'], 1);
   $pdf->Cell(20, 8, $row['Material_Type'], 1);
-  $pdf->Cell(20, 8, $row['Test_Type'], 1);
+  $pdf->Cell(25, 8, $row['Test_Type'], 1);
   $pdf->Cell(20, 8, $row['Test_Condition'], 1);
   $pdf->MultiCell(70, 8, $row['Comments'], 1);
 }
