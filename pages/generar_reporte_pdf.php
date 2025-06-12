@@ -19,6 +19,9 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
+$day_of_week = date('w', strtotime($fecha));
+$week_number = date('W', strtotime($fecha));
+
 $requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
 $realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
@@ -40,7 +43,7 @@ foreach ($tablas as $tabla => $col_fecha) {
   $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
   $results = find_by_sql($query);
   foreach ($results as $row) {
-    $test_details[] = [ 
+    $test_details[] = [
       'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
       'type'   => $row['Test_Type'],
       'tech'   => $has_tech ? $row['Technician'] : 'N/A',
@@ -98,6 +101,8 @@ $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date 
 
 class PDF extends FPDF {
   public $fecha_en;
+  public $day_of_week;
+  public $week_number;
 
   function Header() {
     if ($this->PageNo() > 1) return;
@@ -111,28 +116,27 @@ class PDF extends FPDF {
     $this->SetXY(150, 20);
     $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
     $this->Ln(15);
-  }
 
-   $this->SetFont('Arial', 'B', 11);
+    $this->SetFont('Arial', 'B', 11);
     $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
     $this->SetFont('Arial', '', 10);
 
-    if ($day_of_week == 3) {
+    if ($this->day_of_week == 3) {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
       $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
       $this->MultiCell(0, 6, "Lab Document Control: Jamilexi Mejia, Frandy Epsinal, Arturo Santana", 0, 'L');
       $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta, Victor Mercedes", 0, 'L');
       $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
-    } elseif (in_array($day_of_week, [0, 1, 2, 3])) {
+    } elseif (in_array($this->day_of_week, [0, 1, 2])) {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
       $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: " . ($week_number % 2 === 0 ? "Jamilexi Mejia, Frandy Espinal" : "Frandy Espinal"), 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Jamilexi Mejia, Frandy Espinal" : "Frandy Espinal"), 0, 'L');
       $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
       $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
     } else {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
       $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: " . ($week_number % 2 === 0 ? "Jamilexi Mejia, Arturo Santana" : "Arturo Santana"), 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Jamilexi Mejia, Arturo Santana" : "Arturo Santana"), 0, 'L');
       $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
       $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
     }
@@ -152,8 +156,11 @@ class PDF extends FPDF {
 
 $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
+$pdf->day_of_week = $day_of_week;
+$pdf->week_number = $week_number;
 $pdf->AddPage();
 
+// Summary Table
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
 $pdf->SetFont('Arial', 'B', 11);
@@ -166,15 +173,17 @@ $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1)
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
 $pdf->Ln(10);
+
+// Status of Tests
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Status of Tests', 0, 1);
 $pdf->SetFont('Arial', 'B', 9);
-$pdf->Cell(35, 8, 'Sample ID', 1, 0, 'C');
-$pdf->Cell(20, 8, 'Structure', 1, 0, 'C');
-$pdf->Cell(20, 8, 'Mat. Type', 1, 0, 'C');
-$pdf->Cell(20, 8, 'Test Type', 1, 0, 'C');
-$pdf->Cell(20, 8, 'Condition', 1, 0, 'C');
-$pdf->Cell(80, 8, 'Comments', 1, 1, 'C');
+$pdf->Cell(35, 8, 'Sample ID', 1);
+$pdf->Cell(20, 8, 'Structure', 1);
+$pdf->Cell(20, 8, 'Mat. Type', 1);
+$pdf->Cell(20, 8, 'Test Type', 1);
+$pdf->Cell(20, 8, 'Condition', 1);
+$pdf->Cell(80, 8, 'Comments', 1, 1);
 $pdf->SetFont('Arial', '', 9);
 foreach ($ensayos_reporte as $row) {
   $pdf->Cell(35, 8, $row['Sample_Number'] . '-' . $row['Sample_Name'], 1);
@@ -186,13 +195,15 @@ foreach ($ensayos_reporte as $row) {
 }
 
 $pdf->Ln(10);
+
+// Test Details
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 8, 'Sample Number', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Test Type', 1, 0, 'C');
-$pdf->Cell(45, 8, 'Technician', 1, 0, 'C');
-$pdf->Cell(35, 8, 'Status', 1, 1, 'C');
+$pdf->Cell(60, 8, 'Sample Number', 1);
+$pdf->Cell(40, 8, 'Test Type', 1);
+$pdf->Cell(45, 8, 'Technician', 1);
+$pdf->Cell(35, 8, 'Status', 1, 1);
 $pdf->SetFont('Arial', '', 9);
 foreach ($test_details as $detail) {
   $pdf->Cell(60, 8, $detail['sample'], 1);
@@ -203,14 +214,16 @@ foreach ($test_details as $detail) {
 }
 
 $pdf->Ln(10);
+
+// Pending Tests
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample ID', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Number', 1, 0, 'C');
-$pdf->Cell(60, 8, 'Test Type', 1, 0, 'C');
-$pdf->Cell(40, 8, 'Sample Date', 1, 1, 'C');
+$pdf->Cell(10, 8, '#', 1);
+$pdf->Cell(40, 8, 'Sample ID', 1);
+$pdf->Cell(40, 8, 'Sample Number', 1);
+$pdf->Cell(60, 8, 'Test Type', 1);
+$pdf->Cell(40, 8, 'Sample Date', 1, 1);
 $pdf->SetFont('Arial', '', 9);
 foreach ($pending_tests as $i => $row) {
   $pdf->Cell(10, 8, $i + 1, 1);
