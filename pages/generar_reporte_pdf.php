@@ -3,11 +3,7 @@ ob_start(); // ← Esto habilita el buffer de salida
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/error_log.txt');
+
 
 if (!isset($_GET['fecha'])) {
   die('Fecha no especificada.');

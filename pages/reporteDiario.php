@@ -48,6 +48,10 @@ include_once('../components/header.php');
               <label class="form-label">Test Condition</label>
               <input type="text" class="form-control" name="Test_Condition[]" required>
             </div>
+            <div class="col-md-6">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-control" name="Date[]">
+            </div>
             <div class="col-12">
               <label class="form-label">Comments</label>
               <textarea class="form-control" name="Comments[]" rows="3"></textarea>
@@ -93,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $test_conditions  = $_POST['Test_Condition'] ?? [];
   $comments_list    = $_POST['Comments'] ?? [];
 
-  $report_date = date('Y-m-d H:i:s');
+  $report_date = $_POST['Date'] ?? [];
 
   for ($i = 0; $i < count($sample_names); $i++) {
     $sample_name     = $db->escape($sample_names[$i]);
