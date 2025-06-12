@@ -190,3 +190,26 @@ Stack trace:
 #3 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(177): FPDF->SetFont('helvetica', '1', 9)
 #4 {main}
   thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[11-Jun-2025 18:03:49 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'fmfwfvmy_pvj2_db.ensayos_reporte' doesn't exist in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT * FROM e...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT * FROM e...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(97): find_by_sql('SELECT * FROM e...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[11-Jun-2025 18:41:21 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Report_Date' in 'where clause' in C:\laragon\www\QA-LAB-APP\config\database.php:49
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\config\database.php(49): mysqli->query('SELECT COUNT(*)...')
+#1 C:\laragon\www\QA-LAB-APP\config\sql.php(21): MySqli_DB->query('SELECT COUNT(*)...')
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(97): find_by_sql('SELECT COUNT(*)...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\config\database.php on line 49
+[11-Jun-2025 18:42:52 UTC] PHP Warning:  foreach() argument must be of type array|object, string given in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 183
+[11-Jun-2025 18:42:52 UTC] PHP Fatal error:  Uncaught Exception: FPDF error: Some data has already been output, can't send PDF file in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php:267
+Stack trace:
+#0 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1058): FPDF->Error('Some data has a...')
+#1 C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php(1004): FPDF->_checkoutput()
+#2 C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php(236): FPDF->Output('I', 'Daily_Laborator...')
+#3 {main}
+  thrown in C:\laragon\www\QA-LAB-APP\libs\fpdf\fpdf.php on line 267
+[11-Jun-2025 18:45:39 UTC] PHP Warning:  foreach() argument must be of type array|object, string given in C:\laragon\www\QA-LAB-APP\pages\generar_reporte_pdf.php on line 183

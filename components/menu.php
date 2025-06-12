@@ -224,7 +224,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
     </li><!-- End Review Page Nav -->
 
    <li class="nav-item">
-  <a class="nav-link" href="/pages/reporte_diario_lab.php">
+  <a class="nav-link" href="../components/menu_reporte_diario.php">
     <i class="bi bi-calendar-event"></i>
     <span>Reporte Diario</span>
   </a>

@@ -75,24 +75,26 @@ foreach ($tables_to_check as $table) {
 $pending_tests = [];
 foreach ($requisitions as $requisition) {
   $sample_id = normalize($requisition['Sample_ID']);
-$sample_num = normalize($requisition['Sample_Number']);
-$test_types = explode(',', $requisition['Test_Type'] ?? '');
-$date = $requisition['Sample_Date'];
+  $sample_num = normalize($requisition['Sample_Number']);
+  $test_types = explode(',', $requisition['Test_Type'] ?? '');
+  $date = $requisition['Sample_Date'];
 
-foreach ($test_types as $test_type_raw) {
-  $test_type = normalize($test_type_raw);
-  $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+  foreach ($test_types as $test_type_raw) {
+    $test_type = normalize($test_type_raw);
+    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
 
-  if (!isset($indexed_status[$key])) {
-    $pending_tests[] = [
-      'Sample_ID' => $requisition['Sample_ID'],
-      'Sample_Number' => $requisition['Sample_Number'],
-      'Test_Type' => trim($test_type_raw),
-      'Sample_Date' => $date
-    ];
+    if (!isset($indexed_status[$key])) {
+      $pending_tests[] = [
+        'Sample_ID' => $requisition['Sample_ID'],
+        'Sample_Number' => $requisition['Sample_Number'],
+        'Test_Type' => trim($test_type_raw),
+        'Sample_Date' => $date
+      ];
+    }
   }
 }
-}
+
+$ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
 
 class PDF extends FPDF {
   public $fecha_en;
@@ -109,12 +111,9 @@ class PDF extends FPDF {
     $this->SetXY(150, 20);
     $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
     $this->Ln(15);
+  }
 
-    $timestamp = strtotime($this->fecha_en);
-    $day_of_week = date('w', $timestamp);
-    $week_number = (int) date('W', $timestamp);
-
-    $this->SetFont('Arial', 'B', 11);
+   $this->SetFont('Arial', 'B', 11);
     $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
     $this->SetFont('Arial', '', 10);
 
@@ -150,6 +149,7 @@ class PDF extends FPDF {
     $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
   }
 }
+
 $pdf = new PDF();
 $pdf->fecha_en = $fecha_en;
 $pdf->AddPage();
@@ -167,6 +167,26 @@ $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
+$pdf->Cell(0, 10, 'Status of Tests', 0, 1);
+$pdf->SetFont('Arial', 'B', 9);
+$pdf->Cell(35, 8, 'Sample ID', 1, 0, 'C');
+$pdf->Cell(20, 8, 'Structure', 1, 0, 'C');
+$pdf->Cell(20, 8, 'Mat. Type', 1, 0, 'C');
+$pdf->Cell(20, 8, 'Test Type', 1, 0, 'C');
+$pdf->Cell(20, 8, 'Condition', 1, 0, 'C');
+$pdf->Cell(80, 8, 'Comments', 1, 1, 'C');
+$pdf->SetFont('Arial', '', 9);
+foreach ($ensayos_reporte as $row) {
+  $pdf->Cell(35, 8, $row['Sample_Number'] . '-' . $row['Sample_Name'], 1);
+  $pdf->Cell(20, 8, $row['Structure'], 1);
+  $pdf->Cell(20, 8, $row['Material_Type'], 1);
+  $pdf->Cell(20, 8, $row['Test_Type'], 1);
+  $pdf->Cell(20, 8, $row['Test_Condition'], 1);
+  $pdf->MultiCell(80, 8, $row['Comments'], 1);
+}
+
+$pdf->Ln(10);
+$pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Test Details', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(60, 8, 'Sample Number', 1, 0, 'C');
@@ -181,10 +201,6 @@ foreach ($test_details as $detail) {
   $pdf->Cell(35, 8, $detail['status'], 1);
   $pdf->Ln();
 }
-
-$pdf->SetFont('Arial', 'B', 7);
-$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SP= Standard Proctor, SG= Specific Gravity, SCT= Sand Castle, LAA= Los Angeles Abrasion, Shape= Particle Shape', 0, 1);
-$pdf->Cell(0, 5, 'SND= Soundness, PH= Pinhole, AL=Atterberg Limits, MP= Modified Proctor, Mc= Moisture Constent, PLT= Point Load, UCS= Simple Compresion, BTS= Bazilian', 0, 1);
 
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
@@ -205,5 +221,5 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Ln();
 }
 
+ob_clean();
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
-
