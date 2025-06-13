@@ -195,7 +195,11 @@ $pdf->Ln(10);
 
 // Test Details
 $pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Test Details', 0, 1);
+$pdf->Cell(0, 5, 'Test Details', 0, 1);
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 5, 'Test LEgend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
+$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
+$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(60, 8, 'Sample Number', 1);
 $pdf->Cell(40, 8, 'Test Type', 1);
@@ -215,6 +219,10 @@ $pdf->Ln(10);
 // Pending Tests
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Pending Tests', 0, 1);
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 5, 'Test LEgend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
+$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
+$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(10, 8, '#', 1);
 $pdf->Cell(40, 8, 'Sample ID', 1);
