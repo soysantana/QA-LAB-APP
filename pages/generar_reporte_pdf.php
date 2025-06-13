@@ -140,7 +140,7 @@ class PDF extends FPDF {
 
     $this->Ln(2);
     $this->SetFont('Arial', 'I', 10);
-    $this->Cell(0, 8, "Report reviwed Wendin De Jesus", 0, 1);
+    $this->Cell(0, 8, "Report reviwed by: Wendin De Jesus", 0, 1);
     $this->Ln(5);
   }
 
