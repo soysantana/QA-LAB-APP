@@ -29,6 +29,7 @@ $pdf->useTemplate($tplIdx, 0, 0);
 // Configurar fuente
 $pdf->SetFont('Arial', '', 12);
 
+
 // Definir posiciones y valores en el PDF
 $fields = [
     [58, 36, $Search['Project_Name']],
@@ -164,6 +165,25 @@ $pdf->SetXY(100, 264);
 $pdf->Cell(35, 4, $Search['PL_Avg_Mc_Porce'], 0, 1, 'C');
 
 // Sumarry Atterberg Limits Parameters
+$Material = isset($Search['Material_Type']) ? $Search['Material_Type'] : '';
+$IP = isset($Search['Plasticity_Index_Porce']) ? (float)$Search['Plasticity_Index_Porce'] : 0.0;
+
+$status = '';
+
+if ($Material === 'LPF') {
+    if ($IP >= 14.5) {
+        $status = 'Passed';
+    } else {
+        $status = 'Failed';
+    }
+} elseif ($Material === 'IRF') {
+    if ($IP <= 7) {
+        $status = 'Passed';
+    } else {
+        $status = 'Failed';
+    }
+}
+
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->SetXY(349, 120);
 $pdf->Cell(24, 4, $Search['Liquid_Limit_Porce'], 0, 1, 'C');
@@ -174,7 +194,7 @@ $pdf->Cell(24, 4, $Search['Plasticity_Index_Porce'], 0, 1, 'C');
 $pdf->SetXY(349, 145);
 $pdf->Cell(24, 4, $Search['Liquidity_Index_Porce'], 0, 1, 'C');
 $pdf->SetXY(349, 153);
-$pdf->Cell(24, 4, ($Search['Plasticity_Index_Porce'] >= 14.5) ? "Passed" : "Failed", 0, 1, 'C');
+$pdf->Cell(24, 4, $status, 0, 1, 'C');
 $pdf->SetXY(139, 278.5);
 $pdf->Cell(24, 4, $Search['Classification'], 0, 1, 'C');
 
