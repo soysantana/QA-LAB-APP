@@ -1,15 +1,12 @@
 <?php
- if (isset($_POST['delete-preparation']) && isset($_GET['id'])) {
-    $delete = $_GET['id'];
+if (isset($_POST['delete_multiple']) && !empty($_POST['selected_samples'])) {
+    $selected_ids = $_POST['selected_samples'];
 
-    $ID = delete_by_id('test_preparation', $delete);
-
-    if ($ID) {
-        $session->msg("s", "Borrado exitosamente");
-    } else {
-        $session->msg("d", "No encontrado");
+    foreach ($selected_ids as $id) {
+        $escaped_id = $db->escape($id);
+        delete_by_id('test_preparation', $escaped_id);
     }
 
+    $session->msg("s", "Registros eliminados correctamente.");
     redirect('/pages/test-preparation.php');
- }
-?>
+}
