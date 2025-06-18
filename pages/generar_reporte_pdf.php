@@ -127,13 +127,13 @@ class PDF extends FPDF {
     } elseif (in_array($this->day_of_week, [0, 1, 2])) {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
       $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Yamilexi Mejia, Frandy Espinal" : "Frandy Espinal, Yamilexi Mejía"), 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Yamilexi Mejia, Frandy Espinal" : "Frandy Espinal, Yamilexi Mejia"), 0, 'L');
       $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
       $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
     } else {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
       $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejía"), 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejia"), 0, 'L');
       $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
       $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
     }
