@@ -1,18 +1,12 @@
 <?php
+if (isset($_POST['delete_delivery']) && !empty($_POST['selected_samples'])) {
+    $selected_ids = $_POST['selected_samples'];
 
-page_require_level(2);
-
- if (isset($_POST['delete-delivery']) && isset($_GET['id'])) {
-    $delete = $_GET['id'];
-
-    $ID = delete_by_id('test_delivery', $delete);
-
-    if ($ID) {
-        $session->msg("s", "Borrado exitosamente");
-    } else {
-        $session->msg("d", "No encontrado");
+    foreach ($selected_ids as $id) {
+        $escaped_id = $db->escape($id);
+        delete_by_id('test_delivery', $escaped_id);
     }
 
+    $session->msg("s", "Registros eliminados correctamente.");
     redirect('/pages/test-delivery.php');
- }
-?>
+}
