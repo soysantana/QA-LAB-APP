@@ -386,7 +386,7 @@ function FineFilter() {
         return "SW-Well graded sand";
     } else if (sand > gravel && fines < 5 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel >= 15) {
         return "SW-Well graded sand with gravel";
-    } else if (sand > gravel && fines < 5 && Cu < 6.4 && Cc < 1 && gravel < 15) {
+    } else if (sand > gravel && fines < 5 && (Cu < 6 || Cc < 1 || Cc > 3) && gravel < 15) {
         return "SP-Poorly graded sand";
     } else if (sand > gravel && fines < 5 && Cu < 6 &&  Cc > 3 && gravel < 15) {
         return "SP-Poorly graded sand";
