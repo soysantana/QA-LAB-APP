@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     include('../database/sample-tracking/preparation/delete.php');
   } elseif (isset($_POST['SendMultipleRealization'])) {
     include('../database/sample-tracking/realization/send-multiple.php');
+  } elseif (isset($_POST['update_multiple'])) {
+    include('../database/sample-tracking/preparation/update.php');
   }
 }
 ?>
@@ -120,7 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
                   <?php foreach ($Seach as $Seach): ?>
                     <tr>
-                      <td><?php echo count_id(); ?></td>
+                      <td>
+                        <?php echo count_id(); ?>
+                      </td>
                       <td>
                         <input type="checkbox" name="selected_samples[]" value="<?php echo $Seach['id']; ?>">
                       </td>
@@ -147,6 +151,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
               <button type="submit" class="btn btn-success mt-2" name="SendMultipleRealization">
                 <i class="bi bi-send-check me-1"></i>
+              </button>
+              <button type="submit" class="btn btn-primary mt-2" name="update_multiple">
+                <i class="bi bi-pencil"></i>
               </button>
               <button type="submit" class="btn btn-danger mt-2" name="delete_multiple">
                 <i class="bi bi-trash"></i>
