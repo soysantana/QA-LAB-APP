@@ -130,7 +130,7 @@
         document.getElementById("WashPan").value = WashPan.toFixed(2);
         document.getElementById("Ret" + i).value = Ret.toFixed(2);
         document.getElementById("CumRet" + i).value = CumRet.toFixed(2);
-        document.getElementById("Pass" + i).value = Pass.toFixed(0);
+        document.getElementById("Pass" + i).value = Pass.toFixed(1);
         document.getElementById("PanRet").value = PanRet.toFixed(2);
         document.getElementById("TotalWtRet").value = TotalWtRet.toFixed(2);
         document.getElementById("TotalRet").value = TotalRet.toFixed(2);
