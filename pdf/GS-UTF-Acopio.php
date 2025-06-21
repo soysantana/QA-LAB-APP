@@ -23,6 +23,19 @@ $pdf->setSourceFile('template/PV-F-81259 Laboratory Sieve Grain Size for UTF.pdf
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
+$Sand = $Search['Sand'];
+$Fines = $Search['Fines'];
+
+// Condición para "Acepted"
+if (
+    $Sand >= 39.45 &&
+    $Fines <= 4.4
+) {
+    $resultado = 'Acepted';
+} else {
+    $resultado = 'Rejected';
+}
+
 $pdf->SetFont('Arial', 'B', 10);
 
 //Information for the essay
@@ -305,7 +318,7 @@ $pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Grain Size Test Results
 $pdf->SetXY(361, 378);
-$pdf->Cell(73, 6, '', 0, 1, 'C');
+$pdf->Cell(73, 6, $resultado, 0, 1, 'C');
 
 // Comments and observations
 $pdf->SetXY(52, 430);
