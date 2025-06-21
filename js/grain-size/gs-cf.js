@@ -183,7 +183,7 @@
 
         document.getElementById("AcidResult").value = AcidResult;
         document.getElementById("ReactionResult").value = reactionResult;
-        document.getElementById("AvgParticles").value = avgParticles;
+        document.getElementById("AvgParticles").value = avgParticles.toFixed(0);
     }
 
     // Sumary Parameter
