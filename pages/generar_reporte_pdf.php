@@ -101,6 +101,52 @@ class PDF extends FPDF {
   public $day_of_week;
   public $week_number;
 
+// Función para calcular cantidad de líneas que ocupará un texto en MultiCell
+function NbLines($w, $txt) {
+    global $pdf;
+    $cw = &$pdf->CurrentFont['cw'];
+    if($w==0)
+        $w = $pdf->w - $pdf->rMargin - $pdf->x;
+    $wmax = ($w - 2 * $pdf->cMargin) * 1000 / $pdf->FontSize;
+    $s = str_replace("\r", '', $txt);
+    $nb = strlen($s);
+    if ($nb > 0 && $s[$nb - 1] == "\n")
+        $nb--;
+    $sep = -1;
+    $i = 0;
+    $j = 0;
+    $l = 0;
+    $nl = 1;
+    while ($i < $nb) {
+        $c = $s[$i];
+        if ($c == "\n") {
+            $i++;
+            $sep = -1;
+            $j = $i;
+            $l = 0;
+            $nl++;
+            continue;
+        }
+        if ($c == ' ')
+            $sep = $i;
+        $l += $cw[$c];
+        if ($l > $wmax) {
+            if ($sep == -1) {
+                if ($i == $j)
+                    $i++;
+            } else
+                $i = $sep + 1;
+            $sep = -1;
+            $j = $i;
+            $l = 0;
+            $nl++;
+        } else
+            $i++;
+    }
+    return $nl;
+}
+
+
   function Header() {
     if ($this->PageNo() > 1) return;
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
@@ -112,7 +158,7 @@ class PDF extends FPDF {
     $this->SetFont('Arial', '', 12);
     $this->SetXY(150, 20);
     $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-    $this->Ln(15);
+    $this->Ln(5);
 
     $this->SetFont('Arial', 'B', 11);
     $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
@@ -169,27 +215,90 @@ $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1)
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
-$pdf->Ln(10);
+$pdf->Ln();
 
 // Status of Tests
+$pdf->Ln(10);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Status of Tests', 0, 1);
-$pdf->SetFont('Arial', 'B', 9);
-$pdf->Cell(35, 8, 'Sample ID', 1);
-$pdf->Cell(25, 8, 'Structure', 1);
-$pdf->Cell(20, 8, 'Mat. Type', 1);
-$pdf->Cell(25, 8, 'Test Type', 1);
-$pdf->Cell(20, 8, 'Condition', 1);
-$pdf->Cell(70, 8, 'Comments', 1, 1);
+
+// Definir anchos por columna
+$w1 = 35; // Sample ID
+$w2 = 25; // Structure
+$w3 = 20; // Mat. Type
+$w4 = 25; // Test Type
+$w5 = 20; // Condition
+$w6 = 70; // Comments
+$lineHeight = 6;
+
+// Encabezado
+$pdf->SetFont('Arial', 'B', 10);
+$x = $pdf->GetX();
+$y = $pdf->GetY();
+
+// Dibujar rectángulos del encabezado
+$pdf->Rect($x, $y, $w1, 8);
+$pdf->Rect($x + $w1, $y, $w2, 8);
+$pdf->Rect($x + $w1 + $w2, $y, $w3, 8);
+$pdf->Rect($x + $w1 + $w2 + $w3, $y, $w4, 8);
+$pdf->Rect($x + $w1 + $w2 + $w3 + $w4, $y, $w5, 8);
+$pdf->Rect($x + $w1 + $w2 + $w3 + $w4 + $w5, $y, $w6, 8);
+
+// Escribir títulos de encabezado
+$pdf->SetXY($x, $y); $pdf->Cell($w1, 8, 'Sample ID', 0, 0);
+$pdf->SetXY($x + $w1, $y); $pdf->Cell($w2, 8, 'Structure', 0, 0);
+$pdf->SetXY($x + $w1 + $w2, $y); $pdf->Cell($w3, 8, 'Mat. Type', 0, 0);
+$pdf->SetXY($x + $w1 + $w2 + $w3, $y); $pdf->Cell($w4, 8, 'Test Type', 0, 0);
+$pdf->SetXY($x + $w1 + $w2 + $w3 + $w4, $y); $pdf->Cell($w5, 8, 'Condition', 0, 0);
+$pdf->SetXY($x + $w1 + $w2 + $w3 + $w4 + $w5, $y); $pdf->Cell($w6, 8, 'Comments', 0, 1);
+
+// Contenido de la tabla
 $pdf->SetFont('Arial', '', 9);
 foreach ($ensayos_reporte as $row) {
-  $pdf->Cell(35, 8, $row['Sample_Name'] . '-' . $row['Sample_Number'], 1);
-  $pdf->Cell(25, 8, $row['Structure'], 1);
-  $pdf->Cell(20, 8, $row['Material_Type'], 1);
-  $pdf->Cell(25, 8, $row['Test_Type'], 1);
-  $pdf->Cell(20, 8, $row['Test_Condition'], 1);
-  $pdf->MultiCell(70, 8, $row['Comments'], 1);
-}
+  // Datos
+  $sample = $row['Sample_Name'] . '-' . $row['Sample_Number'];
+  $structure = $row['Structure'];
+  $mat_type = $row['Material_Type'];
+  $test_type = $row['Test_Type'];
+  $condition = $row['Test_Condition'];
+  $comments = $row['Comments'];
+
+    // Calcular líneas necesarias por columna
+    $lines = max(
+      $pdf->NbLines($w1, $sample),
+      $pdf->NbLines($w2, $structure),
+      $pdf->NbLines($w3, $mat_type),
+      $pdf->NbLines($w4, $test_type),
+      $pdf->NbLines($w5, $condition),
+      $pdf->NbLines($w6, $comments)
+    );
+    $rowHeight = $lines * $lineHeight;
+
+    // Coordenadas iniciales
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+
+    // Dibujar bordes de fila
+    $pdf->Rect($x, $y, $w1, $rowHeight);
+    $pdf->Rect($x + $w1, $y, $w2, $rowHeight);
+    $pdf->Rect($x + $w1 + $w2, $y, $w3, $rowHeight);
+    $pdf->Rect($x + $w1 + $w2 + $w3, $y, $w4, $rowHeight);
+    $pdf->Rect($x + $w1 + $w2 + $w3 + $w4, $y, $w5, $rowHeight);
+    $pdf->Rect($x + $w1 + $w2 + $w3 + $w4 + $w5, $y, $w6, $rowHeight);
+
+    // Imprimir contenido sincronizado
+    $pdf->SetXY($x, $y); $pdf->MultiCell($w1, $lineHeight, $sample, 0);
+    $pdf->SetXY($x + $w1, $y); $pdf->MultiCell($w2, $lineHeight, $structure, 0);
+    $pdf->SetXY($x + $w1 + $w2, $y); $pdf->MultiCell($w3, $lineHeight, $mat_type, 0);
+    $pdf->SetXY($x + $w1 + $w2 + $w3, $y); $pdf->MultiCell($w4, $lineHeight, $test_type, 0);
+    $pdf->SetXY($x + $w1 + $w2 + $w3 + $w4, $y); $pdf->MultiCell($w5, $lineHeight, $condition, 0);
+    $pdf->SetXY($x + $w1 + $w2 + $w3 + $w4 + $w5, $y); $pdf->MultiCell($w6, $lineHeight, $comments, 0);
+
+    // Mover cursor a nueva fila
+    $pdf->SetXY($x, $y + $rowHeight);
+  }
+
+
 
 $pdf->Ln(10);
 
@@ -214,7 +323,7 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
-$pdf->Ln(10);
+$pdf->Ln(5);
 
 // Pending Tests
 $pdf->SetFont('Arial', 'B', 12);
@@ -238,6 +347,8 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
 }
+
+
 
 
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
