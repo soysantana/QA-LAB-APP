@@ -4,6 +4,7 @@ $user = current_user();
 if (isset($_POST['SendMultipleRealization'])) {
     if (isset($_POST['selected_samples']) && is_array($_POST['selected_samples'])) {
         $selected_ids = $_POST['selected_samples'];
+        $technicians = $_POST['Technician'];
         $RegistedDate = make_date();
         $Register_By = $user['name'];
         $Register_Date = make_date();
@@ -13,16 +14,16 @@ if (isset($_POST['SendMultipleRealization'])) {
 
         foreach ($selected_ids as $sample_id) {
             $escaped_id = $db->escape($sample_id);
+            $tech_name = $db->escape($technicians[$sample_id]);
 
             // Obtén los datos de la muestra desde test_preparation
-            $query = "SELECT Sample_Name, Sample_Number, Test_Type, Technician FROM test_preparation WHERE id = '$escaped_id' LIMIT 1";
+            $query = "SELECT Sample_Name, Sample_Number, Test_Type FROM test_preparation WHERE id = '$escaped_id' LIMIT 1";
             $result = $db->fetch_assoc($db->query($query));
 
             if ($result) {
                 $Sname = $db->escape($result['Sample_Name']);
                 $Snumber = $db->escape($result['Sample_Number']);
                 $Ttype = $db->escape($result['Test_Type']);
-                $Technician = $db->escape($result['Technician']);
 
                 $ExistingRealization = check_R($Sname, $Snumber, $Ttype);
 
@@ -43,7 +44,7 @@ if (isset($_POST['SendMultipleRealization'])) {
                         '$Sname',
                         '$Snumber',
                         '$Ttype',
-                        '$Technician',
+                        '$tech_name',
                         '$RegistedDate',
                         '$Register_By',
                         '$Register_Date',

@@ -130,7 +130,7 @@
         document.getElementById("WashPan").value = WashPan.toFixed(2);
         document.getElementById("Ret" + i).value = Ret.toFixed(2);
         document.getElementById("CumRet" + i).value = CumRet.toFixed(2);
-        document.getElementById("Pass" + i).value = Pass.toFixed(2);
+        document.getElementById("Pass" + i).value = Pass.toFixed(1);
         document.getElementById("PanRet").value = PanRet.toFixed(2);
         document.getElementById("TotalWtRet").value = TotalWtRet.toFixed(2);
         document.getElementById("TotalRet").value = TotalRet.toFixed(2);
@@ -183,7 +183,7 @@
 
         document.getElementById("AcidResult").value = AcidResult;
         document.getElementById("ReactionResult").value = reactionResult;
-        document.getElementById("AvgParticles").value = avgParticles;
+        document.getElementById("AvgParticles").value = avgParticles.toFixed(0);
     }
 
     // Sumary Parameter
@@ -348,7 +348,7 @@
         return "GP-Poorly graded gravel";
     } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand < 15) {
         return "GP-Poorly graded gravel";
-    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
+    } else if (gravel > sand && fines < 5 && (Cu < 4 || Cc < 1 || Cc > 3) && sand >= 15) {
         return "GP-Poorly graded gravel with sand";
     } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand >= 15) {
         return "GP-Poorly graded gravel with sand";

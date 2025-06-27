@@ -434,6 +434,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/gs-cf.js"></script>
+<script src="../js/grain-size/gs-cf.js?v=0.0.3"></script>
 <script src="../libs/graph/Grain-Size-CF.js"></script>
 <?php include_once('../components/footer.php');  ?>

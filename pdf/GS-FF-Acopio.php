@@ -39,7 +39,7 @@ if (
     $passn16 >= 60 && $passn16 <= 85 &&
     $passn50 >= 10 && $passn50 <= 30 &&
     $passn60 >= 5 && $passn60 <= 35 &&
-    $passn200 >= 0 && $passn200 <= 2
+    $passn200 >= 0 && $passn200 <= 2.4
 ) {
     $resultado = 'Acepted';
 } else {
