@@ -300,7 +300,7 @@ foreach ($ensayos_reporte as $row) {
 
 
 
-$pdf->Ln(10);
+$pdf->Ln(5);
 
 // Test Details
 $pdf->SetFont('Arial', 'B', 12);
