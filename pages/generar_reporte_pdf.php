@@ -218,7 +218,8 @@ $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 $pdf->Ln();
 
 // Status of Tests
-$pdf->Ln(10);
+
+$pdf->Ln(5);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Status of Tests', 0, 1);
 
@@ -301,7 +302,7 @@ foreach ($ensayos_reporte as $row) {
 
 
 $pdf->Ln(5);
-
+$pdf->AddPage();
 // Test Details
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 5, 'Test Details', 0, 1);
