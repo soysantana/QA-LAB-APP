@@ -23,6 +23,31 @@ $pdf->setSourceFile('template/PV-F01709 Laboratory Sieve Grain Size Distribution
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
+$pass1p5 = $Search['Pass7'];
+$pass1 = $Search['Pass8'];
+$pass3p4 = $Search['Pass9'];
+$pass3p8 = $Search['Pass11'];
+$passn4 = $Search['Pass12'];
+$passn10 = $Search['Pass13'];
+$passn20 = $Search['Pass15'];
+$passn200 = $Search['Pass18'];
+
+// Condición para "Acepted"
+if (
+    $pass1p5 == 100 &&
+    $pass1 >= 86.5 && $pass1 <= 100 &&
+    $pass3p4 >= 69.5 && $pass3p4 <= 100 &&
+    $pass3p8 >= 32.5 && $pass3p8 <= 100 &&
+    $passn4 >= 6.5 && $passn4 <= 60.4 &&
+    $passn10 >= 0 && $passn10 <= 15.4 &&
+    $passn20 >= 0 && $passn20 <= 7.4 &&
+    $passn200 >= 0 && $passn200 <= 5.4
+) {
+    $resultado = 'Acepted';
+} else {
+    $resultado = 'Rejected';
+}
+
 $pdf->SetFont('Arial', '', 10);
 
 //Information for the essay
