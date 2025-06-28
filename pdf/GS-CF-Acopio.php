@@ -38,7 +38,7 @@ if (
     $pass1 >= 87 && $pass1 <= 100 &&
     $pass3p4 >= 80 && $pass3p4 <= 100 &&
     $pass3p8 >= 50 && $pass3p8 <= 100 &&
-    $passn4 >= 15 && $passn4 <= 60 &&
+    $passn4 >= 14.5 && $passn4 <= 60 &&
     $passn10 >= 2 && $passn10 <= 15 &&
     $passn20 >= 0 && $passn20 <= 7 &&
     $passn200 >= 0 && $passn200 <= 2
