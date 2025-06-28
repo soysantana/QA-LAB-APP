@@ -32,22 +32,6 @@ $passn10 = $Search['Pass13'];
 $passn20 = $Search['Pass15'];
 $passn200 = $Search['Pass18'];
 
-// Condición para "Acepted"
-if (
-    $pass1p5 == 100 &&
-    $pass1 >= 86.5 && $pass1 <= 100 &&
-    $pass3p4 >= 69.5 && $pass3p4 <= 100 &&
-    $pass3p8 >= 32.5 && $pass3p8 <= 100 &&
-    $passn4 >= 6.5 && $passn4 <= 60.4 &&
-    $passn10 >= 0 && $passn10 <= 15.4 &&
-    $passn20 >= 0 && $passn20 <= 7.4 &&
-    $passn200 >= 0 && $passn200 <= 5.4
-) {
-    $resultado = 'Acepted';
-} else {
-    $resultado = 'Rejected';
-}
-
 $pdf->SetFont('Arial', '', 10);
 
 //Information for the essay
@@ -411,5 +395,25 @@ $tempFile = tempnam(sys_get_temp_dir(), 'image');
 file_put_contents($tempFile, $imageData);
 $pdf->Image($tempFile, 30, 320, 230, 170, 'PNG');
 unlink($tempFile);
+
+// Condición para validacion
+if (
+    $pass1p5 == 100 &&
+    $pass1 >= 86.5 && $pass1 <= 100 &&
+    $pass3p4 >= 69.5 && $pass3p4 <= 100 &&
+    $pass3p8 >= 32.5 && $pass3p8 <= 100 &&
+    $passn4 >= 6.5 && $passn4 <= 60.4 &&
+    $passn10 >= 0 && $passn10 <= 15.4 &&
+    $passn20 >= 0 && $passn20 <= 7.4 &&
+    $passn200 >= 0 && $passn200 <= 5.4
+) {
+    $resultado = 'Accepted';
+} else {
+    $resultado = 'Rejected';
+    $pdf->SetTextColor(255, 0, 0); // Rojo
+}
+
+$pdf->SetXY(391, 420);
+$pdf->Cell(75, 6, $resultado, 0, 1, 'C');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
