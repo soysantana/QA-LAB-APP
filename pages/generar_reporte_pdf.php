@@ -101,6 +101,8 @@ class PDF extends FPDF {
   public $day_of_week;
   public $week_number;
 
+
+
   function Header() {
     if ($this->PageNo() > 1) return;
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
@@ -112,7 +114,7 @@ class PDF extends FPDF {
     $this->SetFont('Arial', '', 12);
     $this->SetXY(150, 20);
     $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-    $this->Ln(15);
+    $this->Ln(5);
 
     $this->SetFont('Arial', 'B', 11);
     $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
@@ -169,29 +171,45 @@ $pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1)
 $pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
 $pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
 
-$pdf->Ln(10);
+$pdf->Ln();
 
 // Status of Tests
+$pdf->Ln(5);
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Cell(0, 10, 'Status of Tests', 0, 1);
-$pdf->SetFont('Arial', 'B', 9);
+
+// Encabezado de la tabla
+$pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(35, 8, 'Sample ID', 1);
 $pdf->Cell(25, 8, 'Structure', 1);
-$pdf->Cell(20, 8, 'Mat. Type', 1);
-$pdf->Cell(25, 8, 'Test Type', 1);
-$pdf->Cell(20, 8, 'Condition', 1);
-$pdf->Cell(70, 8, 'Comments', 1, 1);
+$pdf->Cell(25, 8, 'Mat. Type', 1);
+$pdf->Cell(30, 8, 'Test Type', 1);
+$pdf->Cell(25, 8, 'Condition', 1);
+$pdf->Cell(50, 8, 'Comments', 1);
+$pdf->Ln();
+
+// Cuerpo de la tabla
 $pdf->SetFont('Arial', '', 9);
 foreach ($ensayos_reporte as $row) {
-  $pdf->Cell(35, 8, $row['Sample_Name'] . '-' . $row['Sample_Number'], 1);
-  $pdf->Cell(25, 8, $row['Structure'], 1);
-  $pdf->Cell(20, 8, $row['Material_Type'], 1);
-  $pdf->Cell(25, 8, $row['Test_Type'], 1);
-  $pdf->Cell(20, 8, $row['Test_Condition'], 1);
-  $pdf->MultiCell(70, 8, $row['Comments'], 1);
+    $sample = $row['Sample_Name'] . '-' . $row['Sample_Number'];
+    $structure = $row['Structure'];
+    $mat_type = $row['Material_Type'];
+    $test_type = $row['Test_Type'];
+    $condition = $row['Test_Condition'];
+    $comments = $row['Comments'];
+
+    $pdf->Cell(35, 8, $sample, 1);
+    $pdf->Cell(25, 8, $structure, 1);
+    $pdf->Cell(25, 8, $mat_type, 1);
+    $pdf->Cell(30, 8, $test_type, 1);
+    $pdf->Cell(25, 8, $condition, 1);
+    $pdf->Cell(50, 8, substr($comments, 0, 30), 1); // Limita comentarios largos
+    $pdf->Ln();
 }
 
-$pdf->Ln(10);
+
+
+$pdf->Ln(5);
 
 // Test Details
 $pdf->SetFont('Arial', 'B', 12);
@@ -214,7 +232,7 @@ foreach ($test_details as $detail) {
   $pdf->Ln();
 }
 
-$pdf->Ln(10);
+$pdf->Ln(5);
 
 // Pending Tests
 $pdf->SetFont('Arial', 'B', 12);
@@ -238,6 +256,8 @@ foreach ($pending_tests as $i => $row) {
   $pdf->Cell(40, 8, $row['Sample_Date'], 1);
   $pdf->Ln();
 }
+
+
 
 
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
