@@ -36,7 +36,7 @@ if (
     $pass3p8 == 100 &&
     $passn4 >= 95 && $passn4 <= 100 &&
     $passn10 >= 75 && $passn10 <= 100 &&
-    $passn16 >= 60 && $passn16 <= 85 &&
+    $passn16 >= 59.5 && $passn16 <= 85 &&
     $passn50 >= 10 && $passn50 <= 30 &&
     $passn60 >= 5 && $passn60 <= 35 &&
     $passn200 >= 0 && $passn200 <= 2.4
