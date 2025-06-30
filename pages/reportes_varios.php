@@ -70,24 +70,72 @@ function muestras_nuevas($start, $end) {
   return find_by_sql("SELECT Sample_ID, Sample_Number, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 }
 
-function pendientes($start, $end) {
-  return find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+function ensayos_pendientes( $start, $end) {
+  $requisitions = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+  ");
+
+  $tables_to_check = [
+    'test_preparation',
+    'test_realization',
+    'test_delivery'
+  ];
+
+  $indexed_status = [];
+
+  foreach ($tables_to_check as $table) {
+    $column_fecha = ($table == 'test_reviewed') ? 'Start_Date' : 'Register_Date';
+    $data = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM {$table} WHERE {$column_fecha} BETWEEN '{$start}' AND '{$end}'");
+    foreach ($data as $row) {
+      $key = strtoupper(trim($row['Sample_Name'])) . "|" . strtoupper(trim($row['Sample_Number'])) . "|" . strtoupper(trim($row['Test_Type']));
+      $indexed_status[$key] = true;
+    }
+  }
+
+  $pending_tests = [];
+
+  foreach ($requisitions as $r) {
+    $sample_id = strtoupper(trim($r['Sample_ID']));
+    $sample_num = strtoupper(trim($r['Sample_Number']));
+    $test_types = json_decode($r['Test_Type'], true); // asegurarse que es JSON
+
+    if (!is_array($test_types)) continue;
+
+    foreach ($test_types as $raw_test) {
+      $test = strtoupper(trim($raw_test));
+      $key = $sample_id . "|" . $sample_num . "|" . $test;
+
+      if (!isset($indexed_status[$key])) {
+        $pending_tests[] = [
+          'Sample_ID' => $r['Sample_ID'],
+          'Sample_Number' => $r['Sample_Number'],
+          'Test_Type' => $raw_test,
+          'Sample_Date' => $r['Sample_Date']
+        ];
+      }
+    }
+  }
+
+  return $pending_tests;
 }
 
+
 function resumen_tecnico($start, $end) {
-  return find_by_sql("SELECT Technician, COUNT(*) as total, 'Preparación' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
+  return find_by_sql("SELECT Technician, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
     UNION ALL
-    SELECT Technician, COUNT(*) as total, 'Realización' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
+    SELECT Technician, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
     UNION ALL
-    SELECT Technician, COUNT(*) as total, 'Entrega' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician");
+    SELECT Technician, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician");
 }
 
 function resumen_tipo($start, $end) {
-  return find_by_sql("SELECT Test_Type, COUNT(*) as total, 'Preparación' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
+  return find_by_sql("SELECT Test_Type, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
     UNION ALL
-    SELECT Test_Type, COUNT(*) as total, 'Realización' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
+    SELECT Test_Type, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
     UNION ALL
-    SELECT Test_Type, COUNT(*) as total, 'Entrega' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type");
+    SELECT Test_Type, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type");
 }
 
 function observaciones($start, $end) {
@@ -194,7 +242,7 @@ foreach ($clientes as $cli => $d) {
 }
 
 $pdf->section_table(["Client", "Requested", "Delivered", "%"], $rows, [50, 35, 35, 25]);
-$pdf->Ln(5);
+$pdf->Ln(4);
 
 $pdf->section_title("4. Newly Registered Samples");
 $muestras = muestras_nuevas($start, $end);
@@ -212,38 +260,52 @@ $pdf->SetFont('Arial', '', 8);
 $pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
 $pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
 $pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
-$pdf->Ln(5);
-$pdf->section_title("4. Ensayos Pendientes");
-
-
-$pendientes = pendientes($start, $end);
-$p_rows = [];
-foreach ($pendientes as $p) {
-  $tests = json_decode($p['Test_Type'], true);
-  foreach ($tests as $t) {
-    $delivered = count(find_by_sql("SELECT id FROM test_delivery WHERE Sample_Name = '{$p['Sample_ID']}' AND Test_Type = '{$t}'"));
-    if ($delivered == 0) {
-      $p_rows[] = [$p['Sample_ID'], $t, "Pendiente"];
-    }
-  }
-}
-$pdf->section_table(["Sample ID", "Ensayo", "Estado"], $p_rows, [50, 60, 40]);
-
-$pdf->section_title("5. Ensayos por Técnico");
+$pdf->Ln(4);
+$pdf->section_title("5. Summary of Tests by Technician ");
 $tec = resumen_tecnico($start, $end);
 $t_rows = [];
 foreach ($tec as $r) {
   $t_rows[] = [$r['Technician'], $r['etapa'], $r['total']];
 }
 $pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 4, 'Tech. Legend: WM= Wilson Martinez, JV= Jonathan Vargas, RV= Roni Vargas, RL =Rafy Leocadio,', 0, 1);
+$pdf->Cell(0, 4, 'RR= Rafael Reyes, JL= Joel Ledesma, DF= Darielvy Felix, JA= Jordany Almonte , ', 0, 1);
+$pdf->Ln(5);
 
-$pdf->section_title("6. Test By Type");
+
+$pdf->section_title("6. Distribution of Tests by Type");
 $tipos = resumen_tipo($start, $end);
 $type_rows = [];
 foreach ($tipos as $r) {
   $type_rows[] = [$r['Test_Type'], $r['etapa'], $r['total']];
 }
-$pdf->section_table(["Test Type", "Etapa", "Quantity"], $type_rows, [70, 50, 30]);
+$pdf->section_table(["Test Type", "Process", "Quantity"], $type_rows, [70, 50, 30]);
+
+
+
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
+$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
+$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
+$pdf->Ln(4);
+
+$pdf->section_title("7. Pending Tests");
+
+// Definir fecha de inicio exclusivo para ensayos pendientes (1 mes atrás desde $end)
+$start_pendientes = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
+
+// Obtener los ensayos pendientes en ese rango
+$pendientes = ensayos_pendientes($start_pendientes, $end);
+
+$rows = [];
+foreach ($pendientes as $p) {
+  $rows[] = [$p['Sample_ID'], $p['Sample_Number'], $p['Test_Type'], $p['Sample_Date']];
+}
+
+
+
+
 
 $pdf->section_title("7. Observations / Non-Conformities");
 $pdf->SetFont('Arial', '', 10);
