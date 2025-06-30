@@ -9,11 +9,9 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
 
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
-$fecha_en = $fecha_obj ? $fecha_obj->format('d/m/Y') : 'Fecha inválida';
+$fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
-
-
 
 function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
@@ -22,28 +20,40 @@ function get_count($table, $field, $start, $end) {
 
 function resumen_cliente($start, $end) {
   $clientes = [];
-  $muestras = find_by_sql("SELECT Client, Sample_ID FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+
+  $muestras = find_by_sql("SELECT Client, Sample_ID, Sample_Number FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+
   foreach ($muestras as $m) {
-    $c = $m['Client']; $s = $m['Sample_ID'];
-    if (!isset($clientes[$c])) $clientes[$c] = ['total' => 0, 'prep' => 0, 'real' => 0, 'ent' => 0];
+    $c = $m['Client'];
+    $s_id = $m['Sample_ID'];
+    $s_num = $m['Sample_Number'];
+
+    if (!isset($clientes[$c])) {
+      $clientes[$c] = ['total' => 0, 'prep' => 0, 'real' => 0, 'ent' => 0];
+    }
+
     $clientes[$c]['total']++;
-    if (count_by_sample('test_preparation', $s) > 0) $clientes[$c]['prep']++;
-    if (count_by_sample('test_realization', $s) > 0) $clientes[$c]['real']++;
-    if (count_by_sample('test_delivery', $s) > 0) $clientes[$c]['ent']++;
+    if (count_by_sample('test_preparation', $s_id, $s_num) > 0) $clientes[$c]['prep']++;
+    if (count_by_sample('test_realization', $s_id, $s_num) > 0) $clientes[$c]['real']++;
+    if (count_by_sample('test_delivery', $s_id, $s_num) > 0) $clientes[$c]['ent']++;
   }
+
   return $clientes;
 }
 
-function count_by_sample($table, $sample) {
-  return count(find_by_sql("SELECT id FROM {$table} WHERE Sample_Name = '{$sample}'"));
+function count_by_sample($table, $sample_id, $sample_number) {
+  $sample_id = strtoupper(trim($sample_id));
+  $sample_number = strtoupper(trim($sample_number));
+  $sql = "SELECT id FROM {$table} WHERE (UPPER(Sample_Name) = '{$sample_id}' OR UPPER(Sample_Name) = '{$sample_number}')";
+  return count(find_by_sql($sql));
 }
 
 function muestras_nuevas($start, $end) {
-  return find_by_sql("SELECT Sample_ID, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+  return find_by_sql("SELECT Sample_ID, Sample_Number, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 }
 
 function pendientes($start, $end) {
-  return find_by_sql("SELECT Sample_ID, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+  return find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 }
 
 function resumen_tecnico($start, $end) {
@@ -149,31 +159,41 @@ $pdf = new PDF($fecha_en);
 $pdf->AddPage();
 
 $pdf->section_title("2. Summary of  Daily Activities");
-$pdf->section_table(["Actividad", "Cantidad"], [
-  ["Registradas", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
-  ["Preparadas", get_count("test_preparation", "Register_Date", $start, $end)],
-  ["Realizadas", get_count("test_realization", "Register_Date", $start, $end)],
-  ["Entregadas", get_count("test_delivery", "Register_Date", $start, $end)]
+$pdf->section_table(["Activities", "Quantity"], [
+  ["Requisitioned", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
+  ["In Preparation", get_count("test_preparation", "Register_Date", $start, $end)],
+  ["In Realizacion", get_count("test_realization", "Register_Date", $start, $end)],
+  ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
 ], [90, 40]);
 
-$pdf->section_title("3. Resumen por Cliente del Día");
+$pdf->section_title("3. Client Summary of the Day" );
 $clientes = resumen_cliente($start, $end);
 $rows = [];
 foreach ($clientes as $cli => $d) {
   $pct = $d['total'] ? round($d['ent'] * 100 / $d['total']) : 0;
   $rows[] = [$cli, $d['total'], $d['prep'], $d['real'], $d['ent'], "$pct%"];
 }
-$pdf->section_table(["Cliente", "Registradas", "Preparadas", "Realizadas", "Entregadas", "%"], $rows, [35, 25, 25, 25, 25, 25]);
+$pdf->section_table(["Client", "Requisitioned", "In Preparation", "in Realization", "Completed", "%"], $rows, [35, 25, 25, 25, 25, 25]);
 
-$pdf->section_title("3. Muestras Nuevas Registradas");
+$pdf->section_title("4. Newly Registered Samples");
 $muestras = muestras_nuevas($start, $end);
 $rows = [];
 foreach ($muestras as $m) {
-  $rows[] = [$m['Sample_ID'], $m['Structure'], $m['Client'], $m['Test_Type']];
+  $ref = $m['Sample_ID'];
+  if (!empty($m['Sample_Number'])) {
+    $ref .= ' - ' . $m['Sample_Number'];
+  }
+  $rows[] = [$ref, $m['Structure'], $m['Client'], $m['Test_Type']];
 }
-$pdf->section_table(["Sample ID", "Estructura", "Cliente", "Ensayos"], $rows, [45, 35, 35, 75]);
-
+$pdf->section_table(["Sample ID", "Structure", "Client", "Test Type"], $rows, [45, 35, 35, 75]);
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
+$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
+$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
+$pdf->Ln(5);
 $pdf->section_title("4. Ensayos Pendientes");
+
+
 $pendientes = pendientes($start, $end);
 $p_rows = [];
 foreach ($pendientes as $p) {
