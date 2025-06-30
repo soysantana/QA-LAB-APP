@@ -3,11 +3,17 @@ ob_start();
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 
+$user = current_user();
+$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+
+
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('d/m/Y') : 'Fecha inválida';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
+
+
 
 function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
@@ -61,12 +67,58 @@ function observaciones($start, $end) {
 }
 
 class PDF extends FPDF {
-  function header() {
-    global $fecha_en;
-    $this->SetFont('Arial', 'B', 14);
-    $this->Cell(0, 10, 'REPORTE DIARIO DE ACTIVIDAD DEL LABORATORIO', 0, 1, 'C');
+  public $day_of_week;
+  public $week_number;
+  public $fecha_en;
+
+  function __construct($fecha_en) {
+    parent::__construct();
+    $this->day_of_week = date('w');
+    $this->week_number = date('W');
+    $this->fecha_en = $fecha_en;
+  }
+  function Header() {
+    $user = current_user();
+$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+    if ($this->PageNo() > 1) return;
+    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 50);
+    }
+     $this->SetFont('Arial', 'B', 14);
+    $this->SetXY(150, 10); // Posiciona el cursor en la parte superior derecha
+    $this->Cell(50, 10, utf8_decode('Daily Laboratory Report'), 0, 1, 'R');
+
     $this->SetFont('Arial', '', 10);
-    $this->Cell(0, 10, "Fecha del reporte: {$fecha_en}", 0, 1, 'C');
+    $this->SetXY(150, 18); // Un poco más abajo para la fecha
+    $this->Cell(50, 8, "Date: {$this->fecha_en}", 0, 1, 'R');
+
+    $this->Ln(10); // Espacio antes del contenido principal
+
+    $this->SetFont('Arial', 'B', 11);
+    $this->section_title("1. Personnel Assigned");
+    $this->SetFont('Arial', '', 10);
+
+    if (in_array($this->day_of_week, [1, 2, 3, 4])) { // Lunes a Jueves
+  $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
+  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia, Frandy Espinal", 0, 'L');
+  $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
+  $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
+  $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
+
+}
+
+if (in_array($this->day_of_week, [3, 4, 5, 6])) { // Miércoles a Sábado
+  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
+  $doc_control = $this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejia";
+  $this->MultiCell(0, 6, "Lab Document Control: {$doc_control}", 0, 'L');
+  $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
+  $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
+}
+
+
+
     $this->Ln(5);
   }
   function section_title($title) {
@@ -92,10 +144,11 @@ class PDF extends FPDF {
   }
 }
 
-$pdf = new PDF();
+$pdf = new PDF($fecha_en);
+
 $pdf->AddPage();
 
-$pdf->section_title("1. Resumen General del Día");
+$pdf->section_title("2. Summary of  Daily Activities");
 $pdf->section_table(["Actividad", "Cantidad"], [
   ["Registradas", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
   ["Preparadas", get_count("test_preparation", "Register_Date", $start, $end)],
@@ -103,7 +156,7 @@ $pdf->section_table(["Actividad", "Cantidad"], [
   ["Entregadas", get_count("test_delivery", "Register_Date", $start, $end)]
 ], [90, 40]);
 
-$pdf->section_title("2. Resumen por Cliente del Día");
+$pdf->section_title("3. Resumen por Cliente del Día");
 $clientes = resumen_cliente($start, $end);
 $rows = [];
 foreach ($clientes as $cli => $d) {
@@ -140,17 +193,17 @@ $t_rows = [];
 foreach ($tec as $r) {
   $t_rows[] = [$r['Technician'], $r['etapa'], $r['total']];
 }
-$pdf->section_table(["Técnico", "Etapa", "Cantidad"], $t_rows, [60, 50, 40]);
+$pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
 
-$pdf->section_title("6. Ensayos por Tipo");
+$pdf->section_title("6. Test By Type");
 $tipos = resumen_tipo($start, $end);
 $type_rows = [];
 foreach ($tipos as $r) {
   $type_rows[] = [$r['Test_Type'], $r['etapa'], $r['total']];
 }
-$pdf->section_table(["Tipo de Ensayo", "Etapa", "Cantidad"], $type_rows, [70, 50, 30]);
+$pdf->section_table(["Test Type", "Etapa", "Quantity"], $type_rows, [70, 50, 30]);
 
-$pdf->section_title("7. Observaciones / No Conformidades");
+$pdf->section_title("7. Observations / Non-Conformities");
 $pdf->SetFont('Arial', '', 10);
 $obs = observaciones($start, $end);
 if (count($obs) > 0) {
@@ -158,16 +211,17 @@ if (count($obs) > 0) {
     $pdf->MultiCell(0, 6, "- {$o['Sample_ID']}: {$o['Comment']}");
   }
 } else {
-  $pdf->MultiCell(0, 6, "Sin observaciones registradas.");
+  $pdf->MultiCell(0, 6, "No Observations registered.");
 }
 $pdf->Ln(5);
 
-$pdf->section_title("8. Responsable");
+$pdf->section_title("8. Responsible");
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(60, 8, "Nombre Responsable", 1);
-$pdf->Cell(130, 8, "Wendin De Jesús Mendoza", 1, 1);
-$pdf->Cell(60, 20, "Firma", 1);
-$pdf->Cell(130, 20, "[Espacio para firma]", 1, 1);
+$pdf->Cell(60, 8, "Report prepared by", 1);
+$pdf->Cell(130, 8, utf8_decode($nombre_responsable), 1, 1);
+
+
+
 
 ob_end_clean();
 $pdf->Output('I', "Reporte_Diario_{$fecha}.pdf");
