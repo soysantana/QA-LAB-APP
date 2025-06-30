@@ -2,6 +2,9 @@
 ob_start();
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 $user = current_user();
 $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
