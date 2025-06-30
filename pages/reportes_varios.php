@@ -18,24 +18,33 @@ function get_count($table, $field, $start, $end) {
   return (int)$r[0]['total'];
 }
 
-function resumen_cliente($start, $end) {
+function resumen_cliente_from_details($test_details, $requisitions) {
   $clientes = [];
 
-  $muestras = find_by_sql("SELECT Client, Sample_ID, Sample_Number FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+  foreach ($requisitions as $req) {
+    $cliente = $req['Client'];
+    $id = strtoupper(trim($req['Sample_ID']));
+    $num = strtoupper(trim($req['Sample_Number']));
+    $tests = explode(',', $req['Test_Type']);
 
-  foreach ($muestras as $m) {
-    $c = $m['Client'];
-    $s_id = $m['Sample_ID'];
-    $s_num = $m['Sample_Number'];
-
-    if (!isset($clientes[$c])) {
-      $clientes[$c] = ['total' => 0, 'prep' => 0, 'real' => 0, 'ent' => 0];
+    if (!isset($clientes[$cliente])) {
+      $clientes[$cliente] = ['total' => 0, 'prep' => 0, 'real' => 0, 'ent' => 0];
     }
 
-    $clientes[$c]['total']++;
-    if (count_by_sample('test_preparation', $s_id, $s_num) > 0) $clientes[$c]['prep']++;
-    if (count_by_sample('test_realization', $s_id, $s_num) > 0) $clientes[$c]['real']++;
-    if (count_by_sample('test_delivery', $s_id, $s_num) > 0) $clientes[$c]['ent']++;
+    foreach ($tests as $t) {
+      $clientes[$cliente]['total']++;
+
+      foreach ($test_details as $td) {
+        if (
+          (strtoupper(trim($td['sample'])) === "$id $num" || strtoupper(trim($td['sample'])) === "$num") &&
+          strtoupper(trim($td['type'])) === strtoupper(trim($t))
+        ) {
+          if ($td['status'] === 'Preparación') $clientes[$cliente]['prep']++;
+          elseif ($td['status'] === 'Realización') $clientes[$cliente]['real']++;
+          elseif ($td['status'] === 'Entrega') $clientes[$cliente]['ent']++;
+        }
+      }
+    }
   }
 
   return $clientes;
@@ -167,7 +176,7 @@ $pdf->section_table(["Activities", "Quantity"], [
 ], [90, 40]);
 
 $pdf->section_title("3. Client Summary of the Day" );
-$clientes = resumen_cliente($start, $end);
+$clientes = resumen_cliente_from_details($start, $end);
 $rows = [];
 foreach ($clientes as $cli => $d) {
   $pct = $d['total'] ? round($d['ent'] * 100 / $d['total']) : 0;
