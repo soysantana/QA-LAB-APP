@@ -304,7 +304,7 @@ $pdf->section_title("3. Client Summary of Delivered Tests");
 
 
 $clientes = resumen_entregas_por_cliente($start, $end);
-$rows = [];
+$rows = [];  
 foreach ($clientes as $cli => $d) {
   $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
   $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
