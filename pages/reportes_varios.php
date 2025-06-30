@@ -16,73 +16,54 @@ $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
-
-
 }
 
+function resumen_entregas_por_cliente( $end) {
+  $stats = [];
+  $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
 
-function resumen_actividades_dia($start, $end) {
-  return [
-    ["Requisitioned", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
-    ["In Preparation", get_count("test_preparation", "Register_Date", $start, $end)],
-    ["In Realization", get_count("test_realization", "Register_Date", $start, $end)],
-    ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
-  ];
-}
+  // Obtener solicitudes de ensayos en el rango de fechas
+  $solicitudes = find_by_sql("
+    SELECT Client, Sample_ID, Sample_Number, Test_Type
+    FROM lab_test_requisition_form
+    WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
+  ");
 
+  // Obtener todas las entregas registradas
+  $entregas = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery");
 
+  // Mapear entregas
+  $entregado_map = [];
+  foreach ($entregas as $e) {
+    $key = strtoupper(trim($e['Sample_Name'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
+    $entregado_map[$key] = true;
+  }
 
+  // Procesar progreso por cliente
+  foreach ($solicitudes as $s) {
+    $cliente = $s['Client'] ?: 'SIN CLIENTE';
+    $sample_id = strtoupper(trim($s['Sample_ID']));
+    $sample_num = strtoupper(trim($s['Sample_Number']));
+    $test_type = strtoupper(trim($s['Test_Type']));
+    $key = $sample_id . '|' . $sample_num . '|' . $test_type;
 
-function resumen_cliente_simple($end) {
-  $clientes = [];
-
-  // Fecha de inicio solo para esta función: hace 1 mes desde $end
-  $start_cliente = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
-
-  // Obtener todas las muestras registradas en ese rango
-  $muestras = find_by_sql("SELECT Client, Sample_ID, Sample_Number, Test_Type 
-                           FROM lab_test_requisition_form 
-                           WHERE Registed_Date BETWEEN '{$start_cliente}' AND '{$end}'");
-
-  foreach ($muestras as $m) {
-    $cliente = $m['Client'];
-    $sample_id = strtoupper(trim($m['Sample_ID']));
-    $sample_num = strtoupper(trim($m['Sample_Number']));
-
-    // Verificar que Test_Type no esté vacío y que sea un JSON válido
-    $tests = json_decode($m['Test_Type'], true);
-    if (!is_array($tests) || count($tests) === 0) continue;
-
-    if (!isset($clientes[$cliente])) {
-      $clientes[$cliente] = ['registradas' => 0, 'completas' => 0];
+    if (!isset($stats[$cliente])) {
+      $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0];
     }
 
-    $clientes[$cliente]['registradas']++;
+    $stats[$cliente]['solicitados']++;
 
-    $entregados = 0;
-    foreach ($tests as $test) {
-      $test = strtoupper(trim($test));
-      $query = "SELECT id FROM test_delivery 
-                WHERE (UPPER(Sample_Name) = '{$sample_id}' OR UPPER(Sample_Name) = '{$sample_num}') 
-                  AND UPPER(Test_Type) = '{$test}'";
-      $res = find_by_sql($query);
-      if (!empty($res)) $entregados++;
-    }
-
-    if ($entregados === count($tests)) {
-      $clientes[$cliente]['completas']++;
+    if (isset($entregado_map[$key])) {
+      $stats[$cliente]['entregados']++;
     }
   }
 
-  return $clientes;
+  return $stats;
 }
 
 
-function count_by_sample($table, $sample_id, $sample_number) {
-  $sample_id = strtoupper(trim($sample_id));
-  $sample_number = strtoupper(trim($sample_number));
-  $sql = "SELECT id FROM {$table} WHERE (UPPER(Sample_Name) = '{$sample_id}' OR UPPER(Sample_Name) = '{$sample_number}')";
-  return count(find_by_sql($sql));
+function count_by_sample($table, $sample, $field = 'Sample_Name') {
+  return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
 }
 
 function muestras_nuevas($start, $end) {
@@ -112,7 +93,6 @@ function resumen_tipo($start, $end) {
 function observaciones($start, $end) {
   return find_by_sql("SELECT Sample_ID, Comment FROM lab_test_requisition_form WHERE Comment IS NOT NULL AND Registed_Date BETWEEN '{$start}' AND '{$end}'");
 }
-
 class PDF extends FPDF {
   public $day_of_week;
   public $week_number;
@@ -195,32 +175,37 @@ $pdf = new PDF($fecha_en);
 
 $pdf->AddPage();
 
-$pdf->section_title("2. Summary of Daily Activities");
-$pdf->section_table(["Activities", "Quantity"], resumen_actividades_dia($start, $end), [90, 40]);
+$pdf->section_title("2. Summary of  Daily Activities");
+$pdf->section_table(["Activities", "Quantity"], [
+  ["Requisitioned", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
+  ["In Preparation", get_count("test_preparation", "Register_Date", $start, $end)],
+  ["In Realizacion", get_count("test_realization", "Register_Date", $start, $end)],
+  ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
+], [90, 40]);
+
+$pdf->section_title("3. Client Summary of Delivered Tests");
 
 
-$clientes = resumen_cliente_simple($end);
-
+$clientes = resumen_entregas_por_cliente($start, $end);
 $rows = [];
 foreach ($clientes as $cli => $d) {
-  $pct = $d['registradas'] ? round($d['completas'] * 100 / $d['registradas']) : 0;
-  $rows[] = [$cli, $d['registradas'], $d['completas'], "$pct%"];
+  $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
+  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
 }
 
-$pdf->section_title("3. Client Summary of the Day");
-$pdf->section_table(["Client", "Registered", "Delivered", "%"], $rows, [60, 30, 30, 20]);
-
-
+$pdf->section_table(["Client", "Requested", "Delivered", "%"], $rows, [50, 35, 35, 25]);
+$pdf->Ln(5);
 
 $pdf->section_title("4. Newly Registered Samples");
 $muestras = muestras_nuevas($start, $end);
 $rows = [];
 foreach ($muestras as $m) {
-  $ref = $m['Sample_ID'];
-  if (!empty($m['Sample_Number'])) {
-    $ref .= ' - ' . $m['Sample_Number'];
-  }
-  $rows[] = [$ref, $m['Structure'], $m['Client'], $m['Test_Type']];
+ $rows = [];
+foreach ($muestras as $m) {
+  $rows[] = [$m['Sample_ID'] . ' -' . $m['Sample_Number'], $m['Structure'], $m['Client'], $m['Test_Type']];
+}
+
+
 }
 $pdf->section_table(["Sample ID", "Structure", "Client", "Test Type"], $rows, [45, 35, 35, 75]);
 $pdf->SetFont('Arial', '', 8);
