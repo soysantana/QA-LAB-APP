@@ -56,6 +56,10 @@ include_once('../components/header.php');
               <label class="form-label">Comments</label>
               <textarea class="form-control" name="Comments[]" rows="3"></textarea>
             </div>
+            <div class="col-12">
+              <label class="form-label">Observacion/No Conformidad</label>
+              <textarea class="form-control" name="noconformidad[]" rows="3"></textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -96,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $test_types       = $_POST['Test_Type'] ?? [];
   $test_conditions  = $_POST['Test_Condition'] ?? [];
   $comments_list    = $_POST['Comments'] ?? [];
+  $noconformidad_list    = $_POST['noconformidad'] ?? [];
   $report_dates     = $_POST['Date'] ?? [];
 
   for ($i = 0; $i < count($sample_names); $i++) {
@@ -106,14 +111,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $test_type       = $db->escape($test_types[$i]);
     $test_condition  = $db->escape($test_conditions[$i]);
     $comments        = $db->escape($comments_list[$i]);
+    $noconformidad       = $db->escape($noconformidad_list[$i]);
     $date            = $db->escape($report_dates[$i]);
 
     $sql = "INSERT INTO ensayos_reporte (
               Sample_Number, Sample_Name, Structure, Material_Type,
-              Test_Type, Test_Condition, Comments, Report_Date
+              Test_Type, Test_Condition, Comments,Noconformidad, Report_Date
             ) VALUES (
               '{$sample_number}', '{$sample_name}', '{$structure}', '{$material_type}',
-              '{$test_type}', '{$test_condition}', '{$comments}', '{$date}'
+              '{$test_type}', '{$test_condition}', '{$comments}' , '{$noconformidad}', '{$date}'
             )";
 
     $db->query($sql);
