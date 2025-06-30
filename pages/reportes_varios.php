@@ -263,6 +263,7 @@ if (in_array($this->day_of_week, [4, 5, 6])) { // Miércoles a Sábado
 
 
 
+
     $this->Ln(5);
   }
   function section_title($title) {
