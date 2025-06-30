@@ -229,7 +229,7 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
     $this->section_title("1. Personnel Assigned");
     $this->SetFont('Arial', '', 10);
 
-    if (in_array($this->day_of_week, [0,1,2])) { // Lunes a Jueves
+    if (in_array($this->day_of_week, [1, 2, 3, 4])) { // Lunes a Jueves
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
   $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia, Frandy Espinal", 0, 'L');
@@ -238,21 +238,8 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
   $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
 
 }
-// Miércoles (3): Todos los técnicos y supervisores
-if ($this->day_of_week == 3) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
-  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia, Frandy Espinal", 0, 'L');
-  $this->MultiCell(0, 6, utf8_decode("Chief Laboratory: Wendin De Jesús Mendoza"), 0, 'L');
-  $this->MultiCell(0, 6, "Field Supervisors: Adelqui Acosta, Victor Mercedes", 0, 'L');
-  $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
-}
-if (in_array($this->day_of_week, [4, 5])) {
-  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');
-  $this->MultiCell(0, 6, utf8_decode("Chief Laboratory: Wendin De Jesús Mendoza"), 0, 'L');
-}
 
-if (in_array($this->day_of_week, [4, 5, 6])) { // Miércoles a Sábado
+if (in_array($this->day_of_week, [3, 4, 5, 6])) { // Miércoles a Sábado
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
   $doc_control = $this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejia";
@@ -260,7 +247,6 @@ if (in_array($this->day_of_week, [4, 5, 6])) { // Miércoles a Sábado
   $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
   $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
 }
-
 
 
 
