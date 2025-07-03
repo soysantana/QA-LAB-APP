@@ -418,6 +418,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/gs-utf.js"></script>
+<script src="../js/grain-size/gs-utf.js?v=0.0.1"></script>
 <script src="../libs/graph/Grain-Size-UTF.js"></script>
 <?php include_once('../components/footer.php');  ?>
