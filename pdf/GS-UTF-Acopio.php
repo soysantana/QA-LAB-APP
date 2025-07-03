@@ -138,7 +138,7 @@ $pdf->Cell(21, 4, $Search['CumRet1'], 0, 1, 'C');
 $pdf->SetXY(359, 176);
 $pdf->Cell(43, 4, $Search['Pass1'], 0, 1, 'C');
 $pdf->SetXY(394, 176);
-$pdf->Cell(43, 4, $Search['Specs1'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 182);
 $pdf->Cell(29, 4, $Search['WtRet2'], 0, 1, 'C');
@@ -149,7 +149,7 @@ $pdf->Cell(21, 4, $Search['CumRet2'], 0, 1, 'C');
 $pdf->SetXY(359, 182);
 $pdf->Cell(43, 4, $Search['Pass2'], 0, 1, 'C');
 $pdf->SetXY(394, 182);
-$pdf->Cell(43, 4, $Search['Specs2'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 188);
 $pdf->Cell(29, 4, $Search['WtRet3'], 0, 1, 'C');
@@ -160,7 +160,7 @@ $pdf->Cell(21, 4, $Search['CumRet3'], 0, 1, 'C');
 $pdf->SetXY(359, 188);
 $pdf->Cell(43, 4, $Search['Pass3'], 0, 1, 'C');
 $pdf->SetXY(394, 188);
-$pdf->Cell(43, 4, $Search['Specs3'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 194);
 $pdf->Cell(29, 4, $Search['WtRet4'], 0, 1, 'C');
@@ -171,7 +171,7 @@ $pdf->Cell(21, 4, $Search['CumRet4'], 0, 1, 'C');
 $pdf->SetXY(359, 194);
 $pdf->Cell(43, 4, $Search['Pass4'], 0, 1, 'C');
 $pdf->SetXY(394, 194);
-$pdf->Cell(43, 4, $Search['Specs4'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 200);
 $pdf->Cell(29, 4, $Search['WtRet5'], 0, 1, 'C');
@@ -182,7 +182,7 @@ $pdf->Cell(21, 4, $Search['CumRet5'], 0, 1, 'C');
 $pdf->SetXY(359, 200);
 $pdf->Cell(43, 4, $Search['Pass5'], 0, 1, 'C');
 $pdf->SetXY(394, 200);
-$pdf->Cell(43, 4, $Search['Specs5'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 206);
 $pdf->Cell(29, 4, $Search['WtRet6'], 0, 1, 'C');
@@ -193,7 +193,7 @@ $pdf->Cell(21, 4, $Search['CumRet6'], 0, 1, 'C');
 $pdf->SetXY(359, 206);
 $pdf->Cell(43, 4, $Search['Pass6'], 0, 1, 'C');
 $pdf->SetXY(394, 206);
-$pdf->Cell(43, 4, $Search['Specs6'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 212);
 $pdf->Cell(29, 4, $Search['WtRet7'], 0, 1, 'C');
@@ -204,7 +204,7 @@ $pdf->Cell(21, 4, $Search['CumRet7'], 0, 1, 'C');
 $pdf->SetXY(359, 212);
 $pdf->Cell(43, 4, $Search['Pass7'], 0, 1, 'C');
 $pdf->SetXY(394, 212);
-$pdf->Cell(43, 4, $Search['Specs7'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 219);
 $pdf->Cell(29, 4, $Search['WtRet8'], 0, 1, 'C');
@@ -215,7 +215,7 @@ $pdf->Cell(21, 4, $Search['CumRet8'], 0, 1, 'C');
 $pdf->SetXY(359, 219);
 $pdf->Cell(43, 4, $Search['Pass8'], 0, 1, 'C');
 $pdf->SetXY(394, 219);
-$pdf->Cell(43, 4, $Search['Specs8'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 225);
 $pdf->Cell(29, 4, $Search['WtRet9'], 0, 1, 'C');
@@ -226,7 +226,7 @@ $pdf->Cell(21, 4, $Search['CumRet9'], 0, 1, 'C');
 $pdf->SetXY(359, 225);
 $pdf->Cell(43, 4, $Search['Pass9'], 0, 1, 'C');
 $pdf->SetXY(394, 225);
-$pdf->Cell(43, 4, $Search['Specs9'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 231);
 $pdf->Cell(29, 4, $Search['WtRet10'], 0, 1, 'C');
@@ -237,7 +237,7 @@ $pdf->Cell(21, 4, $Search['CumRet10'], 0, 1, 'C');
 $pdf->SetXY(359, 231);
 $pdf->Cell(43, 4, $Search['Pass10'], 0, 1, 'C');
 $pdf->SetXY(394, 231);
-$pdf->Cell(43, 4, $Search['Specs10'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 237);
 $pdf->Cell(29, 4, $Search['WtRet11'], 0, 1, 'C');
@@ -248,7 +248,7 @@ $pdf->Cell(21, 4, $Search['CumRet11'], 0, 1, 'C');
 $pdf->SetXY(359, 237);
 $pdf->Cell(43, 4, $Search['Pass11'], 0, 1, 'C');
 $pdf->SetXY(394, 237);
-$pdf->Cell(43, 4, $Search['Specs11'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 243);
 $pdf->Cell(29, 4, $Search['WtRet12'], 0, 1, 'C');
@@ -259,7 +259,7 @@ $pdf->Cell(21, 4, $Search['CumRet12'], 0, 1, 'C');
 $pdf->SetXY(359, 243);
 $pdf->Cell(43, 4, $Search['Pass12'], 0, 1, 'C');
 $pdf->SetXY(394, 243);
-$pdf->Cell(43, 4, $Search['Specs12'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 249);
 $pdf->Cell(29, 4, $Search['WtRet13'], 0, 1, 'C');
@@ -270,7 +270,7 @@ $pdf->Cell(21, 4, $Search['CumRet13'], 0, 1, 'C');
 $pdf->SetXY(359, 249);
 $pdf->Cell(43, 4, $Search['Pass13'], 0, 1, 'C');
 $pdf->SetXY(394, 249);
-$pdf->Cell(43, 4, $Search['Specs13'], 0, 1, 'C');
+$pdf->Cell(43, 4, '', 0, 1, 'C');
 
 $pdf->SetXY(250, 255);
 $pdf->Cell(29, 4, $Search['PanWtRen'], 0, 1, 'C');
