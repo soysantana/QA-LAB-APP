@@ -1,264 +1,403 @@
 <?php
-ob_start(); // ← Esto habilita el buffer de salida
+ob_start();
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+$user = current_user();
+$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
 
 
-
-if (!isset($_GET['fecha'])) {
-  die('Fecha no especificada.');
-}
-
-$fecha = $_GET['fecha'];
+$fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
-$fecha_en = $fecha_obj ? $fecha_obj->format('F d, Y') : 'Invalid Date';
-
+$fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
-$end = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
+$end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-$day_of_week = date('w', strtotime($fecha));
-$week_number = date('W', strtotime($fecha));
+function get_count($table, $field, $start, $end) {
+  $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
+  return (int)$r[0]['total'];
+}
 
-$requisitioned = (int) find_by_sql("SELECT COUNT(*) as total FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$preparation   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$realization   = (int) find_by_sql("SELECT COUNT(*) as total FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$delivery      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
-$reviewed      = (int) find_by_sql("SELECT COUNT(*) as total FROM test_reviewed WHERE Start_Date BETWEEN '{$start}' AND '{$end}'")[0]['total'];
+function resumen_entregas_por_cliente( $end) {
+  $stats = [];
+  $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
 
-$test_details = [];
-$tablas = [
-  'test_preparation' => 'Register_Date',
-  'test_realization' => 'Register_Date',
-  'test_delivery'    => 'Register_Date',
-  'test_reviewed'    => 'Start_Date'
-];
+  // Obtener solicitudes de ensayos en el rango de fechas
+  $solicitudes = find_by_sql("
+    SELECT Client, Sample_ID, Sample_Number, Test_Type
+    FROM lab_test_requisition_form
+    WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
+  ");
 
-foreach ($tablas as $tabla => $col_fecha) {
-  $query = "SELECT Sample_Name, Sample_Number, Test_Type, Status";
-  $has_tech = in_array($tabla, ['test_preparation', 'test_realization', 'test_delivery']);
-  if ($has_tech) $query .= ", Technician";
-  $query .= " FROM {$tabla} WHERE {$col_fecha} BETWEEN '{$start}' AND '{$end}'";
-  $results = find_by_sql($query);
-  foreach ($results as $row) {
-    $test_details[] = [
-      'sample' => trim($row['Sample_Name'] . ' ' . $row['Sample_Number']),
-      'type'   => $row['Test_Type'],
-      'tech'   => $has_tech ? $row['Technician'] : 'N/A',
-      'status' => $row['Status']
-    ];
+  // Obtener todas las entregas registradas
+  $entregas = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery");
+
+  // Mapear entregas
+  $entregado_map = [];
+  foreach ($entregas as $e) {
+    $key = strtoupper(trim($e['Sample_Name'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
+    $entregado_map[$key] = true;
   }
-}
 
-function normalize($v) {
-  return strtoupper(trim($v));
-}
+  // Procesar progreso por cliente
+  foreach ($solicitudes as $s) {
+    $cliente = $s['Client'] ?: 'SIN CLIENTE';
+    $sample_id = strtoupper(trim($s['Sample_ID']));
+    $sample_num = strtoupper(trim($s['Sample_Number']));
+    $test_type = strtoupper(trim($s['Test_Type']));
+    $key = $sample_id . '|' . $sample_num . '|' . $test_type;
 
-$requisitions = find_by_sql("SELECT * FROM lab_test_requisition_form");
-$tables_to_check = [
-  'test_preparation',
-  'test_delivery',
-  'test_realization',
-  'test_repeat',
-  'test_review',
-  'test_reviewed'
-];
-
-$indexed_status = [];
-foreach ($tables_to_check as $table) {
-  $data = find_all($table);
-  foreach ($data as $row) {
-    $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-    $indexed_status[$key] = true;
-  }
-}
-
-$pending_tests = [];
-foreach ($requisitions as $requisition) {
-  $sample_id = normalize($requisition['Sample_ID']);
-  $sample_num = normalize($requisition['Sample_Number']);
-  $test_types = explode(',', $requisition['Test_Type'] ?? '');
-  $date = $requisition['Sample_Date'];
-
-  foreach ($test_types as $test_type_raw) {
-    $test_type = normalize($test_type_raw);
-    $key = $sample_id . "|" . $sample_num . "|" . $test_type;
-
-    if (!isset($indexed_status[$key])) {
-      $pending_tests[] = [
-        'Sample_ID' => $requisition['Sample_ID'],
-        'Sample_Number' => $requisition['Sample_Number'],
-        'Test_Type' => trim($test_type_raw),
-        'Sample_Date' => $date
-      ];
-    }
-  }
-}
-
-$ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
-
-class PDF extends FPDF {
-  public $fecha_en;
-  public $day_of_week;
-  public $week_number;
-
-
-
-  function Header() {
-    if ($this->PageNo() > 1) return;
-    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
-      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 30);
-    }
-    $this->SetFont('Arial', 'B', 14);
-    $this->SetXY(150, 10);
-    $this->Cell(50, 10, 'Daily Laboratory Report', 0, 1, 'R');
-    $this->SetFont('Arial', '', 12);
-    $this->SetXY(150, 20);
-    $this->Cell(50, 10, "Date: {$this->fecha_en}", 0, 1, 'R');
-    $this->Ln(5);
-
-    $this->SetFont('Arial', 'B', 11);
-    $this->Cell(0, 8, 'Personnel Assigned', 0, 1);
-    $this->SetFont('Arial', '', 10);
-
-    if ($this->day_of_week == 3) {
-      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas, Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
-      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez, Laura Sanchez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia, Frandy Epsinal, Arturo Santana", 0, 'L');
-      $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta, Victor Mercedes", 0, 'L');
-      $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo, Luis Monegro", 0, 'L');
-    } elseif (in_array($this->day_of_week, [0, 1, 2])) {
-      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
-      $this->MultiCell(0, 6, "PV Supervisor: Diana Vazquez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Yamilexi Mejia, Frandy Espinal" : "Frandy Espinal, Yamilexi Mejia"), 0, 'L');
-      $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
-      $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
-    } else {
-      $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
-      $this->MultiCell(0, 6, "PV Supervisor: Laura Sanchez", 0, 'L');
-      $this->MultiCell(0, 6, "Lab Document Control: " . ($this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejia"), 0, 'L');
-      $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
-      $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
+    if (!isset($stats[$cliente])) {
+      $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0];
     }
 
-    $this->Ln(2);
-    $this->SetFont('Arial', 'I', 10);
-    $this->Cell(0, 8, "Report reviwed by: Wendin De Jesus", 0, 1);
-    $this->Ln(5);
+    $stats[$cliente]['solicitados']++;
+
+    if (isset($entregado_map[$key])) {
+      $stats[$cliente]['entregados']++;
+    }
   }
 
-  function Footer() {
-    $this->SetY(-15);
-    $this->SetFont('Arial', 'I', 8);
-    $this->Cell(0, 10, 'Page ' . $this->PageNo(), 0, 0, 'C');
-  }
+  return $stats;
 }
 
-$pdf = new PDF();
-$pdf->fecha_en = $fecha_en;
-$pdf->day_of_week = $day_of_week;
-$pdf->week_number = $week_number;
-$pdf->AddPage();
 
-// Summary Table
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Summary of Activities', 0, 1);
-$pdf->SetFont('Arial', 'B', 11);
-$pdf->Cell(90, 8, 'Test Process', 1, 0, 'C');
-$pdf->Cell(30, 8, 'Quantity', 1, 1, 'C');
-$pdf->SetFont('Arial', '', 11);
-$pdf->Cell(90, 8, 'Requisitioned', 1, 0); $pdf->Cell(30, 8, $requisitioned, 1, 1);
-$pdf->Cell(90, 8, 'In Preparation', 1, 0); $pdf->Cell(30, 8, $preparation, 1, 1);
-$pdf->Cell(90, 8, 'In Realization', 1, 0); $pdf->Cell(30, 8, $realization, 1, 1);
-$pdf->Cell(90, 8, 'Completed', 1, 0); $pdf->Cell(30, 8, $delivery, 1, 1);
+function count_by_sample($table, $sample, $field = 'Sample_Name') {
+  return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
+}
 
-$pdf->Ln();
+function muestras_nuevas($start, $end) {
+  return find_by_sql("SELECT Sample_ID, Sample_Number, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+}
 
-// Status of Tests
-$pdf->Ln(5);
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Status of Tests', 0, 1);
+function ensayos_pendientes($start, $end) {
+  $requisitions = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+  ");
 
-// Encabezado de la tabla
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(35, 8, 'Sample ID', 1);
-$pdf->Cell(25, 8, 'Structure', 1);
-$pdf->Cell(25, 8, 'Mat. Type', 1);
-$pdf->Cell(30, 8, 'Test Type', 1);
-$pdf->Cell(25, 8, 'Condition', 1);
-$pdf->Cell(50, 8, 'Comments', 1);
-$pdf->Ln();
+  // Cargar todos los registros existentes en las demás tablas
+  $tablas = [
+    'test_preparation',
+    'test_realization',
+    'test_delivery',
+    'test_review',
+    'test_reviewed',
+    'test_repeat'
+  ];
 
-// Cuerpo de la tabla
-$pdf->SetFont('Arial', '', 9);
-foreach ($ensayos_reporte as $row) {
+  $indexados = [];
+
+  foreach ($tablas as $tabla) {
+    $datos = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM {$tabla}");
+    foreach ($datos as $d) {
+      $key = strtoupper(trim($d['Sample_Name'])) . '|' . strtoupper(trim($d['Sample_Number'])) . '|' . strtoupper(trim($d['Test_Type']));
+      $indexados[$key] = true;
+    }
+  }
+
+  // Verificar si cada ensayo solicitado ha sido ejecutado en alguna tabla
+  $pendientes = [];
+
+  foreach ($requisitions as $r) {
+    $sample_id = strtoupper(trim($r['Sample_ID']));
+    $sample_num = strtoupper(trim($r['Sample_Number']));
+    $tipos = explode(',', $r['Test_Type']);
+    $fecha = $r['Sample_Date'];
+
+    foreach ($tipos as $tipo_raw) {
+      $tipo = strtoupper(trim($tipo_raw));
+      $key = $sample_id . '|' . $sample_num . '|' . $tipo;
+
+      if (!isset($indexados[$key])) {
+        $pendientes[] = [
+          'Sample_ID' => $r['Sample_ID'],
+          'Sample_Number' => $r['Sample_Number'],
+          'Test_Type' => $tipo_raw,
+          'Sample_Date' => $fecha
+        ];
+      }
+    }
+  }
+
+  return $pendientes;
+}
+
+
+
+function resumen_tecnico($start, $end) {
+  return find_by_sql("SELECT Technician, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
+    UNION ALL
+    SELECT Technician, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
+    UNION ALL
+    SELECT Technician, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician");
+}
+
+function resumen_tipo($start, $end) {
+  return find_by_sql("SELECT Test_Type, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
+    UNION ALL
+    SELECT Test_Type, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
+    UNION ALL
+    SELECT Test_Type, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type");
+}
+
+
+function render_ensayos_reporte($pdf, $start, $end) {
+  // Obtener datos desde la tabla `ensayos_reporte`
+  $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
+
+  // Título de la sección
+  $pdf->section_title("8. Summary of Dam Constructions Test");
+
+  // Encabezados de la tabla
+  $pdf->SetFont('Arial', 'B', 9);
+  $pdf->Cell(35, 8, 'Sample', 1);
+  $pdf->Cell(25, 8, 'Structure', 1);
+  $pdf->Cell(25, 8, 'Mat. Type', 1);
+  $pdf->Cell(30, 8, 'Test Type', 1);
+  $pdf->Cell(20, 8, 'Condition', 1);
+  $pdf->Cell(55, 8, 'Comments', 1);
+  $pdf->Ln();
+
+  // Contenido de la tabla
+  $pdf->SetFont('Arial', '', 9);
+  foreach ($ensayos_reporte as $row) {
     $sample = $row['Sample_Name'] . '-' . $row['Sample_Number'];
     $structure = $row['Structure'];
     $mat_type = $row['Material_Type'];
     $test_type = $row['Test_Type'];
     $condition = $row['Test_Condition'];
-    $comments = $row['Comments'];
+    $comments = substr($row['Comments'], 0, 45); // Limita comentarios largos
 
     $pdf->Cell(35, 8, $sample, 1);
     $pdf->Cell(25, 8, $structure, 1);
     $pdf->Cell(25, 8, $mat_type, 1);
     $pdf->Cell(30, 8, $test_type, 1);
-    $pdf->Cell(25, 8, $condition, 1);
-    $pdf->Cell(50, 8, substr($comments, 0, 30), 1); // Limita comentarios largos
+    $pdf->Cell(20, 8, $condition, 1);
+    $pdf->Cell(55, 8, $comments, 1);
     $pdf->Ln();
+  }
+}
+
+function observaciones_ensayos_reporte($start, $end) {
+  return find_by_sql("
+    SELECT 
+      Sample_Name, 
+      Sample_Number, 
+      Structure, 
+      Material_Type, 
+      Noconformidad 
+    FROM ensayos_reporte 
+    WHERE 
+      Noconformidad IS NOT NULL 
+      AND TRIM(Noconformidad) != '' 
+      AND Report_Date BETWEEN '{$start}' AND '{$end}'
+  ");
+}
+
+
+class PDF extends FPDF {
+  public $day_of_week;
+  public $week_number;
+  public $fecha_en;
+
+  function __construct($fecha_en) {
+    parent::__construct();
+    $this->day_of_week = date('w');
+    $this->week_number = date('W');
+    $this->fecha_en = $fecha_en;
+  }
+  function Header() {
+    $user = current_user();
+$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+    if ($this->PageNo() > 1) return;
+    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 50);
+    }
+     $this->SetFont('Arial', 'B', 14);
+    $this->SetXY(150, 10); // Posiciona el cursor en la parte superior derecha
+    $this->Cell(50, 10, utf8_decode('Daily Laboratory Report'), 0, 1, 'R');
+
+    $this->SetFont('Arial', '', 10);
+    $this->SetXY(150, 18); // Un poco más abajo para la fecha
+    $this->Cell(50, 8, "Date: {$this->fecha_en}", 0, 1, 'R');
+
+    $this->Ln(10); // Espacio antes del contenido principal
+
+    $this->SetFont('Arial', 'B', 11);
+    $this->section_title("1. Personnel Assigned");
+    $this->SetFont('Arial', '', 10);
+
+    if (in_array($this->day_of_week, [1, 2, 3, 4])) { // Lunes a Jueves
+  $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
+  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia, Frandy Espinal", 0, 'L');
+  $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
+  $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
+  $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
+
+}
+
+if (in_array($this->day_of_week, [3, 4, 5, 6])) { // Miércoles a Sábado
+  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
+  $doc_control = $this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejia";
+  $this->MultiCell(0, 6, "Lab Document Control: {$doc_control}", 0, 'L');
+  $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
+  $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
 }
 
 
 
-$pdf->Ln(5);
+    $this->Ln(5);
+  }
+  function section_title($title) {
+    $this->SetFont('Arial', 'B', 12);
+    $this->SetFillColor(200, 220, 255);
+    $this->Cell(0, 8, $title, 0, 1, 'L', true);
+    $this->Ln(2);
+  }
+  function section_table($headers, $rows, $widths) {
+    $this->SetFont('Arial', 'B', 10);
+    foreach ($headers as $i => $h) {
+      $this->Cell($widths[$i], 7, $h, 1, 0, 'C');
+    }
+    $this->Ln();
+    $this->SetFont('Arial', '', 10);
+    foreach ($rows as $row) {
+      foreach ($row as $i => $col) {
+        $this->Cell($widths[$i], 6, $col, 1, 0, 'C');
+      }
+      $this->Ln();
+    }
+    $this->Ln(3);
+  }
+}
 
-// Test Details
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 5, 'Test Details', 0, 1);
+$pdf = new PDF($fecha_en);
+
+$pdf->AddPage();
+
+$pdf->section_title("2. Summary of  Daily Activities");
+$pdf->section_table(["Activities", "Quantity"], [
+  ["Requisitioned", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
+  ["In Preparation", get_count("test_preparation", "Register_Date", $start, $end)],
+  ["In Realizacion", get_count("test_realization", "Register_Date", $start, $end)],
+  ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
+], [90, 40]);
+
+$pdf->section_title("3. Client Summary of Delivered Tests");
+
+
+$clientes = resumen_entregas_por_cliente($start, $end);
+$rows = [];
+foreach ($clientes as $cli => $d) {
+  $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
+  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
+}
+
+$pdf->section_table(["Client", "Requested", "Delivered", "%"], $rows, [50, 35, 35, 25]);
+$pdf->Ln(4);
+
+$pdf->section_title("4. Newly Registered Samples");
+$muestras = muestras_nuevas($start, $end);
+$rows = [];
+foreach ($muestras as $m) {
+ $rows = [];
+foreach ($muestras as $m) {
+  $rows[] = [$m['Sample_ID'] . ' -' . $m['Sample_Number'], $m['Structure'], $m['Client'], $m['Test_Type']];
+}
+
+
+}
+$pdf->section_table(["Sample ID", "Structure", "Client", "Test Type"], $rows, [45, 35, 35, 75]);
 $pdf->SetFont('Arial', '', 8);
 $pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
 $pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
 $pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 8, 'Sample Number', 1);
-$pdf->Cell(40, 8, 'Test Type', 1);
-$pdf->Cell(45, 8, 'Technician', 1);
-$pdf->Cell(35, 8, 'Status', 1, 1);
+$pdf->Ln(4);
+$pdf->section_title("5. Summary of Tests by Technician ");
+$tec = resumen_tecnico($start, $end);
+$t_rows = [];
+foreach ($tec as $r) {
+  $t_rows[] = [$r['Technician'], $r['etapa'], $r['total']];
+}
+$pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 4, 'Tech. Legend: WM= Wilson Martinez, JV= Jonathan Vargas, RV= Roni Vargas, RL =Rafy Leocadio,', 0, 1);
+$pdf->Cell(0, 4, 'RR= Rafael Reyes, JL= Joel Ledesma, DF= Darielvy Felix, JA= Jordany Almonte , ', 0, 1);
+$pdf->Ln(5);
+
+
+$pdf->section_title("6. Distribution of Tests by Type");
+$tipos = resumen_tipo($start, $end);
+$type_rows = [];
+foreach ($tipos as $r) {
+  $type_rows[] = [$r['Test_Type'], $r['etapa'], $r['total']];
+}
+$pdf->section_table(["Test Type", "Process", "Quantity"], $type_rows, [70, 50, 30]);
+
+
+
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
+$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
+$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
+$pdf->Ln(4);
+
+$pdf->section_title("7. Pending Tests");
+
+// Definir fecha de inicio exclusivo para ensayos pendientes (1 mes atrás desde $end)
+$start_pendientes = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
+
+// Obtener los ensayos pendientes en ese rango
+$pendientes = ensayos_pendientes($start_pendientes, $end);
+
+$rows = [];
+foreach ($pendientes as $p) {
+  $rows[] = [$p['Sample_ID'], $p['Sample_Number'], $p['Test_Type'], $p['Sample_Date']];
+}
+$pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 60, 40]);
+
+
+
+render_ensayos_reporte($pdf, $start, $end);
+$pdf->Ln(5);
+
+$pdf->section_title("9. Summary of Observations/Non-Conformities");
+
+$observaciones = observaciones_ensayos_reporte($start, $end);
+
+// Encabezado
+$pdf->SetFont('Arial', 'B', 9);
+$pdf->Cell(40, 8, 'Sample', 1);
+$pdf->Cell(30, 8, 'Material Type', 1);
+$pdf->Cell(120, 8, 'Observations', 1);
+$pdf->Ln();
+
+// Cuerpo
 $pdf->SetFont('Arial', '', 9);
-foreach ($test_details as $detail) {
-  $pdf->Cell(60, 8, $detail['sample'], 1);
-  $pdf->Cell(40, 8, $detail['type'], 1);
-  $pdf->Cell(45, 8, $detail['tech'], 1);
-  $pdf->Cell(35, 8, $detail['status'], 1);
+foreach ($observaciones as $obs) {
+  $sample = $obs['Sample_Name'] . '-' . $obs['Sample_Number'];
+  $pdf->Cell(40, 8, $sample, 1); 
+  $pdf->Cell(30, 8, $obs['Material_Type'], 1);
+  $pdf->Cell(120, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
   $pdf->Ln();
 }
 
 $pdf->Ln(5);
 
-// Pending Tests
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Pending Tests', 0, 1);
-$pdf->SetFont('Arial', '', 8);
-$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
-$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
-$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(10, 8, '#', 1);
-$pdf->Cell(40, 8, 'Sample ID', 1);
-$pdf->Cell(40, 8, 'Sample Number', 1);
-$pdf->Cell(60, 8, 'Test Type', 1);
-$pdf->Cell(40, 8, 'Sample Date', 1, 1);
-$pdf->SetFont('Arial', '', 9);
-foreach ($pending_tests as $i => $row) {
-  $pdf->Cell(10, 8, $i + 1, 1);
-  $pdf->Cell(40, 8, $row['Sample_ID'], 1);
-  $pdf->Cell(40, 8, $row['Sample_Number'], 1);
-  $pdf->Cell(60, 8, $row['Test_Type'], 1);
-  $pdf->Cell(40, 8, $row['Sample_Date'], 1);
-  $pdf->Ln();
-}
+$pdf->section_title("10. Responsible");
+$pdf->SetFont('Arial', '', 10);
+$pdf->Cell(60, 8, "Report prepared by", 1);
+$pdf->Cell(120, 8, utf8_decode($nombre_responsable), 1, 1);
 
 
 
 
+ob_end_clean();
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
-exit;
