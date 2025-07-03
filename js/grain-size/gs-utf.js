@@ -262,11 +262,11 @@ function UTF() {
         return "GW-Well graded gravel";
     } else if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 0.5 && Cc <= 3 && sand >= 15) {
         return "GW-Well graded gravel with sand";
-    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3  && sand < 15) {
+    } else if (gravel > sand && fines < 5 && (Cu < 4 || Cc < 1 || Cc > 3) && sand < 15) {
         return "GP-Poorly graded gravel";
     } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand < 15) {
         return "GP-Poorly graded gravel";
-    } else if (gravel > sand && fines < 5 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
+    } else if (gravel > sand && fines < 5 && (Cu < 4 || Cc < 1 || Cc > 3) && sand >= 15) {
         return "GP-Poorly graded gravel with sand";
     } else if (gravel > sand && fines < 5 && Cu < 4 &&  Cc > 3 && sand >= 15) {
         return "GP-Poorly graded gravel with sand";
@@ -306,7 +306,7 @@ function UTF() {
         return "SP-Poorly graded sand";
     } else if (sand > gravel && fines < 5 && Cu < 6 &&  Cc > 3 && gravel < 15) {
         return "SP-Poorly graded sand";
-    } else if (sand > gravel && fines < 5 && Cu < 6 && (Cc < 1 || Cc > 3) && gravel >= 15) {
+    } else if (sand > gravel && fines < 5 && (Cu < 6 || Cc < 1 || Cc > 3) && gravel >= 15) {
         return "SP-Poorly graded sand with gravel";
     } else if (sand > gravel && fines >= 5 && fines <= 12 && Cu >= 6 && Cc >= 1 && Cc <= 3 && gravel < 15) {
         return "SW-SM-Well graded sand with silt";

@@ -28,9 +28,11 @@ echarts.init(document.querySelector("#GrainSizeCoarseFilter")).setOption({
     },
     type: 'log',
     inverse: true,
-    min: 0.0001,
-    max: 1000.0,
-    position: 'right',
+    min: 0.001,
+    max: 1000,
+    splitLine: {
+      show: true
+    }
   },
   yAxis: {
     name: 'Percent Passing (%)',
@@ -40,7 +42,8 @@ echarts.init(document.querySelector("#GrainSizeCoarseFilter")).setOption({
       lineHeight: 33
     },
     min: 0,
-    max: 100
+    max: 100,
+    interval: 10
   },
   series: [
     {
