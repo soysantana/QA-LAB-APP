@@ -232,24 +232,45 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
     $this->section_title("1. Personnel Assigned");
     $this->SetFont('Arial', '', 10);
 
-    if (in_array($this->day_of_week, [1, 2, 3, 4])) { // Lunes a Jueves
+$semana = $this->week_number;
+$dia = $this->day_of_week;
+
+$semana = $this->week_number;
+$dia = $this->day_of_week;
+
+// =============================
+// GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
+// =============================
+if (in_array($dia, [0, 1, 2, 3])) {
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia, Frandy Espinal", 0, 'L');
+  $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
   $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
   $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
-  $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
-
 }
 
-if (in_array($this->day_of_week, [3, 4, 5, 6])) { // Miércoles a Sábado
+// =============================
+// GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
+// =============================
+if (in_array($dia, [3, 4, 5, 6])) {
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
-  $doc_control = $this->week_number % 2 === 0 ? "Yamilexi Mejia, Arturo Santana" : "Arturo Santana, Yamilexi Mejia";
-  $this->MultiCell(0, 6, "Lab Document Control: {$doc_control}", 0, 'L');
+  $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
   $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
   $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
 }
+
+// =============================
+// YAMILEXI + WENDIN — Rotación semanal
+// =============================
+if (
+  ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
+  ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
+) {
+  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');
+  $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
+}
+
 
 
 
