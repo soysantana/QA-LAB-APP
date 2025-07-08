@@ -44,7 +44,7 @@ function resumen_entregas_por_cliente( $end) {
 
   // Procesar progreso por cliente
   foreach ($solicitudes as $s) {
-    $cliente = $s['Client'] ?: 'SIN CLIENTE';
+    $cliente = $s['Client'] ?: 'Pending Inf';
     $sample_id = strtoupper(trim($s['Sample_ID']));
     $sample_num = strtoupper(trim($s['Sample_Number']));
     $test_type = strtoupper(trim($s['Test_Type']));
@@ -311,7 +311,7 @@ $pdf->section_table(["Activities", "Quantity"], [
   ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
 ], [90, 40]);
 
-$pdf->section_title("3. Client Summary of Delivered Tests");
+$pdf->section_title("3. Client Summary of Completed Tests");
 
 
 $clientes = resumen_entregas_por_cliente($start, $end);
@@ -321,7 +321,7 @@ foreach ($clientes as $cli => $d) {
   $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
 }
 
-$pdf->section_table(["Client", "Requested", "Delivered", "%"], $rows, [50, 35, 35, 25]);
+$pdf->section_table(["Client", "Requested", "Completed", "%"], $rows, [50, 35, 35, 25]);
 $pdf->Ln(4);
 
 $pdf->section_title("4. Newly Registered Samples");
@@ -380,9 +380,18 @@ $pendientes = ensayos_pendientes($start_pendientes, $end);
 
 $rows = [];
 foreach ($pendientes as $p) {
-  $rows[] = [$p['Sample_ID'], $p['Sample_Number'], $p['Test_Type'], $p['Sample_Date']];
+  if (!empty($p['Test_Type'])) { // Excluir los que tengan Test_Type vacío o null
+    $rows[] = [
+      $p['Sample_ID'],
+      $p['Sample_Number'],
+      $p['Test_Type'],
+      $p['Sample_Date']
+    ];
+  }
 }
+
 $pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 60, 40]);
+
 
 
 

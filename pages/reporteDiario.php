@@ -23,7 +23,12 @@ include_once('../components/header.php');
       <div id="samples-container">
         <div class="card sample-card mb-4">
           <div class="card-body row g-3">
-            <h5 class="card-title">Test Status</h5>
+            <h5 class="card-title d-flex justify-content-between align-items-center">
+              Test Status
+              <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSample(this)">
+                <i class="bi bi-trash"></i> Eliminar
+              </button>
+            </h5>
             <div class="col-md-6">
               <label class="form-label">Sample Name</label>
               <input type="text" class="form-control" name="Sample_Name[]" required>
@@ -81,17 +86,33 @@ function duplicateSample() {
   const clone = original.cloneNode(true);
   const inputs = clone.querySelectorAll('input, textarea');
   inputs.forEach(input => input.value = '');
+
+  // Reasignar evento eliminar
+  const deleteButton = clone.querySelector('button.btn-outline-danger');
+  deleteButton.onclick = function () {
+    removeSample(deleteButton);
+  };
+
   container.appendChild(clone);
+}
+
+function removeSample(button) {
+  const card = button.closest('.sample-card');
+  const container = document.getElementById('samples-container');
+  if (container.children.length > 1) {
+    card.remove();
+  } else {
+    alert("Debe haber al menos una muestra.");
+  }
 }
 </script>
 
 <?php include_once('../components/footer.php'); ?>
 
 <?php
-// Guardar en la base de datos después del cierre del HTML
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   global $db;
-  $db->db_connect(); // Asegura conexión activa
+  $db->db_connect();
 
   $sample_names     = $_POST['Sample_Name'] ?? [];
   $sample_numbers   = $_POST['Sample_Number'] ?? [];
@@ -100,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $test_types       = $_POST['Test_Type'] ?? [];
   $test_conditions  = $_POST['Test_Condition'] ?? [];
   $comments_list    = $_POST['Comments'] ?? [];
-  $noconformidad_list    = $_POST['noconformidad'] ?? [];
+  $noconformidad_list = $_POST['noconformidad'] ?? [];
   $report_dates     = $_POST['Date'] ?? [];
 
   for ($i = 0; $i < count($sample_names); $i++) {
@@ -111,22 +132,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $test_type       = $db->escape($test_types[$i]);
     $test_condition  = $db->escape($test_conditions[$i]);
     $comments        = $db->escape($comments_list[$i]);
-    $noconformidad       = $db->escape($noconformidad_list[$i]);
+    $noconformidad   = $db->escape($noconformidad_list[$i]);
     $date            = $db->escape($report_dates[$i]);
 
     $sql = "INSERT INTO ensayos_reporte (
               Sample_Number, Sample_Name, Structure, Material_Type,
-              Test_Type, Test_Condition, Comments,Noconformidad, Report_Date
+              Test_Type, Test_Condition, Comments, Noconformidad, Report_Date
             ) VALUES (
               '{$sample_number}', '{$sample_name}', '{$structure}', '{$material_type}',
-              '{$test_type}', '{$test_condition}', '{$comments}' , '{$noconformidad}', '{$date}'
+              '{$test_type}', '{$test_condition}', '{$comments}', '{$noconformidad}', '{$date}'
             )";
 
     $db->query($sql);
   }
 
   $session->msg('s', 'Todas las muestras fueron guardadas exitosamente.');
-  redirect('../pages/reporte_diario_lab.php', false);
+  redirect('../pages/reporteDiario.php', false);
 }
-
 ?>

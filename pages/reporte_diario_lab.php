@@ -16,7 +16,7 @@ for ($i = 0; $i < 7; $i++) {
 <main id="main" class="main"> 
   <div class="pagetitle mb-3">
     <h1><i class="bi bi-calendar-week"></i> Lista de Reportes Semanales</h1>
-    <p>Seleccione un día para generar el reporte en PDF</p>
+    <p>Seleccione un día para generar el reporte en PDF o editar su contenido</p>
   </div>
 
   <section class="section">
@@ -35,17 +35,14 @@ for ($i = 0; $i < 7; $i++) {
               <tr>
                 <td><?= $i++ ?></td>
                 <td><?= date('d-m-Y', strtotime($fecha)) ?></td>
-               <td class="d-flex gap-2">
-  <a href="../pages/generar_reporte_pdf.php?fecha=<?= $fecha ?>" target="_blank" class="btn btn-danger btn-sm">
-    <i class="bi bi-file-earmark-pdf"></i> Generar PDF
-  </a>
-
-
-
-
-
-</td>
-
+                <td class="d-flex gap-2">
+                  <a href="../pages/generar_reporte_pdf.php?fecha=<?= $fecha ?>" target="_blank" class="btn btn-danger btn-sm">
+                    <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+                  </a>
+                  <a href="../pages/editar_reporteDiario.php?fecha=<?= $fecha ?>" class="btn btn-primary btn-sm">
+                    <i class="bi bi-pencil-square"></i> Editar
+                  </a>
+                </td>
               </tr>
             <?php endforeach; ?>
           </tbody>
