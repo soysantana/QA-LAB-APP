@@ -196,7 +196,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
   // Contenido de la tabla
   $pdf->SetFont('Arial', '', 9);
   foreach ($ensayos_reporte as $row) {
-    $sample = $row['Sample_ID'] . '-' . $row['Sample_ID'];
+    $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
     $structure = $row['Structure'];
     $mat_type = $row['Material_Type'];
     $test_type = $row['Test_Type'];
