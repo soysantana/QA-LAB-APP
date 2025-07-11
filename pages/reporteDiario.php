@@ -31,7 +31,7 @@ include_once('../components/header.php');
             </h5>
             <div class="col-md-6">
               <label class="form-label">Sample Name</label>
-              <input type="text" class="form-control" name="Sample_Name[]" required>
+              <input type="text" class="form-control" name="Sample_ID[]" required>
             </div>
             <div class="col-md-6">
               <label class="form-label">Sample Number</label>
@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   global $db;
   $db->db_connect();
 
-  $sample_names     = $_POST['Sample_Name'] ?? [];
+  $sample_names     = $_POST['Sample_ID'] ?? [];
   $sample_numbers   = $_POST['Sample_Number'] ?? [];
   $structures       = $_POST['Structure'] ?? [];
   $material_types   = $_POST['Material_Type'] ?? [];
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $date            = $db->escape($report_dates[$i]);
 
     $sql = "INSERT INTO ensayos_reporte (
-              Sample_Number, Sample_Name, Structure, Material_Type,
+              Sample_Number, Sample_ID, Structure, Material_Type,
               Test_Type, Test_Condition, Comments, Noconformidad, Report_Date
             ) VALUES (
               '{$sample_number}', '{$sample_name}', '{$structure}', '{$material_type}',
