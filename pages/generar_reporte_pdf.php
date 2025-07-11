@@ -442,7 +442,7 @@ $pdf->Ln();
 // Cuerpo
 $pdf->SetFont('Arial', '', 9);
 foreach ($observaciones as $obs) {
-  $sample = $obs['Sample_Sample_ID'] . '-' . $obs['Sample_Number'];
+  $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'];
   $pdf->Cell(40, 8, $sample, 1); 
   $pdf->Cell(30, 8, $obs['Material_Type'], 1);
   $pdf->Cell(120, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
