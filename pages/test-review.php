@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php foreach ($Seach as $Seach): ?>
                   <tr>
                     <td><?php echo count_id(); ?></td>
-                    <td><?php echo $Seach['Sample_Name']; ?></td>
+                    <td><?php echo $Seach['Sample_ID']; ?></td>
                     <td><?php echo $Seach['Sample_Number']; ?></td>
                     <td><?php echo $Seach['Test_Type']; ?></td>
                     <td><?php echo $Seach['Register_By']; ?></td>

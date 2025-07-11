@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
 
     // Verificar si ya existe una entrega con esa muestra
     $check_query = "SELECT id FROM test_delivery 
-                    WHERE Sample_Name = '{$nombre}' 
+                    WHERE Sample_ID = '{$nombre}' 
                       AND Sample_Number = '{$numero}' 
                       AND Test_Type = '{$tipo}' 
                     LIMIT 1";
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
                             Register_By = '{$registrado}',
                             Register_Date = '{$fecha_registro}',
                             Status = '{$estado}'
-                         WHERE Sample_Name = '{$nombre}' 
+                         WHERE Sample_ID = '{$nombre}' 
                            AND Sample_Number = '{$numero}' 
                            AND Test_Type = '{$tipo}'";
 
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
     } else {
         // No existe → Hacer INSERT
         $insert_query = "INSERT INTO test_delivery (
-                            id, Sample_Name, Sample_Number, Test_Type, Technician,
+                            id, Sample_ID, Sample_Number, Test_Type, Technician,
                             Start_Date, Register_By, Register_Date, Status
                          ) VALUES (
                             '{$uuid}', '{$nombre}', '{$numero}', '{$tipo}', '{$registrado}',
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
     if ($exec) {
         // Eliminar de test_repeat
         $delete_query = "DELETE FROM test_repeat 
-                         WHERE Sample_Name = '{$nombre}' 
+                         WHERE Sample_ID = '{$nombre}' 
                            AND Sample_Number = '{$numero}' 
                            AND Test_Type = '{$tipo}'";
         $delete_result = $db->query($delete_query);

@@ -53,14 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $sample_numbers = array_unique(array_column($Requisition, 'Sample_Number'));
 
               if (!empty($sample_ids) && !empty($sample_numbers)) {
-                $query = "SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery WHERE Sample_Name IN ('" . implode("','", $sample_ids) . "') AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
+                $query = "SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery WHERE Sample_ID IN ('" . implode("','", $sample_ids) . "') AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
                 $result = $db->query($query);
               }
 
               // Crear un arreglo con las entregas
               $entregas = [];
               while ($row = $result->fetch_assoc()) {
-                $entregas[$row['Sample_Name']][$row['Sample_Number']][] = $row['Test_Type'];
+                $entregas[$row['Sample_ID']][$row['Sample_Number']][] = $row['Test_Type'];
               }
               ?>
 

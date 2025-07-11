@@ -44,13 +44,13 @@ function insertDataFromTable($tableName, $db, $session)
 
             if ($existingData) {
                 // Si hay cambios, actualiza
-                if ($existingData['Sample_Name'] != $row["Sample_ID"] || 
+                if ($existingData['Sample_ID'] != $row["Sample_ID"] || 
                     $existingData['Sample_Number'] != $row["Sample_Number"] || 
                     $existingData['Start_Date'] != $row["Registed_Date"] || 
                     $existingData['Register_By'] != $row["Register_By"] || 
                     $existingData['Status'] != 'Review') {
                     $updateQuery = "UPDATE test_review 
-                    SET Sample_Name = '{$row["Sample_ID"]}', Sample_Number = '{$row["Sample_Number"]}', 
+                    SET Sample_ID = '{$row["Sample_ID"]}', Sample_Number = '{$row["Sample_Number"]}', 
                     Test_Type = '$mappedType', Start_Date = '{$row["Registed_Date"]}', 
                     Register_By = '{$row["Register_By"]}', Status = 'Review' 
                     WHERE Tracking = '$tracking'";
@@ -60,7 +60,7 @@ function insertDataFromTable($tableName, $db, $session)
                 }
             } else {
                 // Inserta un nuevo registro
-                $insertQuery = "INSERT INTO test_review (id, Sample_Name, Sample_Number, Register_By, Test_Type, Start_Date, Status, Tracking)
+                $insertQuery = "INSERT INTO test_review (id, Sample_ID, Sample_Number, Register_By, Test_Type, Start_Date, Status, Tracking)
                                 VALUES ('$id', '{$row["Sample_ID"]}', '{$row["Sample_Number"]}', '{$row["Register_By"]}', 
                                 '$mappedType', '{$row["Registed_Date"]}', 'Review', '$tracking')";
                 $session->msg($db->query($insertQuery) ? "s" : "d", $db->error ?: "Insertado exitosamente");

@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body">
           <h5 class="card-title">LISTA DE MUESTRAS EN REPETICIÓN</h5>
           <?php
-          $reviewed_check = "(SELECT 1 FROM test_reviewed trw WHERE trw.Sample_Name = p.Sample_Name AND trw.Sample_Number = p.Sample_Number AND trw.Test_Type = p.Test_Type AND trw.Signed = 1)";
+          $reviewed_check = "(SELECT 1 FROM test_reviewed trw WHERE trw.Sample_ID = p.Sample_ID AND trw.Sample_Number = p.Sample_Number AND trw.Test_Type = p.Test_Type AND trw.Signed = 1)";
           $Search = find_by_sql("SELECT * FROM test_repeat p WHERE NOT EXISTS $reviewed_check ORDER BY Start_Date DESC");
           ?>
           <table class="table table-bordered datatable">
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php foreach ($Search as $index => $item): ?>
                 <tr>
                   <td><?php echo $index + 1; ?></td>
-                  <td><?php echo htmlspecialchars($item['Sample_Name'] ?? ''); ?></td>
+                  <td><?php echo htmlspecialchars($item['Sample_ID'] ?? ''); ?></td>
                   <td><?php echo htmlspecialchars($item['Sample_Number'] ?? ''); ?></td>
                   <td><?php echo htmlspecialchars($item['Test_Type'] ?? ''); ?></td>
                   <td><?php echo htmlspecialchars($item['Register_By'] ?? ''); ?></td>
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <td><?php echo htmlspecialchars($item['Comment'] ?? ''); ?></td>
                   <td>
                     <form method="POST" action="test-repeat.php">
-                      <input type="hidden" name="Sample_Name" value="<?php echo htmlspecialchars($item['Sample_Name']); ?>">
+                      <input type="hidden" name="Sample_ID" value="<?php echo htmlspecialchars($item['Sample_ID']); ?>">
                       <input type="hidden" name="Sample_Number" value="<?php echo htmlspecialchars($item['Sample_Number']); ?>">
                       <input type="hidden" name="Test_Type" value="<?php echo htmlspecialchars($item['Test_Type']); ?>">
                       <input type="hidden" name="Register_By" value="<?php echo htmlspecialchars($item['Register_By']); ?>">

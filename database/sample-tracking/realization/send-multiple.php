@@ -17,11 +17,11 @@ if (isset($_POST['SendMultipleRealization'])) {
             $tech_name = $db->escape($technicians[$sample_id]);
 
             // Obtén los datos de la muestra desde test_preparation
-            $query = "SELECT Sample_Name, Sample_Number, Test_Type FROM test_preparation WHERE id = '$escaped_id' LIMIT 1";
+            $query = "SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation WHERE id = '$escaped_id' LIMIT 1";
             $result = $db->fetch_assoc($db->query($query));
 
             if ($result) {
-                $Sname = $db->escape($result['Sample_Name']);
+                $Sname = $db->escape($result['Sample_ID']);
                 $Snumber = $db->escape($result['Sample_Number']);
                 $Ttype = $db->escape($result['Test_Type']);
 
@@ -31,7 +31,7 @@ if (isset($_POST['SendMultipleRealization'])) {
                     $new_id = uuid();
                     $insert_sql = "INSERT INTO test_realization (
                         id,
-                        Sample_Name,
+                        Sample_ID,
                         Sample_Number,
                         Test_Type,
                         Technician,

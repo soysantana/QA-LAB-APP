@@ -25,7 +25,7 @@
         if (!$ExistingRealization) {
             $sql = "INSERT INTO test_realization (
                 id,
-                Sample_Name,
+                Sample_ID,
                 Sample_Number,
                 Test_Type,
                 Technician,
@@ -67,7 +67,7 @@
     $SeachR = find_all("test_realization");
     
     foreach ($SeachR as $SeachR) {
-        if ($SeachR['Sample_Name'] == $Sname && $SeachR['Sample_Number'] == $Snumber && $SeachR['Test_Type'] == $Ttype) {
+        if ($SeachR['Sample_ID'] == $Sname && $SeachR['Sample_Number'] == $Snumber && $SeachR['Test_Type'] == $Ttype) {
             return true;
         }
     }

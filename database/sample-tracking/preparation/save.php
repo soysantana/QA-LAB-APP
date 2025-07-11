@@ -31,7 +31,7 @@ if (isset($_POST['test-preparation'])) {
 
                     $sql = "INSERT INTO test_preparation (
                         id,
-                        Sample_Name,
+                        Sample_ID,
                         Sample_Number,
                         Test_Type,
                         Technician,

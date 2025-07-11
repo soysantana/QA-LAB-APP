@@ -102,9 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="card-body">
             <h5 class="card-title">LISTA DE MUESTRAS EN PREPARACIÓN</h5>
 
-            <?php $week = date('Y-m-d', strtotime('-300 days')); ?>
-            <?php $realization = "(SELECT 1 FROM test_realization WHERE sample_name = p.sample_name AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
-            <?php $Seach = find_by_sql("SELECT id, Sample_Name, Sample_Number, Test_Type, Technician, Start_Date FROM test_preparation p WHERE Start_Date >= '{$week}' AND NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
+            <?php $week = date('Y-m-d', strtotime('-20 days')); ?>
+            <?php $realization = "(SELECT 1 FROM test_realization WHERE sample_id= p.sample_id AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
+            <?php $Seach = find_by_sql("SELECT id, Sample_ID, Sample_Number, Test_Type, Technician, Start_Date FROM test_preparation p WHERE Start_Date >= '{$week}' AND NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
 
             <form id="multiple-send-form" method="post" action="test-preparation.php">
               <table class="table datatable">
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="checkbox" name="selected_samples[]" value="<?php echo $Seach['id']; ?>">
                       </td>
                       <td>
-                        <?php echo $Seach['Sample_Name']; ?>
+                        <?php echo $Seach['Sample_ID']; ?>
                       </td>
                       <td>
                         <?php echo $Seach['Sample_Number']; ?>

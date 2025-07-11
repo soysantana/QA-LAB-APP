@@ -137,7 +137,7 @@ if (!$session->isUserLoggedIn(true)) {
                     function getStatusFromTable($sampleID, $sampleNumber, $testType, $tableData)
                     {
                       foreach ($tableData as $row) {
-                        if ($row['Sample_Name'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType) {
+                        if ($row['Sample_ID'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType) {
                           return $row['Status'];
                         }
                       }
@@ -211,7 +211,7 @@ if (!$session->isUserLoggedIn(true)) {
               <div class="card-body">
                 <h5 class="card-title">Ensayos en Repeticion <span>| Hoy</span></h5>
                 <?php $week = date('Y-m-d', strtotime('-7 days')); ?>
-                <?php $Seach = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type, Start_Date, Send_By FROM test_repeat WHERE Start_Date >= '{$week}'"); ?>
+                <?php $Seach = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type, Start_Date, Send_By FROM test_repeat WHERE Start_Date >= '{$week}'"); ?>
                 <table class="table table-borderless datatable">
                   <thead>
                     <tr>
@@ -225,7 +225,7 @@ if (!$session->isUserLoggedIn(true)) {
                   <tbody>
                     <?php foreach ($Seach as $Seach): ?>
                       <tr>
-                        <td><?php echo $Seach['Sample_Name']; ?></td>
+                        <td><?php echo $Seach['Sample_ID']; ?></td>
                         <td><?php echo $Seach['Sample_Number']; ?></td>
                         <td><?php echo $Seach['Test_Type']; ?></td>
                         <td><?php echo date('Y-m-d', strtotime($Seach['Start_Date'])); ?></td>
@@ -289,13 +289,13 @@ if (!$session->isUserLoggedIn(true)) {
                         ) {
                           $matchingPreparations = array_filter($Preparation, function ($preparation) use ($requisition, $testTypeKey) {
 
-                            return $preparation["Sample_Name"] === $requisition["Sample_ID"] &&
+                            return $preparation["Sample_ID"] === $requisition["Sample_ID"] &&
                               $preparation["Sample_Number"] === $requisition["Sample_Number"] &&
                               $preparation["Test_Type"] === $requisition[$testTypeKey];
                           });
 
                           $matchingReviews = array_filter($Review, function ($review) use ($requisition, $testTypeKey) {
-                            return $review["Sample_Name"] === $requisition["Sample_ID"] &&
+                            return $review["Sample_ID"] === $requisition["Sample_ID"] &&
                               $review["Sample_Number"] === $requisition["Sample_Number"] &&
                               $review["Test_Type"] === $requisition[$testTypeKey];
                           });
@@ -583,7 +583,7 @@ if (!$session->isUserLoggedIn(true)) {
                 foreach ($tables_to_check as $table) {
                   $rows = find_all($table);
                   foreach ($rows as $row) {
-                    $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+                    $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
                     $indexed_status[$key] = true;
                   }
                 }
