@@ -73,14 +73,28 @@ function muestras_nuevas($start, $end) {
   return find_by_sql("SELECT Sample_ID, Sample_Number, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 }
 
+// Función auxiliar para detectar columnas existentes
+function get_columns_for_table($tabla) {
+  global $db;
+  $cols = [];
+  $res = $db->query("SHOW COLUMNS FROM {$tabla}");
+  while ($row = $res->fetch_assoc()) {
+    $cols[] = $row['Field'];
+  }
+  return $cols;
+}
+
+// Función principal
 function ensayos_pendientes($start, $end) {
+  // Obtener requisiciones dentro del rango y del cliente TSF Llagal
   $requisitions = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+      AND client = 'TSF Llagal'
   ");
 
-  // Cargar todos los registros existentes en las demás tablas
+  // Tablas donde puede aparecer un ensayo ya ejecutado
   $tablas = [
     'test_preparation',
     'test_realization',
@@ -93,21 +107,35 @@ function ensayos_pendientes($start, $end) {
   $indexados = [];
 
   foreach ($tablas as $tabla) {
-    $datos = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM {$tabla}");
+    // Detectar si la tabla tiene Sample_ID o Sample_Name
+    $columnas = get_columns_for_table($tabla);
+    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_Name';
+
+    // Cargar datos desde la tabla
+    $datos = find_by_sql("
+      SELECT 
+        {$campo_id} AS Sample_ID,
+        Sample_Number, Test_Type
+      FROM {$tabla}
+    ");
+
     foreach ($datos as $d) {
-      $key = strtoupper(trim($d['Sample_Name'])) . '|' . strtoupper(trim($d['Sample_Number'])) . '|' . strtoupper(trim($d['Test_Type']));
+      $key = strtoupper(trim($d['Sample_ID'])) . '|' .
+             strtoupper(trim($d['Sample_Number'])) . '|' .
+             strtoupper(trim($d['Test_Type']));
       $indexados[$key] = true;
     }
   }
 
-  // Verificar si cada ensayo solicitado ha sido ejecutado en alguna tabla
+  // Analizar ensayos pendientes
   $pendientes = [];
 
   foreach ($requisitions as $r) {
-    $sample_id = strtoupper(trim($r['Sample_ID']));
-    $sample_num = strtoupper(trim($r['Sample_Number']));
-    $tipos = explode(',', $r['Test_Type']);
-    $fecha = $r['Sample_Date'];
+    $sample_id   = strtoupper(trim($r['Sample_ID']));
+    $sample_num  = strtoupper(trim($r['Sample_Number']));
+    $tipos_raw   = str_replace(';', ',', $r['Test_Type']); // Sanitizar separadores
+    $tipos       = explode(',', $tipos_raw);
+    $fecha       = $r['Sample_Date'];
 
     foreach ($tipos as $tipo_raw) {
       $tipo = strtoupper(trim($tipo_raw));
@@ -115,10 +143,10 @@ function ensayos_pendientes($start, $end) {
 
       if (!isset($indexados[$key])) {
         $pendientes[] = [
-          'Sample_ID' => $r['Sample_ID'],
+          'Sample_ID'     => $r['Sample_ID'],
           'Sample_Number' => $r['Sample_Number'],
-          'Test_Type' => $tipo_raw,
-          'Sample_Date' => $fecha
+          'Test_Type'     => $tipo_raw,
+          'Sample_Date'   => $fecha
         ];
       }
     }
@@ -126,6 +154,8 @@ function ensayos_pendientes($start, $end) {
 
   return $pendientes;
 }
+
+
 
 
 
