@@ -49,7 +49,7 @@ $registros = find_by_sql("SELECT * FROM ensayos_reporte WHERE DATE(Report_Date) 
 
               <div class="col-md-6">
                 <label class="form-label">Sample Name</label>
-                <input type="text" class="form-control" name="Sample_Name[]" value="<?= $row['Sample_Name'] ?>" required>
+                <input type="text" class="form-control" name="Sample_ID[]" value="<?= $row['Sample_ID'] ?>" required>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Sample Number</label>
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update-form'])) {
   $db->db_connect();
 
   $ids             = $_POST['ids'] ?? [];
-  $sample_names    = $_POST['Sample_Name'] ?? [];
+  $sample_names    = $_POST['Sample_ID'] ?? [];
   $sample_numbers  = $_POST['Sample_Number'] ?? [];
   $structures      = $_POST['Structure'] ?? [];
   $material_types  = $_POST['Material_Type'] ?? [];
@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update-form'])) {
     $noconf         = $db->escape($noconformidad[$i]);
 
     $sql = "UPDATE ensayos_reporte SET
-              Sample_Name = '{$sample_name}',
+              Sample_ID = '{$sample_name}',
               Sample_Number = '{$sample_number}',
               Structure = '{$structure}',
               Material_Type = '{$material_type}',
