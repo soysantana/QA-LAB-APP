@@ -158,6 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="UpdateReactivity" value="FM13-007">Update</button>
                 <button type="submit" class="btn btn-danger" name="DeleteReactivity"><i class="bi bi-trash"></i></button>
+                <div class="btn-group dropup" role="group">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-printer"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="../pdf/AR-CF.php?id=<?php echo ($Search['id']); ?>">PDF</a></li>
+                  </ul>
+                </div>
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="RepeatReactivity">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="ReviewedReactivity">Reviewed</button>
