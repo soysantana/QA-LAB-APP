@@ -17,7 +17,7 @@ class PDF extends Fpdi
 $pdf = new PDF();
 $pdf->SetMargins(0, 0, 0);
 
-$pdf->AddPage('P', array(560, 470));
+$pdf->AddPage('P', array(470, 400));
 
 $pdf->setSourceFile('template/PV-F-01956 Laboratory Acid Reativity Test for Coarse Aggregates.pdf');
 $tplIdx = $pdf->importPage(1);
