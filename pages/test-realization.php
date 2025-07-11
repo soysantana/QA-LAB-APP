@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <section class="section">
     <div class="row">
-
+ 
       <!-- tabla de muestra en realizacion para el envio a entrega -->
       <div class="col-md-12">
         <div class="card">
