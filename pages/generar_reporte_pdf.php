@@ -33,12 +33,12 @@ function resumen_entregas_por_cliente( $end) {
   ");
 
   // Obtener todas las entregas registradas
-  $entregas = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery");
+  $entregas = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery");
 
   // Mapear entregas
   $entregado_map = [];
   foreach ($entregas as $e) {
-    $key = strtoupper(trim($e['Sample_Name'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
+    $key = strtoupper(trim($e['Sample_ID'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
     $entregado_map[$key] = true;
   }
 
@@ -65,7 +65,7 @@ function resumen_entregas_por_cliente( $end) {
 }
 
 
-function count_by_sample($table, $sample, $field = 'Sample_Name') {
+function count_by_sample($table, $sample, $field = 'Sample_ID') {
   return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
 }
 
@@ -109,7 +109,7 @@ function ensayos_pendientes($start, $end) {
   foreach ($tablas as $tabla) {
     // Detectar si la tabla tiene Sample_ID o Sample_Name
     $columnas = get_columns_for_table($tabla);
-    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_Name';
+    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_ID';
 
     // Cargar datos desde la tabla
     $datos = find_by_sql("
@@ -196,7 +196,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
   // Contenido de la tabla
   $pdf->SetFont('Arial', '', 9);
   foreach ($ensayos_reporte as $row) {
-    $sample = $row['Sample_Name'] . '-' . $row['Sample_Number'];
+    $sample = $row['Sample_ID'] . '-' . $row['Sample_ID'];
     $structure = $row['Structure'];
     $mat_type = $row['Material_Type'];
     $test_type = $row['Test_Type'];
@@ -216,7 +216,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
 function observaciones_ensayos_reporte($start, $end) {
   return find_by_sql("
     SELECT 
-      Sample_Name, 
+      Sample_ID, 
       Sample_Number, 
       Structure, 
       Material_Type, 
@@ -442,7 +442,7 @@ $pdf->Ln();
 // Cuerpo
 $pdf->SetFont('Arial', '', 9);
 foreach ($observaciones as $obs) {
-  $sample = $obs['Sample_Name'] . '-' . $obs['Sample_Number'];
+  $sample = $obs['Sample_Sample_ID'] . '-' . $obs['Sample_Number'];
   $pdf->Cell(40, 8, $sample, 1); 
   $pdf->Cell(30, 8, $obs['Material_Type'], 1);
   $pdf->Cell(120, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
