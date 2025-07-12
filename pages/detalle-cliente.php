@@ -115,7 +115,8 @@ include_once('../components/header.php');
 
 <script src="https://cdn.jsdelivr.net/npm/echarts"></script>
 <script>
-  let currentAnio = '', currentMes = '';
+  let currentAnio = '',
+    currentMes = '';
 
   document.getElementById('filtros').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -124,36 +125,60 @@ include_once('../components/header.php');
     currentMes = form.get('mes');
 
     fetch('../php/detalle_cliente_data.php', {
-      method: 'POST',
-      body: form
-    })
-    .then(res => res.json())
-    .then(data => {
-      const chartEnsayos = echarts.init(document.getElementById('chartEnsayos'));
-      const chartMuestras = echarts.init(document.getElementById('chartMuestras'));
+        method: 'POST',
+        body: form
+      })
+      .then(res => res.json())
+      .then(data => {
+        const chartEnsayos = echarts.init(document.getElementById('chartEnsayos'));
+        const chartMuestras = echarts.init(document.getElementById('chartMuestras'));
 
-      chartEnsayos.setOption({
-        title: { text: 'Ensayos por Cliente', left: 'center' },
-        tooltip: { trigger: 'item' },
-        series: [{ type: 'pie', radius: '60%', data: data.grafico.map(i => ({ name: i.cliente, value: i.ensayos })) }]
-      });
+        chartEnsayos.setOption({
+          title: {
+            text: 'Ensayos por Cliente',
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'item'
+          },
+          series: [{
+            type: 'pie',
+            radius: '60%',
+            data: data.grafico.map(i => ({
+              name: i.cliente,
+              value: i.ensayos
+            }))
+          }]
+        });
 
-      chartMuestras.setOption({
-        title: { text: 'Muestras por Cliente', left: 'center' },
-        tooltip: { trigger: 'item' },
-        series: [{ type: 'pie', radius: '60%', data: data.grafico.map(i => ({ name: i.cliente, value: i.muestras })) }]
-      });
+        chartMuestras.setOption({
+          title: {
+            text: 'Muestras por Cliente',
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'item'
+          },
+          series: [{
+            type: 'pie',
+            radius: '60%',
+            data: data.grafico.map(i => ({
+              name: i.cliente,
+              value: i.muestras
+            }))
+          }]
+        });
 
-      const tbody = document.getElementById('tablaSemana');
-      tbody.innerHTML = '';
-      data.muestras_semana.forEach(row => {
-        tbody.innerHTML += `<tr><td>${row.Client}</td><td>${row.Sample_ID}</td><td>${row.Sample_Number}</td><td>${row.Sample_Date}</td></tr>`;
-      });
+        const tbody = document.getElementById('tablaSemana');
+        tbody.innerHTML = '';
+        data.muestras_semana.forEach(row => {
+          tbody.innerHTML += `<tr><td>${row.Client}</td><td>${row.Sample_ID}</td><td>${row.Sample_Number}</td><td>${row.Sample_Date}</td></tr>`;
+        });
 
-      const tprogreso = document.getElementById('tablaProgreso');
-      tprogreso.innerHTML = '';
-      data.progreso.forEach(item => {
-        tprogreso.innerHTML += `
+        const tprogreso = document.getElementById('tablaProgreso');
+        tprogreso.innerHTML = '';
+        data.progreso.forEach(item => {
+          tprogreso.innerHTML += `
           <tr>
             <td>${item.Client}</td>
             <td>${item.Solicitados}</td>
@@ -165,8 +190,8 @@ include_once('../components/header.php');
             </td>
           </tr>
         `;
+        });
       });
-    });
   });
 </script>
 

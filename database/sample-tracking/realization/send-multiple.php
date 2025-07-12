@@ -80,7 +80,7 @@ function check_R($Sname, $Snumber, $Ttype)
     $SeachR = find_all("test_realization");
 
     foreach ($SeachR as $SeachR) {
-        if ($SeachR['Sample_Name'] == $Sname && $SeachR['Sample_Number'] == $Snumber && $SeachR['Test_Type'] == $Ttype) {
+        if ($SeachR['Sample_ID'] == $Sname && $SeachR['Sample_Number'] == $Snumber && $SeachR['Test_Type'] == $Ttype) {
             return true;
         }
     }

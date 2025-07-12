@@ -8,9 +8,9 @@ $type = isset($_GET['type']) ? strtoupper(trim($_GET['type'])) : '';
 // Obtener datos
 $data = [
     "Requisition" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date FROM lab_test_requisition_form"),
-    "Preparation" => find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_preparation"),
-    "Delivery" => find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery"),
-    "Review" => find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_review")
+    "Preparation" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation"),
+    "Delivery" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery"),
+    "Review" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_review")
 ];
 
 // Normalizar
@@ -24,7 +24,7 @@ $indexedStatus = [];
 
 foreach (["Preparation", "Delivery", "Review"] as $category) {
     foreach ($data[$category] as $entry) {
-        $key = normalize($entry["Sample_Name"]) . "|" . normalize($entry["Sample_Number"]) . "|" . normalize($entry["Test_Type"]);
+        $key = normalize($entry["Sample_ID"]) . "|" . normalize($entry["Sample_Number"]) . "|" . normalize($entry["Test_Type"]);
         $indexedStatus[$key] = true;
     }
 }

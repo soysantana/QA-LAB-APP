@@ -77,7 +77,7 @@ function check_p($Sname, $Snumber, $Ttype)
     $SeachP = find_all("test_preparation");
 
     foreach ($SeachP as $SeachP) {
-        if ($SeachP['Sample_Name'] == $Sname && $SeachP['Sample_Number'] == $Snumber && $SeachP['Test_Type'] == $Ttype) {
+        if ($SeachP['Sample_ID'] == $Sname && $SeachP['Sample_Number'] == $Snumber && $SeachP['Test_Type'] == $Ttype) {
             return true;
         }
     }

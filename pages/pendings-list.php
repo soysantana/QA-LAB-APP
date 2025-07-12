@@ -61,7 +61,7 @@ include_once('../components/header.php');
                   foreach ($tables_to_check as $table) {
                     $data = find_all($table);
                     foreach ($data as $row) {
-                      $key = normalize($row['Sample_Name']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
+                      $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
                       $indexed_status[$key] = true;
                     }
                   }
@@ -141,7 +141,7 @@ include_once('../components/header.php');
                       <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
                     </div>
                     <?php if (isset($columnaTipo[$t])): ?>
-                      <a href="../pdf/pendings.php?type=<?php echo urlencode($t); ?>"
+                      <a href="../pdf/pendings.php?type=<?php echo urlencode($t); ?>" target="_blank"
                         class="btn btn-secondary btn-sm ms-2" title="Generar PDF"><i class="bi bi-printer"></i></a>
                     <?php else: ?>
                       <span class="badge bg-danger">Err</span>

@@ -1,7 +1,7 @@
 <?php
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
-    $nombre     = $db->escape($_POST['Sample_Name']);
+    $nombre     = $db->escape($_POST['Sample_ID']);
     $numero     = $db->escape($_POST['Sample_Number']);
     $tipo       = $db->escape($_POST['Test_Type']);
     $registrado = $db->escape($_POST['Register_By']);
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
 
         if ($delete_result) {
             $session->msg("s", "✅ Muestra entregada y sincronizada correctamente.");
-           redirect('/pages/test-repeat.php', false);
+            redirect('/pages/test-repeat.php', false);
 
             exit;
         } else {
@@ -72,8 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send-delivery'])) {
     }
 } else {
     $session->msg("d", "❌ Solicitud inválida.");
-  redirect('/pages/test-repeat.php', false);
+    redirect('/pages/test-repeat.php', false);
 
     exit;
 }
-
