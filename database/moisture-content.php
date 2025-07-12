@@ -259,7 +259,7 @@ if (isset($_POST["repeat-mc-oven"])) {
             $SampleNumber = $search_data[0]["Sample_Number"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_repeat WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' AND Tracking = '{$ID}' LIMIT 1"
+                "SELECT * FROM test_repeat WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
             if (!$existing_record) {
@@ -270,7 +270,7 @@ if (isset($_POST["repeat-mc-oven"])) {
 
                 $sql = "INSERT INTO test_repeat (
                     id,
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Register_By,
@@ -326,7 +326,7 @@ if (isset($_POST["reviewed-mc-oven"])) {
             $RegisBy = $search_data[0]["Register_By"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_reviewed WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_reviewed WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Register_By = '{$RegisBy}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -336,7 +336,7 @@ if (isset($_POST["reviewed-mc-oven"])) {
 
                 $sql = "INSERT INTO test_reviewed (
                     id,
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Reviewed_By,
@@ -659,7 +659,7 @@ if (isset($_POST["repeat-mc-microwave"])) {
             $TestType = $search_data[0]["Test_Type"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_repeat WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_repeat WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -668,7 +668,7 @@ if (isset($_POST["repeat-mc-microwave"])) {
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Register_By,
@@ -720,7 +720,7 @@ if (isset($_POST["reviewed-mc-microwave"])) {
             $RegisBy = $search_data[0]["Register_By"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_reviewed WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_reviewed WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Register_By = '{$RegisBy}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -731,7 +731,7 @@ if (isset($_POST["reviewed-mc-microwave"])) {
 
                 $sql = "INSERT INTO test_reviewed (
                     id,
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Reviewed_By,
@@ -1054,7 +1054,7 @@ if (isset($_POST["repeat-mc-constant-mass"])) {
             $TestType = $search_data[0]["Test_Type"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_repeat WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_repeat WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -1063,7 +1063,7 @@ if (isset($_POST["repeat-mc-constant-mass"])) {
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Register_By,
@@ -1115,7 +1115,7 @@ if (isset($_POST["reviewed-mc-constant-mass"])) {
             $RegisBy = $search_data[0]["Register_By"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_reviewed WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_reviewed WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Register_By = '{$RegisBy}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -1126,7 +1126,7 @@ if (isset($_POST["reviewed-mc-constant-mass"])) {
 
                 $sql = "INSERT INTO test_reviewed (
                     id,
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Reviewed_By,
