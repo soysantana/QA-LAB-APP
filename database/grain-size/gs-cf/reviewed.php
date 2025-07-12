@@ -1,7 +1,7 @@
 <?php
 $user = current_user();
 
- if (isset($_POST["reviewed-gs-coarse"])) {
+if (isset($_POST["reviewed-gs-coarse"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
@@ -17,7 +17,7 @@ $user = current_user();
             $RegisBy = $search_data[0]["Register_By"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_reviewed WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_reviewed WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Register_By = '{$RegisBy}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -28,7 +28,7 @@ $user = current_user();
 
                 $sql = "INSERT INTO test_reviewed (
                     id,
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Reviewed_By,
@@ -62,5 +62,4 @@ $user = current_user();
         }
     } else {
     }
- }
-?>
+}

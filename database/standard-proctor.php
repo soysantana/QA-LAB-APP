@@ -360,7 +360,7 @@ if (isset($_POST["repeat-sp"])) {
             $TestType = $search_data[0]["Test_Type"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_repeat WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_repeat WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -369,7 +369,7 @@ if (isset($_POST["repeat-sp"])) {
                 $RegisterBy = $user["name"];
 
                 $sql = "INSERT INTO test_repeat (
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Register_By,
@@ -421,7 +421,7 @@ if (isset($_POST["reviewed-sp"])) {
             $RegisBy = $search_data[0]["Register_By"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_reviewed WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_reviewed WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Register_By = '{$RegisBy}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -430,7 +430,7 @@ if (isset($_POST["reviewed-sp"])) {
                 $ReviewedBy = $user["name"];
 
                 $sql = "INSERT INTO test_reviewed (
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Reviewed_By,

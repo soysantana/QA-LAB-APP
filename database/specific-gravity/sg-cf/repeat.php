@@ -16,7 +16,7 @@ if (isset($_POST["repeat-sg-coarse"])) {
             $TestType = $search_data[0]["Test_Type"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_repeat WHERE Sample_Name = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                "SELECT * FROM test_repeat WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
                 AND Test_Type = '{$TestType}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
@@ -27,7 +27,7 @@ if (isset($_POST["repeat-sg-coarse"])) {
 
                 $sql = "INSERT INTO test_repeat (
                     id,
-                    Sample_Name,
+                    Sample_ID,
                     Sample_Number,
                     Start_Date,
                     Send_By,
