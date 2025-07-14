@@ -227,15 +227,20 @@ function render_ensayos_reporte($pdf, $start, $end) {
         $x = $pdf->GetX();
         $y = $pdf->GetY();
 
-        for ($i = 0; $i < count($values); $i++) {
-            $pdf->Rect($x, $y, $widths[$i], $row_height);
-            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
-            $x += $widths[$i];
-            $pdf->SetXY($x, $y); // ← Esto es clave para mantener la posición de celda en fila
-        }
+       // Dibujo de celdas con altura uniforme sin duplicar salto
+$x = $pdf->GetX();
+$y = $pdf->GetY();
 
-        // Mover a la siguiente fila
-        $pdf->SetY($y + $row_height);
+for ($i = 0; $i < count($values); $i++) {
+    $current_x = $x;
+    $pdf->Rect($current_x, $y, $widths[$i], $row_height); // Borde de celda
+    $pdf->SetXY($current_x, $y); // Ir a esquina superior de la celda
+    $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L'); // Contenido
+    $x += $widths[$i]; // Mover a siguiente columna
+}
+
+$pdf->SetY($y + $row_height); // Solo aquí se baja una vez
+
     }
 }
 
