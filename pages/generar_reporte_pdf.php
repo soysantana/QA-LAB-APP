@@ -62,7 +62,7 @@ function resumen_entregas_por_cliente($end) {
     $total_solicitados++;
 
     if (isset($entregado_map[$key])) {
-      $stats[$cliente]['entregados']++;
+      $stats[$cliente]['entregados']++; 
       $total_entregados++;
     }
   }
