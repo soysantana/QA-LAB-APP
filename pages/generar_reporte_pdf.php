@@ -192,6 +192,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
 
     // Cuerpo
     $pdf->SetFont('Arial', '', 9);
+    $line_height = 5;
     foreach ($ensayos_reporte as $row) {
         $values = [
             $row['Sample_ID'] . '-' . $row['Sample_Number'],
@@ -199,7 +200,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $row['Material_Type'],
             $row['Test_Type'],
             $row['Test_Condition'],
-            $row['Comments']
+            trim($row['Comments'])
         ];
 
         // Calcular número de líneas por celda
@@ -210,12 +211,12 @@ function render_ensayos_reporte($pdf, $start, $end) {
 
         // Altura máxima de la fila
         $max_lines = max($nb_lines);
-        $line_height = 5;
         $row_height = $line_height * $max_lines;
 
         // Verificar si hay espacio en la página
         if ($pdf->GetY() + $row_height > ($pdf->GetPageHeight() - 10)) {
             $pdf->AddPage();
+            // Reimprimir encabezado
             $pdf->SetFont('Arial', 'B', 9);
             foreach ($headers as $i => $h) {
                 $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
@@ -224,7 +225,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $pdf->SetFont('Arial', '', 9);
         }
 
-        // Imprimir fila con altura uniforme
+        // Imprimir fila con celdas adaptadas
         $x = $pdf->GetX();
         $y = $pdf->GetY();
         for ($i = 0; $i < count($values); $i++) {
@@ -233,9 +234,12 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $x += $widths[$i];
             $pdf->SetXY($x, $y);
         }
-        $pdf->Ln($row_height);
+
+        // No agregar Ln aquí porque ya se controló la altura con SetXY
+        $pdf->SetY($y + $row_height);
     }
 }
+
 
 
 function observaciones_ensayos_reporte($start, $end) {
