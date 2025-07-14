@@ -21,41 +21,40 @@ function get_count($table, $field, $start, $end) {
   return (int)$r[0]['total'];
 }
 
-function resumen_entregas_por_cliente( $end) {
+function resumen_entregas_por_cliente($end) {
   $stats = [];
   $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
 
-  // Obtener solicitudes de ensayos en el rango de fechas
+  // Obtener solicitudes en el rango
   $solicitudes = find_by_sql("
     SELECT Client, Sample_ID, Sample_Number, Test_Type
     FROM lab_test_requisition_form
     WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
   ");
 
-  // Obtener todas las entregas registradas
+  // Obtener entregas (sin filtrar fecha)
   $entregas = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery");
 
-  // Mapear entregas
+  // Mapa de entregas
   $entregado_map = [];
   foreach ($entregas as $e) {
     $key = strtoupper(trim($e['Sample_ID'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
     $entregado_map[$key] = true;
   }
 
-  // Procesar progreso por cliente
+  // Proceso agrupado por cliente
   foreach ($solicitudes as $s) {
-    $cliente = $s['Client'] ?: 'Pending Inf';
+    $cliente = strtoupper(trim($s['Client'])) ?: 'PENDING INFO';
     $sample_id = strtoupper(trim($s['Sample_ID']));
     $sample_num = strtoupper(trim($s['Sample_Number']));
     $test_type = strtoupper(trim($s['Test_Type']));
-    $key = $sample_id . '|' . $sample_num . '|' . $test_type;
+    $key = "{$sample_id}|{$sample_num}|{$test_type}";
 
     if (!isset($stats[$cliente])) {
       $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0];
     }
 
     $stats[$cliente]['solicitados']++;
-
     if (isset($entregado_map[$key])) {
       $stats[$cliente]['entregados']++;
     }
@@ -63,6 +62,7 @@ function resumen_entregas_por_cliente( $end) {
 
   return $stats;
 }
+
 
 
 function count_by_sample($table, $sample, $field = 'Sample_ID') {
