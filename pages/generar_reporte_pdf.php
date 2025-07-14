@@ -109,7 +109,7 @@ function ensayos_pendientes($start, $end) {
   foreach ($tablas as $tabla) {
     // Detectar si la tabla tiene Sample_ID o Sample_Name
     $columnas = get_columns_for_table($tabla);
-    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_ID';
+    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_Name';
 
     // Cargar datos desde la tabla
     $datos = find_by_sql("
@@ -222,107 +222,43 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $pdf->Ln();
             $pdf->SetFont('Arial', '', 9);
         }
-// Dibujar cada celda con su respectivo contenido SIN mover el cursor con MultiCell
-$x = $pdf->GetX();
-$y = $pdf->GetY();
 
-for ($i = 0; $i < count($values); $i++) {
-    // Dibujar borde
-    $pdf->Rect($x, $y, $widths[$i], $row_height);
-
-    // Guardar posición actual
-    $x_before = $pdf->GetX();
-    $y_before = $pdf->GetY();
-
-    // Imprimir texto con MultiCell SIN alterar el cursor global
-    $pdf->SetXY($x, $y);
-    $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
-
-    // Restaurar XY para la próxima celda en la misma fila
-    $x += $widths[$i];
-    $pdf->SetXY($x, $y_before);
-}
-
-// Mover Y a la siguiente fila manualmente (una sola vez)
-$pdf->SetY($y + $row_height);
-
-    }
-}
-
-
-
-function render_observaciones_ensayos_reporte($pdf, $start, $end) {
-    $observaciones = find_by_sql("
-        SELECT 
-            Sample_ID, 
-            Sample_Number, 
-            Material_Type, 
-            Noconformidad 
-        FROM ensayos_reporte 
-        WHERE 
-            Noconformidad IS NOT NULL 
-            AND TRIM(Noconformidad) != '' 
-            AND Report_Date BETWEEN '{$start}' AND '{$end}'
-    ");
-
-    $pdf->section_title("9. Summary of Observations/Non-Conformities");
-
-    // Encabezado
-    $headers = ['Sample', 'Material Type', 'Observations'];
-    $widths  = [40, 30, 120];
-    $pdf->SetFont('Arial', 'B', 9);
-    foreach ($headers as $i => $h) {
-        $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
-    }
-    $pdf->Ln();
-
-    // Cuerpo
-    $pdf->SetFont('Arial', '', 9);
-    $line_height = 5;
-    foreach ($observaciones as $row) {
-        $values = [
-            $row['Sample_ID'] . '-' . $row['Sample_Number'],
-            $row['Material_Type'],
-            trim($row['Noconformidad'])
-        ];
-
-        // Calcular líneas necesarias por celda
-        $nb_lines = [];
-        for ($i = 0; $i < count($values); $i++) {
-            $nb_lines[] = $pdf->NbLines($widths[$i], $values[$i]);
-        }
-
-        $max_lines = max($nb_lines);
-        $row_height = $line_height * $max_lines;
-
-        // Verificar si cabe en la página
-        if ($pdf->GetY() + $row_height > ($pdf->GetPageHeight() - 10)) {
-            $pdf->AddPage();
-            $pdf->SetFont('Arial', 'B', 9);
-            foreach ($headers as $i => $h) {
-                $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
-            }
-            $pdf->Ln();
-            $pdf->SetFont('Arial', '', 9);
-        }
-
-        // Dibujar celdas
+        // Dibujar cada celda con su respectivo contenido
         $x = $pdf->GetX();
         $y = $pdf->GetY();
+
         for ($i = 0; $i < count($values); $i++) {
             $pdf->Rect($x, $y, $widths[$i], $row_height);
             $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
             $x += $widths[$i];
-            $pdf->SetXY($x, $y);
+            $pdf->SetXY($x, $y); // ← Esto es clave para mantener la posición de celda en fila
         }
+
+        // Mover a la siguiente fila
         $pdf->SetY($y + $row_height);
     }
 }
 
 
+function observaciones_ensayos_reporte($start, $end) {
+  return find_by_sql("
+    SELECT 
+      Sample_ID, 
+      Sample_Number, 
+      Structure, 
+      Material_Type, 
+      Noconformidad 
+    FROM ensayos_reporte 
+    WHERE 
+      Noconformidad IS NOT NULL 
+      AND TRIM(Noconformidad) != '' 
+      AND Report_Date BETWEEN '{$start}' AND '{$end}'
+  ");
+}
+
 
 class PDF extends FPDF {
- function NbLines($w, $txt) {
+  function NbLines($w, $txt) {
     $cw = &$this->CurrentFont['cw'];
     if ($w == 0) $w = $this->w - $this->rMargin - $this->x;
     $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
@@ -362,7 +298,6 @@ class PDF extends FPDF {
     }
     return $nl;
 }
-
   public $day_of_week;
   public $week_number;
   public $fecha_en;
@@ -560,12 +495,28 @@ $pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, 
 render_ensayos_reporte($pdf, $start, $end);
 $pdf->Ln(5);
 
-$pdf->AddPage();
+$pdf->section_title("9. Summary of Observations/Non-Conformities");
 
-render_observaciones_ensayos_reporte($pdf, $start, $end);
+$observaciones = observaciones_ensayos_reporte($start, $end);
+
+// Encabezado
+$pdf->SetFont('Arial', 'B', 9);
+$pdf->Cell(40, 8, 'Sample', 1);
+$pdf->Cell(30, 8, 'Material Type', 1);
+$pdf->Cell(120, 8, 'Observations', 1);
+$pdf->Ln();
+
+// Cuerpo
+$pdf->SetFont('Arial', '', 9);
+foreach ($observaciones as $obs) {
+  $sample = $obs['Sample_IDS'] . '-' . $obs['Sample_Number'];
+  $pdf->Cell(40, 8, $sample, 1); 
+  $pdf->Cell(30, 8, $obs['Material_Type'], 1);
+  $pdf->Cell(120, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
+  $pdf->Ln();
+}
 
 $pdf->Ln(5);
-
 
 $pdf->section_title("10. Responsible");
 $pdf->SetFont('Arial', '', 10);
