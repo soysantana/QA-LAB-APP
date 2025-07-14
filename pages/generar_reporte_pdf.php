@@ -193,56 +193,51 @@ function render_ensayos_reporte($pdf, $start, $end) {
     $pdf->Ln();
 
     $pdf->SetFont('Arial', '', 9);
+foreach ($ensayos_reporte as $row) {
+    $values = [
+        $row['Sample_ID'] . '-' . $row['Sample_Number'],
+        $row['Structure'],
+        $row['Material_Type'],
+        $row['Test_Type'],
+        $row['Test_Condition'],
+        $row['Comments']
+    ];
 
-    foreach ($ensayos_reporte as $row) {
-        $values = [
-            $row['Sample_ID'] . '-' . $row['Sample_Number'],
-            $row['Structure'],
-            $row['Material_Type'],
-            $row['Test_Type'],
-            $row['Test_Condition'],
-            $row['Comments']
-        ];
-
-        // Calcular la cantidad de líneas necesarias por celda
-        $nb_lines = [];
-        foreach ($values as $i => $val) {
-            $nb_lines[] = $pdf->NbLines($widths[$i], $val);
-        }
-        $max_lines = max($nb_lines);
-        $row_height = $line_height * $max_lines;
-
-        // Validar si cabe en la página
-        if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 10) {
-            $pdf->AddPage();
-            $pdf->SetFont('Arial', 'B', 9);
-            foreach ($headers as $i => $h) {
-                $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
-            }
-            $pdf->Ln();
-            $pdf->SetFont('Arial', '', 9);
-        }
-
-        // Dibujar cada celda con su respectivo contenido
-        $x = $pdf->GetX();
-        $y = $pdf->GetY();
-
-       // Dibujo de celdas con altura uniforme sin duplicar salto
-$x = $pdf->GetX();
-$y = $pdf->GetY();
-
-for ($i = 0; $i < count($values); $i++) {
-    $current_x = $x;
-    $pdf->Rect($current_x, $y, $widths[$i], $row_height); // Borde de celda
-    $pdf->SetXY($current_x, $y); // Ir a esquina superior de la celda
-    $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L'); // Contenido
-    $x += $widths[$i]; // Mover a siguiente columna
-}
-
-$pdf->SetY($y + $row_height); // Solo aquí se baja una vez
-
+    // Calcular número de líneas por celda
+    $nb_lines = [];
+    foreach ($values as $i => $val) {
+        $nb_lines[] = $pdf->NbLines($widths[$i], $val);
     }
+
+    $max_lines = max($nb_lines);
+    $row_height = $line_height * $max_lines;
+
+    // Verificar espacio en página
+    if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 10) {
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 9);
+        foreach ($headers as $i => $h) {
+            $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+        }
+        $pdf->Ln();
+        $pdf->SetFont('Arial', '', 9);
+    }
+
+    // Guardar posición inicial
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+
+    // Imprimir cada celda de la fila
+    for ($i = 0; $i < count($values); $i++) {
+        $pdf->SetXY($x, $y);
+        $pdf->MultiCell($widths[$i], $line_height, $values[$i], 1, 'L');
+        $x += $widths[$i];
+    }
+
+    // Ajustar posición Y para la siguiente fila
+    $pdf->SetY($y + $row_height);
 }
+
 
 
 function observaciones_ensayos_reporte($start, $end) {
