@@ -537,7 +537,7 @@ foreach ($observaciones as $obs) {
     $pdf->SetXY($x, $y + $row_height);
 }
 
-
+$pdf->Ln(5);
 
 
 $pdf->section_title("10. Responsible");
