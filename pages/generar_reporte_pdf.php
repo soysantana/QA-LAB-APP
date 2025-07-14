@@ -242,21 +242,74 @@ function render_ensayos_reporte($pdf, $start, $end) {
 
 
 
-function observaciones_ensayos_reporte($start, $end) {
-  return find_by_sql("
-    SELECT 
-      Sample_ID, 
-      Sample_Number, 
-      Structure, 
-      Material_Type, 
-      Noconformidad 
-    FROM ensayos_reporte 
-    WHERE 
-      Noconformidad IS NOT NULL 
-      AND TRIM(Noconformidad) != '' 
-      AND Report_Date BETWEEN '{$start}' AND '{$end}'
-  ");
+function render_observaciones_ensayos_reporte($pdf, $start, $end) {
+    $observaciones = find_by_sql("
+        SELECT 
+            Sample_ID, 
+            Sample_Number, 
+            Material_Type, 
+            Noconformidad 
+        FROM ensayos_reporte 
+        WHERE 
+            Noconformidad IS NOT NULL 
+            AND TRIM(Noconformidad) != '' 
+            AND Report_Date BETWEEN '{$start}' AND '{$end}'
+    ");
+
+    $pdf->section_title("9. Summary of Observations/Non-Conformities");
+
+    // Encabezado
+    $headers = ['Sample', 'Material Type', 'Observations'];
+    $widths  = [40, 30, 120];
+    $pdf->SetFont('Arial', 'B', 9);
+    foreach ($headers as $i => $h) {
+        $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+    }
+    $pdf->Ln();
+
+    // Cuerpo
+    $pdf->SetFont('Arial', '', 9);
+    $line_height = 5;
+    foreach ($observaciones as $row) {
+        $values = [
+            $row['Sample_ID'] . '-' . $row['Sample_Number'],
+            $row['Material_Type'],
+            trim($row['Noconformidad'])
+        ];
+
+        // Calcular líneas necesarias por celda
+        $nb_lines = [];
+        for ($i = 0; $i < count($values); $i++) {
+            $nb_lines[] = $pdf->NbLines($widths[$i], $values[$i]);
+        }
+
+        $max_lines = max($nb_lines);
+        $row_height = $line_height * $max_lines;
+
+        // Verificar si cabe en la página
+        if ($pdf->GetY() + $row_height > ($pdf->GetPageHeight() - 10)) {
+            $pdf->AddPage();
+            $pdf->SetFont('Arial', 'B', 9);
+            foreach ($headers as $i => $h) {
+                $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+            }
+            $pdf->Ln();
+            $pdf->SetFont('Arial', '', 9);
+        }
+
+        // Dibujar celdas
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+        for ($i = 0; $i < count($values); $i++) {
+            $pdf->Rect($x, $y, $widths[$i], $row_height);
+            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
+            $x += $widths[$i];
+            $pdf->SetXY($x, $y);
+        }
+        $pdf->SetY($y + $row_height);
+    }
 }
+
 
 
 class PDF extends FPDF {
@@ -498,48 +551,11 @@ $pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, 
 render_ensayos_reporte($pdf, $start, $end);
 $pdf->Ln(5);
 
-$pdf->section_title("9. Summary of Observations/Non-Conformities");
+
 
 $observaciones = observaciones_ensayos_reporte($start, $end);
 
-// Encabezado
-$pdf->SetFont('Arial', 'B', 9);
-$pdf->Cell(40, 8, 'Sample', 1, 0, 'C');
-$pdf->Cell(30, 8, 'Material Type', 1, 0, 'C');
-$pdf->Cell(120, 8, 'Observations', 1, 1, 'C');
 
-// Cuerpo
-$pdf->SetFont('Arial', '', 9);
-$line_height = 5;
-
-foreach ($observaciones as $obs) {
-    $sample     = $obs['Sample_ID'] . '-' . $obs['Sample_Number'];
-    $mat_type   = $obs['Material_Type'];
-    $ob_text    = trim($obs['Noconformidad']);
-
-    // Calcular número de líneas necesarias
-    $n_lines = $pdf->NbLines(120, $ob_text); // Solo se necesita para la celda más alta
-    $row_height = $line_height * $n_lines;
-
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
-
-    // Sample (altura igual al comentario)
-    $pdf->Rect($x, $y, 40, $row_height);
-    $pdf->MultiCell(40, $line_height, $sample, 0, 'L');
-    $pdf->SetXY($x + 40, $y);
-
-    // Material Type
-    $pdf->Rect($x + 40, $y, 30, $row_height);
-    $pdf->MultiCell(30, $line_height, $mat_type, 0, 'L');
-    $pdf->SetXY($x + 70, $y);
-
-    // Observations
-    $pdf->MultiCell(120, $line_height, $ob_text, 1, 'L');
-
-    // Mover a siguiente fila
-    $pdf->SetXY($x, $y + $row_height);
-}
 
 $pdf->Ln(5);
 
