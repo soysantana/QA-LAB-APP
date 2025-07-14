@@ -181,18 +181,18 @@ function render_ensayos_reporte($pdf, $start, $end) {
 
     $pdf->section_title("8. Summary of Dam Constructions Test");
 
-    // Encabezado
     $headers = ['Sample', 'Structure', 'Mat. Type', 'Test Type', 'Condition', 'Comments'];
     $widths = [35, 25, 25, 30, 20, 55];
+    $line_height = 5;
+
+    // Encabezado
     $pdf->SetFont('Arial', 'B', 9);
     foreach ($headers as $i => $h) {
         $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
     }
     $pdf->Ln();
 
-    // Cuerpo
     $pdf->SetFont('Arial', '', 9);
-    $line_height = 5;
 
     foreach ($ensayos_reporte as $row) {
         $values = [
@@ -204,17 +204,16 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $row['Comments']
         ];
 
-        // Calcular número de líneas por celda
+        // Calcular la cantidad de líneas necesarias por celda
         $nb_lines = [];
-        for ($i = 0; $i < count($values); $i++) {
-            $nb_lines[] = $pdf->NbLines($widths[$i], $values[$i]);
+        foreach ($values as $i => $val) {
+            $nb_lines[] = $pdf->NbLines($widths[$i], $val);
         }
-
         $max_lines = max($nb_lines);
-        $row_height = $max_lines * $line_height;
+        $row_height = $line_height * $max_lines;
 
-        // Verificar si hay espacio suficiente
-        if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 15) {
+        // Validar si cabe en la página
+        if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 10) {
             $pdf->AddPage();
             $pdf->SetFont('Arial', 'B', 9);
             foreach ($headers as $i => $h) {
@@ -224,21 +223,21 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $pdf->SetFont('Arial', '', 9);
         }
 
+        // Dibujar cada celda con su respectivo contenido
         $x = $pdf->GetX();
         $y = $pdf->GetY();
 
-        // Imprimir celdas alineadas en altura
         for ($i = 0; $i < count($values); $i++) {
-            $pdf->SetXY($x, $y);
-            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 1, 'L');
+            $pdf->Rect($x, $y, $widths[$i], $row_height);
+            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
             $x += $widths[$i];
+            $pdf->SetXY($x, $y); // ← Esto es clave para mantener la posición de celda en fila
         }
 
         // Mover a la siguiente fila
         $pdf->SetY($y + $row_height);
     }
 }
-
 
 
 
