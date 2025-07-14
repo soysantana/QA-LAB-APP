@@ -493,7 +493,7 @@ $pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, 
 
 render_ensayos_reporte($pdf, $start, $end);
 $pdf->Ln(5);
-$pdf->AddPage();
+
 $pdf->section_title("9. Summary of Observations/Non-Conformities");
 
 $observaciones = observaciones_ensayos_reporte($start, $end);
