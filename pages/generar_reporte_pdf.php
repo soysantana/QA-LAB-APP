@@ -553,9 +553,7 @@ $pdf->Ln(5);
 
 
 
-$observaciones = observaciones_ensayos_reporte($start, $end);
-
-
+render_observaciones_ensayos_reporte($pdf, $start, $end);
 
 $pdf->Ln(5);
 
