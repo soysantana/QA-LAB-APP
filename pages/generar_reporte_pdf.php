@@ -551,7 +551,7 @@ $pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, 
 render_ensayos_reporte($pdf, $start, $end);
 $pdf->Ln(5);
 
-
+$pdf->AddPage();
 
 render_observaciones_ensayos_reporte($pdf, $start, $end);
 
