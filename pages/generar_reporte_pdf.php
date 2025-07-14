@@ -193,6 +193,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
     // Cuerpo
     $pdf->SetFont('Arial', '', 9);
     $line_height = 5;
+
     foreach ($ensayos_reporte as $row) {
         $values = [
             $row['Sample_ID'] . '-' . $row['Sample_Number'],
@@ -200,7 +201,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $row['Material_Type'],
             $row['Test_Type'],
             $row['Test_Condition'],
-            trim($row['Comments'])
+            $row['Comments']
         ];
 
         // Calcular número de líneas por celda
@@ -209,14 +210,12 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $nb_lines[] = $pdf->NbLines($widths[$i], $values[$i]);
         }
 
-        // Altura máxima de la fila
         $max_lines = max($nb_lines);
-        $row_height = $line_height * $max_lines;
+        $row_height = $max_lines * $line_height;
 
-        // Verificar si hay espacio en la página
-        if ($pdf->GetY() + $row_height > ($pdf->GetPageHeight() - 10)) {
+        // Verificar si hay espacio suficiente
+        if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 15) {
             $pdf->AddPage();
-            // Reimprimir encabezado
             $pdf->SetFont('Arial', 'B', 9);
             foreach ($headers as $i => $h) {
                 $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
@@ -225,20 +224,21 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $pdf->SetFont('Arial', '', 9);
         }
 
-        // Imprimir fila con celdas adaptadas
         $x = $pdf->GetX();
         $y = $pdf->GetY();
+
+        // Imprimir celdas alineadas en altura
         for ($i = 0; $i < count($values); $i++) {
-            $pdf->Rect($x, $y, $widths[$i], $row_height);
-            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
-            $x += $widths[$i];
             $pdf->SetXY($x, $y);
+            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 1, 'L');
+            $x += $widths[$i];
         }
 
-        // No agregar Ln aquí porque ya se controló la altura con SetXY
+        // Mover a la siguiente fila
         $pdf->SetY($y + $row_height);
     }
 }
+
 
 
 
