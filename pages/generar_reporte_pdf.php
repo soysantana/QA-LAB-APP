@@ -177,66 +177,41 @@ function resumen_tipo($start, $end) {
 
 
 function render_ensayos_reporte($pdf, $start, $end) {
-    $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
+  // Obtener datos desde la tabla `ensayos_reporte`
+  $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
 
-    $pdf->section_title("8. Summary of Dam Constructions Test");
+  // Título de la sección
+  $pdf->section_title("8. Summary of Dam Constructions Test");
 
-    $headers = ['Sample', 'Structure', 'Mat. Type', 'Test Type', 'Condition', 'Comments'];
-    $widths = [35, 25, 25, 30, 20, 55];
-    $line_height = 5;
+  // Encabezados de la tabla
+  $pdf->SetFont('Arial', 'B', 9);
+  $pdf->Cell(35, 8, 'Sample', 1);
+  $pdf->Cell(25, 8, 'Structure', 1);
+  $pdf->Cell(25, 8, 'Mat. Type', 1);
+  $pdf->Cell(30, 8, 'Test Type', 1);
+  $pdf->Cell(20, 8, 'Condition', 1);
+  $pdf->Cell(55, 8, 'Comments', 1);
+  $pdf->Ln();
 
-    // Encabezado
-    $pdf->SetFont('Arial', 'B', 9);
-    foreach ($headers as $i => $h) {
-        $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
-    }
+  // Contenido de la tabla
+  $pdf->SetFont('Arial', '', 9);
+  foreach ($ensayos_reporte as $row) {
+    $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
+    $structure = $row['Structure'];
+    $mat_type = $row['Material_Type'];
+    $test_type = $row['Test_Type'];
+    $condition = $row['Test_Condition'];
+    $comments = substr($row['Comments'], 0, 45); // Limita comentarios largos
+
+    $pdf->Cell(35, 8, $sample, 1);
+    $pdf->Cell(25, 8, $structure, 1);
+    $pdf->Cell(25, 8, $mat_type, 1);
+    $pdf->Cell(30, 8, $test_type, 1);
+    $pdf->Cell(20, 8, $condition, 1);
+    $pdf->Cell(55, 8, $comments, 1);
     $pdf->Ln();
-    $pdf->SetFont('Arial', '', 9);
-
-    foreach ($ensayos_reporte as $row) {
-        $values = [
-            $row['Sample_ID'] . '-' . $row['Sample_Number'],
-            $row['Structure'],
-            $row['Material_Type'],
-            $row['Test_Type'],
-            $row['Test_Condition'],
-            $row['Comments']
-        ];
-
-        // Calcular líneas por columna
-        $nb_lines = [];
-        foreach ($values as $i => $val) {
-            $nb_lines[] = $pdf->NbLines($widths[$i], $val);
-        }
-        $max_lines = max($nb_lines);
-        $row_height = $line_height * $max_lines;
-
-        // Salto de página si no cabe
-        if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 10) {
-            $pdf->AddPage();
-            $pdf->SetFont('Arial', 'B', 9);
-            foreach ($headers as $i => $h) {
-                $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
-            }
-            $pdf->Ln();
-            $pdf->SetFont('Arial', '', 9);
-        }
-
-        // Dibujar fila correctamente
-        $x = $pdf->GetX();
-        $y = $pdf->GetY();
-
-        for ($i = 0; $i < count($values); $i++) {
-            $pdf->Rect($x, $y, $widths[$i], $row_height);
-            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
-            $x += $widths[$i];
-            $pdf->SetXY($x, $y);
-        }
-
-        $pdf->SetY($y + $row_height);
-    }
+  }
 }
-
 
 function observaciones_ensayos_reporte($start, $end) {
   return find_by_sql("
@@ -256,48 +231,6 @@ function observaciones_ensayos_reporte($start, $end) {
 
 
 class PDF extends FPDF {
- function NbLines($w, $txt) {
-    $cw = &$this->CurrentFont['cw'];
-    if ($w == 0) $w = $this->w - $this->rMargin - $this->x;
-    $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
-    $s = str_replace("\r", '', $txt);
-    $nb = strlen($s);
-    if ($nb > 0 and $s[$nb - 1] == "\n") $nb--;
-    $sep = -1;
-    $i = 0;
-    $j = 0;
-    $l = 0;
-    $nl = 1;
-    while ($i < $nb) {
-        $c = $s[$i];
-        if ($c == "\n") {
-            $i++;
-            $sep = -1;
-            $j = $i;
-            $l = 0;
-            $nl++;
-            continue;
-        }
-        if ($c == ' ') $sep = $i;
-        $l += $cw[$c];
-        if ($l > $wmax) {
-            if ($sep == -1) {
-                if ($i == $j) $i++;
-            } else {
-                $i = $sep + 1;
-            }
-            $sep = -1;
-            $j = $i;
-            $l = 0;
-            $nl++;
-        } else {
-            $i++;
-        }
-    }
-    return $nl;
-}
-
-
   public $day_of_week;
   public $week_number;
   public $fecha_en;
@@ -394,8 +327,6 @@ if (
     }
     $this->Ln(3);
   }
-
-  
 }
 
 $pdf = new PDF($fecha_en);
