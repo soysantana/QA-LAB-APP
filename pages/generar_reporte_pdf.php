@@ -109,7 +109,7 @@ function ensayos_pendientes($start, $end) {
   foreach ($tablas as $tabla) {
     // Detectar si la tabla tiene Sample_ID o Sample_Name
     $columnas = get_columns_for_table($tabla);
-    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_Name';
+    $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_ID';
 
     // Cargar datos desde la tabla
     $datos = find_by_sql("
