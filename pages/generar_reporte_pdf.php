@@ -20,33 +20,24 @@ function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
 }
-
 function resumen_entregas_por_cliente($end) {
   $stats = [];
   $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
 
-  // Obtener solicitudes
   $solicitudes = find_by_sql("
     SELECT Client, Sample_ID, Sample_Number, Test_Type
     FROM lab_test_requisition_form
     WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
   ");
 
-  // Obtener entregas (sin filtrar por fecha)
   $entregas = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery");
 
-  // Crear mapa de entregas para coincidencia rápida
   $entregado_map = [];
   foreach ($entregas as $e) {
     $key = strtoupper(trim($e['Sample_ID'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
     $entregado_map[$key] = true;
   }
 
-  // Inicializar totales globales
-  $total_solicitados = 0;
-  $total_entregados = 0;
-
-  // Procesar cada solicitud
   foreach ($solicitudes as $s) {
     $cliente = strtoupper(trim($s['Client'])) ?: 'PENDING INFO';
     $sample_id = strtoupper(trim($s['Sample_ID']));
@@ -59,31 +50,21 @@ function resumen_entregas_por_cliente($end) {
     }
 
     $stats[$cliente]['solicitados']++;
-    $total_solicitados++;
 
     if (isset($entregado_map[$key])) {
-      $stats[$cliente]['entregados']++; 
-      $total_entregados++;
+      $stats[$cliente]['entregados']++;
     }
   }
 
-  // Calcular porcentaje por cliente
   foreach ($stats as $cliente => $val) {
     $s = $val['solicitados'];
     $e = $val['entregados'];
-    
     $stats[$cliente]['porcentaje'] = $s > 0 ? round(($e / $s) * 100, 2) : 0;
   }
 
-  // Agregar resumen global
-  $stats['_TOTAL_'] = [
-    'solicitados' => $total_solicitados,
-    'entregados' => $total_entregados,
-    'porcentaje' => $total_solicitados > 0 ? round(($total_entregados / $total_solicitados) * 100, 2) : 0
-  ];
-
   return $stats;
 }
+
 
 
 
