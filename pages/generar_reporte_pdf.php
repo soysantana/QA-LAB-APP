@@ -71,6 +71,7 @@ function resumen_entregas_por_cliente($end) {
   foreach ($stats as $cliente => $val) {
     $s = $val['solicitados'];
     $e = $val['entregados'];
+    
     $stats[$cliente]['porcentaje'] = $s > 0 ? round(($e / $s) * 100, 2) : 0;
   }
 
