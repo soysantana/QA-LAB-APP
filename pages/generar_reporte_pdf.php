@@ -95,7 +95,7 @@ function ensayos_pendientes($start, $end) {
     SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
-      AND client = 'TSF Llagal'
+      
   ");
 
   // Tablas donde puede aparecer un ensayo ya ejecutado
