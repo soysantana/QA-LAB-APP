@@ -191,53 +191,51 @@ function render_ensayos_reporte($pdf, $start, $end) {
         $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
     }
     $pdf->Ln();
-
     $pdf->SetFont('Arial', '', 9);
-foreach ($ensayos_reporte as $row) {
-    $values = [
-        $row['Sample_ID'] . '-' . $row['Sample_Number'],
-        $row['Structure'],
-        $row['Material_Type'],
-        $row['Test_Type'],
-        $row['Test_Condition'],
-        $row['Comments']
-    ];
 
-    // Calcular número de líneas por celda
-    $nb_lines = [];
-    foreach ($values as $i => $val) {
-        $nb_lines[] = $pdf->NbLines($widths[$i], $val);
-    }
+    foreach ($ensayos_reporte as $row) {
+        $values = [
+            $row['Sample_ID'] . '-' . $row['Sample_Number'],
+            $row['Structure'],
+            $row['Material_Type'],
+            $row['Test_Type'],
+            $row['Test_Condition'],
+            $row['Comments']
+        ];
 
-    $max_lines = max($nb_lines);
-    $row_height = $line_height * $max_lines;
-
-    // Verificar espacio en página
-    if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 10) {
-        $pdf->AddPage();
-        $pdf->SetFont('Arial', 'B', 9);
-        foreach ($headers as $i => $h) {
-            $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+        // Calcular líneas por columna
+        $nb_lines = [];
+        foreach ($values as $i => $val) {
+            $nb_lines[] = $pdf->NbLines($widths[$i], $val);
         }
-        $pdf->Ln();
-        $pdf->SetFont('Arial', '', 9);
+        $max_lines = max($nb_lines);
+        $row_height = $line_height * $max_lines;
+
+        // Salto de página si no cabe
+        if ($pdf->GetY() + $row_height > $pdf->GetPageHeight() - 10) {
+            $pdf->AddPage();
+            $pdf->SetFont('Arial', 'B', 9);
+            foreach ($headers as $i => $h) {
+                $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+            }
+            $pdf->Ln();
+            $pdf->SetFont('Arial', '', 9);
+        }
+
+        // Dibujar fila correctamente
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+
+        for ($i = 0; $i < count($values); $i++) {
+            $pdf->Rect($x, $y, $widths[$i], $row_height);
+            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
+            $x += $widths[$i];
+            $pdf->SetXY($x, $y);
+        }
+
+        $pdf->SetY($y + $row_height);
     }
-
-    // Guardar posición inicial
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
-
-    // Imprimir cada celda de la fila
-    for ($i = 0; $i < count($values); $i++) {
-        $pdf->SetXY($x, $y);
-        $pdf->MultiCell($widths[$i], $line_height, $values[$i], 1, 'L');
-        $x += $widths[$i];
-    }
-
-    // Ajustar posición Y para la siguiente fila
-    $pdf->SetY($y + $row_height);
 }
-
 
 
 function observaciones_ensayos_reporte($start, $end) {
@@ -258,7 +256,7 @@ function observaciones_ensayos_reporte($start, $end) {
 
 
 class PDF extends FPDF {
-  function NbLines($w, $txt) {
+ function NbLines($w, $txt) {
     $cw = &$this->CurrentFont['cw'];
     if ($w == 0) $w = $this->w - $this->rMargin - $this->x;
     $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
@@ -298,6 +296,8 @@ class PDF extends FPDF {
     }
     return $nl;
 }
+
+
   public $day_of_week;
   public $week_number;
   public $fecha_en;
@@ -394,6 +394,8 @@ if (
     }
     $this->Ln(3);
   }
+
+  
 }
 
 $pdf = new PDF($fecha_en);
@@ -509,7 +511,7 @@ $pdf->Ln();
 // Cuerpo
 $pdf->SetFont('Arial', '', 9);
 foreach ($observaciones as $obs) {
-  $sample = $obs['Sample_IDS'] . '-' . $obs['Sample_Number'];
+  $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'];
   $pdf->Cell(40, 8, $sample, 1); 
   $pdf->Cell(30, 8, $obs['Material_Type'], 1);
   $pdf->Cell(120, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
