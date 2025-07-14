@@ -222,20 +222,30 @@ function render_ensayos_reporte($pdf, $start, $end) {
             $pdf->Ln();
             $pdf->SetFont('Arial', '', 9);
         }
+// Dibujar cada celda con su respectivo contenido SIN mover el cursor con MultiCell
+$x = $pdf->GetX();
+$y = $pdf->GetY();
 
-        // Dibujar cada celda con su respectivo contenido
-        $x = $pdf->GetX();
-        $y = $pdf->GetY();
+for ($i = 0; $i < count($values); $i++) {
+    // Dibujar borde
+    $pdf->Rect($x, $y, $widths[$i], $row_height);
 
-        for ($i = 0; $i < count($values); $i++) {
-            $pdf->Rect($x, $y, $widths[$i], $row_height);
-            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
-            $x += $widths[$i];
-            $pdf->SetXY($x, $y); // ← Esto es clave para mantener la posición de celda en fila
-        }
+    // Guardar posición actual
+    $x_before = $pdf->GetX();
+    $y_before = $pdf->GetY();
 
-        // Mover a la siguiente fila
-        $pdf->SetY($y + $row_height);
+    // Imprimir texto con MultiCell SIN alterar el cursor global
+    $pdf->SetXY($x, $y);
+    $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
+
+    // Restaurar XY para la próxima celda en la misma fila
+    $x += $widths[$i];
+    $pdf->SetXY($x, $y_before);
+}
+
+// Mover Y a la siguiente fila manualmente (una sola vez)
+$pdf->SetY($y + $row_height);
+
     }
 }
 
