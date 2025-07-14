@@ -177,41 +177,66 @@ function resumen_tipo($start, $end) {
 
 
 function render_ensayos_reporte($pdf, $start, $end) {
-  // Obtener datos desde la tabla `ensayos_reporte`
-  $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
+    $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
 
-  // Título de la sección
-  $pdf->section_title("8. Summary of Dam Constructions Test");
+    $pdf->section_title("8. Summary of Dam Constructions Test");
 
-  // Encabezados de la tabla
-  $pdf->SetFont('Arial', 'B', 9);
-  $pdf->Cell(35, 8, 'Sample', 1);
-  $pdf->Cell(25, 8, 'Structure', 1);
-  $pdf->Cell(25, 8, 'Mat. Type', 1);
-  $pdf->Cell(30, 8, 'Test Type', 1);
-  $pdf->Cell(20, 8, 'Condition', 1);
-  $pdf->Cell(55, 8, 'Comments', 1);
-  $pdf->Ln();
-
-  // Contenido de la tabla
-  $pdf->SetFont('Arial', '', 9);
-  foreach ($ensayos_reporte as $row) {
-    $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
-    $structure = $row['Structure'];
-    $mat_type = $row['Material_Type'];
-    $test_type = $row['Test_Type'];
-    $condition = $row['Test_Condition'];
-    $comments = substr($row['Comments'], 0, 45); // Limita comentarios largos
-
-    $pdf->Cell(35, 8, $sample, 1);
-    $pdf->Cell(25, 8, $structure, 1);
-    $pdf->Cell(25, 8, $mat_type, 1);
-    $pdf->Cell(30, 8, $test_type, 1);
-    $pdf->Cell(20, 8, $condition, 1);
-    $pdf->Cell(55, 8, $comments, 1);
+    // Encabezado
+    $headers = ['Sample', 'Structure', 'Mat. Type', 'Test Type', 'Condition', 'Comments'];
+    $widths = [35, 25, 25, 30, 20, 55];
+    $pdf->SetFont('Arial', 'B', 9);
+    foreach ($headers as $i => $h) {
+        $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+    }
     $pdf->Ln();
-  }
+
+    // Cuerpo
+    $pdf->SetFont('Arial', '', 9);
+    foreach ($ensayos_reporte as $row) {
+        $values = [
+            $row['Sample_ID'] . '-' . $row['Sample_Number'],
+            $row['Structure'],
+            $row['Material_Type'],
+            $row['Test_Type'],
+            $row['Test_Condition'],
+            $row['Comments']
+        ];
+
+        // Calcular número de líneas por celda
+        $nb_lines = [];
+        for ($i = 0; $i < count($values); $i++) {
+            $nb_lines[] = $pdf->NbLines($widths[$i], $values[$i]);
+        }
+
+        // Altura máxima de la fila
+        $max_lines = max($nb_lines);
+        $line_height = 5;
+        $row_height = $line_height * $max_lines;
+
+        // Verificar si hay espacio en la página
+        if ($pdf->GetY() + $row_height > ($pdf->GetPageHeight() - 10)) {
+            $pdf->AddPage();
+            $pdf->SetFont('Arial', 'B', 9);
+            foreach ($headers as $i => $h) {
+                $pdf->Cell($widths[$i], 8, $h, 1, 0, 'C');
+            }
+            $pdf->Ln();
+            $pdf->SetFont('Arial', '', 9);
+        }
+
+        // Imprimir fila con altura uniforme
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+        for ($i = 0; $i < count($values); $i++) {
+            $pdf->Rect($x, $y, $widths[$i], $row_height);
+            $pdf->MultiCell($widths[$i], $line_height, $values[$i], 0, 'L');
+            $x += $widths[$i];
+            $pdf->SetXY($x, $y);
+        }
+        $pdf->Ln($row_height);
+    }
 }
+
 
 function observaciones_ensayos_reporte($start, $end) {
   return find_by_sql("
@@ -231,6 +256,47 @@ function observaciones_ensayos_reporte($start, $end) {
 
 
 class PDF extends FPDF {
+ function NbLines($w, $txt) {
+    $cw = &$this->CurrentFont['cw'];
+    if ($w == 0) $w = $this->w - $this->rMargin - $this->x;
+    $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
+    $s = str_replace("\r", '', $txt);
+    $nb = strlen($s);
+    if ($nb > 0 and $s[$nb - 1] == "\n") $nb--;
+    $sep = -1;
+    $i = 0;
+    $j = 0;
+    $l = 0;
+    $nl = 1;
+    while ($i < $nb) {
+        $c = $s[$i];
+        if ($c == "\n") {
+            $i++;
+            $sep = -1;
+            $j = $i;
+            $l = 0;
+            $nl++;
+            continue;
+        }
+        if ($c == ' ') $sep = $i;
+        $l += $cw[$c];
+        if ($l > $wmax) {
+            if ($sep == -1) {
+                if ($i == $j) $i++;
+            } else {
+                $i = $sep + 1;
+            }
+            $sep = -1;
+            $j = $i;
+            $l = 0;
+            $nl++;
+        } else {
+            $i++;
+        }
+    }
+    return $nl;
+}
+
   public $day_of_week;
   public $week_number;
   public $fecha_en;
@@ -434,22 +500,45 @@ $observaciones = observaciones_ensayos_reporte($start, $end);
 
 // Encabezado
 $pdf->SetFont('Arial', 'B', 9);
-$pdf->Cell(40, 8, 'Sample', 1);
-$pdf->Cell(30, 8, 'Material Type', 1);
-$pdf->Cell(120, 8, 'Observations', 1);
-$pdf->Ln();
+$pdf->Cell(40, 8, 'Sample', 1, 0, 'C');
+$pdf->Cell(30, 8, 'Material Type', 1, 0, 'C');
+$pdf->Cell(120, 8, 'Observations', 1, 1, 'C');
 
 // Cuerpo
 $pdf->SetFont('Arial', '', 9);
+$line_height = 5;
+
 foreach ($observaciones as $obs) {
-  $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'];
-  $pdf->Cell(40, 8, $sample, 1); 
-  $pdf->Cell(30, 8, $obs['Material_Type'], 1);
-  $pdf->Cell(120, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
-  $pdf->Ln();
+    $sample     = $obs['Sample_ID'] . '-' . $obs['Sample_Number'];
+    $mat_type   = $obs['Material_Type'];
+    $ob_text    = trim($obs['Noconformidad']);
+
+    // Calcular número de líneas necesarias
+    $n_lines = $pdf->NbLines(120, $ob_text); // Solo se necesita para la celda más alta
+    $row_height = $line_height * $n_lines;
+
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+
+    // Sample (altura igual al comentario)
+    $pdf->Rect($x, $y, 40, $row_height);
+    $pdf->MultiCell(40, $line_height, $sample, 0, 'L');
+    $pdf->SetXY($x + 40, $y);
+
+    // Material Type
+    $pdf->Rect($x + 40, $y, 30, $row_height);
+    $pdf->MultiCell(30, $line_height, $mat_type, 0, 'L');
+    $pdf->SetXY($x + 70, $y);
+
+    // Observations
+    $pdf->MultiCell(120, $line_height, $ob_text, 1, 'L');
+
+    // Mover a siguiente fila
+    $pdf->SetXY($x, $y + $row_height);
 }
 
 $pdf->Ln(5);
+
 
 $pdf->section_title("10. Responsible");
 $pdf->SetFont('Arial', '', 10);
