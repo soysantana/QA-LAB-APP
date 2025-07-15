@@ -204,9 +204,9 @@ function render_ensayos_reporte($pdf, $start, $end) {
 
   // Encabezados de la tabla
   $pdf->SetFont('Arial', 'B', 9);
-  $pdf->Cell(35, 8, 'Sample', 1);
+  $pdf->Cell(40, 8, 'Sample', 1);
   $pdf->Cell(25, 8, 'Structure', 1);
-  $pdf->Cell(25, 8, 'Mat. Type', 1);
+  $pdf->Cell(20, 8, 'Mat. Type', 1);
   $pdf->Cell(30, 8, 'Test Type', 1);
   $pdf->Cell(20, 8, 'Condition', 1);
   $pdf->Cell(55, 8, 'Comments', 1);
