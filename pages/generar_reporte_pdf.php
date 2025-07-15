@@ -42,8 +42,23 @@ function resumen_entregas_por_cliente($end) {
     $cliente = strtoupper(trim($s['Client'])) ?: 'PENDING INFO';
     $sample_id = strtoupper(trim($s['Sample_ID']));
     $sample_num = strtoupper(trim($s['Sample_Number']));
-    $test_type = strtoupper(trim($s['Test_Type']));
-    $key = "{$sample_id}|{$sample_num}|{$test_type}";
+    $test_types = explode(',', $s['Test_Type']); // o json_decode si es un array JSON
+
+foreach ($test_types as $tt) {
+  $test_type = strtoupper(trim($tt));
+  $key = "{$sample_id}|{$sample_num}|{$test_type}";
+
+  if (!isset($stats[$cliente])) {
+    $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
+  }
+
+  $stats[$cliente]['solicitados']++;
+
+  if (isset($entregado_map[$key])) {
+    $stats[$cliente]['entregados']++;
+  }
+}
+
 
     if (!isset($stats[$cliente])) {
       $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
