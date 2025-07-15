@@ -453,18 +453,18 @@ $observaciones = observaciones_ensayos_reporte($start, $end);
 
 // Encabezado
 $pdf->SetFont('Arial', 'B', 9);
-$pdf->Cell(40, 8, 'Sample', 1);
+$pdf->Cell(45, 8, 'Sample', 1);
 
-$pdf->Cell(150, 8, 'Observations', 1);
+$pdf->Cell(145, 8, 'Observations', 1);
 $pdf->Ln();
 
 // Cuerpo
 $pdf->SetFont('Arial', '', 9);
 foreach ($observaciones as $obs) {
   $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'] .'-' . $obs['Material_Type'];
-  $pdf->Cell(40, 8, $sample, 1); 
+  $pdf->Cell(45, 8, $sample, 1); 
  
-  $pdf->Cell(150, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
+  $pdf->Cell(145, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
   $pdf->Ln();
 }
 
