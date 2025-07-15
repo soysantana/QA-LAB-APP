@@ -222,9 +222,9 @@ function render_ensayos_reporte($pdf, $start, $end) {
     $condition = $row['Test_Condition'];
     $comments = substr($row['Comments'], 0, 45); // Limita comentarios largos
 
-    $pdf->Cell(35, 8, $sample, 1);
+    $pdf->Cell(40, 8, $sample, 1);
     $pdf->Cell(25, 8, $structure, 1);
-    $pdf->Cell(25, 8, $mat_type, 1);
+    $pdf->Cell(20, 8, $mat_type, 1);
     $pdf->Cell(30, 8, $test_type, 1);
     $pdf->Cell(20, 8, $condition, 1);
     $pdf->Cell(55, 8, $comments, 1);
