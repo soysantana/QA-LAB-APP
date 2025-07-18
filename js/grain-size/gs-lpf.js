@@ -1,78 +1,107 @@
 function LPF() {
-  const cumRetArray = [0];
-  const PassArray = [];
-  let CoarserGravel;
-  let gravel;
-  let sand;
-  let fines;
 
-  var Specs12 = document.getElementById("Specs2");
-  var Specs3p4 = document.getElementById("Specs5");
-  var Specs3p8 = document.getElementById("Specs6");
-  var SpecsN4 = document.getElementById("Specs7");
-  var SpecsN10 = document.getElementById("Specs8");
-  var SpecsN200 = document.getElementById("Specs13");
+    var Specs12 = document.getElementById("Specs2");
+    var Specs3p4 = document.getElementById("Specs5");
+    var Specs3p8 = document.getElementById("Specs6");
+    var SpecsN4 = document.getElementById("Specs7");
+    var SpecsN10 = document.getElementById("Specs8");
+    var SpecsN200 = document.getElementById("Specs13");
 
-  Specs12.value = "100";
-  Specs3p4.value = "80-100";
-  Specs3p8.value = "70-100";
-  SpecsN4.value = "60-100";
-  SpecsN10.value = "50-100";
-  SpecsN200.value = "25-94";
+    Specs12.value = "100";
+    Specs3p4.value = "80-100";
+    Specs3p8.value = "70-100";
+    SpecsN4.value = "60-100";
+    SpecsN10.value = "50-100";
+    SpecsN200.value = "25-94";
 
-  for (let i = 1; i <= 13; i++) {
-    // Obtener los valores
-    const DrySoilTare = parseFloat(document.getElementById("DrySoilTare").value);
-    const Tare = parseFloat(document.getElementById("Tare").value);
-    const Washed = parseFloat(document.getElementById("Washed").value);
-    const WtRet = parseFloat(document.getElementById("WtRet" + i).value) || 0;
-    const PanWtRen = parseFloat(document.getElementById("PanWtRen").value);
+const cumRetArray = [0];
+const PassArray = new Array(13).fill(null);
 
-    // Calculation
-    const DrySoil = DrySoilTare-Tare;
-    const WashPan = DrySoil-Washed;
+const DrySoilTare = parseFloat(document.getElementById("DrySoilTare").value);
+const Tare = parseFloat(document.getElementById("Tare").value);
+const Washed = parseFloat(document.getElementById("Washed").value);
+const PanWtRen = parseFloat(document.getElementById("PanWtRen").value);
 
-    // Grain Size Distribution
-    const Ret = (WtRet / DrySoil) * 100;
-    const CumRet = cumRetArray[i - 1] + Ret;
-    cumRetArray.push(CumRet);
-    const Pass = 100 - CumRet;
-    const PanRet = (PanWtRen / DrySoil) * 100;
-    const TotalWtRet = PanWtRen + WashPan;
-    const TotalRet = (TotalWtRet / DrySoil) * 100;
-    const TotalCumRet = cumRetArray[13] + TotalRet;
-    const TotalPass = 100 - TotalCumRet;
+const DrySoil = DrySoilTare - Tare;
+const WashPan = DrySoil - Washed;
 
-    // Summary Grain Size Distribution Parameter
-    PassArray.push(Pass);
-    if (PassArray.length <= 17) {
-      CoarserGravel = 100 - PassArray[1];
-      gravel = PassArray[1] - PassArray[6];
-      sand = PassArray[6] - PassArray[12];
-      fines = PassArray[12];
-    } else {
-      CoarserGravel = null;
-      gravel = null;
-      sand = null;
-      fines = null;
+let lastCumRet = 0;
+
+// Detectar primer índice con valor válido en WtRet
+let startIndex = 1;
+for (let i = 1; i <= 13; i++) {
+    const val = parseFloat(document.getElementById("WtRet" + i).value);
+    if (!isNaN(val)) {
+        startIndex = i;
+        break;
+    }
+}
+
+// Limpiar campos anteriores a startIndex para que no muestren nada
+for (let i = 1; i < startIndex; i++) {
+    document.getElementById("Ret" + i).value = "";
+    document.getElementById("CumRet" + i).value = "";
+    document.getElementById("Pass" + i).value = "";
+    PassArray[i - 1] = null; // o NaN
+}
+
+// Calcular desde startIndex en adelante
+for (let i = startIndex; i <= 13; i++) {
+    const WtRet = parseFloat(document.getElementById("WtRet" + i).value);
+
+    let Ret = NaN;
+    if (!isNaN(WtRet) && DrySoil > 0) {
+        Ret = (WtRet / DrySoil) * 100;
     }
 
-    // Result
-    document.getElementById("DrySoil").value = DrySoil.toFixed(2);
-    document.getElementById("WashPan").value = WashPan.toFixed(2);
-    document.getElementById("Ret" + i).value = Ret.toFixed(2);
-    document.getElementById("CumRet" + i).value = CumRet.toFixed(2);
-    document.getElementById("Pass" + i).value = Pass.toFixed(2);
-    document.getElementById("PanRet").value = PanRet.toFixed(2);
-    document.getElementById("TotalWtRet").value = TotalWtRet.toFixed(2);
-    document.getElementById("TotalRet").value = TotalRet.toFixed(2);
-    document.getElementById("TotalCumRet").value = TotalCumRet.toFixed(2);
-    document.getElementById("TotalPass").value = TotalPass.toFixed(2);
-    document.getElementById("CoarserGravel").value = CoarserGravel !== null && !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
-    document.getElementById("Gravel").value = gravel !== null && !isNaN(gravel) ? gravel.toFixed(2) : "";
-    document.getElementById("Sand").value = sand !== null && !isNaN(sand) ? sand.toFixed(2) : "";
-    document.getElementById("Fines").value = fines !== null && !isNaN(fines) ? fines.toFixed(2) : "";
-  }
+    let CumRet = NaN;
+    if (!isNaN(Ret)) {
+        CumRet = lastCumRet + Ret;
+        lastCumRet = CumRet;
+    } else {
+        CumRet = lastCumRet;
+    }
+    cumRetArray.push(CumRet);
+
+    const Pass = !isNaN(CumRet) ? 100 - CumRet : NaN;
+
+    PassArray[i - 1] = Pass;
+
+    document.getElementById("Ret" + i).value = isNaN(Ret) ? '' : Ret.toFixed(2);
+    document.getElementById("CumRet" + i).value = isNaN(CumRet) ? '' : CumRet.toFixed(2);
+    document.getElementById("Pass" + i).value = isNaN(Pass) ? '' : Pass.toFixed(2);
+}
+
+// Calcular resumen con protección nullish
+const sieve3In = PassArray[1] ?? 100;
+const sieveNo4 = PassArray[6] ?? 100;
+const sieveNo200 = PassArray[12] ?? 100;
+
+const CoarserGravel = 100 - sieve3In;
+const gravel = sieve3In - sieveNo4;
+const sand = sieveNo4 - sieveNo200;
+const fines = sieveNo200;
+
+const PanRet = DrySoil > 0 ? (PanWtRen / DrySoil) * 100 : NaN;
+const TotalWtRet = PanWtRen + WashPan;
+const TotalRet = DrySoil > 0 ? (TotalWtRet / DrySoil) * 100 : NaN;
+const TotalCumRet = lastCumRet + TotalRet;
+const TotalPass = !isNaN(TotalCumRet) ? Math.abs(100 - TotalCumRet) : NaN;
+
+// Mostrar resultados generales
+document.getElementById("DrySoil").value = isNaN(DrySoil) ? '' : DrySoil.toFixed(2);
+document.getElementById("WashPan").value = isNaN(WashPan) ? '' : WashPan.toFixed(2);
+document.getElementById("PanRet").value = isNaN(PanRet) ? '' : PanRet.toFixed(2);
+document.getElementById("TotalWtRet").value = isNaN(TotalWtRet) ? '' : TotalWtRet.toFixed(2);
+document.getElementById("TotalRet").value = isNaN(TotalRet) ? '' : TotalRet.toFixed(2);
+document.getElementById("TotalCumRet").value = isNaN(TotalCumRet) ? '' : TotalCumRet.toFixed(2);
+document.getElementById("TotalPass").value = isNaN(TotalPass) ? '' : TotalPass.toFixed(2);
+
+document.getElementById("CoarserGravel").value = !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
+document.getElementById("Gravel").value = !isNaN(gravel) ? gravel.toFixed(2) : "";
+document.getElementById("Sand").value = !isNaN(sand) ? sand.toFixed(2) : "";
+document.getElementById("Fines").value = !isNaN(fines) ? fines.toFixed(2) : "";
+
   // Sumary Parameter
  const datos = [
     [PassArray[12], 0.075, PassArray[11], 0.25],
