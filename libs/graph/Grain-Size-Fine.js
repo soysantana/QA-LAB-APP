@@ -18,6 +18,31 @@ function getSpecsValues(specValue) {
   }
 }
 
+var rawData = [
+        [127, document.getElementById("Pass1").value],
+        [101.6, document.getElementById("Pass2").value],
+        [88.90, document.getElementById("Pass3").value],
+        [76.20, document.getElementById("Pass4").value],
+        [63.50, document.getElementById("Pass5").value],
+        [50.80, document.getElementById("Pass6").value],
+        [38.10, document.getElementById("Pass7").value],
+        [25.00, document.getElementById("Pass8").value],
+        [19.00, document.getElementById("Pass9").value],
+        [12.50, document.getElementById("Pass10").value],
+        [9.50, document.getElementById("Pass11").value],
+        [4.75, document.getElementById("Pass12").value],
+        [2.00, document.getElementById("Pass13").value],
+        [1.18, document.getElementById("Pass14").value],
+        [0.85, document.getElementById("Pass15").value],
+        [0.30, document.getElementById("Pass16").value],
+        [0.25, document.getElementById("Pass17").value],
+        [0.075, document.getElementById("Pass18").value]
+];
+
+var filteredData = rawData
+    .filter(item => item[1] !== '' && item[1] !== null && !isNaN(item[1]))
+    .map(item => [item[0], parseFloat(item[1])]);
+
 echarts.init(document.querySelector("#GrainSizeFineFilter")).setOption({
   xAxis: {
     name: 'Particle Diameter (mm)',
@@ -47,29 +72,11 @@ echarts.init(document.querySelector("#GrainSizeFineFilter")).setOption({
   },
   series: [
     {
-      data: [
-        [127, document.getElementById("Pass1").value],
-        [101.6, document.getElementById("Pass2").value],
-        [88.90, document.getElementById("Pass3").value],
-        [76.20, document.getElementById("Pass4").value],
-        [63.50, document.getElementById("Pass5").value],
-        [50.80, document.getElementById("Pass6").value],
-        [38.10, document.getElementById("Pass7").value],
-        [25.00, document.getElementById("Pass8").value],
-        [19.00, document.getElementById("Pass9").value],
-        [12.50, document.getElementById("Pass10").value],
-        [9.50, document.getElementById("Pass11").value],
-        [4.75, document.getElementById("Pass12").value],
-        [2.00, document.getElementById("Pass13").value],
-        [1.18, document.getElementById("Pass14").value],
-        [0.85, document.getElementById("Pass15").value],
-        [0.30, document.getElementById("Pass16").value],
-        [0.25, document.getElementById("Pass17").value],
-        [0.075, document.getElementById("Pass18").value]
-      ],
-      type: 'line',
+      data: filteredData,
+      type: filteredData.length === 1 ? 'scatter' : 'line',
       color: 'orange',
-      showSymbol: false
+      showSymbol: false,
+      z: 10,
     },
     { // line left
       data: [
