@@ -427,5 +427,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 <script src="../js/grain-size/gs-ff.js"></script>
-<script src="../libs/graph/Grain-Size-Fine.js"></script>
+<script src="../libs/graph/Grain-Size-Fine.js?v01"></script>
 <?php include_once('../components/footer.php');  ?>
