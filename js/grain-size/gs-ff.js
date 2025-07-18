@@ -474,7 +474,7 @@ document.getElementById("Fines").value = !isNaN(fines) ? fines.toFixed(2) : "";
 
   function enviarData() {
     $.ajax({
-      url: "../libs/graph/Grain-Size-Fine.js",
+      url: "../libs/graph/Grain-Size-Fine.js?v01",
       type: "GET",
       data: $("#nopasonada").serialize(),
       success: function (data) {},
