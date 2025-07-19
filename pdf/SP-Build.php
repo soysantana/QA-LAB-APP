@@ -309,7 +309,7 @@ $pdf->Cell(39, 6, $Search['Yw_KnM3'], 0, 1, 'C');
 
 // Test Result
 $pdf->SetXY(82, 351);
-$pdf->Cell(39, 10, '', 0, 1, 'C');
+$pdf->Cell(39, 10, 'Passed', 0, 1, 'C');
 
 // Comparison Information
 $pdf->SetXY(82, 378);
@@ -331,4 +331,4 @@ file_put_contents($tempFile, $imageData);
 $pdf->Image($tempFile, 190, 290, 0, 0, 'PNG');
 unlink($tempFile);
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '-' . $Search['Material_Type'] . '.pdf', 'I');
