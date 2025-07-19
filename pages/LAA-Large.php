@@ -1,112 +1,151 @@
 <?php
-  $page_title = 'Los Angeles Abrasion';
-  require_once('../config/load.php');
+$page_title = 'Los Angeles Abrasion';
+require_once('../config/load.php');
 ?>
 
-<?php 
-  // Manejo de los formularios
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['LAA_Coarse_Aggregate'])) {
-        include('../database/los-angeles-abrasion-coarse-filter.php');
-    } 
+<?php
+// Manejo de los formularios
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['save'])) {
+    include('../database/LAA/large/save.php');
   }
+}
 ?>
 
 <?php page_require_level(2); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
-<div class="pagetitle">
-  <h1>Los Angeles Abrasion For Large Size Coarse</h1>
-  <nav>
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-      <li class="breadcrumb-item">Forms</li>
-      <li class="breadcrumb-item active">Los Angeles Abrasion</li>
-    </ol>
-  </nav>
-</div><!-- End Page Title -->
-<section class="section">
-  <div class="row">
+  <div class="pagetitle">
+    <h1>Los Angeles Abrasion For Large Size Coarse</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
+        <li class="breadcrumb-item"><a href="LAA-menu.php">Forms</a></li>
+        <li class="breadcrumb-item active">Los Angeles Abrasion</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+  <section class="section">
+    <div class="row">
 
-  <form action="LAA-Large.php" method="post" class="row">
+      <form action="LAA-Large.php" method="post" class="row">
 
-  <div class="col-md-7">
-  <?php echo display_msg($msg); ?>
-  </div>
-
-  <div id="product_info"></div>
-
-    <div class="col-lg-12">
-
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Trial Information</h5>
-
-          <!-- Multi Columns Form -->
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="Standard" class="form-label">Standard</label>
-              <select id="Standard" class="form-select" name="Standard">
-                <option value="ASTM-C535">ASTM-C535</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="TestMethod" class="form-label">Test Method</label>
-              <input type="text" class="form-control" id="TestMethod" name="TestMethod">
-            </div>
-            <div class="col-md-6">
-              <label for="Technician" class="form-label">Technician</label>
-              <input type="text" class="form-control" id="Technician" name="Technician">
-            </div>
-            <div class="col-md-6">
-              <label for="DateTesting" class="form-label">Date of Testing</label>
-              <input type="date" class="form-control" id="DateTesting" name="DateTesting">
-            </div>
-            <div class="col-12">
-              <label for="Comments" class="form-label">Comments</label>
-              <textarea class="form-control" id="Comments" name="Comments" style="height: 100px;"></textarea>
-            </div>
-          </div><!-- End Multi Columns Form -->
-
+        <div class="col-md-7">
+          <?php echo display_msg($msg); ?>
         </div>
-      </div>
 
-    </div>
+        <!-- Sample Information -->
+        <div id="product_info"></div>
+        <!-- End Sample Information -->
 
-    <div class="col-lg-5">
+        <!-- Laboratory Information -->
+        <div class="col-lg-12">
 
-    <div class="card">
+          <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Testing Information</h5>
-              <!-- Bordered Table -->
-              <table class="table table-bordered">
-                <tbody>
-                  <tr>
-                    <th scope="row">Selected Grading</th>
-                    <td>
-                        <select class="form-control" id="SelectGrading" name="SelectGrading">
-                            <option selected>Choose...</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                        </select>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <!-- End Bordered Table -->
+              <h5 class="card-title">Trial Information</h5>
+
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="Standard" class="form-label">Standard</label>
+                  <select id="Standard" class="form-select" name="Standard">
+                    <option value="ASTM-C535">ASTM-C535</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="Technician" class="form-label">Technician</label>
+                  <input type="text" class="form-control" id="Technician" name="Technician">
+                </div>
+                <div class="col-md-4">
+                  <label for="TestMethod" class="form-label">Test Method</label>
+                  <input type="text" class="form-control" id="TestMethod" name="TestMethod">
+                </div>
+                <div class="col-md-4">
+                  <label for="PMethods" class="form-label">Preparation Methods</label>
+                  <select id="PMethods" class="form-select" name="PMethods">
+                    <option selected>Choose...</option>
+                    <option value="Oven Dried">Oven Dried</option>
+                    <option value="Air Dried">Air Dried</option>
+                    <option value="Microwave Dried">Microwave Dried</option>
+                    <option value="Wet">Wet</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="SMethods" class="form-label">Split Methods</label>
+                  <select id="SMethods" class="form-select" name="SMethods">
+                    <option selected>Choose...</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Mechanical">Mechanical</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="DateTesting" class="form-label">Date of Testing</label>
+                  <input type="date" class="form-control" id="DateTesting" name="DateTesting">
+                </div>
+                <div class="col-12">
+                  <label for="Comments" class="form-label">Comments</label>
+                  <textarea class="form-control" id="Comments" name="Comments" style="height: 100px;"></textarea>
+                </div>
+              </div>
 
             </div>
           </div>
-    </div>
 
-    <div class="col-lg-7">
+        </div>
+        <!-- End Laboratory Information -->
 
-    <div class="card">
+        <!-- Testing Information -->
+        <div class="col-lg-5">
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Testing Information</h5>
+
+              <table class="table table-bordered">
+                <tbody>
+                  <tr>
+                    <th scope="row">Nominal Maximum Size</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="NominalMaxSize" name="NominalMaxSize"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Selected Grading</th>
+                    <td>
+                      <select class="form-control" id="SelectGrading" name="SelectGrading">
+                        <option selected>Choose...</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">No. of Spheres</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="NoSpheres" name="NoSpheres"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Weight of the Spheres (g)</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="WeigSpheres" name="WeigSpheres"></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Revolutions</th>
+                    <td><input type="text" style="border: none;" class="form-control" id="Revolutions" name="Revolutions"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+            </div>
+          </div>
+        </div>
+        <!-- End Testing Information -->
+
+        <!-- Results for the testing -->
+        <div class="col-lg-7">
+
+          <div class="card">
             <div class="card-body">
               <h5 class="card-title">Results</h5>
-              <!-- Bordered Table -->
+
               <table class="table table-bordered" oninput="laaLarge()">
                 <tbody>
                   <tr>
@@ -123,32 +162,33 @@
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
 
             </div>
           </div>
-    </div>
-
-    
-    <div class="col-lg-3">
-
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Actions</h5>
-        <!-- Actions Buttons -->
-        <div class="d-grid gap-2 mt-3">
-          <button type="submit" name="LAA_Coarse_Aggregate" class="btn btn-success">Save Essay</button>
         </div>
+        <!-- End Results for the testing -->
 
-      </div>
+        <!-- Actions Buttons -->
+        <div class="col-lg-3">
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Actions</h5>
+
+              <div class="d-grid gap-2 mt-3">
+                <button type="submit" name="save" class="btn btn-success">Save Essay</button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+        <!-- End Actions Buttons -->
+
     </div>
-  
-  </div>
+  </section>
 
-  </div>
-</section>
-
-</form>
+  </form>
 
 </main><!-- End #main -->
 
