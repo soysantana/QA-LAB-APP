@@ -47,13 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php include_once('../includes/sample-info-form.php'); ?>
         <!-- End Sample Information -->
 
+        <!-- Laboratory Information -->
         <div class="col-lg-12">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Trial Information</h5>
 
-              <!-- Multi Columns Form -->
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="Standard" class="form-label">Standard</label>
@@ -97,18 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
                 </div>
               </div>
-              <!-- End Multi Columns Form -->
 
             </div>
           </div>
 
         </div>
+        <!-- End Laboratory Information -->
 
+        <!-- Liquid Limit and Plastic Limit Trials -->
         <div class="col-lg-5">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Liquid Limit</h5>
-              <!-- Bordered Table -->
+              <!-- Table for Liquid Limit Trials -->
               <table class="table table-bordered">
                 <thead>
                   <tr>
@@ -169,9 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Table for Liquid Limit Trials -->
               <h5 class="card-title">Plastic Limit</h5>
-              <!-- Bordered Table -->
+              <!-- Table for Plastic Limit Trials -->
               <table class="table table-bordered">
                 <thead>
                   <tr>
@@ -230,43 +231,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Table for Plastic Limit Trials -->
             </div>
           </div>
         </div>
+        <!-- End Liquid Limit and Plastic Limit Trials -->
 
+        <!-- Charts Liquid Limit and Plasticity Index -->
         <div class="col-lg-4">
 
+          <!-- Multi Point Liquid Limit Plot Chart -->
           <div class="card">
             <div class="card-body">
               <h5 class="card-title"></h5>
-
-              <!-- Multi Point Liquid Limit Plot Chart -->
               <div id="liquid-limit" style="min-height: 400px;" class="echart"></div>
-              <!-- End Multi Point Liquid Limit Plot Chart -->
-
             </div>
           </div>
+          <!-- End Multi Point Liquid Limit Plot Chart -->
 
+          <!-- Plasticity Chart -->
           <div class="card">
             <div class="card-body">
               <h5 class="card-title"></h5>
-
-              <!-- Plasticity Chart -->
               <div id="PlasticityChart" style="min-height: 400px;" class="echart"></div>
-              <!-- End Plasticity Chart -->
-
             </div>
           </div>
+          <!-- End Plasticity Chart -->
 
         </div>
+        <!-- End Charts Liquid Limit and Plasticity Index -->
 
+        <!-- Summary AL Parameter and Actions Buttons -->
         <div class="col-lg-3">
 
+          <!-- Summary Atteberg Limit Parameter -->
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Summary Atteberg Limit Parameter</h5>
-              <!-- Summary Atteberg Limit Parameter -->
+
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -288,8 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Default Table Example -->
-              <!-- Summary Atteberg Limit Parameter -->
+
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -298,14 +299,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Default Table Example -->
+
             </div>
           </div>
+          <!-- End Summary Atteberg Limit Parameter -->
 
+          <!-- Actions Buttons -->
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Actions</h5>
-              <!-- Actions Buttons -->
+
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="update-atterberg-limit">UpdateEssay</button>
 
@@ -318,7 +321,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <li><a class="dropdown-item" onclick="enviarImagenAlServidor('AL-Build')">Contruccion</a></li>
                   </ul>
                 </div>
-
                 <button type="submit" class="btn btn-danger" name="delete_al"><i class="bi bi-trash"></i></button>
               </div>
 
@@ -332,8 +334,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div class="mt-2" id="mensaje-container"></div>
             </div>
           </div>
+          <!-- End Actions Buttons -->
 
         </div>
+        <!-- End Summary AL Parameter and Actions Buttons -->
 
       </form><!-- End Form -->
 

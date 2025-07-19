@@ -212,18 +212,38 @@ function LLyPL() {
         backgroundColor: '#fff'
     });
 
-    fetch(`../../pdf/${tipoReporte}.php?id=${encodeURIComponent(sampleId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ liquidlimit: LiquidLimitImageURL, plasticity: PlasticityImageURL })
+fetch(`../../pdf/${tipoReporte}.php?id=${encodeURIComponent(sampleId)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        liquidlimit: LiquidLimitImageURL, 
+        plasticity: PlasticityImageURL 
     })
-    .then(response => response.blob())
-    .then(blob => {
-        const url = URL.createObjectURL(blob);
-        window.open(url);
-        URL.revokeObjectURL(url);
-    })
-    .catch(console.error);
+})
+.then(response => {
+    const disposition = response.headers.get('Content-Disposition');
+    let filename = "Reporte.pdf"; // Valor por defecto
+
+    // Extraer filename si viene en el encabezado
+    if (disposition && disposition.indexOf('filename=') !== -1) {
+        const matches = /filename="?([^"]+)"?/.exec(disposition);
+        if (matches != null && matches[1]) filename = matches[1];
+    }
+
+    return response.blob().then(blob => ({ blob, filename }));
+})
+.then(({ blob, filename }) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+})
+.catch(console.error);
+
 }
 
   // Función para buscar la humedad natural y mostrarla en el input correspondiente
