@@ -116,7 +116,7 @@ $pdf->SetXY(61, 358);
 $pdf->MultiCell(130, 4, $Search['Comments'], 0, 'L');
 
 $pdf->SetXY(201, 358);
-$pdf->MultiCell(130, 4, $Search['FieldComment'], 1, 'L');
+$pdf->MultiCell(130, 4, $Search['FieldComment'], 0, 'L');
 
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'LAA' . '-' . $Search['Material_Type'] . '.pdf', 'I');
