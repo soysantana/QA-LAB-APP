@@ -236,4 +236,4 @@ insertarImagenBase64($pdf, $plasticity, 190, 200, 95, 0); // ajusta X, Y, ancho,
 
 
 // Salida del archivo PDF
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '-' . $Search['Material_Type'] . '.pdf', 'I');
