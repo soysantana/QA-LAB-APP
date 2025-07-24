@@ -283,7 +283,7 @@ $pdf->SetXY(27, 260);
 $pdf->Cell(78, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Comparison Information
-$pdf->SetFont('Arial', '', 10);
+
 
 // Specifications
 $pdf->SetXY(56, 289);
@@ -312,12 +312,11 @@ $pdf->Cell(22, 5, $Search['Specs8'], 0, 1, 'C');
 $pdf->SetXY(83, 312);
 $pdf->Cell(22, 4, $Search['Specs13'], 0, 1, 'C');
 
-// Test Result Condition
-$pdf->SetXY(83, 325);
-$pdf->Cell(53, 4, '', 0, 1, 'C');
-
+// Comments
 $pdf->SetXY(28, 345);
 $pdf->MultiCell(105, 4, utf8_decode($Search['Comments']), 0, 'L');
+$pdf->SetXY(138, 345);
+$pdf->MultiCell(105, 4, utf8_decode($Search['FieldComment']), 0, 'L');
 
 // GRAFICAS
 $imageBase64 = $Search['Graph'];
@@ -327,4 +326,29 @@ file_put_contents($tempFile, $imageData);
 $pdf->Image($tempFile, 140, 230, 180, 90, 'PNG');
 unlink($tempFile);
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+// Test Result Condition
+$pass3     = ($Search['Pass2']    === null || $Search['Pass2']    === "") ? 100 : $Search['Pass2'];
+$pass3p4   = ($Search['Pass5']    === null || $Search['Pass5']    === "") ? 100 : $Search['Pass5'];
+$pass3p8   = ($Search['Pass6']    === null || $Search['Pass6']    === "") ? 100 : $Search['Pass6'];
+$passn4    = ($Search['Pass7']    === null || $Search['Pass7']    === "") ? 100 : $Search['Pass7'];
+$passn10   = ($Search['Pass8']    === null || $Search['Pass8']    === "") ? 100 : $Search['Pass8'];
+$passn200  = ($Search['Pass13']   === null || $Search['Pass13']   === "") ? 100 : $Search['Pass13'];
+
+if (
+    $pass3 == 100 &&
+    $pass3p4 >= 79.5 && $pass3p4 <= 100 &&
+    $pass3p8 >= 69.5 && $pass3p8 <= 100 &&
+    $passn4 >= 59.5 && $passn4 <= 100 &&
+    $passn10 >= 49.5 && $passn10 <= 100 &&
+    $passn200 >= 24.5 && $passn200 <= 94.4
+) {
+    $resultado = 'Accepted';
+} else {
+    $resultado = 'Rejected';
+    $pdf->SetTextColor(255, 0, 0); // Rojo
+}
+
+$pdf->SetXY(83, 325);
+$pdf->Cell(53, 4, $resultado, 0, 1, 'C');
+
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'GS' . '-' . $Search['Material_Type'] . '.pdf', 'I');
