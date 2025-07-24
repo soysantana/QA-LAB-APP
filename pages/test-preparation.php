@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <option value="SHAPE">Formas de Partículas</option>
                   <option value="DENSITY">Densidad</option>
                   <option value="CRUMBS">CRUMBS</option>
+                  <option value="Densidad-Vibratorio">Densidad Vibratorio</option>
                 </select>
                 <small class="text-muted">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples opciones.</small>
               </div>
