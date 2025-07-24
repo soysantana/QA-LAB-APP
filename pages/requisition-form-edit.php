@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="UFF" <?php if ($Search['Material_Type'] == 'UFF') echo 'selected'; ?>>UFF</option>
                     <option value="EF" <?php if ($Search['Material_Type'] == 'EF') echo 'selected'; ?>>EF</option>
                     <option value="Common" <?php if ($Search['Material_Type'] == 'Common') echo 'selected'; ?>>Common</option>
+                    <option value="Concreto" <?php if ($Search['Material_Type'] == 'Concreto') echo 'selected'; ?>>Concreto</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -160,6 +161,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="Lexan" <?php if ($Search['Sample_Type'] == 'Lexan') echo 'selected'; ?>>Lexan</option>
                     <option value="Mazier" <?php if ($Search['Sample_Type'] == 'Mazier') echo 'selected'; ?>>Mazier</option>
                     <option value="Ring" <?php if ($Search['Sample_Type'] == 'Ring') echo 'selected'; ?>>Ring</option>
+                    <option value="Cilindro" <?php if ($Search['Sample_Type'] == 'Cilindro') echo 'selected'; ?>>Cilindro</option>
+                    <option value="Cubo" <?php if ($Search['Sample_Type'] == 'Cubo') echo 'selected'; ?>>Cubo</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -210,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   "HY" => "Hidrometro (HY)",
                   "DHY" => "Doble Hidrometro (DHY)",
                   "PH" => "Pinhole (PH)",
+                  "Densidad-Vibratorio" => "Densidad-Vibratorio",
                   "Permeability" => "Permeabilidad",
                   "SHAPE" => "Formas de Particulas (SHAPE)",
                   "DENSITY" => "Densidad",

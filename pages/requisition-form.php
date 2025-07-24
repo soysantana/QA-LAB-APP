@@ -145,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="UFF">UFF</option>
                     <option value="EF">EF</option>
                     <option value="Common">Common</option>
+                    <option value="Concreto">Concreto</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -159,6 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="Lexan">Lexan</option>
                     <option value="Mazier">Mazier</option>
                     <option value="Ring">Ring</option>
+                    <option value="Cilindro">Cilindro</option>
+                    <option value="Cubo">Cubo</option>
                   </select>
                 </div>
                 <div class="col-md-2">
@@ -209,12 +212,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   "HY" => "Hidrometro (HY)",
                   "DHY" => "Doble Hidrometro (DHY)",
                   "PH" => "Pinhole (PH)",
+                  "Densidad-Vibratorio" => "Densidad-Vibratorio",
                   "Permeability" => "Permeabilidad",
                   "SHAPE" => "Formas de Particulas (SHAPE)",
                   "DENSITY" => "Densidad",
                   "CRUMBS" => "Crumbs",
                   "Actividad" => "Actividad",
                   "Envio" => "Envio",
+
                 ];
                 ?>
 
