@@ -114,7 +114,7 @@ function ensayos_pendientes($start, $end) {
   ");
   
   return $requisitions;
-}
+
 
 
   // Tablas donde puede aparecer un ensayo ya ejecutado
