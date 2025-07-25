@@ -77,9 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <option value="Consolidation">Consolidación</option>
                   <option value="PH">PH</option>
                   <option value="Permeability">Permeabilidad</option>
-                  <option value="SHAPE">Formas de Partículas</option>
-                  <option value="DENSITY">Densidad</option>
-                  <option value="CRUMBS">CRUMBS</option>
+                  <option value="Shape">Formas de Partículas</option>
+                  <option value="ensity">Densidad</option>
+                  <option value="Crumbs">Crumbs</option>
                   <option value="Actividad">Actividad</option>
                 </select>
                 <small class="text-muted">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples opciones.</small>
