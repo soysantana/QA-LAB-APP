@@ -257,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <th scope="row">Wc (%)</th>
                     <td><input type="text" style="border: none;" class="form-control" name="WcPorce" id="WcPorce" value="<?php echo ($Search['Wc_Porce']); ?>"></td>
                     <th scope="row">ɣDF</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Ydf" id="Ydf" value="<?php echo ($Search['YDF_Porce']); ?>"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Ydf" id="Ydf" readonly tabindex="-1" value="<?php echo ($Search['YDF_Porce']); ?>"></td>
                   </tr>
                   <tr>
                     <th scope="row">Pc (%)</th>
@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <th scope="row">Gm</th>
                     <td><input type="text" style="border: none;" class="form-control" name="Gm" id="Gm" value="<?php echo ($Search['GM_Porce']); ?>"></td>
                     <th scope="row">ɣDT</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="Ydt" id="Ydt" value="<?php echo ($Search['YDT_Porce']); ?>"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="Ydt" id="Ydt" readonly tabindex="-1" value="<?php echo ($Search['YDT_Porce']); ?>"></td>
                   </tr>
                   <tr>
                     <th scope="row">ɣω (KN/mᵌ)</th>
