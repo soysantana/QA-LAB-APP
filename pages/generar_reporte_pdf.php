@@ -105,17 +105,12 @@ function get_columns_for_table($tabla) {
 
 // Función principal
 function ensayos_pendientes($start, $end) {
-  // Obtener requisiciones dentro del rango, excluyendo las de tipo 'Envio'
+  // Obtener requisiciones dentro del rango
   $requisitions = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
-      AND Test_Type != 'Envio'
   ");
-  
-  return $requisitions;
-
-
 
   // Tablas donde puede aparecer un ensayo ya ejecutado
   $tablas = [
@@ -130,11 +125,9 @@ function ensayos_pendientes($start, $end) {
   $indexados = [];
 
   foreach ($tablas as $tabla) {
-    // Detectar si la tabla tiene Sample_ID o Sample_Name
     $columnas = get_columns_for_table($tabla);
     $campo_id = in_array('Sample_ID', $columnas) ? 'Sample_ID' : 'Sample_ID';
 
-    // Cargar datos desde la tabla
     $datos = find_by_sql("
       SELECT 
         {$campo_id} AS Sample_ID,
@@ -156,12 +149,18 @@ function ensayos_pendientes($start, $end) {
   foreach ($requisitions as $r) {
     $sample_id   = strtoupper(trim($r['Sample_ID']));
     $sample_num  = strtoupper(trim($r['Sample_Number']));
-    $tipos_raw   = str_replace(';', ',', $r['Test_Type']); // Sanitizar separadores
+    $tipos_raw   = str_replace(';', ',', $r['Test_Type']); // Unificar separadores
     $tipos       = explode(',', $tipos_raw);
     $fecha       = $r['Sample_Date'];
 
     foreach ($tipos as $tipo_raw) {
       $tipo = strtoupper(trim($tipo_raw));
+
+      // Excluir los que contienen "ENVIO"
+      if ($tipo === '' || strpos($tipo, 'ENVIO') !== false) {
+        continue;
+      }
+
       $key = $sample_id . '|' . $sample_num . '|' . $tipo;
 
       if (!isset($indexados[$key])) {
@@ -177,7 +176,6 @@ function ensayos_pendientes($start, $end) {
 
   return $pendientes;
 }
-
 
 
 
