@@ -105,13 +105,17 @@ function get_columns_for_table($tabla) {
 
 // Función principal
 function ensayos_pendientes($start, $end) {
-  // Obtener requisiciones dentro del rango y del cliente TSF Llagal
+  // Obtener requisiciones dentro del rango, excluyendo las de tipo 'Envio'
   $requisitions = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
-      
+      AND Test_Type != 'Envio'
   ");
+  
+  return $requisitions;
+}
+
 
   // Tablas donde puede aparecer un ensayo ya ejecutado
   $tablas = [
