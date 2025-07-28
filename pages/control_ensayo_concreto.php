@@ -108,21 +108,22 @@ foreach ($estados as $e) {
                     <?php endif; ?>
                   <?php else: ?>
                     <div class="d-flex flex-column gap-1">
-                      <form method="POST" action="../database/actualizar_estado_concreto.php">
-                        <input type="hidden" name="sample_id" value="<?= $row['Sample_ID']; ?>">
-                        <input type="hidden" name="sample_number" value="<?= $row['Sample_Number']; ?>">
-                        <input type="hidden" name="dias" value="<?= $d; ?>">
-                        <input type="hidden" name="estado" value="Realizado">
-                        <button type="submit" class="btn btn-sm btn-success">✅ Realizado</button>
-                      </form>
+                     <form method="POST" action="../database/actualizar_estado_concreto.php">
+  <input type="hidden" name="sample_id" value="<?= $row['Sample_ID']; ?>">
+  <input type="hidden" name="sample_number" value="<?= $row['Sample_Number']; ?>">
+  <input type="hidden" name="dias" value="<?= $d; ?>">
+  <input type="hidden" name="estado" value="Realizado">
+  <button type="submit" class="btn btn-sm btn-success">✅ Realizado</button>
+</form>
 
-                      <form method="POST" action="../database/actualizar_estado_concreto.php">
-                        <input type="hidden" name="sample_id" value="<?= $row['Sample_ID']; ?>">
-                        <input type="hidden" name="sample_number" value="<?= $row['Sample_Number']; ?>">
-                        <input type="hidden" name="dias" value="<?= $d; ?>">
-                        <input type="hidden" name="estado" value="No solicitado">
-                        <button type="submit" class="btn btn-sm btn-secondary">🚫 No solicitado</button>
-                      </form>
+<form method="POST" action="../database/actualizar_estado_concreto.php">
+  <input type="hidden" name="sample_id" value="<?= $row['Sample_ID']; ?>">
+  <input type="hidden" name="sample_number" value="<?= $row['Sample_Number']; ?>">
+  <input type="hidden" name="dias" value="<?= $d; ?>">
+  <input type="hidden" name="estado" value="No solicitado">
+  <button type="submit" class="btn btn-sm btn-secondary">🚫 No solicitado</button>
+</form>
+
                     </div>
                   <?php endif; ?>
                 </td>
