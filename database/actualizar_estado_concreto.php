@@ -3,6 +3,7 @@ require_once('../config/load.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sample_id = $_POST['sample_id'] ?? '';
+    $sample_number = $_POST['sample_number'] ?? '';
     $dias = $_POST['dias'] ?? '';
     $estado = $_POST['estado'] ?? 'Realizado';
     $fecha = date('Y-m-d');
@@ -14,8 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($result->num_rows == 0) {
             // Insertar nuevo
-            $insert = "INSERT INTO estado_ensayo_concreto (sample_id, dias, estado, fecha_registro)
-                       VALUES ('{$sample_id}', {$dias}, '{$estado}', '{$fecha}')";
+            $insert = "INSERT INTO estado_ensayo_concreto (sample_id, Sample_Number, dias, estado, fecha_registro)
+                       VALUES ('{$sample_id}', '{$sample_number}', {$dias}, '{$estado}', '{$fecha}')";
             $db->query($insert);
         }
     }
