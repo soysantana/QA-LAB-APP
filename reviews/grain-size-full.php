@@ -707,7 +707,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <li><a class="dropdown-item" onclick="enviarImagenAlServidor()">Contruccion</a></li>
                   </ul>
                 </div>
-                <button type="submit" class="btn btn-danger" name="DeleteHY"><i class="bi bi-trash"></i></button>
+                <button type="submit" class="btn btn-danger" name="DeleteGSFul"><i class="bi bi-trash"></i></button>
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="RepeatGSFull">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="ReviewedGSFull">Reviewed</button>
