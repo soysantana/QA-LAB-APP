@@ -1,6 +1,7 @@
 <?php
 if (isset($_POST['update_multiple'])) {
-    $technicians = $_POST['Technician']; // Ej: ['uuid1' => 'nombre1', 'uuid2' => 'nombre2', ...]
+    $technicians = $_POST['Technician'];  // ['uuid1' => 'nombre1', ...]
+    $start_dates = $_POST['Start_Date'];  // ['uuid1' => '2024-08-05', ...]
 
     if (is_array($technicians)) {
         $errores = [];
@@ -8,7 +9,8 @@ if (isset($_POST['update_multiple'])) {
 
         foreach ($technicians as $id => $name) {
             $technicianName = $db->escape(trim($name));
-            $uuid = $db->escape(trim($id)); // Importante: escapamos el UUID
+            $uuid = $db->escape(trim($id));
+            $startDate = isset($start_dates[$id]) ? $db->escape(trim($start_dates[$id])) : null;
 
             // Validación simple
             if (empty($technicianName)) {
@@ -16,16 +18,23 @@ if (isset($_POST['update_multiple'])) {
                 continue;
             }
 
-            $query = "UPDATE test_preparation SET Technician = '{$technicianName}' WHERE id = '{$uuid}'";
+            if (empty($startDate)) {
+                $errores[] = "La fecha de inicio para el ID $uuid está vacía.";
+                continue;
+            }
+
+            $query = "UPDATE test_preparation 
+                      SET Technician = '{$technicianName}', Start_Date = '{$startDate}' 
+                      WHERE id = '{$uuid}'";
             $result = $db->query($query);
 
-            if ($result && $db->affected_rows() === 1) {
+            if ($result && $db->affected_rows() >= 0) {
                 $actualizados++;
             }
         }
 
         if ($actualizados > 0) {
-            $session->msg('s', "$actualizados técnico actualizado con éxito.");
+            $session->msg('s', "$actualizados registro(s) actualizados con éxito.");
         } else {
             $session->msg('w', 'No se realizaron cambios.');
         }
@@ -40,3 +49,4 @@ if (isset($_POST['update_multiple'])) {
         redirect('/pages/test-preparation.php', false);
     }
 }
+?>
