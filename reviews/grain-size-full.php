@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Grain Size Full</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
+        <li class="breadcrumb-item"><a href="../pages/home.php">Home</a></li>
         <li class="breadcrumb-item">Forms</li>
         <li class="breadcrumb-item active">Grain Size Full</li>
       </ol>
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <section class="section">
     <div class="row">
 
-      <form class="row" action="grain-size-full.php?id=<?php echo $Search['id']; ?>" method="post">
+      <form class="row" action="../reviews/grain-size-full.php?id=<?php echo $Search['id']; ?>" method="post">
 
         <div class="col-md-4">
           <?php echo display_msg($msg); ?>
