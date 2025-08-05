@@ -107,7 +107,7 @@ function get_columns_for_table($tabla) {
 function ensayos_pendientes($start, $end) {
   // Obtener requisiciones dentro del rango
   $requisitions = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
+    SELECT Sample_ID, Sample_Number,Client, Test_Type, Sample_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
   ");
@@ -148,6 +148,7 @@ function ensayos_pendientes($start, $end) {
 
   foreach ($requisitions as $r) {
     $sample_id   = strtoupper(trim($r['Sample_ID']));
+    $client   = strtoupper(trim($r['Client']));
     $sample_num  = strtoupper(trim($r['Sample_Number']));
     $tipos_raw   = str_replace(';', ',', $r['Test_Type']); // Unificar separadores
     $tipos       = explode(',', $tipos_raw);
@@ -165,6 +166,7 @@ function ensayos_pendientes($start, $end) {
 
       if (!isset($indexados[$key])) {
         $pendientes[] = [
+          'Client'     => $r['Client'],
           'Sample_ID'     => $r['Sample_ID'],
           'Sample_Number' => $r['Sample_Number'],
           'Test_Type'     => $tipo_raw,
@@ -426,6 +428,7 @@ $rows = [];
 foreach ($pendientes as $p) {
   if (!empty($p['Test_Type'])) { // Excluir los que tengan Test_Type vacío o null
     $rows[] = [
+      $p['Client'],
       $p['Sample_ID'],
       $p['Sample_Number'],
       $p['Test_Type'],
@@ -434,7 +437,7 @@ foreach ($pendientes as $p) {
   }
 }
 
-$pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 60, 40]);
+$pdf->section_table([ "Client","Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 30, 40, 40]);
 
 
 
