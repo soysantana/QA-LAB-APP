@@ -60,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option <?php if ($Search['Client'] == 'MRM') echo 'selected'; ?>>MRM</option>
                     <option <?php if ($Search['Client'] == 'Geotecnia') echo 'selected'; ?>>Geotecnia</option>
                     <option <?php if ($Search['Client'] == 'Hidrogeologia') echo 'selected'; ?>>Hidrogeologia</option>
+                    <option <?php if ($Search['Client'] == 'PV Project') echo 'selected'; ?>>PV Project</option>
                   </select>
                 </div>
                 <div class="col-md-3">

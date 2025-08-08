@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="MRM">MRM</option>
                     <option value="Geotecnia">Geotecnia</option>
                     <option value="Hidrogeologia">Hidrogeologia</option>
+                    <option value="PV Project">PV Project</option>
                   </select>
                 </div>
                 <div class="col-md-3">
