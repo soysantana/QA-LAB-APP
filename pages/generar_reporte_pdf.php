@@ -13,7 +13,7 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
-$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
+$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 15:59:59"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
 function get_count($table, $field, $start, $end) {
@@ -89,8 +89,28 @@ function count_by_sample($table, $sample, $field = 'Sample_ID') {
 }
 
 function muestras_nuevas($start, $end) {
-  return find_by_sql("SELECT Sample_ID, Sample_Number, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
+    // Accede a la variable global de conexión si es necesario
+    global $db;
+
+    $sql = "
+        SELECT 
+            Sample_ID,
+            Sample_Number,
+            Structure,
+            Client,
+            Test_Type,
+            Registed_Date
+        FROM 
+            lab_test_requisition_form
+        WHERE 
+            Registed_Date BETWEEN '{$start}' AND '{$end}'
+        ORDER BY 
+            Registed_Date ASC
+    ";
+
+    return find_by_sql($sql);
 }
+
 
 // Función auxiliar para detectar columnas existentes
 function get_columns_for_table($tabla) {
