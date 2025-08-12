@@ -11,77 +11,73 @@ $anio    = isset($_GET['anio'])    ? trim($_GET['anio'])    : '';
 $mes     = isset($_GET['mes'])     ? trim($_GET['mes'])     : '';
 $cliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
 
-// WHERE dinámico (se aplicará sobre la fuente expandida por ensayo)
-$where = [];
-if ($anio   !== '') { $where[] = "YEAR(r.Sample_Date) = '". $db->escape($anio) ."'"; }
-if ($mes    !== '') { $where[] = "MONTH(r.Sample_Date) = '". (int)$mes ."'"; }
-if ($cliente!== '') { $where[] = "r.Client = '". $db->escape($cliente) ."'"; }
-$whereSql = count($where) ? 'WHERE ' . implode(' AND ', $where) : '';
-
 // Combos
 $years   = find_by_sql("SELECT DISTINCT YEAR(Sample_Date) AS y FROM lab_test_requisition_form ORDER BY y DESC");
 $clients = find_by_sql("SELECT DISTINCT Client FROM lab_test_requisition_form ORDER BY Client");
 
-// ====== Query principal (AGRUPADO POR ENSAYO) ======
-// - Normaliza Test_Type (JSON -> 'a,b,c' | texto -> limpio)
-// - Parte por comas a filas (WITH RECURSIVE)
-// - Cuenta solicitados por ensayo
-// - Marca entregados si existe coincidencia en test_delivery por (Sample_ID, Sample_Number, Test_Type) normalizado
-$sql = "
-WITH RECURSIVE
-norm AS (
-  SELECT
-    r.Client, r.Sample_ID, r.Sample_Number, r.Sample_Date,
-    CASE
-      WHEN JSON_VALID(r.Test_Type) THEN
-        REPLACE(REPLACE(TRIM(BOTH '[]' FROM JSON_UNQUOTE(r.Test_Type)), '\"', ''), '\",\"', ',')
-      ELSE TRIM(REPLACE(REPLACE(COALESCE(r.Test_Type,''), CHAR(13), ''), CHAR(10), ''))
-    END AS raw_types
+// ====== WHERE dinámico para consultas sobre alias 'e' (expandidas) ======
+$whereExp = [];
+if ($anio   !== '') $whereExp[] = "YEAR(e.Sample_Date) = '". $db->escape($anio) ."'";
+if ($mes    !== '') $whereExp[] = "MONTH(e.Sample_Date) = '". (int)$mes ."'";
+if ($cliente!== '') $whereExp[] = "e.Client = '". $db->escape($cliente) ."'";
+$whereSqlExp = count($whereExp) ? 'WHERE ' . implode(' AND ', $whereExp) : '';
+
+// ====== Subconsulta (EXPANSIÓN por comas, compatible MySQL 5.7/8.0) ======
+$expandedSubquery = "
+  SELECT 
+    r.Client,
+    r.Sample_ID,
+    r.Sample_Number,
+    r.Sample_Date,
+    -- Tomamos el token n-ésimo al partir por coma, quitando espacios/comillas
+    TRIM(BOTH '\"' FROM TRIM(
+      SUBSTRING_INDEX(
+        SUBSTRING_INDEX(
+          REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), 
+          ',', n.n
+        ), 
+        ',', -1
+      )
+    )) AS Test_Type
   FROM lab_test_requisition_form r
-),
-split AS (
+  JOIN (
+    SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
+    UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
+    UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+  ) n
+    ON n.n <= 1 
+         + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
+         - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
+";
+
+// ====== Query principal (AGRUPADO POR ENSAYO) ======
+$sql = "
   SELECT
-    n.Client, n.Sample_ID, n.Sample_Number, n.Sample_Date,
-    TRIM(SUBSTRING_INDEX(n.raw_types, ',', 1)) AS Test_Type,
-    TRIM(SUBSTRING(n.raw_types, LENGTH(SUBSTRING_INDEX(n.raw_types, ',', 1)) + 2)) AS rest
-  FROM norm n
-  UNION ALL
-  SELECT
-    s.Client, s.Sample_ID, s.Sample_Number, s.Sample_Date,
-    TRIM(SUBSTRING_INDEX(s.rest, ',', 1)) AS Test_Type,
-    TRIM(SUBSTRING(s.rest, LENGTH(SUBSTRING_INDEX(s.rest, ',', 1)) + 2)) AS rest
-  FROM split s
-  WHERE s.rest IS NOT NULL AND s.rest <> ''
-),
-expanded AS (
-  SELECT
-    Client, Sample_ID, Sample_Number, Sample_Date,
-    NULLIF(TRIM(BOTH '\"' FROM TRIM(Test_Type)), '') AS Test_Type
-  FROM split
-)
-SELECT
-  r.Client,
-  YEAR(r.Sample_Date)  AS anio,
-  MONTH(r.Sample_Date) AS mes,
-  COUNT(*) AS solicitados,
-  SUM(
-    EXISTS (
-      SELECT 1
-      FROM test_delivery d
-      WHERE d.Sample_ID     = r.Sample_ID
-        AND d.Sample_Number = r.Sample_Number
-        AND LOWER(TRIM(d.Test_Type)) = LOWER(TRIM(r.Test_Type))
-    )
-  ) AS entregados
-FROM expanded r
-$whereSql
-GROUP BY r.Client, anio, mes
-ORDER BY anio DESC, mes DESC, r.Client
+    e.Client,
+    YEAR(e.Sample_Date)  AS anio,
+    MONTH(e.Sample_Date) AS mes,
+    COUNT(*) AS solicitados,
+    SUM(
+      EXISTS (
+        SELECT 1
+        FROM test_delivery d
+        WHERE d.Sample_ID     = e.Sample_ID
+          AND d.Sample_Number = e.Sample_Number
+          AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))
+              = LOWER(REPLACE(TRIM(e.Test_Type),' ',''))
+      )
+    ) AS entregados
+  FROM ( $expandedSubquery ) e
+  $whereSqlExp
+  WHERE e.Test_Type IS NOT NULL AND e.Test_Type <> ''
+  GROUP BY e.Client, anio, mes
+  ORDER BY anio DESC, mes DESC, e.Client
 ";
 
 $res = $db->query($sql);
 if (!$res) {
-  die('Error en consulta: ' . $db->error);
+  die('Error en consulta principal: ' . $db->error);
 }
 
 // Totales KPI
@@ -238,47 +234,41 @@ if (empty($rows)) {
     $anioRow    = (int)$r['anio'];
     $mesRow     = (int)$r['mes'];
 
+    // Subquery expanded (reutilizable)
+    $expanded = "
+      SELECT 
+        r.Client,
+        r.Sample_ID,
+        r.Sample_Number,
+        r.Sample_Date,
+        TRIM(BOTH '\"' FROM TRIM(
+          SUBSTRING_INDEX(
+            SUBSTRING_INDEX(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', n.n),
+            ',', -1
+          )
+        )) AS Test_Type
+      FROM lab_test_requisition_form r
+      JOIN (
+        SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+        UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
+        UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
+        UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+      ) n
+        ON n.n <= 1 
+             + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
+             - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
+      WHERE r.Client = '{$clienteRow}'
+        AND YEAR(r.Sample_Date) = {$anioRow}
+        AND MONTH(r.Sample_Date) = {$mesRow}
+    ";
+
     // === SOLICITADOS (expandido a ensayos) ===
     $sqlSolic = "
-WITH RECURSIVE
-norm AS (
-  SELECT
-    r.Client, r.Sample_ID, r.Sample_Number, r.Sample_Date,
-    CASE
-      WHEN JSON_VALID(r.Test_Type) THEN
-        REPLACE(REPLACE(TRIM(BOTH '[]' FROM JSON_UNQUOTE(r.Test_Type)), '\"', ''), '\",\"', ',')
-      ELSE TRIM(REPLACE(REPLACE(COALESCE(r.Test_Type,''), CHAR(13), ''), CHAR(10), ''))
-    END AS raw_types
-  FROM lab_test_requisition_form r
-  WHERE r.Client = '{$clienteRow}'
-    AND YEAR(r.Sample_Date) = {$anioRow}
-    AND MONTH(r.Sample_Date) = {$mesRow}
-),
-split AS (
-  SELECT
-    n.Client, n.Sample_ID, n.Sample_Number, DATE(n.Sample_Date) AS fecha,
-    TRIM(SUBSTRING_INDEX(n.raw_types, ',', 1)) AS Test_Type,
-    TRIM(SUBSTRING(n.raw_types, LENGTH(SUBSTRING_INDEX(n.raw_types, ',', 1)) + 2)) AS rest
-  FROM norm n
-  UNION ALL
-  SELECT
-    s.Client, s.Sample_ID, s.Sample_Number, s.fecha,
-    TRIM(SUBSTRING_INDEX(s.rest, ',', 1)) AS Test_Type,
-    TRIM(SUBSTRING(s.rest, LENGTH(SUBSTRING_INDEX(s.rest, ',', 1)) + 2)) AS rest
-  FROM split s
-  WHERE s.rest IS NOT NULL AND s.rest <> ''
-),
-expanded AS (
-  SELECT Client, Sample_ID, Sample_Number, fecha,
-         NULLIF(TRIM(BOTH '\"' FROM TRIM(Test_Type)), '') AS Test_Type
-  FROM split
-)
-SELECT Sample_ID, Sample_Number, Test_Type, fecha
-FROM expanded
-WHERE Test_Type IS NOT NULL
-ORDER BY fecha DESC, Sample_ID
-";
-
+      SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+      FROM ( $expanded ) e
+      WHERE e.Test_Type IS NOT NULL AND e.Test_Type <> ''
+      ORDER BY e.Sample_Date DESC, e.Sample_ID
+    ";
     $detSolic = [];
     $rs = $db->query($sqlSolic);
     if ($rs) {
@@ -289,50 +279,17 @@ ORDER BY fecha DESC, Sample_ID
 
     // === PENDIENTES (solicitados SIN entrega) ===
     $sqlPend = "
-WITH RECURSIVE
-norm AS (
-  SELECT
-    r.Client, r.Sample_ID, r.Sample_Number, r.Sample_Date,
-    CASE
-      WHEN JSON_VALID(r.Test_Type) THEN
-        REPLACE(REPLACE(TRIM(BOTH '[]' FROM JSON_UNQUOTE(r.Test_Type)), '\"', ''), '\",\"', ',')
-      ELSE TRIM(REPLACE(REPLACE(COALESCE(r.Test_Type,''), CHAR(13), ''), CHAR(10), ''))
-    END AS raw_types
-  FROM lab_test_requisition_form r
-  WHERE r.Client = '{$clienteRow}'
-    AND YEAR(r.Sample_Date) = {$anioRow}
-    AND MONTH(r.Sample_Date) = {$mesRow}
-),
-split AS (
-  SELECT
-    n.Client, n.Sample_ID, n.Sample_Number, DATE(n.Sample_Date) AS fecha,
-    TRIM(SUBSTRING_INDEX(n.raw_types, ',', 1)) AS Test_Type,
-    TRIM(SUBSTRING(n.raw_types, LENGTH(SUBSTRING_INDEX(n.raw_types, ',', 1)) + 2)) AS rest
-  FROM norm n
-  UNION ALL
-  SELECT
-    s.Client, s.Sample_ID, s.Sample_Number, s.fecha,
-    TRIM(SUBSTRING_INDEX(s.rest, ',', 1)) AS Test_Type,
-    TRIM(SUBSTRING(s.rest, LENGTH(SUBSTRING_INDEX(s.rest, ',', 1)) + 2)) AS rest
-  FROM split s
-  WHERE s.rest IS NOT NULL AND s.rest <> ''
-),
-expanded AS (
-  SELECT Client, Sample_ID, Sample_Number, fecha,
-         NULLIF(TRIM(BOTH '\"' FROM TRIM(Test_Type)), '') AS Test_Type
-  FROM split
-)
-SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, e.fecha
-FROM expanded e
-LEFT JOIN test_delivery d
-  ON d.Sample_ID     = e.Sample_ID
- AND d.Sample_Number = e.Sample_Number
- AND LOWER(TRIM(d.Test_Type)) = LOWER(TRIM(e.Test_Type))
-WHERE e.Test_Type IS NOT NULL
-  AND d.Sample_ID IS NULL
-ORDER BY e.fecha DESC, e.Sample_ID
-";
-
+      SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+      FROM ( $expanded ) e
+      LEFT JOIN test_delivery d
+        ON d.Sample_ID     = e.Sample_ID
+       AND d.Sample_Number = e.Sample_Number
+       AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))
+           = LOWER(REPLACE(TRIM(e.Test_Type),' ',''))
+      WHERE e.Test_Type IS NOT NULL AND e.Test_Type <> ''
+        AND d.Sample_ID IS NULL
+      ORDER BY e.Sample_Date DESC, e.Sample_ID
+    ";
     $detPend = [];
     $rp = $db->query($sqlPend);
     if ($rp) {
@@ -431,7 +388,7 @@ ORDER BY e.fecha DESC, e.Sample_ID
                                     <th>Fecha</th>
                                     <th>Sample ID</th>
                                     <th>Sample Number</th>
-                                    <th>Test Type</th>  
+                                    <th>Test Type</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -449,7 +406,7 @@ ORDER BY e.fecha DESC, e.Sample_ID
                           <?php } ?>
                         </div>
                       </div>
-                    </div>  
+                    </div>
                     <div class="modal-footer">
                       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
