@@ -7,9 +7,9 @@ page_require_level(2);
 include_once('../components/header.php');
 
 // ====== Filtros ======
-$anio   = isset($_GET['anio'])   ? trim($_GET['anio'])   : '';
-$mes    = isset($_GET['mes'])    ? trim($_GET['mes'])    : '';
-$cliente= isset($_GET['cliente'])? trim($_GET['cliente']): '';
+$anio    = isset($_GET['anio'])    ? trim($_GET['anio'])    : '';
+$mes     = isset($_GET['mes'])     ? trim($_GET['mes'])     : '';
+$cliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
 
 // Construir WHERE dinámico
 $where = [];
@@ -58,7 +58,7 @@ while ($row = $res->fetch_assoc()) {
 }
 $pct_global = $total_solic > 0 ? round($total_entr / $total_solic * 100, 1) : 0.0;
 
-// Función helpers
+// Helpers
 function pctBadgeClass($pct) {
   if ($pct >= 90) return 'bg-success';
   if ($pct >= 70) return 'bg-warning text-dark';
@@ -181,15 +181,41 @@ function monthName($m) {
                 <th class="text-end">Solicitados</th>
                 <th class="text-end">Entregados</th>
                 <th style="width:220px;">% Entrega</th>
+                <th class="text-center" style="width:120px;">Detalle</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($rows)): ?>
-                <tr><td colspan="6" class="text-center text-muted py-4">Sin datos para los filtros seleccionados.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">Sin datos para los filtros seleccionados.</td></tr>
               <?php else: ?>
-                <?php foreach ($rows as $r): 
+                <?php 
+                $idx = 0;
+                foreach ($rows as $r): 
                   $pct = $r['solicitados'] > 0 ? round($r['entregados'] / $r['solicitados'] * 100, 1) : 0;
                   $badge = pctBadgeClass($pct);
+                  $idx++;
+                  $modalId = 'detalles_' . $idx;
+
+                  // ===== Detalle de solicitados por fila (Cliente + Año + Mes), respeta los filtros actuales =====
+                  $clienteRow = $db->escape($r['Client']);
+                  $anioRow    = (int)$r['anio'];
+                  $mesRow     = (int)$r['mes'];
+
+                  $sqlDetalle = "
+                    SELECT Sample_ID, Sample_Number, Test_Type, DATE(Sample_Date) AS fecha
+                    FROM lab_test_requisition_form
+                    WHERE Client = '{$clienteRow}'
+                      AND YEAR(Sample_Date) = {$anioRow}
+                      AND MONTH(Sample_Date) = {$mesRow}
+                    ORDER BY Sample_Date DESC, Sample_ID
+                  ";
+                  $detRes = $db->query($sqlDetalle);
+                  $detalles = [];
+                  if ($detRes) {
+                    while ($d = $detRes->fetch_assoc()) {
+                      $detalles[] = $d;
+                    }
+                  }
                 ?>
                   <tr>
                     <td><span class="fw-semibold"><?= htmlspecialchars($r['Client'] ?: '(Sin cliente)') ?></span></td>
@@ -205,7 +231,59 @@ function monthName($m) {
                         <span class="badge <?= $badge ?>"><?= $pct ?>%</span>
                       </div>
                     </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#<?= $modalId ?>">
+                        Ver
+                      </button>
+                    </td>
                   </tr>
+
+                  <!-- Modal de detalle por fila -->
+                  <div class="modal fade" id="<?= $modalId ?>" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">
+                            Solicitados – <?= htmlspecialchars($r['Client'] ?: '(Sin cliente)') ?> | <?= (int)$r['anio'] ?> / <?= str_pad($r['mes'], 2, '0', STR_PAD_LEFT) ?>
+                          </h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                          <?php if (empty($detalles)): ?>
+                            <div class="text-muted">Sin registros de solicitados para esta combinación.</div>
+                          <?php else: ?>
+                            <div class="table-responsive">
+                              <table class="table table-sm table-striped align-middle">
+                                <thead>
+                                  <tr>
+                                    <th>Fecha</th>
+                                    <th>Sample ID</th>
+                                    <th>Sample Number</th>
+                                    <th>Test Type</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <?php foreach ($detalles as $d): ?>
+                                    <tr>
+                                      <td><?= htmlspecialchars($d['fecha']) ?></td>
+                                      <td><?= htmlspecialchars($d['Sample_ID']) ?></td>
+                                      <td><?= htmlspecialchars($d['Sample_Number']) ?></td>
+                                      <td><?= htmlspecialchars($d['Test_Type']) ?></td>
+                                    </tr>
+                                  <?php endforeach; ?>
+                                </tbody>
+                              </table>
+                            </div>
+                          <?php endif; ?>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- /Modal -->
+
                 <?php endforeach; ?>
               <?php endif; ?>
             </tbody>
