@@ -51,6 +51,6 @@ if (!$ok) {
 }
 
 // Redirige de vuelta a la página anterior
-$back = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '../pages/control_concreto.php';
+$back = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '../pages/control_ensayo_concreto.php';
 header('Location: ' . $back);
 exit;
