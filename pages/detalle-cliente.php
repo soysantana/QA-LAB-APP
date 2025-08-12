@@ -376,3 +376,15 @@ function monthName($m) {
 </main>
 
 <?php include_once('../components/footer.php'); ?>
+<script>
+// Si la fila tiene pendientes, al abrir el modal cambia a la pestaña "Pendientes"
+document.addEventListener('shown.bs.modal', function (e) {
+  const trigger = document.querySelector('[data-bs-target="#' + e.target.id + '"].btn-ver-detalle');
+  if (!trigger) return;
+  const badge = trigger.querySelector('.badge.bg-danger');
+  if (badge && parseInt(badge.textContent, 10) > 0) {
+    const pendTabBtn = e.target.querySelector('[id^="pend-"][id$="-tab"]');
+    if (pendTabBtn) pendTabBtn.click();
+  }
+}, true);
+</script>
