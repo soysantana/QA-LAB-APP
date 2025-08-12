@@ -325,7 +325,7 @@ function monthName($m) {
                                         <th>Fecha</th>
                                         <th>Sample ID</th>
                                         <th>Sample Number</th>
-                                        <th>Test Type</th>
+                                        <th>Test Type</th>  
                                       </tr>
                                     </thead>
                                     <tbody>
