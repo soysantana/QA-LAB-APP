@@ -343,7 +343,7 @@ function monthName($m) {
                               <?php endif; ?>
                             </div>
                           </div>
-                        </div>
+                        </div>  
                         <div class="modal-footer">
                           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                         </div>
