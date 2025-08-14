@@ -121,11 +121,11 @@ page_require_level(3);
                           </div>
                           <div class="form-group mb-2">
                             <label for="Sample_Length">Longitud (m)</label>
-                            <input type="number" step="0.01" class="form-control" name="Sample_Length" value="<?= htmlspecialchars($row['sample_length']) ?>">
+                            <input type="number" step="any" class="form-control" name="Sample_Length" value="<?= htmlspecialchars($row['sample_length']) ?>">
                           </div>
                           <div class="form-group mb-2">
                             <label for="Sample_Weight">Peso (kg)</label>
-                            <input type="number" step="0.01" class="form-control" name="Sample_Weight" value="<?= htmlspecialchars($row['sample_weight']) ?>">
+                            <input type="number" step="any" class="form-control" name="Sample_Weight" value="<?= htmlspecialchars($row['sample_weight']) ?>">
                           </div>
                           <div class="form-group mb-2">
                             <label for="Store_In">Ubicación</label>
