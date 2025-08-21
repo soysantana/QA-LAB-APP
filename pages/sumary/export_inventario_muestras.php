@@ -55,7 +55,7 @@ function fillRows(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, $db, $sq
     $sheet->setCellValue("E{$rowNum}", $row['Depth_To']);
     $sheet->setCellValue("F{$rowNum}", $row['Sample_Date']);
     $sheet->setCellValue("G{$rowNum}", $row['Test_Type']);
-    $sheet->setCellValue("H{$rowNum}", $row['cliente']);
+    $sheet->setCellValue("H{$rowNum}", $row['Client']);
     $sheet->setCellValue("I{$rowNum}", $row['sample_length']);
     $sheet->setCellValue("J{$rowNum}", $row['sample_weight']);
     $sheet->setCellValue("K{$rowNum}", $row['store_in']);
@@ -74,7 +74,7 @@ function addStoreSheet(Spreadsheet $spreadsheet, $db, $title, $storeIn, $clientF
     SELECT 
       r.Sample_ID, r.Sample_Number, r.Sample_Type,
       r.Depth_From, r.Depth_To, r.Sample_Date,
-      r.Test_Type, r.`{$clientField}` AS cliente,
+      r.Test_Type, r.`{$clientField}` AS Client,
       i.sample_length, i.sample_weight, i.store_in, i.comment
     FROM lab_test_requisition_form r
     LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
@@ -88,7 +88,7 @@ function addStoreSheet(Spreadsheet $spreadsheet, $db, $title, $storeIn, $clientF
 /** Obtiene lista de clientes distintos en los últimos 12 meses */
 function getClients($db, $clientField, $fechaLimite) {
   $sql = "
-    SELECT DISTINCT r.`{$clientField}` AS cliente
+    SELECT DISTINCT r.`{$clientField}` AS Client
     FROM lab_test_requisition_form r
     WHERE r.Sample_Date >= '{$fechaLimite}'
     ORDER BY r.`{$clientField}` ASC
@@ -96,7 +96,7 @@ function getClients($db, $clientField, $fechaLimite) {
   $rs = $db->query($sql);
   $clientes = [];
   while ($c = $db->fetch_assoc($rs)) {
-    $clientes[] = $c['cliente'] ?: 'Sin_Cliente';
+    $clientes[] = $c['Client'] ?: 'Sin_Cliente';
   }
   return $clientes;
 }
@@ -123,7 +123,7 @@ function addClientSheets(Spreadsheet $spreadsheet, $db, $clientField, $fechaLimi
       SELECT 
         r.Sample_ID, r.Sample_Number, r.Sample_Type,
         r.Depth_From, r.Depth_To, r.Sample_Date,
-        r.Test_Type, r.`{$clientField}` AS cliente,
+        r.Test_Type, r.`{$clientField}` AS Client,
         i.sample_length, i.sample_weight, i.store_in, i.comment
       FROM lab_test_requisition_form r
       LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
@@ -143,7 +143,7 @@ function addClientSheets(Spreadsheet $spreadsheet, $db, $clientField, $fechaLimi
       SELECT 
         r.Sample_ID, r.Sample_Number, r.Sample_Type,
         r.Depth_From, r.Depth_To, r.Sample_Date,
-        r.Test_Type, r.`{$clientField}` AS cliente,
+        r.Test_Type, r.`{$clientField}` AS Client,
         i.sample_length, i.sample_weight, i.store_in, i.comment
       FROM lab_test_requisition_form r
       LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
