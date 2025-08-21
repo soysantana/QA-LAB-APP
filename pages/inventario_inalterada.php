@@ -87,11 +87,17 @@ while ($row = $db->fetch_assoc($result)) {
       <a href="../pages/sumary/export_inventario_muestras.php" class="btn btn-success">
         <i class="bi bi-file-earmark-excel"></i> Exportar Inventario
       </a>
+      <!-- NUEVO: Exportar LTRF + store_in -->
+  <a href="../pages/sumary/export_ltrf_samples.php?tipo=<?= urlencode((string)$tipo) ?>&desde=<?= urlencode((string)$desde) ?>&hasta=<?= urlencode((string)$hasta) ?>" 
+     class="btn btn-outline-success">
+    <i class="bi bi-filetype-csv"></i> Exportar LTRF + Store
+  </a>
       <button class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
         <i class="bi bi-funnel"></i> Filtros
       </button>
     </div>
   </div>
+  
 
   <div class="pagetitle mb-3">
     <h1><i class="bi bi-box-seam"></i> Inventario de Muestras</h1>
