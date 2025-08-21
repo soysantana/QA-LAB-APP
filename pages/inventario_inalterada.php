@@ -90,7 +90,7 @@ while ($row = $db->fetch_assoc($result)) {
       <!-- NUEVO: Exportar LTRF + store_in -->
   <a href="../pages/sumary/export_ltrf_samples.php?tipo=<?= urlencode((string)$tipo) ?>&desde=<?= urlencode((string)$desde) ?>&hasta=<?= urlencode((string)$hasta) ?>" 
      class="btn btn-outline-success">
-    <i class="bi bi-filetype-csv"></i> Exportar LTRF + Store
+    <i class="bi bi-filetype-csv"></i> Inventario General
   </a>
       <button class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros">
         <i class="bi bi-funnel"></i> Filtros
