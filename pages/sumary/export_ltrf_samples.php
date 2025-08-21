@@ -45,7 +45,7 @@ function fillRows(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, $db, $sq
     $sheet->setCellValue("F{$rowNum}", $row['Sample_Date']);
     $sheet->setCellValue("G{$rowNum}", $row['Test_Type']);
     // Si existe campo cliente en el SELECT, úsalo; si no, deja vacío
-    $sheet->setCellValue("H{$rowNum}", isset($row['cliente']) ? $row['cliente'] : '');
+    $sheet->setCellValue("H{$rowNum}", isset($row['Client']) ? $row['Client'] : '');
     $sheet->setCellValue("I{$rowNum}", $row['sample_length']);
     $sheet->setCellValue("J{$rowNum}", $row['sample_weight']);
     $sheet->setCellValue("K{$rowNum}", $row['store_in']);
@@ -79,7 +79,7 @@ function addStoreSheet(Spreadsheet $spreadsheet, $db, $title, $storeIn, $clientF
   $sheet->setTitle(sanitizeSheetName($title));
   setHeaders($sheet, $headers);
 
-  $selectClient = $clientFieldOrNull ? " , r.`{$clientFieldOrNull}` AS cliente " : " , '' AS cliente ";
+  $selectClient = $clientFieldOrNull ? " , r.`{$clientFieldOrNull}` AS Client " : " , '' AS Client ";
   $sql = "
     SELECT 
       r.Sample_ID, r.Sample_Number, r.Sample_Type,
@@ -99,7 +99,7 @@ function addStoreSheet(Spreadsheet $spreadsheet, $db, $title, $storeIn, $clientF
 /** Obtiene lista de clientes distintos (respeta fecha) */
 function getClients($db, $clientField, $fechaLimite) {
   $sql = "
-    SELECT DISTINCT r.`{$clientField}` AS cliente
+    SELECT DISTINCT r.`{$clientField}` AS Client
     FROM lab_test_requisition_form r
     WHERE r.Sample_Date >= '{$fechaLimite}'
     ORDER BY r.`{$clientField}` ASC
@@ -108,7 +108,7 @@ function getClients($db, $clientField, $fechaLimite) {
   $clientes = [];
   if ($rs) {
     while ($c = $db->fetch_assoc($rs)) {
-      $clientes[] = ($c['cliente'] === null || $c['cliente'] === '') ? 'Sin_Cliente' : $c['cliente'];
+      $clientes[] = ($c['Client'] === null || $c['Client'] === '') ? 'Sin_Cliente' : $c['Client'];
     }
   }
   return $clientes;
@@ -120,8 +120,8 @@ function addClientSheets(Spreadsheet $spreadsheet, $db, $clientField, $fechaLimi
 
   // Hoja "Clientes" con listado
   $listSheet = $spreadsheet->createSheet();
-  $listSheet->setTitle(sanitizeSheetName('Clientes'));
-  $listSheet->setCellValue('A1', 'Cliente');
+  $listSheet->setTitle(sanitizeSheetName('Client'));
+  $listSheet->setCellValue('A1', 'Client');
   $listSheet->getStyle('A1')->getFont()->setBold(true);
   $listSheet->getColumnDimension('A')->setAutoSize(true);
   $r = 2;
@@ -148,7 +148,7 @@ function addClientSheets(Spreadsheet $spreadsheet, $db, $clientField, $fechaLimi
       SELECT 
         r.Sample_ID, r.Sample_Number, r.Sample_Type,
         r.Depth_From, r.Depth_To, r.Sample_Date,
-        r.Test_Type, r.`{$clientField}` AS cliente,
+        r.Test_Type, r.`{$clientField}` AS Client,
         i.sample_length, i.sample_weight, i.store_in, i.comment
       FROM lab_test_requisition_form r
       LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
@@ -168,7 +168,7 @@ function addClientSheets(Spreadsheet $spreadsheet, $db, $clientField, $fechaLimi
       SELECT 
         r.Sample_ID, r.Sample_Number, r.Sample_Type,
         r.Depth_From, r.Depth_To, r.Sample_Date,
-        r.Test_Type, r.`{$clientField}` AS cliente,
+        r.Test_Type, r.`{$clientField}` AS Client,
         i.sample_length, i.sample_weight, i.store_in, i.comment
       FROM lab_test_requisition_form r
       LEFT JOIN inalteratedsample i ON r.id = i.requisition_id
