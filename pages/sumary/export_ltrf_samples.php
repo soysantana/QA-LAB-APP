@@ -123,7 +123,7 @@ if (empty($clientes)) {
 }
 
 /** ========= Descargar ========= */
-$filename  = 'Muestras_por_Cliente_' . date('Ymd_His') . '.xlsx';
+$filename  = 'Samples Inventory_' . date('Ymd_His') . '.xlsx';
 $temp_file = tempnam(sys_get_temp_dir(), 'excel_');
 $writer    = new Xlsx($spreadsheet);
 $writer->save($temp_file);
