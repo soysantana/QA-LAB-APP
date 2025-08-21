@@ -59,16 +59,16 @@ $typesIn = "('" . implode("','", array_map(function($t){ return $t; }, $ALLOWED_
 
 /** ========= Obtener lista de clientes (solo con tipos permitidos) ========= */
 $sqlClients = "
-  SELECT DISTINCT COALESCE(NULLIF(TRIM(r.`{$CLIENT_FIELD}`), ''), 'Sin_Cliente') AS cliente
+  SELECT DISTINCT COALESCE(NULLIF(TRIM(r.`{$CLIENT_FIELD}`), ''), 'Sin_Cliente') AS Client
   FROM lab_test_requisition_form r
   WHERE r.Sample_Type IN {$typesIn}
-  ORDER BY cliente ASC
+  ORDER BY Client ASC
 ";
 $rsClients = $db->query($sqlClients);
 
 $clientes = [];
 while ($c = $db->fetch_assoc($rsClients)) {
-  $clientes[] = $c['cliente'];
+  $clientes[] = $c['Client'];
 }
 
 /** ========= Construir Excel ========= */
