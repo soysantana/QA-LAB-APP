@@ -21,13 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-        <li class="breadcrumb-item">Forms</li>
+        <li class="breadcrumb-item"><a href="grain-size-menu.php">Forms</a></li>
         <li class="breadcrumb-item active">Grain Size Low Permeability Fill</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="LPF()">
+    <div class="row">
 
       <form class="row" action="grain-size-lpf.php" method="post">
 
@@ -35,15 +35,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <?php echo display_msg($msg); ?>
         </div>
 
+        <!-- Sample Information -->
         <div id="product_info"></div>
+        <!-- End Sample Information -->
 
+        <!-- Test Information -->
         <div class="col-lg-12">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Trial Information</h5>
 
-              <!-- Multi Columns Form -->
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="Standard" class="form-label">Standard</label>
@@ -85,22 +87,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"></textarea>
                 </div>
-                <div class="col-12">
-                  <textarea hidden class="form-control" name="Graph" id="Graph" style="height: 100px;"></textarea>
-                </div>
-              </div><!-- End Multi Columns Form -->
+              </div>
 
             </div>
           </div>
 
         </div>
+        <!-- End Test Information -->
 
+        <!-- Weighing Information and Summary GS Parameter -->
         <div class="col-lg-5">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Testing Information</h5>
-              <!-- Bordered Table -->
+              <!-- Weighing Information -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -133,10 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Weighing Information -->
 
               <h5 class="card-title">Summary Grain Size Distribution Parameter</h5>
-              <!-- Bordered Table -->
+              <!-- Summary GS Parameter -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -185,18 +186,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Summary GS Parameter -->
             </div>
           </div>
-        </div>
 
+        </div>
+        <!-- End Weighing Information and Summary GS Parameter -->
+
+        <!-- Grain Size and Classification -->
         <div class="col-lg-7">
 
+          <!-- Data Grain Size -->
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Grain Size Distribution</h5>
-              <!-- Bordered Table -->
-              <table class="table table-bordered">
+
+              <table id="grainTable" class="table table-bordered">
                 <thead>
                   <tr>
                     <th scope="col">Screen</th>
@@ -224,8 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     array("No. 20", "0.85", "WtRet10", "Ret10", "CumRet10", "Pass10", "Specs10"),
                     array("No. 50", "0.3", "WtRet11", "Ret11", "CumRet11", "Pass11", "Specs11"),
                     array("No. 60", "0.25", "WtRet12", "Ret12", "CumRet12", "Pass12", "Specs12"),
-                    array("No. 200", "0.075", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13"),
-                    // Puedes agregar más filas según sea necesario
+                    array("No. 200", "0.075", "WtRet13", "Ret13", "CumRet13", "Pass13", "Specs13")
                   );
 
                   foreach ($datos as $fila) {
@@ -261,15 +265,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
 
             </div>
           </div>
+          <!-- End Data Grain Size -->
 
+          <!-- Classification Using USCS -->
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Coarse Grained Classification using the USCS</h5>
-              <!-- Bordered Table -->
+
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -280,41 +285,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+
             </div>
           </div>
+          <!-- End Classification Using USCS -->
 
         </div>
+        <!-- End Grain Size and Classification -->
 
+        <!-- Chart the Grain Size Distribution -->
         <div class="col-lg-9">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title"></h5>
 
-              <!-- Multi Point Liquid Limit Plot Chart -->
-              <div id="GrainSizeLPF" style="min-height: 400px;" class="echart"></div>
-              <!-- End Multi Point Liquid Limit Plot Chart -->
+              <div id="GrainSizeChart" style="min-height: 400px;" class="echart"></div>
 
             </div>
           </div>
 
         </div>
+        <!-- Chart the Grain Size Distribution -->
 
+        <!-- Actions Buttons -->
         <div class="col-lg-3">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Actions</h5>
-              <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="gs_lpf">Save Essay</button>
               </div>
-
             </div>
           </div>
 
         </div>
+        <!-- End Actions Buttons -->
 
       </form>
 
@@ -323,6 +330,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/gs-lpf.js"></script>
-<script src="../libs/graph/Grain-Size-LPF.js"></script>
+<script type="module" src="../js/grain-size/gs-lpf.js"></script>
 <?php include_once('../components/footer.php');  ?>

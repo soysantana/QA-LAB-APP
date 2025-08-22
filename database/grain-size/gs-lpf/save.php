@@ -1,4 +1,3 @@
-<!-- Grain Size General -->
 <?php
 $user = current_user();
 
@@ -73,9 +72,6 @@ if (isset($_POST['gs_lpf'])) {
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         for ($i = 1; $i <= 13; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
@@ -139,8 +135,7 @@ if (isset($_POST['gs_lpf'])) {
             TotalWtRet,
             TotalRet,
             TotalCumRet,
-            TotalPass,
-            Graph";
+            TotalPass";
 
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 13; $i++) {
@@ -202,8 +197,7 @@ if (isset($_POST['gs_lpf'])) {
             '$TotalWtRet',
             '$TotalRet',
             '$TotalCumRet',
-            '$TotalPass',
-            '$Graph64'";
+            '$TotalPass'";
 
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 13; $i++) {
@@ -213,10 +207,10 @@ if (isset($_POST['gs_lpf'])) {
         $sql .= ")";
 
         if ($db->query($sql)) {
-            $session->msg('s', "Essay added successfully.");
+            $session->msg('s', "Ensayo agregado exitosamente.");
             redirect('../pages/grain-size-lpf.php', false);
         } else {
-            $session->msg('d', 'Sorry, the essay could not be added.');
+            $session->msg('d', 'Lo siento, el ensayo no se pudo agregar.');
             redirect('../pages/grain-size-lpf.php', false);
         }
     } else {
@@ -224,4 +218,3 @@ if (isset($_POST['gs_lpf'])) {
         redirect('../pages/grain-size-lpf.php', false);
     }
 }
-?>
