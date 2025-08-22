@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <?php $week = date('Y-m-d', strtotime('-14 days')); ?>
             <?php $realization = "(SELECT 1 FROM test_realization WHERE sample_id= p.sample_id AND sample_number = p.sample_number AND test_type = p.test_type)"; ?>
-            <?php $Seach = find_by_sql("SELECT id, Sample_ID, Sample_Number, Test_Type, Technician, Start_Date FROM test_preparation p WHERE Start_Date >= '{$week}' AND NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
+            <?php $Seach = find_by_sql("SELECT id, Sample_ID, Sample_Number, Test_Type, Technician, Start_Date FROM test_preparation p WHERE NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
 
             <form id="multiple-send-form" method="post" action="test-preparation.php">
               <table class="table datatable">
