@@ -145,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="GF">GF</option>
                     <option value="UFF">UFF</option>
                     <option value="EF">EF</option>
+                    <option value="PQ">PQ</option>
                     <option value="Common">Common</option>
                     <option value="Concreto">Concreto</option>
                   </select>
