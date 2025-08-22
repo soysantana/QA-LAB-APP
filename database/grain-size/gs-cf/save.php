@@ -84,9 +84,6 @@ if (isset($_POST['grain-size-coarse'])) {
         $ReactionResult = $db->escape($_POST['ReactionResult']);
         $AcidResult = $db->escape($_POST['AcidResult']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         for ($i = 1; $i <= 18; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
@@ -161,8 +158,7 @@ if (isset($_POST['grain-size-coarse'])) {
             Percent_Reactive_Particles,
             Average_Particles_Reactive,
             Reaction_Strength_Result,
-            Acid_Reactivity_Test_Result,
-            Graph";
+            Acid_Reactivity_Test_Result";
 
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 18; $i++) {
@@ -235,8 +231,7 @@ if (isset($_POST['grain-size-coarse'])) {
             '$PercentReactive',
             '$AvgParticles',
             '$ReactionResult',
-            '$AcidResult',
-            '$Graph64'";
+            '$AcidResult'";
 
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 18; $i++) {

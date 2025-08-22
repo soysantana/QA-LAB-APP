@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="FineFilter()">
+    <div class="row">
 
       <form class="row" action="grain-size-fine-filter.php?id=<?php echo $Search['id']; ?>" method="post">
 
@@ -47,13 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php include_once('../includes/sample-info-form.php'); ?>
         <!-- End Sample Information -->
 
+        <!-- Test Information -->
         <div class="col-lg-12">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Trial Information</h5>
 
-              <!-- Multi Columns Form -->
               <div class="row g-3">
                 <div class="col-md-4">
                   <label for="specsType" class="form-label">Especificaciones</label>
@@ -106,22 +106,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
                 </div>
-                <div class="col-12">
-                  <textarea hidden class="form-control" name="Graph" id="Graph" style="height: 100px;"><?php echo ($Search['Graph']); ?></textarea>
-                </div>
-              </div><!-- End Multi Columns Form -->
+              </div>
 
             </div>
           </div>
 
         </div>
+        <!-- End Test Information -->
 
+        <!-- Weighing Information and Acid Reactivity Test -->
         <div class="col-lg-5">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Testing Information</h5>
-              <!-- Bordered Table -->
+              <!-- Weighing Information -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -154,10 +153,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Weighing Information -->
 
               <h5 class="card-title">Reactivity Test Method FM13-006</h5>
-              <!-- Bordered Table -->
+              <!-- Reactivity Test -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -194,7 +193,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
 
               <table class="table table-bordered">
                 <tbody>
@@ -204,18 +202,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-
+              <!-- End Reactivity Test -->
             </div>
           </div>
-        </div>
 
+        </div>
+        <!-- End Weighing Information and Acid Reactivity Test -->
+
+        <!-- Grain Size and Classification -->
         <div class="col-lg-7">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Grain Size Distribution</h5>
-              <!-- Bordered Table -->
-              <table class="table table-bordered">
+              <!-- Data Grain Size -->
+              <table id="grainTable" class="table table-bordered">
                 <thead>
                   <tr>
                     <th scope="col">Screen</th>
@@ -285,7 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Data Grain Size -->
 
             </div>
           </div>
@@ -293,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Coarse Grained Classification using the USCS</h5>
-              <!-- Bordered Table -->
+              <!-- Classification USCS -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -304,33 +305,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+              <!-- End Classification USCS -->
             </div>
           </div>
 
         </div>
+        <!-- Grain Size and Classification -->
 
+        <!-- Chart the Grain Size Distribution -->
         <div class="col-lg-6">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title"></h5>
 
-              <!-- Grain Size Fine Aggregate -->
-              <div id="GrainSizeFineFilter" style="min-height: 400px;" class="echart"></div>
-              <!-- End Grain Size Fine Aggregate -->
+              <div id="GrainSizeChart" style="min-height: 400px;" class="echart"></div>
 
             </div>
           </div>
 
         </div>
+        <!-- End Chart the Grain Size Distribution -->
 
+        <!-- Summary GS Parameters -->
         <div class="col-lg-4">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Summary Grain Size Distribution Parameter</h5>
-              <!-- Bordered Table -->
+
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -379,17 +382,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
-              <!-- End Bordered Table -->
+
             </div>
           </div>
-        </div>
 
+        </div>
+        <!-- End Summary GS Parameters -->
+
+        <!-- Actions Buttons -->
         <div class="col-lg-2">
 
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Actions</h5>
-              <!-- Actions Buttons -->
+
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="update-gs-fine">Update Essay</button>
 
@@ -398,9 +404,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="../pdf/GS-FF-Build.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
-                    <li><a class="dropdown-item" href="../pdf/GS-FF-Naranjo.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
-                    <li><a class="dropdown-item" href="../pdf/GS-FF-Acopio.php?id=<?php echo ($Search['id']); ?>">Acopio</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-FF-Build">Contruccion</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-FF-Naranjo">Naranjo</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-FF-Acopio">Acopio</a></li>
                   </ul>
                 </div>
 
@@ -418,6 +424,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
         </div>
+        <!-- End Actions Buttons -->
 
       </form>
 
@@ -426,6 +433,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/gs-ff.js?v01"></script>
-<script src="../libs/graph/Grain-Size-Fine.js?v01"></script>
+<script type="module" src="../js/grain-size/gs-ff.js"></script>
 <?php include_once('../components/footer.php');  ?>

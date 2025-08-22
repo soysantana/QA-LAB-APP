@@ -70,9 +70,6 @@ if (isset($_POST['update_gs_lpf'])) {
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         $inputValues = array();
         for ($i = 1; $i <= 13; $i++) {
             $inputValues["WtRet" . $i] = $db->escape($_POST["WtRet$i"]);
@@ -139,17 +136,16 @@ if (isset($_POST['update_gs_lpf'])) {
         $query .= "TotalWtRet = '{$TotalWtRet}', ";
         $query .= "TotalRet = '{$TotalRet}', ";
         $query .= "TotalCumRet = '{$TotalCumRet}', ";
-        $query .= "TotalPass = '{$TotalPass}', ";
-        $query .= "Graph = '{$Graph64}' ";
+        $query .= "TotalPass = '{$TotalPass}'";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);
 
         if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'Sample has been updated');
+            $session->msg('s', 'La muestra se ha actualizado correctamente.');
             redirect('../reviews/grain-size-lpf.php?id=' . $Search, false);
         } else {
-            $session->msg('w', 'No changes were made');
+            $session->msg('w', 'No se realizaron cambios');
             redirect('../reviews/grain-size-lpf.php?id=' . $Search, false);
         }
     } else {

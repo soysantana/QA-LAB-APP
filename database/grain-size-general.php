@@ -73,9 +73,6 @@ if (isset($_POST['grain-size-general'])) {
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         for ($i = 1; $i <= 22; $i++) {
             ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
             ${"Ret" . $i} = $db->escape($_POST["Ret$i"]);
@@ -138,8 +135,7 @@ if (isset($_POST['grain-size-general'])) {
             TotalWtRet,
             TotalRet,
             TotalCumRet,
-            TotalPass,
-            Graph";
+            TotalPass";
 
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 22; $i++) {
@@ -201,8 +197,7 @@ if (isset($_POST['grain-size-general'])) {
             '$TotalWtRet',
             '$TotalRet',
             '$TotalCumRet',
-            '$TotalPass',
-            '$Graph64'";
+            '$TotalPass'";
 
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 22; $i++) {
@@ -212,10 +207,10 @@ if (isset($_POST['grain-size-general'])) {
         $sql .= ")";
 
         if ($db->query($sql)) {
-            $session->msg('s', "Essay added successfully.");
+            $session->msg('s', "Ensayo agregado exitosamente.");
             redirect('../pages/grain-size.php', false);
         } else {
-            $session->msg('d', 'Sorry, the essay could not be added.');
+            $session->msg('d', 'Lo siento, el ensayo no pudo ser agregado.');
             redirect('../pages/grain-size.php', false);
         }
     } else {
@@ -297,9 +292,6 @@ if (isset($_POST['update-gs-general'])) {
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         $inputValues = array();
         for ($i = 1; $i <= 22; $i++) {
             $inputValues["WtRet" . $i] = $db->escape($_POST["WtRet$i"]);
@@ -365,17 +357,16 @@ if (isset($_POST['update-gs-general'])) {
         $query .= "TotalWtRet = '{$TotalWtRet}', ";
         $query .= "TotalRet = '{$TotalRet}', ";
         $query .= "TotalCumRet = '{$TotalCumRet}', ";
-        $query .= "TotalPass = '{$TotalPass}', ";
-        $query .= "Graph = '{$Graph64}' ";
+        $query .= "TotalPass = '{$TotalPass}'";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);
 
         if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'Sample has been updated');
+            $session->msg('s', 'La muestra ha sido actualizada');
             redirect('../reviews/grain-size.php?id=' . $Search, false);
         } else {
-            $session->msg('w', 'No changes were made');
+            $session->msg('w', 'No se realizaron cambios');
             redirect('../reviews/grain-size.php?id=' . $Search, false);
         }
     } else {
