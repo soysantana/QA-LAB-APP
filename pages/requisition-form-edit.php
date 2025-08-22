@@ -145,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="GF" <?php if ($Search['Material_Type'] == 'GF') echo 'selected'; ?>>GF</option>
                     <option value="UFF" <?php if ($Search['Material_Type'] == 'UFF') echo 'selected'; ?>>UFF</option>
                     <option value="EF" <?php if ($Search['Material_Type'] == 'EF') echo 'selected'; ?>>EF</option>
+                    <option value="PQ" <?php if ($Search['Material_Type'] == 'PQ') echo 'selected'; ?>>PQ</option>
                     <option value="Common" <?php if ($Search['Material_Type'] == 'Common') echo 'selected'; ?>>Common</option>
                   </select>
                 </div>
