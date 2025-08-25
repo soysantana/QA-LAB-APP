@@ -119,4 +119,4 @@ $pdf->SetFont('Arial', '', 12);
 $pdf->SetXY(24, 208);
 $pdf->MultiCell(166, 4, $Search['Comments'], 0, 'L');
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'MC' . '-' . $Search['Material_Type'] . '.pdf', 'I');

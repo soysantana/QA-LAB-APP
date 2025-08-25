@@ -129,14 +129,14 @@ if (isset($_POST['update_sp'])) {
         $result = $db->query($query);
 
         if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'Sample has been updated');
-            redirect('/reviews/standard-proctor.php?id=' . $Search, false);
+            $session->msg('s', 'La muestra ha sido actualizada');
+            redirect('../../reviews/standard-proctor.php?id=' . $Search, false);
         } else {
-            $session->msg('w', 'No changes were made');
-            redirect('/reviews/standard-proctor.php?id=' . $Search, false);
+            $session->msg('w', 'No se realizaron cambios');
+            redirect('../../reviews/standard-proctor.php?id=' . $Search, false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('/reviews/standard-proctor.php?id=' . $Search, false);
+        redirect('../../reviews/standard-proctor.php?id=' . $Search, false);
     }
 }

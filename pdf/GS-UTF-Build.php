@@ -3,6 +3,10 @@ require('../libs/fpdf/fpdf.php');
 require('../libs/fpdi/src/autoload.php');
 require_once('../config/load.php');
 
+// Leer JSON recibido
+$input = json_decode(file_get_contents('php://input'), true);
+$GrainSizeChart = $input['GrainSizeChart'] ?? null;
+
 $Search = find_by_id('grain_size_upstream_transition_fill', $_GET['id']);
 
 use setasign\Fpdi\Fpdi;
@@ -327,12 +331,19 @@ $pdf->Cell(73, 6, $resultado, 0, 1, 'C');
 $pdf->SetXY(52, 478);
 $pdf->MultiCell(145, 4, $Search['Comments'], 0, 'L');
 
-// GRAFICAS
-$imageBase64 = $Search['Graph'];
-$imageData = base64_decode($imageBase64);
-$tempFile = tempnam(sys_get_temp_dir(), 'image');
-file_put_contents($tempFile, $imageData);
-$pdf->Image($tempFile, 30, 305, 230, 0, 'PNG');
-unlink($tempFile);
+// Function to insert base64 image into PDF
+function insertarImagenBase64($pdf, $base64Str, $x, $y, $w, $h)
+{
+    if ($base64Str) {
+        $base64Str = preg_replace('#^data:image/\w+;base64,#i', '', $base64Str);
+        $imageData = base64_decode($base64Str);
+        $tmpFile = tempnam(sys_get_temp_dir(), 'img') . '.png';
+        file_put_contents($tmpFile, $imageData);
+        $pdf->Image($tmpFile, $x, $y, $w, $h);
+        unlink($tmpFile);
+    }
+}
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+insertarImagenBase64($pdf, $GrainSizeChart, 30, 305, 230, 0); // ajusta X, Y, ancho, alto
+
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'GS' . '-' . $Search['Material_Type'] . '.pdf', 'I');

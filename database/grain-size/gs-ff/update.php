@@ -81,9 +81,6 @@ if (isset($_POST['update-gs-fine'])) {
         $ReactionResult = $db->escape($_POST['ReactionResult']);
         $AcidResult = $db->escape($_POST['AcidResult']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         $inputValues = array();
         for ($i = 1; $i <= 18; $i++) {
             $inputValues["WtRet" . $i] = $db->escape($_POST["WtRet$i"]);
@@ -159,8 +156,7 @@ if (isset($_POST['update-gs-fine'])) {
         $query .= "E_Particles_Reactive = '{$Particles5}', ";
         $query .= "Average_Particles_Reactive = '{$AvgParticles}', ";
         $query .= "Reaction_Strength_Result = '{$ReactionResult}', ";
-        $query .= "Acid_Reactivity_Test_Result = '{$AcidResult}', ";
-        $query .= "Graph = '{$Graph64}' ";
+        $query .= "Acid_Reactivity_Test_Result = '{$AcidResult}'";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);
