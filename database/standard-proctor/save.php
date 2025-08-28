@@ -1,7 +1,7 @@
 <?php
 $user = current_user();
 
-if (isset($_POST['standard-proctor'])) {
+if (isset($_POST['SaveSP'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -208,14 +208,14 @@ if (isset($_POST['standard-proctor'])) {
         $sql .= ")";
 
         if ($db->query($sql)) {
-            $session->msg('s', "Essay added successfully.");
-            redirect('/pages/standard-proctor.php', false);
+            $session->msg('s', "Ensayo registrado exitosamente.");
+            redirect('../../pages/standard-proctor.php', false);
         } else {
-            $session->msg('d', 'Sorry, the essay could not be added.');
-            redirect('/pages/standard-proctor.php', false);
+            $session->msg('d', 'Lo sentimos, no se pudo agregar el ensayo.');
+            redirect('../../pages/standard-proctor.php', false);
         }
     } else {
         $session->msg("d", $errors);
-        redirect('/pages/standard-proctor.php', false);
+        redirect('../../pages/standard-proctor.php', false);
     }
 }
