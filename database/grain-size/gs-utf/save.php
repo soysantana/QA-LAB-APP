@@ -94,6 +94,33 @@ if (isset($_POST['gs_utf'])) {
             ${"Pass" . $i} = $db->escape($_POST["Pass$i"]);
         }
 
+
+        // --- Verificar si ya existe el Sample_Number en esta prueba ---
+        $baseSampleNumber = $SampleNumber;
+        $sqlCheck = "SELECT Sample_Number 
+             FROM grain_size_upstream_transition_fill
+             WHERE Sample_ID = '{$SampleID}'
+               AND Test_Type = '{$TestType}'
+               AND (Sample_Number = '{$baseSampleNumber}' OR Sample_Number LIKE '{$baseSampleNumber}-%')
+             ORDER BY id ASC";
+
+        $resultCheck = $db->query($sqlCheck);
+
+        if ($db->num_rows($resultCheck) > 0) {
+            $maxSuffix = 0;
+            while ($row = $db->fetch_assoc($resultCheck)) {
+                if (preg_match('/-R(\d+)$/', $row['Sample_Number'], $matches)) {
+                    $num = (int)$matches[1];
+                    if ($num > $maxSuffix) {
+                        $maxSuffix = $num;
+                    }
+                }
+            }
+            // generar el nuevo SampleNumber con sufijo +1
+            $SampleNumber = $baseSampleNumber . '-R' . ($maxSuffix + 1);
+        }
+        // --- Fin verificación ---
+
         $sql = "INSERT INTO grain_size_upstream_transition_fill (
             id,
             Project_Name,
