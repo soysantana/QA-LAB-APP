@@ -71,7 +71,15 @@ function fetchData($tableName, $applyDateFilter = false)
 {
     $week = date('Y-m-d', strtotime('-14 days'));
     $query = $applyDateFilter
-        ? "SELECT * FROM {$tableName} p WHERE NOT EXISTS (SELECT 1 FROM test_reviewed WHERE Tracking = p.id) AND p.Registed_Date >= '$week'"
+        ? "SELECT * 
+       FROM {$tableName} p 
+       WHERE NOT EXISTS (
+           SELECT 1 FROM test_reviewed tr WHERE tr.Tracking = p.id
+       )
+       AND NOT EXISTS (
+           SELECT 1 FROM test_repeat tpr WHERE tpr.Tracking = p.id
+       )
+       AND p.Registed_Date >= '$week'"
         : "SELECT * FROM {$tableName}";
 
     return find_by_sql($query);
