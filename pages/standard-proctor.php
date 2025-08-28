@@ -8,7 +8,7 @@ require_once('../config/load.php');
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['standard-proctor'])) {
+  if (isset($_POST['SaveSP'])) {
     include('../database/standard-proctor/save.php');
   }
 }
@@ -295,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <h5 class="card-title">Actions</h5>
               <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
-                <button type="submit" class="btn btn-success" name="standard-proctor">Save Essay</button>
+                <button type="submit" class="btn btn-success" name="SaveSP">Save Essay</button>
                 <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
                 <button type="button" class="btn btn-primary" onclick="search()">Seach Gravity</button>
                 <div id="mensaje-container"></div>
