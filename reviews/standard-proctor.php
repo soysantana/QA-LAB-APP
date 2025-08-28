@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="SProctor()">
+    <div class="row">
 
       <form class="row" action="standard-proctor.php?id=<?php echo $Search['id']; ?>" method="post">
 
@@ -313,8 +313,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="../pdf/SP-Naranjo.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
-                    <li><a class="dropdown-item" href="../pdf/SP-Build.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
+                    <li><a class="dropdown-item" data-exportar="SP-Naranjo">Naranjo</a></li>
+                    <li><a class="dropdown-item" data-exportar="SP-Build">Contruccion</a></li>
                   </ul>
                 </div>
 
@@ -342,6 +342,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/Standard-Proctor.js"></script>
+<script type="module" src="../js/Standard-Proctor.js"></script>
 <script src="../libs/graph/Standard-Proctor.js"></script>
 <?php include_once('../components/footer.php');  ?>
