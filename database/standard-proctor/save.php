@@ -195,8 +195,7 @@ if (isset($_POST['SaveSP'])) {
             '$Ydt',
             '$YwKnm',
             '$CorrectedDryUnitWeigt',
-            '$CorrectedWaterContentFiner',
-            '$Graph64'";
+            '$CorrectedWaterContentFiner'";
 
         // Add the dynamically generated values to the query
         for ($i = 1; $i <= 6; $i++) {
