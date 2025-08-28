@@ -57,9 +57,6 @@ if (isset($_POST['standard-proctor'])) {
         $Ydt = $db->escape($_POST['Ydt']);
         $YwKnm = $db->escape($_POST['YwKnm']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         for ($i = 1; $i <= 6; $i++) {
             ${"WetSoilMod" . $i} = $db->escape($_POST["WetSoilMod$i"]);
             ${"WtMold" . $i} = $db->escape($_POST["WtMold$i"]);
@@ -146,8 +143,7 @@ if (isset($_POST['standard-proctor'])) {
             YDT_Porce,
             Yw_KnM3,
             Corrected_Dry_Unit_Weigt,
-            Corrected_Water_Content_Finer,
-            Graph";
+            Corrected_Water_Content_Finer";
 
         // Add the dynamically generated fields to the query
         for ($i = 1; $i <= 6; $i++) {

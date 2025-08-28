@@ -104,9 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"><?php echo ($Search['Comments']); ?></textarea>
                 </div>
-                <div class="col-12">
-                  <textarea hidden class="form-control" name="Graph" id="Graph" style="height: 100px;"><?php echo ($Search['Graph']); ?></textarea>
-                </div>
               </div><!-- End Multi Columns Form -->
 
             </div>

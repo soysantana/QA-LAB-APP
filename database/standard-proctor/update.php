@@ -56,9 +56,6 @@ if (isset($_POST['update_sp'])) {
         $Ydt = $db->escape($_POST['Ydt']);
         $YwKnm = $db->escape($_POST['YwKnm']);
 
-        $Graph = $db->escape($_POST['Graph']);
-        $Graph64 = str_replace('data:image/png;base64,', '', $Graph);
-
         $inputValues = array();
         for ($i = 1; $i <= 6; $i++) {
             $inputValues["WetSoilMod" . $i] = $db->escape($_POST["WetSoilMod$i"]);
@@ -122,8 +119,7 @@ if (isset($_POST['update_sp'])) {
         $query .= "PF_Porce = '{$PfPorce}', ";
         $query .= "GM_Porce = '{$Gm}', ";
         $query .= "YDT_Porce = '{$Ydt}', ";
-        $query .= "Yw_KnM3 = '{$YwKnm}', ";
-        $query .= "Graph = '{$Graph64}' ";
+        $query .= "Yw_KnM3 = '{$YwKnm}' ";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);
