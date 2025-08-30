@@ -106,18 +106,6 @@ document.querySelectorAll('[data-exportar]').forEach((el) => {
   });
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("form.row");
-  if (form) {
-    // Seleccionamos solo los inputs con los nombres específicos
-    const inputs = form.querySelectorAll('input[name="SearchMC"], input[name="SearchSG"]');
-    inputs.forEach(input => {
-      input.addEventListener("input", search);
-    });
-  }
-});
-
-
 $("input").on("blur", function (event) {
   event.preventDefault();
   enviarData();
@@ -161,3 +149,12 @@ function search() {
     }
   });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Seleccionamos los botones por su atributo name
+  const botones = document.querySelectorAll('button[name="SearchMC"], button[name="SearchSG"]');
+
+  botones.forEach(boton => {
+    boton.addEventListener("click", search);
+  });
+});
