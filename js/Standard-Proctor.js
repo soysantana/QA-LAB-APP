@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form.row");
   if (form) {
     // Seleccionamos solo los inputs con los nombres específicos
-    const inputs = form.querySelectorAll('input[name="SearchMC"], input[name="SheacrSG"]');
+    const inputs = form.querySelectorAll('input[name="SearchMC"], input[name="SearchSG"]');
     inputs.forEach(input => {
       input.addEventListener("input", search);
     });

@@ -296,8 +296,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success" name="SaveSP">Save Essay</button>
-                <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
-                <button type="button" class="btn btn-primary" onclick="search()">Seach Gravity</button>
+                <button type="button" class="btn btn-primary" name="SearchMC">Search Moisture</button>
+                <button type="button" class="btn btn-primary" name="SearchSG">Search Gravity</button>
                 <div id="mensaje-container"></div>
               </div>
 
