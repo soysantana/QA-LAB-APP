@@ -106,6 +106,18 @@ document.querySelectorAll('[data-exportar]').forEach((el) => {
   });
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form.row");
+  if (form) {
+    // Seleccionamos solo los inputs con los nombres específicos
+    const inputs = form.querySelectorAll('input[name="SearchMC"], input[name="SheacrSG"]');
+    inputs.forEach(input => {
+      input.addEventListener("input", search);
+    });
+  }
+});
+
+
 $("input").on("blur", function (event) {
   event.preventDefault();
   enviarData();
