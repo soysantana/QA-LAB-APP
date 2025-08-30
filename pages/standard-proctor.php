@@ -313,6 +313,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script type="module" src="../js/Standard-Proctor.js"></script>
+<script type="module" src="../js/Standard-Proctor.js?V-01"></script>
 <script src="../libs/graph/Standard-Proctor.js"></script>
 <?php include_once('../components/footer.php');  ?>
