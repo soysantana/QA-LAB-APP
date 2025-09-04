@@ -64,16 +64,19 @@ $sql = "
         FROM test_delivery d
         WHERE d.Sample_ID     = e.Sample_ID
           AND d.Sample_Number = e.Sample_Number
-          AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))
-              = LOWER(REPLACE(TRIM(e.Test_Type),' ',''))
+          AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
+              = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
       )
     ) AS entregados
   FROM ( $expandedSubquery ) e
   $whereSqlExp
-  WHERE e.Test_Type IS NOT NULL AND e.Test_Type <> ''
+  WHERE e.Test_Type IS NOT NULL 
+    AND e.Test_Type <> ''
+    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
   GROUP BY e.Client, anio, mes
   ORDER BY anio DESC, mes DESC, e.Client
 ";
+
 
 $res = $db->query($sql);
 if (!$res) {
