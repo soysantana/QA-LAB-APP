@@ -266,12 +266,15 @@ if (empty($rows)) {
     ";
 
     // === SOLICITADOS (expandido a ensayos) ===
-    $sqlSolic = "
-      SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-      FROM ( $expanded ) e
-      WHERE e.Test_Type IS NOT NULL AND e.Test_Type <> ''
-      ORDER BY e.Sample_Date DESC, e.Sample_ID
-    ";
+  $sqlSolic = "
+  SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+  FROM ( $expanded ) e
+  WHERE e.Test_Type IS NOT NULL 
+    AND e.Test_Type <> ''
+    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
+  ORDER BY e.Sample_Date DESC, e.Sample_ID
+";
+
     $detSolic = [];
     $rs = $db->query($sqlSolic);
     if ($rs) {
@@ -281,18 +284,21 @@ if (empty($rows)) {
     }
 
     // === PENDIENTES (solicitados SIN entrega) ===
-    $sqlPend = "
-      SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-      FROM ( $expanded ) e
-      LEFT JOIN test_delivery d
-        ON d.Sample_ID     = e.Sample_ID
-       AND d.Sample_Number = e.Sample_Number
-       AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))
-           = LOWER(REPLACE(TRIM(e.Test_Type),' ',''))
-      WHERE e.Test_Type IS NOT NULL AND e.Test_Type <> ''
-        AND d.Sample_ID IS NULL
-      ORDER BY e.Sample_Date DESC, e.Sample_ID
-    ";
+   $sqlPend = "
+  SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+  FROM ( $expanded ) e
+  LEFT JOIN test_delivery d
+    ON d.Sample_ID     = e.Sample_ID
+   AND d.Sample_Number = e.Sample_Number
+   AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
+       = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+  WHERE e.Test_Type IS NOT NULL 
+    AND e.Test_Type <> ''
+    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
+    AND d.Sample_ID IS NULL
+  ORDER BY e.Sample_Date DESC, e.Sample_ID
+";
+
     $detPend = [];
     $rp = $db->query($sqlPend);
     if ($rp) {
