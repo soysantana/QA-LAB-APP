@@ -8,7 +8,7 @@ require_once('../config/load.php');
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['standard-proctor'])) {
+  if (isset($_POST['SaveSP'])) {
     include('../database/standard-proctor/save.php');
   }
 }
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </nav>
   </div><!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="SProctor()">
+    <div class="row">
 
       <form class="row" action="standard-proctor.php" method="post">
 
@@ -95,9 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-12">
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px;"></textarea>
-                </div>
-                <div class="col-12">
-                  <textarea hidden class="form-control" name="Graph" id="Graph" style="height: 100px;"></textarea>
                 </div>
               </div><!-- End Multi Columns Form -->
 
@@ -265,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                   <tr>
                     <th scope="row">ɣω (KN/mᵌ)</th>
-                    <td colspan="3"><input type="text" style="border: none;" class="form-control" name="YwKnm" id="YwKnm" value="9.802"></td>
+                    <td colspan="3"><input type="text" style="border: none;" class="form-control" name="YwKnm" id="YwKnm"></td>
                   </tr>
                 </tbody>
               </table>
@@ -298,9 +295,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <h5 class="card-title">Actions</h5>
               <!-- Actions Buttons -->
               <div class="d-grid gap-2 mt-3">
-                <button type="submit" class="btn btn-success" name="standard-proctor">Save Essay</button>
-                <button type="button" class="btn btn-primary" onclick="search()">Search Moisture</button>
-                <button type="button" class="btn btn-primary" onclick="search()">Seach Gravity</button>
+                <button type="submit" class="btn btn-success" name="SaveSP">Save Essay</button>
+                <button type="button" class="btn btn-primary" name="SearchMC">Search Moisture</button>
+                <button type="button" class="btn btn-primary" name="SearchSG">Search Gravity</button>
                 <div id="mensaje-container"></div>
               </div>
 
@@ -316,6 +313,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/Standard-Proctor.js"></script>
+<script type="module" src="../js/Standard-Proctor.js?V-01"></script>
 <script src="../libs/graph/Standard-Proctor.js"></script>
 <?php include_once('../components/footer.php');  ?>
