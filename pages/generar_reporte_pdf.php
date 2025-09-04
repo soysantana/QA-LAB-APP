@@ -316,7 +316,6 @@ if (in_array($dia, [0, 1, 2, 3])) {
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
   $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
-  $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
   $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
 }
 
@@ -327,7 +326,6 @@ if (in_array($dia, [3, 4, 5, 6])) {
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
   $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
-  $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
   $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
 }
 
@@ -339,6 +337,7 @@ if (
   ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
 ) {
   $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');
+   $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
   $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
 }
 
