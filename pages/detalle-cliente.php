@@ -25,31 +25,44 @@ $whereSqlExp = count($whereExp) ? 'WHERE ' . implode(' AND ', $whereExp) : '';
 // ====== Subconsulta (EXPANSIÓN por comas, compatible MySQL 5.7/8.0) ======
 $expandedSubquery = "
   SELECT 
-    r.Client,
-    r.Sample_ID,
-    r.Sample_Number,
-    r.Sample_Date,
-    -- Tomamos el token n-ésimo al partir por coma, quitando espacios/comillas
-    TRIM(BOTH '\"' FROM TRIM(
-      SUBSTRING_INDEX(
+    t.Client,
+    t.Sample_ID,
+    t.Sample_Number,
+    t.Sample_Date,
+    t.Test_Type
+  FROM (
+    SELECT 
+      r.Client,
+      r.Sample_ID,
+      r.Sample_Number,
+      r.Sample_Date,
+      -- Token n-ésimo, sin espacios ni comillas
+      TRIM(BOTH '\"' FROM TRIM(
         SUBSTRING_INDEX(
-          REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), 
-          ',', n.n
-        ), 
-        ',', -1
-      )
-    )) AS Test_Type
-  FROM lab_test_requisition_form r
-  JOIN (
-    SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
-    UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
-    UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
-  ) n
-    ON n.n <= 1 
-         + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
-         - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
+          SUBSTRING_INDEX(
+            REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','),
+            ',', n.n
+          ),
+          ',', -1
+        )
+      )) AS Test_Type
+    FROM lab_test_requisition_form r
+    JOIN (
+      SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+      UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
+      UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
+      UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+    ) n
+      ON n.n <= 1 
+           + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
+           - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
+  ) t
+  WHERE t.Test_Type IS NOT NULL 
+    AND t.Test_Type <> ''
+    -- Normaliza acento y compara contra 'envio'
+    AND LOWER(REPLACE(t.Test_Type,'í','i')) <> 'envio'
 ";
+
 
 // ====== Query principal (AGRUPADO POR ENSAYO) ======
 $sql = "
