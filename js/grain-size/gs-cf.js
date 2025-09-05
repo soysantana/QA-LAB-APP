@@ -1,84 +1,9 @@
 import { calcularParametrosGranulometricos } from './gs-summary.js';
 import { enviarImagenAlServidor } from '../export/export-chart.js';
 import { UpdateGraph } from '../../charts/grain-size/gs-chart.js';
+import { initSpecsSelect } from '../../js/grain-size/specs-gs.js';
 
 function CoarseFilter() {
-
-    // Array para almacenar los IDs de los elementos del DOM
-    const specElements = [
-        "Specs7",
-        "Specs8",
-        "Specs9",
-        "Specs11",
-        "Specs12",
-        "Specs13",
-        "Specs15",
-        "Specs18"
-    ];
-
-    const specsType = document.getElementById("specsType");
-
-    // Especificaciones de investigación, agregado, naranjo y acopio
-    const specs = {
-        AGGINV: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "80-100",
-            Specs11: "50-100",
-            Specs12: "15-60",
-            Specs13: "2-15",
-            Specs15: "0-7",
-            Specs18: "0-2",
-        },
-        Build: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "70-100",
-            Specs11: "33-100",
-            Specs12: "7-60",
-            Specs13: "0-15",
-            Specs15: "0-7",
-            Specs18: "0-5",
-        },
-        Naranjo: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "80-100",
-            Specs11: "40-100",
-            Specs12: "7-60",
-            Specs13: "0-15",
-            Specs15: "0-7",
-            Specs18: "0-1.7",
-        },
-        Acopio: {
-            Specs7: "100",
-            Specs8: "87-100",
-            Specs9: "80-100",
-            Specs11: "50-100",
-            Specs12: "15-60",
-            Specs13: "2-15",
-            Specs15: "0-7",
-            Specs18: "0-2",
-        },
-    };
-
-    // Función que actualiza los valores de las especificaciones dinámicamente
-    function updateSpecs(selectedType) {
-        const selectedSpecs = specs[selectedType];
-
-        specElements.forEach((id) => {
-            document.getElementById(id).value = selectedSpecs[id];
-        });
-    }
-
-    // Evento que detecta cambios en el select
-    specsType.addEventListener("change", function () {
-        // Obtener el valor seleccionado ("Investigacion" o "agregado")
-        const selectedValue = specsType.value;
-
-        // Llamar a la función para actualizar las especificaciones
-        updateSpecs(selectedValue);
-    });
 
     const cumRetArray = [0];
     const PassArray = new Array(18).fill(null);
@@ -222,6 +147,10 @@ function CoarseFilter() {
     calcularParametrosGranulometricos(datos);
     UpdateGraph();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    initSpecsSelect();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("form.row");
