@@ -348,6 +348,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
 <script src="../js/Atterberg-Limit.js"></script>
-<script src="../libs/graph/Liquid-Limit-Plot.js"></script>
+<script src="../libs/graph/Liquid-Limit-Plot.js?v01"></script>
 <script src="../libs/graph/Plasticity-Chart.js"></script>
 <?php include_once('../components/footer.php');  ?>
