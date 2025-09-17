@@ -7,8 +7,8 @@ var LLMCPorce3 = parseFloat(document.getElementById("LLMCPorce3").value);
 
 var Rsquared = document.getElementById("Rsquared").value;
 
-var maxLLMCPorce3 = Math.ceil(LLMCPorce3) + 1;
-var minLLMCPorce1 = Math.floor(LLMCPorce1) - 1;
+var maxLLMCPorce3 = Math.ceil(LLMCPorce3) + 2;
+var minLLMCPorce1 = Math.floor(LLMCPorce1) - 2;
 
 echarts.registerTransform(ecStat.transform.regression);
 
