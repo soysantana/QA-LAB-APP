@@ -10,11 +10,6 @@ var Rsquared = document.getElementById("Rsquared").value;
 var maxLLMCPorce3 = Math.ceil(LLMCPorce3) + 1;
 var minLLMCPorce1 = Math.floor(LLMCPorce1) - 1;
 
-// Ajustar el valor para que sea par
-if (minLLMCPorce1 % 2 !== 0) {
-  minLLMCPorce1--;
-}
-
 echarts.registerTransform(ecStat.transform.regression);
 
 echarts.init(document.querySelector("#liquid-limit")).setOption({
