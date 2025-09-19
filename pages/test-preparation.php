@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <option value="AL">AL</option>
                   <option value="GS">GS</option>
                   <option value="SP">SP</option>
+                   <option value="Densidad-Vibratorio">Densidad Vibratorio</option>
                   <option value="SG">SG</option>
                   <option value="UCS">UCS</option>
                   <option value="BTS">BTS</option>
@@ -76,9 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <option value="Consolidation">Consolidación</option>
                   <option value="PH">PH</option>
                   <option value="Permeability">Permeabilidad</option>
-                  <option value="SHAPE">Formas de Partículas</option>
-                  <option value="DENSITY">Densidad</option>
-                  <option value="CRUMBS">CRUMBS</option>
+                  <option value="Shape">Formas de Partículas</option>
+                  <option value="ensity">Densidad</option>
+                  <option value="Crumbs">Crumbs</option>
+                  <option value="Actividad">Actividad</option>
                 </select>
                 <small class="text-muted">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples opciones.</small>
               </div>
@@ -140,9 +142,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       <td>
                         <input type="text" class="form-control" name="Technician[<?php echo $Seach['id']; ?>]" autocomplete="off" value="<?php echo $Seach['Technician']; ?>">
                       </td>
-                      <td>
-                        <?php echo $Seach['Start_Date']; ?>
+                     <td>
+                       <input type="date" name="Start_Date[<?= $Seach['id'] ?>]"  value="<?= $Seach['Start_Date'] ?>" class="form-control form-control-sm">
                       </td>
+
                     </tr>
                   <?php endforeach; ?>
                 </tbody>

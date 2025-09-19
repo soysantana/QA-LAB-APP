@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="MRM">MRM</option>
                     <option value="Geotecnia">Geotecnia</option>
                     <option value="Hidrogeologia">Hidrogeologia</option>
+                    <option value="PV Project">PV Project</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -146,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="EF">EF</option>
                     <option value="PQ">PQ</option>
                     <option value="Common">Common</option>
+                    <option value="Concreto">Concreto</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -160,6 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="Lexan">Lexan</option>
                     <option value="Mazier">Mazier</option>
                     <option value="Ring">Ring</option>
+                    <option value="Cilindro">Cilindro</option>
+                    <option value="Cubo">Cubo</option>
                   </select>
                 </div>
                 <div class="col-md-2">
@@ -210,12 +214,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   "HY" => "Hidrometro (HY)",
                   "DHY" => "Doble Hidrometro (DHY)",
                   "PH" => "Pinhole (PH)",
+                  "Densidad-Vibratorio" => "Densidad-Vibratorio",
                   "Permeability" => "Permeabilidad",
-                  "SHAPE" => "Formas de Particulas (SHAPE)",
-                  "DENSITY" => "Densidad",
-                  "CRUMBS" => "Crumbs",
+                  "Shape" => "Formas de Particulas (Shape)",
+                  "Density" => "Densidad",
+                  "Crumbs" => "Crumbs",
                   "Actividad" => "Actividad",
                   "Envio" => "Envio",
+
                 ];
                 ?>
 

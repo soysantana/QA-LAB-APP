@@ -116,7 +116,7 @@ $pdf->Cell(25, 1, $Search['Moisture_Content_Porce'], 0, 1, 'C');
 
 // Comments Laboratory
 $pdf->SetFont('Arial', '', 12);
-$pdf->SetXY(19, 210);
-$pdf->MultiCell(50, 1, $Search['Comments'], 0, 'C');
+$pdf->SetXY(24, 208);
+$pdf->MultiCell(166, 4, $Search['Comments'], 0, 'L');
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'MC' . '-' . $Search['Material_Type'] . '.pdf', 'I');

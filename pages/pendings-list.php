@@ -121,13 +121,14 @@ include_once('../components/header.php');
                 $columnaTipo = [];
 
                 foreach ($requisitions as $req) {
-                  if (!empty($req['Test_Type'])) {
-                    $testTypesArray = array_map('trim', explode(',', $req['Test_Type']));
-                    foreach ($testTypesArray as $testType) {
-                      $columnaTipo[$testType] = 'Test_Type'; // solo hay una columna ahora
-                    }
-                  }
-                }
+  if (!empty($req['Test_Type'])) {
+    $testTypesArray = array_map('trim', explode(',', $req['Test_Type']));
+    foreach ($testTypesArray as $testType) {
+      $columnaTipo[strtoupper(trim($testType))] = 'Test_Type'; // normalizado
+    }
+  }
+}
+
 
                 foreach ($testTypes as $s) {
                   $t = $s['Test_Type'];

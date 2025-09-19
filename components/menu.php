@@ -24,6 +24,8 @@ $user_group = !empty($user_group) ? $user_group : "collapsed";
 $dCliente = !empty($dCliente) ? $dCliente : "collapsed";
 $rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
+$control_concreto = !empty($control_concreto) ? $control_concreto : "collapsed";
+
 ?>
 <!-- ======= Sidebar ======= -->
 <aside id="sidebar" class="sidebar">
@@ -84,6 +86,15 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
         <span>Formulario de requisicion</span>
       </a>
     </li><!-- End Register Page Nav -->
+
+   <li class="nav-item">
+  <a class="nav-link <?php echo $control_concreto; ?>" href="/pages/control_ensayo_concreto.php">
+    <i class="bi bi-clipboard-data"></i>
+    <span>Control Ensayo de Concreto</span>
+  </a>
+</li><!-- End Control Ensayo de Concreto -->
+
+
 
     <li class="nav-item">
       <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">

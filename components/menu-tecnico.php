@@ -78,6 +78,13 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
+ <li class="nav-item">
+  <a class="nav-link <?php echo $control_concreto; ?>" href="/pages/control_ensayo_concreto.php">
+    <i class="bi bi-clipboard-data"></i>
+    <span>Control Ensayo de Concreto</span>
+  </a>
+</li><!-- End Control Ensayo de Concreto -->
+
 
       <li class="nav-item">
         <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
