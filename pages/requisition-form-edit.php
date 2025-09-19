@@ -3,25 +3,33 @@ $page_title = 'Edición de Paquete de Muestras';
 $requisition_form = 'show';
 require_once('../config/load.php');
 
-// Recibir package_id
+// Recibir parámetros
 $packageId = $_GET['package_id'] ?? '';
+$rowId     = $_GET['id'] ?? '';
 
-if (empty($packageId)) {
-  $session->msg("d", "No se especificó el paquete.");
+if (empty($packageId) && empty($rowId)) {
+  $session->msg("d", "No se especificó un paquete o registro.");
   redirect('requisition-form-view.php');
 }
 
 $twoMonthsAgo = date('Y-m-d', strtotime('-2 months'));
 
-// Traer todas las filas de ese paquete
-$SearchRows = find_by_sql("
-  SELECT * 
-  FROM lab_test_requisition_form 
-  WHERE Package_ID = '" . $db->escape($packageId) . "'
-    AND Registed_Date >= '{$twoMonthsAgo}'
-  ORDER BY Registed_Date DESC
-");
-
+if (!empty($packageId)) {
+  $SearchRows = find_by_sql("
+    SELECT * 
+    FROM lab_test_requisition_form 
+    WHERE Package_ID = '" . $db->escape($packageId) . "'
+      AND Registed_Date >= '{$twoMonthsAgo}'
+    ORDER BY Registed_Date DESC
+  ");
+} else {
+  $SearchRows = find_by_sql("
+    SELECT * 
+    FROM lab_test_requisition_form 
+    WHERE id = '" . $db->escape($rowId) . "'
+    LIMIT 1
+  ");
+}
 
 if (!$SearchRows) {
   $session->msg("d", "Paquete no encontrado.");
@@ -62,7 +70,14 @@ include_once('../components/header.php');
   <section class="section">
     <div class="row">
 
-      <form class="row" action="requisition-form-edit.php?package_id=<?php echo urlencode($packageId); ?>" method="post">
+      <form class="row"
+        action="requisition-form-edit.php?
+      <?php if (!empty($packageId)): ?>
+        package_id=<?php echo urlencode($packageId); ?>
+      <?php else: ?>
+        id=<?php echo urlencode($rowId); ?>
+      <?php endif; ?>"
+        method="post">
 
         <!-- Información general del paquete -->
         <div class="col-md-12">
