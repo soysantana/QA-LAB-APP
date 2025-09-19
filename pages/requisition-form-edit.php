@@ -3,10 +3,10 @@ $page_title = 'Edición de Paquete de Muestras';
 $requisition_form = 'show';
 require_once('../config/load.php');
 
-// Recibir Sample_ID
-$sampleId = $_GET['sample_id'] ?? '';
+// Recibir package_id
+$packageId = $_GET['package_id'] ?? '';
 
-if (empty($sampleId)) {
+if (empty($packageId)) {
   $session->msg("d", "No se especificó el paquete.");
   redirect('requisition-form-view.php');
 }
@@ -17,7 +17,7 @@ $twoMonthsAgo = date('Y-m-d', strtotime('-2 months'));
 $SearchRows = find_by_sql("
   SELECT * 
   FROM lab_test_requisition_form 
-  WHERE Sample_ID = '" . $db->escape($sampleId) . "'
+  WHERE Package_ID = '" . $db->escape($packageId) . "'
     AND Registed_Date >= '{$twoMonthsAgo}'
   ORDER BY Registed_Date DESC
 ");
@@ -34,7 +34,7 @@ $Search = $SearchRows[0];
 // Manejo de formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['update-requisition'])) {
-    include('../database/requisition-form.php');
+    include('../database/requisition-form/update.php');
   }
 }
 
@@ -62,7 +62,7 @@ include_once('../components/header.php');
   <section class="section">
     <div class="row">
 
-      <form class="row" action="requisition-form-edit.php?sample_id=<?php echo urlencode($sampleId); ?>" method="post">
+      <form class="row" action="requisition-form-edit.php?package_id=<?php echo urlencode($packageId); ?>" method="post">
 
         <!-- Información general del paquete -->
         <div class="col-md-12">
@@ -94,21 +94,25 @@ include_once('../components/header.php');
                   <label for="PackageID" class="form-label">Paquete ID</label>
                   <input type="text" class="form-control" name="PackageID" id="PackageID" value="<?php echo $Search['Package_ID']; ?>">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label for="Structure" class="form-label">Estructura</label>
                   <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo $Search['Structure']; ?>">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label for="CollectionDate" class="form-label">Fecha de colección</label>
-                  <input type="date" class="form-control" name="CollectionDate" id="CollectionDate" value="<?php echo $Search['Sample_Date']; ?>">
+                  <input type="date" class="form-control" name="CollectionDate" id="CollectionDate" value="<?php echo $Search['Sample_Date']; ?>" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label for="Cviaje" class="form-label">Cantidad de Viajes</label>
                   <input type="text" class="form-control" name="Cviaje" id="Cviaje" value="<?php echo $Search['Truck_Count']; ?>">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label for="SampleBy" class="form-label">Muestreado por</label>
-                  <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo $Search['Sample_By']; ?>">
+                  <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo $Search['Sample_By']; ?>" required>
+                </div>
+                <div class="col-md-3">
+                  <label for="SampleName" class="form-label">Nombre de la muestra</label>
+                  <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo $Search['Sample_ID']; ?>" required>
                 </div>
               </div>
             </div>
@@ -125,13 +129,6 @@ include_once('../components/header.php');
                 <div class="card-body">
                   <h5 class="card-title">Muestra <?php echo $row['Sample_Number']; ?></h5>
                   <div class="row g-3">
-                    <div class="col-md-4">
-                      <label for="SampleName_<?php echo $index; ?>" class="form-label">Nombre</label>
-                      <input type="text" class="form-control"
-                        name="SampleName_<?php echo $index; ?>"
-                        id="SampleName_<?php echo $index; ?>"
-                        value="<?php echo $row['Sample_ID']; ?>">
-                    </div>
                     <div class="col-md-2">
                       <label for="SampleNumber_<?php echo $index; ?>" class="form-label">Número</label>
                       <input type="text" class="form-control"
