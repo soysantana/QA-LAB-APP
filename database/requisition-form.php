@@ -129,82 +129,98 @@ if (isset($_POST['requisition-form'])) {
 
 <!-- Update Requisiton -->
 <?php
-$Search = $_GET['id'];
+$sampleId = $_GET['sample_id'] ?? '';
+
 if (isset($_POST['update-requisition'])) {
-    $req_fields = array(
-        'SampleName_1',
-        'SampleNumber_1'
-    );
-    validate_fields($req_fields);
 
     if (empty($errors)) {
-        $ProjectName = $db->escape($_POST['ProjectName']);
-        $Client = $db->escape($_POST['Client']);
-        $ProjectNumber = $db->escape($_POST['ProjectNumber']);
-        $PackageID = $db->escape($_POST['PackageID']);
-        $Structure = $db->escape($_POST['Structure']);
-        $Area = $db->escape($_POST['Area']);
-        $Source = $db->escape($_POST['Source']);
+        $ProjectName    = $db->escape($_POST['ProjectName']);
+        $Client         = $db->escape($_POST['Client']);
+        $ProjectNumber  = $db->escape($_POST['ProjectNumber']);
+        $PackageID      = $db->escape($_POST['PackageID']);
+        $Structure      = $db->escape($_POST['Structure']);
         $CollectionDate = $db->escape($_POST['CollectionDate']);
-        $SampleID = $db->escape($_POST['SampleName_1']);
-        $SampleNumber = $db->escape($_POST['SampleNumber_1']);
-        $DepthFrom = $db->escape($_POST['DepthFrom_1']);
-        $DepthTo = $db->escape($_POST['DepthTo_1']);
-        $MType = $db->escape($_POST['MType_1']);
-        $SType = $db->escape($_POST['SType_1']);
-        $North = $db->escape($_POST['North_1']);
-        $East = $db->escape($_POST['East_1']);
-        $Elev = $db->escape($_POST['Elev_1']);
-        $Cviaje = $db->escape($_POST['Cviaje']);
-        $SampleBy = $db->escape($_POST['SampleBy']);
-        $Comments = $db->escape($_POST['Comments_1']);
-        $ModifiedDate = make_date();
-        $ModifiedBy = $user['name'];
+        $Cviaje         = $db->escape($_POST['Cviaje']);
+        $SampleBy       = $db->escape($_POST['SampleBy']);
+        $ModifiedDate   = make_date();
+        $ModifiedBy     = $user['name'];
 
-        $TestType1 = isset($_POST['TestType_1']) ? implode(',', $_POST['TestType_1']) : '';
+        $totalAffected = 0;
 
+        // Actualizar datos generales
+        $generalUpdate = "
+            UPDATE lab_test_requisition_form SET
+                Project_Name   = '{$ProjectName}',
+                Client         = '{$Client}',
+                Project_Number = '{$ProjectNumber}',
+                Package_ID     = '{$PackageID}',
+                Structure      = '{$Structure}',
+                Sample_Date    = '{$CollectionDate}',
+                Truck_Count    = '{$Cviaje}',
+                Sample_By      = '{$SampleBy}',
+                Modified_Date  = '{$ModifiedDate}',
+                Modified_By    = '{$ModifiedBy}'
+            WHERE Sample_ID = '{$sampleId}'
+        ";
+        $resultGeneral = $db->query($generalUpdate);
+        $totalAffected += $db->affected_rows();
 
-        $query = "UPDATE lab_test_requisition_form SET ";
-        $query .= "Project_Name = '{$ProjectName}',";
-        $query .= "Client = '{$Client}', ";
-        $query .= "Project_Number = '{$ProjectNumber}', ";
-        $query .= "Package_ID = '{$PackageID}', ";
-        $query .= "Structure = '{$Structure}', ";
-        $query .= "Area = '{$Area}', ";
-        $query .= "Source = '{$Source}', ";
-        $query .= "Sample_Date = '{$CollectionDate}', ";
-        $query .= "Sample_ID = '{$SampleID}', ";
-        $query .= "Sample_Number = '{$SampleNumber}', ";
-        $query .= "Depth_From = '{$DepthFrom}', ";
-        $query .= "Depth_To = '{$DepthTo}', ";
-        $query .= "Material_Type = '{$MType}', ";
-        $query .= "Sample_Type = '{$SType}', ";
-        $query .= "North = '{$North}', ";
-        $query .= "East = '{$East}', ";
-        $query .= "Elev = '{$Elev}', ";
-        $query .= "Truck_Count = '{$Cviaje}', ";
-        $query .= "Sample_By = '{$SampleBy}', ";
-        $query .= "Comment = '{$Comments}', ";
-        $query .= "Modified_Date = '{$ModifiedDate}', ";
-        $query .= "Modified_By = '{$ModifiedBy}', ";
-        $query .= "Test_Type = '{$TestType1}' ";
-        $query .= "WHERE id = '{$Search}'";
+        // Recorrer y actualizar las muestras
+        $i = 0;
+        while (isset($_POST["SampleNumber_{$i}"])) {
+            $SampleNumber = $db->escape($_POST["SampleNumber_{$i}"]);
+            $Area         = $db->escape($_POST["Area_{$i}"] ?? '');
+            $Source       = $db->escape($_POST["Source_{$i}"] ?? '');
+            $DepthFrom    = $db->escape($_POST["DepthFrom_{$i}"] ?? '');
+            $DepthTo      = $db->escape($_POST["DepthTo_{$i}"] ?? '');
+            $Comments     = $db->escape($_POST["Comments_{$i}"] ?? '');
+            $MType        = $db->escape($_POST["MType_{$i}"] ?? '');
+            $SType        = $db->escape($_POST["SType_{$i}"] ?? '');
+            $North        = $db->escape($_POST["North_{$i}"] ?? '');
+            $East         = $db->escape($_POST["East_{$i}"] ?? '');
+            $Elev         = $db->escape($_POST["Elev_{$i}"] ?? '');
+            $TestTypeArr  = $_POST["TestType_{$i}"] ?? [];
+            $TestType     = implode(',', $TestTypeArr);
 
-        $result = $db->query($query);
+            $query = "
+                UPDATE lab_test_requisition_form SET
+                    Area          = '{$Area}',
+                    Source        = '{$Source}',
+                    Depth_From    = '{$DepthFrom}',
+                    Depth_To      = '{$DepthTo}',
+                    Material_Type = '{$MType}',
+                    Sample_Type   = '{$SType}',
+                    North         = '{$North}',
+                    East          = '{$East}',
+                    Elev          = '{$Elev}',
+                    Comment       = '{$Comments}',
+                    Test_Type     = '{$TestType}',
+                    Modified_Date = '{$ModifiedDate}',
+                    Modified_By   = '{$ModifiedBy}'
+                WHERE Sample_ID = '{$sampleId}' AND Sample_Number = '{$SampleNumber}'
+            ";
+            $resultSample = $db->query($query);
+            $totalAffected += $db->affected_rows();
 
-        if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'El Formulario de requisicion ha sido actualizada.');
-            redirect('/pages/requisition-form-view.php', false);
-        } else {
-            $session->msg('w', 'No se hicieron cambios en el Formulario de requisicion');
-            redirect('/pages/requisition-form-view.php', false);
+            $i++;
         }
+
+        // Revisar si hubo cambios
+        if ($totalAffected > 0) {
+            $session->msg('s', 'El paquete ha sido actualizado.');
+        } else {
+            $session->msg('w', 'No se realizaron cambios en el paquete.');
+        }
+
+        redirect('/pages/requisition-form-view.php', false);
     } else {
         $session->msg("d", $errors);
         redirect('/pages/requisition-form-view.php', false);
     }
 }
 ?>
+
+
 
 <!-- Delete Requisiton -->
 <?php
