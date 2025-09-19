@@ -42,56 +42,74 @@ include_once('../components/header.php');
               <?php
               $twoMonthsAgo = date('Y-m-d', strtotime('-2 months'));
 
-              // Traer todas las requisiciones recientes
-              $query = "SELECT id, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
+              // Traer requisiciones recientes
+              $query = "SELECT id, Package_ID, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
                         FROM lab_test_requisition_form 
                         WHERE Registed_Date >= '$twoMonthsAgo' 
                         ORDER BY Registed_Date DESC";
               $RequisitionRows = find_by_sql($query);
 
-              // Agrupar por Sample_ID y luego por Sample_Number
+              // Agrupar por Package_ID
               $paquetes = [];
+              $paquetesInfo = [];
+              $muestras = [];
+
               foreach ($RequisitionRows as $row) {
-                $sampleId = $row['Sample_ID'];
-                $sampleNumber = $row['Sample_Number'];
+                $packageId = $row['Package_ID'];
                 $tests = array_map('trim', explode(',', $row['Test_Type']));
 
                 foreach ($tests as $t) {
                   if (!empty($t)) {
-                    $paquetes[$sampleId][$sampleNumber][] = $t;
+                    $paquetes[$packageId][] = $t;
                   }
                 }
 
-                // Guardar info general (puedes tomar la última o la primera)
-                $paquetesInfo[$sampleId] = [
+                // Info general (último registro sobrescribe)
+                $paquetesInfo[$packageId] = [
                   'Comment'       => $row['Comment'],
                   'Sample_By'     => $row['Sample_By'],
                   'Sample_Date'   => $row['Sample_Date'],
                   'Registed_Date' => $row['Registed_Date']
                 ];
 
-                // Guardar comentario por muestra
-                $muestras[$sampleId][$sampleNumber]['Comment'] = $row['Comment'];
+                // Guardar muestras dentro del paquete
+                $muestras[$packageId][] = [
+                  'Sample_ID'     => $row['Sample_ID'],
+                  'Sample_Number' => $row['Sample_Number'],
+                  'Comment'       => $row['Comment']
+                ];
               }
 
               // Calcular entregas desde test_delivery
-              $sample_ids = array_unique(array_column($RequisitionRows, 'Sample_ID'));
-              $sample_numbers = array_unique(array_column($RequisitionRows, 'Sample_Number'));
+              $package_ids = array_unique(array_column($RequisitionRows, 'Package_ID'));
               $entregas = [];
 
-              if (!empty($sample_ids) && !empty($sample_numbers)) {
+              if (!empty($package_ids)) {
+                // buscar entregas de todas las muestras vinculadas a esos paquetes
+                $samplePairs = [];
+                foreach ($RequisitionRows as $row) {
+                  $samplePairs[] = "('" . $db->escape($row['Sample_ID']) . "', '" . $db->escape($row['Sample_Number']) . "')";
+                }
+                $pairsSql = implode(',', $samplePairs);
+
                 $query = "SELECT Sample_ID, Sample_Number, Test_Type 
-                          FROM test_delivery 
-                          WHERE Sample_ID IN ('" . implode("','", $sample_ids) . "') 
-                            AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
+                FROM test_delivery 
+                WHERE (Sample_ID, Sample_Number) IN ($pairsSql)";
+
                 $result = $db->query($query);
 
                 if ($result) {
                   while ($row = $result->fetch_assoc()) {
-                    $entregas[$row['Sample_ID']][$row['Sample_Number']][] = $row['Test_Type'];
+                    // relacionar entrega con su Package_ID original
+                    foreach ($RequisitionRows as $r) {
+                      if ($r['Sample_ID'] == $row['Sample_ID'] && $r['Sample_Number'] == $row['Sample_Number']) {
+                        $entregas[$r['Package_ID']][] = $row['Test_Type'];
+                      }
+                    }
                   }
                 }
               }
+
               ?>
 
               <!-- Tabla -->
@@ -99,8 +117,8 @@ include_once('../components/header.php');
                 <thead>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Muestra</th>
-                    <th scope="col">Números de muestra</th>
+                    <th scope="col">Paquete</th>
+                    <th scope="col">Numero de muestra</th>
                     <th scope="col">Solicitados</th>
                     <th scope="col">Entregados</th>
                     <th scope="col">Progreso</th>
@@ -108,30 +126,36 @@ include_once('../components/header.php');
                   </tr>
                 </thead>
                 <tbody>
-                  <?php foreach ($paquetes as $sampleId => $numbers): ?>
+                  <?php foreach ($paquetes as $packageId => $tests): ?>
                     <?php
-                    $count_solicitados = 0;
+                    $count_solicitados = count($tests);
                     $count_entregados = 0;
 
-                    foreach ($numbers as $num => $tests) {
-                      $count_solicitados += count($tests);
-                      foreach ($tests as $t) {
-                        if (isset($entregas[$sampleId][$num]) && in_array($t, $entregas[$sampleId][$num])) {
-                          $count_entregados++;
-                        }
+                    foreach ($tests as $t) {
+                      if (isset($entregas[$packageId]) && in_array($t, $entregas[$packageId])) {
+                        $count_entregados++;
                       }
                     }
 
                     $porce_entregados = $count_solicitados > 0
                       ? round(($count_entregados / $count_solicitados) * 100)
                       : 0;
+
+                    // Sample_ID y lista de Sample_Number
+                    $sampleID = $muestras[$packageId][0]['Sample_ID'] ?? $packageId;
+                    $sampleNumbers = array_map(fn($m) => $m['Sample_Number'], $muestras[$packageId] ?? []);
                     ?>
                     <tr>
                       <th scope="row"><?php echo count_id(); ?></th>
-                      <td><?php echo $sampleId; ?></td>
                       <td>
-                        <?php foreach (array_keys($numbers) as $num): ?>
-                          <span class="badge bg-secondary me-1"><?php echo $num; ?></span>
+                        <?php
+                        $sampleID = $muestras[$packageId][0]['Sample_ID'] ?? $packageId;
+                        echo htmlspecialchars($sampleID);
+                        ?>
+                      </td>
+                      <td>
+                        <?php foreach ($sampleNumbers as $sn): ?>
+                          <span class="badge bg-secondary"><?php echo htmlspecialchars($sn); ?></span>
                         <?php endforeach; ?>
                       </td>
                       <td><span class="badge bg-primary"><?php echo $count_solicitados; ?></span></td>
@@ -148,17 +172,17 @@ include_once('../components/header.php');
                           <!-- Ver -->
                           <button type="button" class="btn btn-success"
                             data-bs-toggle="modal"
-                            data-bs-target="#requisitionview<?php echo $sampleId; ?>">
+                            data-bs-target="#requisitionview<?php echo $packageId; ?>">
                             <i class="bi bi-eye"></i>
                           </button>
                           <!-- Editar -->
-                          <a href="requisition-form-edit.php?sample_id=<?php echo urlencode($sampleId); ?>"
+                          <a href="requisition-form-edit.php?package_id=<?php echo urlencode($packageId); ?>"
                             class="btn btn-warning">
                             <i class="bi bi-pen"></i>
                           </a>
                           <!-- Eliminar -->
                           <button type="button" class="btn btn-danger"
-                            onclick="modaldelete('<?php echo $sampleId; ?>')">
+                            onclick="modaldelete('<?php echo $packageId; ?>')">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -166,58 +190,49 @@ include_once('../components/header.php');
                     </tr>
 
                     <!-- Modal -->
-                    <div class="modal" id="requisitionview<?php echo $sampleId; ?>" tabindex="-1">
+                    <div class="modal" id="requisitionview<?php echo $packageId; ?>" tabindex="-1">
                       <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title">Detalle del paquete: <?php echo $sampleId; ?></h5>
+                            <?php
+                            // Todas las muestras del paquete tienen el mismo Sample_ID
+                            $sampleID = $muestras[$packageId][0]['Sample_ID'] ?? $packageId;
+                            ?>
+                            <h5 class="modal-title">Detalle del paquete: <?php echo htmlspecialchars($sampleID); ?></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                           </div>
                           <div class="modal-body">
                             <div class="container">
 
-                              <!-- Ensayos por número de muestra -->
+                              <!-- Ensayos -->
                               <div class="card mb-3">
                                 <div class="card-body">
-                                  <h5 class="card-title">Muestras y ensayos</h5>
-                                  <?php foreach ($numbers as $num => $tests): ?>
+                                  <h5 class="card-title">Ensayos del paquete</h5>
+                                  <?php foreach ($tests as $test):
+                                    $hecho = isset($entregas[$packageId]) && in_array($test, $entregas[$packageId]);
+                                  ?>
+                                    <code style="display:inline-block; margin-right:5px; padding:2px 4px; background:#f0f0f0; border-radius:3px;">
+                                      <?php echo htmlspecialchars($test) . ' ' . ($hecho ? "✅" : "❌"); ?>
+                                    </code>
+                                  <?php endforeach; ?>
+                                </div>
+                              </div>
+
+                              <!-- Comentarios de muestras -->
+                              <div class="card mb-3">
+                                <div class="card-body">
+                                  <h5 class="card-title">Comentarios por muestra</h5>
+                                  <?php foreach ($muestras[$packageId] as $m): ?>
                                     <div class="mb-2">
-                                      <strong class="small"><?php echo htmlspecialchars($num); ?>:</strong>
-                                      <?php foreach ($tests as $test):
-                                        $hecho = isset($entregas[$sampleId][$num]) && in_array($test, $entregas[$sampleId][$num]);
-                                      ?>
-                                        <code style="display:inline-block; margin-right:5px; padding:2px 4px; background:#f0f0f0; border-radius:3px;">
-                                          <?php echo htmlspecialchars($test) . ' ' . ($hecho ? "✅" : "❌"); ?>
+                                      <p>
+                                        <code>Muestra <?php echo htmlspecialchars($m['Sample_Number']); ?>:
+                                          <?php echo htmlspecialchars($m['Comment']); ?>
                                         </code>
-                                      <?php endforeach; ?>
+                                      </p>
                                     </div>
                                   <?php endforeach; ?>
                                 </div>
                               </div>
-
-
-
-                              <!-- Comentario -->
-                              <div class="card mb-3">
-                                <div class="card-body">
-                                  <h5 class="card-title">Comentarios por muestra</h5>
-                                  <?php foreach ($numbers as $num => $tests): ?>
-                                    <?php
-                                    $comment = $muestras[$sampleId][$num]['Comment'] ?? '';
-                                    if (!empty($comment)):
-                                    ?>
-                                      <div class="mb-2">
-                                        <p><code>Muestra <?php echo htmlspecialchars($num); ?>: <?php echo htmlspecialchars($comment); ?></code></p>
-                                      </div>
-                                    <?php endif; ?>
-                                  <?php endforeach; ?>
-                                </div>
-                              </div>
-
-
-
-
-
 
                               <!-- Otros datos -->
                               <div class="card">
@@ -226,15 +241,15 @@ include_once('../components/header.php');
                                   <ul class="list-group">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                       <h6><code>Fecha de la muestra</code></h6>
-                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$sampleId]['Sample_Date']; ?></span>
+                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$packageId]['Sample_Date']; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                       <h6><code>Fecha de Registro</code></h6>
-                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$sampleId]['Registed_Date']; ?></span>
+                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$packageId]['Registed_Date']; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                       <h6><code>Muestra por</code></h6>
-                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$sampleId]['Sample_By']; ?></span>
+                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$packageId]['Sample_By']; ?></span>
                                     </li>
                                   </ul>
                                 </div>
@@ -248,6 +263,7 @@ include_once('../components/header.php');
                         </div>
                       </div>
                     </div>
+
                   <?php endforeach; ?>
                 </tbody>
               </table>
@@ -289,7 +305,7 @@ include_once('../components/header.php');
 
   function Delete() {
     if (selectedId !== undefined) {
-      document.getElementById("deleteForm").action = "requisition-form-view.php?sample_id=" + selectedId;
+      document.getElementById("deleteForm").action = "requisition-form-view.php?package_id=" + selectedId;
       document.getElementById("deleteForm").submit();
     }
   }

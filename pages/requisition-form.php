@@ -8,7 +8,7 @@ require_once('../config/load.php');
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['requisition-form'])) {
-    include('../database/requisition-form.php');
+    include('../database/requisition-form/save.php');
   }
 }
 ?>
