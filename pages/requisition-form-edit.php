@@ -110,10 +110,6 @@ include_once('../components/header.php');
                   <label for="SampleBy" class="form-label">Muestreado por</label>
                   <input type="text" class="form-control" name="SampleBy" id="SampleBy" value="<?php echo $Search['Sample_By']; ?>" required>
                 </div>
-                <div class="col-md-3">
-                  <label for="SampleName" class="form-label">Nombre de la muestra</label>
-                  <input type="text" class="form-control" name="SampleName" id="SampleName" value="<?php echo $Search['Sample_ID']; ?>" required>
-                </div>
               </div>
             </div>
           </div>
@@ -129,12 +125,27 @@ include_once('../components/header.php');
                 <div class="card-body">
                   <h5 class="card-title">Muestra <?php echo $row['Sample_Number']; ?></h5>
                   <div class="row g-3">
+                    <div class="col-md-4">
+                      <label for="SampleName_<?php echo $index; ?>" class="form-label">Nombre</label>
+                      <input type="text" class="form-control"
+                        name="SampleName_<?php echo $index; ?>"
+                        id="SampleName_<?php echo $index; ?>"
+                        value="<?php echo $row['Sample_ID']; ?>">
+                      <input
+                        type="hidden"
+                        name="OldSampleName_<?php echo $index; ?>"
+                        value="<?php echo $row['Sample_ID']; ?>" />
+                    </div>
                     <div class="col-md-2">
                       <label for="SampleNumber_<?php echo $index; ?>" class="form-label">Número</label>
                       <input type="text" class="form-control"
                         name="SampleNumber_<?php echo $index; ?>"
                         id="SampleNumber_<?php echo $index; ?>"
                         value="<?php echo $row['Sample_Number']; ?>">
+                      <input
+                        type="hidden"
+                        name="OldSampleNumber_<?php echo $index; ?>"
+                        value="<?php echo $row['Sample_Number']; ?>" />
                     </div>
                     <div class="col-md-3">
                       <label for="Area_<?php echo $index; ?>" class="form-label">Area</label>

@@ -11,7 +11,6 @@ if (isset($_POST['update-requisition'])) {
         $Structure      = $db->escape($_POST['Structure']);
         $CollectionDate = $db->escape($_POST['CollectionDate']);
         $Cviaje         = $db->escape($_POST['Cviaje']);
-        $SampleName         = $db->escape($_POST['SampleName']);
         $SampleBy       = $db->escape($_POST['SampleBy']);
         $ModifiedDate   = make_date();
         $ModifiedBy     = $user['name'];
@@ -28,7 +27,6 @@ if (isset($_POST['update-requisition'])) {
                 Structure      = '{$Structure}',
                 Sample_Date    = '{$CollectionDate}',
                 Truck_Count    = '{$Cviaje}',
-                Sample_ID      = '{$SampleName}',
                 Sample_By      = '{$SampleBy}',
                 Modified_Date  = '{$ModifiedDate}',
                 Modified_By    = '{$ModifiedBy}'
@@ -40,22 +38,27 @@ if (isset($_POST['update-requisition'])) {
         // Recorrer y actualizar las muestras
         $i = 0;
         while (isset($_POST["SampleNumber_{$i}"])) {
-            $SampleNumber = $db->escape($_POST["SampleNumber_{$i}"]);
-            $Area         = $db->escape($_POST["Area_{$i}"] ?? '');
-            $Source       = $db->escape($_POST["Source_{$i}"] ?? '');
-            $DepthFrom    = $db->escape($_POST["DepthFrom_{$i}"] ?? '');
-            $DepthTo      = $db->escape($_POST["DepthTo_{$i}"] ?? '');
-            $Comments     = $db->escape($_POST["Comments_{$i}"] ?? '');
-            $MType        = $db->escape($_POST["MType_{$i}"] ?? '');
-            $SType        = $db->escape($_POST["SType_{$i}"] ?? '');
-            $North        = $db->escape($_POST["North_{$i}"] ?? '');
-            $East         = $db->escape($_POST["East_{$i}"] ?? '');
-            $Elev         = $db->escape($_POST["Elev_{$i}"] ?? '');
-            $TestTypeArr  = $_POST["TestType_{$i}"] ?? [];
-            $TestType     = implode(',', $TestTypeArr);
+            $SampleName       = $db->escape($_POST["SampleName_{$i}"]);
+            $SampleNumber     = $db->escape($_POST["SampleNumber_{$i}"]);
+            $OldSampleName    = $db->escape($_POST["OldSampleName_{$i}"]);    // valor anterior
+            $OldSampleNumber  = $db->escape($_POST["OldSampleNumber_{$i}"]);
+            $Area             = $db->escape($_POST["Area_{$i}"] ?? '');
+            $Source           = $db->escape($_POST["Source_{$i}"] ?? '');
+            $DepthFrom        = $db->escape($_POST["DepthFrom_{$i}"] ?? '');
+            $DepthTo          = $db->escape($_POST["DepthTo_{$i}"] ?? '');
+            $Comments         = $db->escape($_POST["Comments_{$i}"] ?? '');
+            $MType            = $db->escape($_POST["MType_{$i}"] ?? '');
+            $SType            = $db->escape($_POST["SType_{$i}"] ?? '');
+            $North            = $db->escape($_POST["North_{$i}"] ?? '');
+            $East             = $db->escape($_POST["East_{$i}"] ?? '');
+            $Elev             = $db->escape($_POST["Elev_{$i}"] ?? '');
+            $TestTypeArr      = $_POST["TestType_{$i}"] ?? [];
+            $TestType         = implode(',', $TestTypeArr);
 
             $query = "
                 UPDATE lab_test_requisition_form SET
+                    Sample_ID     = '{$SampleName}',
+                    Sample_Number = '{$SampleNumber}',
                     Area          = '{$Area}',
                     Source        = '{$Source}',
                     Depth_From    = '{$DepthFrom}',
@@ -69,7 +72,7 @@ if (isset($_POST['update-requisition'])) {
                     Test_Type     = '{$TestType}',
                     Modified_Date = '{$ModifiedDate}',
                     Modified_By   = '{$ModifiedBy}'
-                WHERE Package_ID = '{$packageId}' AND Sample_Number = '{$SampleNumber}'
+                WHERE Package_ID = '{$packageId}' AND Sample_ID = '{$OldSampleName}' AND Sample_Number = '{$OldSampleNumber}'
             ";
             $resultSample = $db->query($query);
             $totalAffected += $db->affected_rows();
