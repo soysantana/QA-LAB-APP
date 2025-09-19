@@ -2,19 +2,18 @@
 $page_title = 'Muestras Registradas';
 $requisition_form = 'show';
 require_once('../config/load.php');
-?>
 
-<?php
-// Manejo de los formularios
+// Manejo de formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['delete-requisition'])) {
     include('../database/requisition-form.php');
   }
 }
+
+page_require_level(3);
+include_once('../components/header.php');
 ?>
 
-<?php page_require_level(3); ?>
-<?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
 
   <div class="pagetitle">
@@ -41,162 +40,206 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-body">
               <h5 class="card-title"></h5>
               <?php
-              $threeMonthsAgo = date('Y-m-d', strtotime('-2 months'));
+              $twoMonthsAgo = date('Y-m-d', strtotime('-2 months'));
 
+              // Traer todas las requisiciones recientes
               $query = "SELECT id, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
-              FROM lab_test_requisition_form WHERE Registed_Date >= '$threeMonthsAgo' ORDER BY Registed_Date DESC";
-              $Requisition = find_by_sql($query);
+                        FROM lab_test_requisition_form 
+                        WHERE Registed_Date >= '$twoMonthsAgo' 
+                        ORDER BY Registed_Date DESC";
+              $RequisitionRows = find_by_sql($query);
 
+              // Agrupar por Sample_ID y luego por Sample_Number
+              $paquetes = [];
+              foreach ($RequisitionRows as $row) {
+                $sampleId = $row['Sample_ID'];
+                $sampleNumber = $row['Sample_Number'];
+                $tests = array_map('trim', explode(',', $row['Test_Type']));
 
-              // Obtener todos los resultados de entregas en una sola consulta
-              $sample_ids = array_unique(array_column($Requisition, 'Sample_ID'));
-              $sample_numbers = array_unique(array_column($Requisition, 'Sample_Number'));
+                foreach ($tests as $t) {
+                  if (!empty($t)) {
+                    $paquetes[$sampleId][$sampleNumber][] = $t;
+                  }
+                }
 
-              if (!empty($sample_ids) && !empty($sample_numbers)) {
-                $query = "SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery WHERE Sample_ID IN ('" . implode("','", $sample_ids) . "') AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
-                $result = $db->query($query);
+                // Guardar info general (puedes tomar la última o la primera)
+                $paquetesInfo[$sampleId] = [
+                  'Comment'       => $row['Comment'],
+                  'Sample_By'     => $row['Sample_By'],
+                  'Sample_Date'   => $row['Sample_Date'],
+                  'Registed_Date' => $row['Registed_Date']
+                ];
+
+                // Guardar comentario por muestra
+                $muestras[$sampleId][$sampleNumber]['Comment'] = $row['Comment'];
               }
 
-              // Crear un arreglo con las entregas
+              // Calcular entregas desde test_delivery
+              $sample_ids = array_unique(array_column($RequisitionRows, 'Sample_ID'));
+              $sample_numbers = array_unique(array_column($RequisitionRows, 'Sample_Number'));
               $entregas = [];
-              while ($row = $result->fetch_assoc()) {
-                $entregas[$row['Sample_ID']][$row['Sample_Number']][] = $row['Test_Type'];
+
+              if (!empty($sample_ids) && !empty($sample_numbers)) {
+                $query = "SELECT Sample_ID, Sample_Number, Test_Type 
+                          FROM test_delivery 
+                          WHERE Sample_ID IN ('" . implode("','", $sample_ids) . "') 
+                            AND Sample_Number IN ('" . implode("','", $sample_numbers) . "')";
+                $result = $db->query($query);
+
+                if ($result) {
+                  while ($row = $result->fetch_assoc()) {
+                    $entregas[$row['Sample_ID']][$row['Sample_Number']][] = $row['Test_Type'];
+                  }
+                }
               }
               ?>
 
-              <!-- Table with stripped rows -->
+              <!-- Tabla -->
               <table class="table datatable">
                 <thead>
                   <tr>
                     <th scope="col">#</th>
                     <th scope="col">Muestra</th>
-                    <th scope="col">Numero de muestra</th>
+                    <th scope="col">Números de muestra</th>
                     <th scope="col">Solicitados</th>
                     <th scope="col">Entregados</th>
-                    <th scope="col">Progreso de Ensayos</th>
+                    <th scope="col">Progreso</th>
                     <th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <?php foreach ($Requisition as $Requisition): ?>
-
+                  <?php foreach ($paquetes as $sampleId => $numbers): ?>
                     <?php
                     $count_solicitados = 0;
                     $count_entregados = 0;
 
-                    // Alias para simplificar acceso a las entregas
-                    $entregados = $entregas[$Requisition['Sample_ID']][$Requisition['Sample_Number']] ?? [];
-
-                    $testType = $Requisition["Test_Type"] ?? '';  // Ejemplo: "MC,HY,SND"
-                    $count_solicitados = 0;
-                    $count_entregados = 0;
-
-                    if ($testType !== '') {
-                      // Convertimos el string en array, eliminando espacios por si acaso
-                      $testTypesArray = array_map('trim', explode(',', $testType));
-
-                      $count_solicitados = count($testTypesArray);
-
-                      foreach ($testTypesArray as $type) {
-                        if (in_array($type, $entregados)) {
+                    foreach ($numbers as $num => $tests) {
+                      $count_solicitados += count($tests);
+                      foreach ($tests as $t) {
+                        if (isset($entregas[$sampleId][$num]) && in_array($t, $entregas[$sampleId][$num])) {
                           $count_entregados++;
                         }
                       }
                     }
 
-
                     $porce_entregados = $count_solicitados > 0
                       ? round(($count_entregados / $count_solicitados) * 100)
                       : 0;
                     ?>
-
-
                     <tr>
                       <th scope="row"><?php echo count_id(); ?></th>
-                      <td><?php echo $Requisition['Sample_ID']; ?></td>
-                      <td><?php echo $Requisition['Sample_Number']; ?></td>
-                      <td><span class="badge bg-primary rounded-pill me-2"><?php echo $count_solicitados; ?></span></td>
-                      <td><span class="badge bg-success rounded-pill me-2"><?php echo $count_entregados; ?></span></td>
+                      <td><?php echo $sampleId; ?></td>
                       <td>
-                        <div class="progress" role="progressbar" aria-valuenow="<?php echo $porce_entregados; ?>" aria-valuemin="0" aria-valuemax="100">
-                          <div class="progress-bar" style="width: <?php echo $porce_entregados; ?>%"><?php echo $porce_entregados; ?>%</div>
+                        <?php foreach (array_keys($numbers) as $num): ?>
+                          <span class="badge bg-secondary me-1"><?php echo $num; ?></span>
+                        <?php endforeach; ?>
+                      </td>
+                      <td><span class="badge bg-primary"><?php echo $count_solicitados; ?></span></td>
+                      <td><span class="badge bg-success"><?php echo $count_entregados; ?></span></td>
+                      <td>
+                        <div class="progress">
+                          <div class="progress-bar" style="width: <?php echo $porce_entregados; ?>%">
+                            <?php echo $porce_entregados; ?>%
+                          </div>
                         </div>
                       </td>
                       <td>
                         <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $Requisition['id']; ?>"><i class="bi bi-eye"></i></button>
-                          <a href="requisition-form-edit.php?id=<?php echo $Requisition['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
-                          <button type="button" class="btn btn-danger" onclick="modaldelete('<?php echo $Requisition['id']; ?>')"><i class="bi bi-trash"></i></button>
+                          <!-- Ver -->
+                          <button type="button" class="btn btn-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#requisitionview<?php echo $sampleId; ?>">
+                            <i class="bi bi-eye"></i>
+                          </button>
+                          <!-- Editar -->
+                          <a href="requisition-form-edit.php?sample_id=<?php echo urlencode($sampleId); ?>"
+                            class="btn btn-warning">
+                            <i class="bi bi-pen"></i>
+                          </a>
+                          <!-- Eliminar -->
+                          <button type="button" class="btn btn-danger"
+                            onclick="modaldelete('<?php echo $sampleId; ?>')">
+                            <i class="bi bi-trash"></i>
+                          </button>
                         </div>
                       </td>
                     </tr>
 
-                    <div class="modal" id="requisitionview<?php echo $Requisition['id']; ?>" tabindex="-1">
-                      <div class="modal-dialog">
+                    <!-- Modal -->
+                    <div class="modal" id="requisitionview<?php echo $sampleId; ?>" tabindex="-1">
+                      <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title">Detalle del ensayo </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title">Detalle del paquete: <?php echo $sampleId; ?></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                           </div>
                           <div class="modal-body">
                             <div class="container">
-                              <div class="card">
+
+                              <!-- Ensayos por número de muestra -->
+                              <div class="card mb-3">
                                 <div class="card-body">
-                                  <h5 class="card-title">Muestra</h5>
-                                  <h5><?php echo $Requisition['Sample_ID'] . "-" . $Requisition['Sample_Number']; ?></h5>
+                                  <h5 class="card-title">Muestras y ensayos</h5>
+                                  <?php foreach ($numbers as $num => $tests): ?>
+                                    <div class="mb-2">
+                                      <strong class="small"><?php echo htmlspecialchars($num); ?>:</strong>
+                                      <?php foreach ($tests as $test):
+                                        $hecho = isset($entregas[$sampleId][$num]) && in_array($test, $entregas[$sampleId][$num]);
+                                      ?>
+                                        <code style="display:inline-block; margin-right:5px; padding:2px 4px; background:#f0f0f0; border-radius:3px;">
+                                          <?php echo htmlspecialchars($test) . ' ' . ($hecho ? "✅" : "❌"); ?>
+                                        </code>
+                                      <?php endforeach; ?>
+                                    </div>
+                                  <?php endforeach; ?>
                                 </div>
                               </div>
-                              <div class="card">
+
+
+
+                              <!-- Comentario -->
+                              <div class="card mb-3">
                                 <div class="card-body">
-                                  <h5 class="card-title">Ensayos solicitados</h5>
-                                  <ul class="list-group">
+                                  <h5 class="card-title">Comentarios por muestra</h5>
+                                  <?php foreach ($numbers as $num => $tests): ?>
                                     <?php
-                                    $testType = $Requisition['Test_Type'] ?? '';
-
-                                    if (!empty($testType)) {
-                                      // Convertimos el string a array, eliminando espacios
-                                      $testTypesArray = array_map('trim', explode(',', $testType));
-
-                                      foreach ($testTypesArray as $testTypeValue) {
-                                        if (!empty($testTypeValue)) {
-                                          echo '<li class="list-group-item">' . htmlspecialchars($testTypeValue) . '</li>';
-                                        }
-                                      }
-                                    }
+                                    $comment = $muestras[$sampleId][$num]['Comment'] ?? '';
+                                    if (!empty($comment)):
                                     ?>
+                                      <div class="mb-2">
+                                        <p><code>Muestra <?php echo htmlspecialchars($num); ?>: <?php echo htmlspecialchars($comment); ?></code></p>
+                                      </div>
+                                    <?php endif; ?>
+                                  <?php endforeach; ?>
+                                </div>
+                              </div>
 
-                                  </ul>
-                                </div>
-                              </div>
-                              <div class="card">
-                                <div class="card-body">
-                                  <h5 class="card-title">Comentario</h5>
-                                  <ul class="list-group">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                      <h5><code><?php echo $Requisition['Comment']; ?></code></h5>
-                                    </li>
-                                  </ul>
-                                </div>
-                              </div>
+
+
+
+
+
+                              <!-- Otros datos -->
                               <div class="card">
                                 <div class="card-body">
                                   <h5 class="card-title">Otros datos</h5>
                                   <ul class="list-group">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                      <h5><code>Fecha de la muestra</code></h5>
-                                      <span class="badge bg-primary rounded-pill"><?php echo $Requisition['Sample_Date']; ?></span>
+                                      <h6><code>Fecha de la muestra</code></h6>
+                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$sampleId]['Sample_Date']; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                      <h5><code>Fecha de Registro</code></h5>
-                                      <span class="badge bg-primary rounded-pill"><?php echo $Requisition['Registed_Date']; ?></span>
+                                      <h6><code>Fecha de Registro</code></h6>
+                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$sampleId]['Registed_Date']; ?></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                      <h5><code>Muestra por</code></h5>
-                                      <span class="badge bg-primary rounded-pill"><?php echo $Requisition['Sample_By']; ?></span>
+                                      <h6><code>Muestra por</code></h6>
+                                      <span class="badge bg-primary"><?php echo $paquetesInfo[$sampleId]['Sample_By']; ?></span>
                                     </li>
                                   </ul>
                                 </div>
                               </div>
+
                             </div>
                           </div>
                           <div class="modal-footer">
@@ -208,14 +251,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <?php endforeach; ?>
                 </tbody>
               </table>
-
-              <!-- End Table with stripped rows -->
+              <!-- End Table -->
             </div>
           </div>
         </div>
       </form>
 
-      <!-- Modal -->
+      <!-- Modal delete -->
       <div class="modal fade" id="ModalDelete" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
           <div class="modal-content text-center">
@@ -238,28 +280,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 <script>
-  var selectedId; // Variable para almacenar el ID
+  var selectedId;
 
   function modaldelete(id) {
-    // Almacena el ID
     selectedId = id;
-
-    // Utiliza el método modal() de Bootstrap para mostrar el modal
     $('#ModalDelete').modal('show');
   }
 
   function Delete() {
-    // Verifica si se ha guardado un ID
     if (selectedId !== undefined) {
-      // Concatena el ID al final de la URL en el atributo 'action' del formulario
-      document.getElementById("deleteForm").action = "requisition-form-view.php?id=" + selectedId;
-
-      // Envía el formulario
+      document.getElementById("deleteForm").action = "requisition-form-view.php?sample_id=" + selectedId;
       document.getElementById("deleteForm").submit();
-    } else {
-      console.log('No se ha seleccionado ningún ID para eliminar.');
     }
   }
 </script>
 
-<?php include_once('../components/footer.php');  ?>
+<?php include_once('../components/footer.php'); ?>
