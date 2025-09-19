@@ -55,30 +55,52 @@ include_once('../components/header.php');
               $muestras = [];
 
               foreach ($RequisitionRows as $row) {
-                $packageId = $row['Package_ID'];
-                $tests = array_map('trim', explode(',', $row['Test_Type']));
+                $packageId = trim($row['Package_ID']);
 
-                foreach ($tests as $t) {
-                  if (!empty($t)) {
-                    $paquetes[$packageId][] = $t;
+                // Si no hay Package_ID, usar el id único como identificador
+                if (empty($packageId)) {
+                  $uniqueKey = 'row_' . $row['id'];  // clave única para manejar este registro
+                  $paquetes[$uniqueKey][] = $row['Test_Type'];
+
+                  $paquetesInfo[$uniqueKey] = [
+                    'Comment'       => $row['Comment'],
+                    'Sample_By'     => $row['Sample_By'],
+                    'Sample_Date'   => $row['Sample_Date'],
+                    'Registed_Date' => $row['Registed_Date']
+                  ];
+
+                  $muestras[$uniqueKey][] = [
+                    'Sample_ID'     => $row['Sample_ID'],
+                    'Sample_Number' => $row['Sample_Number'],
+                    'Comment'       => $row['Comment']
+                  ];
+
+                  // Guardar referencia al id real
+                  $paquetesInfo[$uniqueKey]['real_id'] = $row['id'];
+                } else {
+                  // Caso normal (agrupado por Package_ID)
+                  $tests = array_map('trim', explode(',', $row['Test_Type']));
+                  foreach ($tests as $t) {
+                    if (!empty($t)) {
+                      $paquetes[$packageId][] = $t;
+                    }
                   }
+
+                  $paquetesInfo[$packageId] = [
+                    'Comment'       => $row['Comment'],
+                    'Sample_By'     => $row['Sample_By'],
+                    'Sample_Date'   => $row['Sample_Date'],
+                    'Registed_Date' => $row['Registed_Date']
+                  ];
+
+                  $muestras[$packageId][] = [
+                    'Sample_ID'     => $row['Sample_ID'],
+                    'Sample_Number' => $row['Sample_Number'],
+                    'Comment'       => $row['Comment']
+                  ];
                 }
-
-                // Info general (último registro sobrescribe)
-                $paquetesInfo[$packageId] = [
-                  'Comment'       => $row['Comment'],
-                  'Sample_By'     => $row['Sample_By'],
-                  'Sample_Date'   => $row['Sample_Date'],
-                  'Registed_Date' => $row['Registed_Date']
-                ];
-
-                // Guardar muestras dentro del paquete
-                $muestras[$packageId][] = [
-                  'Sample_ID'     => $row['Sample_ID'],
-                  'Sample_Number' => $row['Sample_Number'],
-                  'Comment'       => $row['Comment']
-                ];
               }
+
 
               // Calcular entregas desde test_delivery
               $package_ids = array_unique(array_column($RequisitionRows, 'Package_ID'));
@@ -117,8 +139,8 @@ include_once('../components/header.php');
                 <thead>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Paquete</th>
-                    <th scope="col">Numero de muestra</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Numero</th>
                     <th scope="col">Solicitados</th>
                     <th scope="col">Entregados</th>
                     <th scope="col">Progreso</th>
@@ -176,10 +198,19 @@ include_once('../components/header.php');
                             <i class="bi bi-eye"></i>
                           </button>
                           <!-- Editar -->
-                          <a href="requisition-form-edit.php?package_id=<?php echo urlencode($packageId); ?>"
-                            class="btn btn-warning">
-                            <i class="bi bi-pen"></i>
-                          </a>
+                          <?php if (strpos($packageId, 'row_') === 0): ?>
+                            <!-- Caso individual: pasar id real -->
+                            <a href="requisition-form-edit.php?id=<?php echo $paquetesInfo[$packageId]['real_id']; ?>"
+                              class="btn btn-warning">
+                              <i class="bi bi-pen"></i>
+                            </a>
+                          <?php else: ?>
+                            <!-- Caso agrupado: pasar package_id -->
+                            <a href="requisition-form-edit.php?package_id=<?php echo urlencode($packageId); ?>"
+                              class="btn btn-warning">
+                              <i class="bi bi-pen"></i>
+                            </a>
+                          <?php endif; ?>
                           <!-- Eliminar -->
                           <button type="button" class="btn btn-danger"
                             onclick="modaldelete('<?php echo $packageId; ?>')">
@@ -194,10 +225,6 @@ include_once('../components/header.php');
                       <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <?php
-                            // Todas las muestras del paquete tienen el mismo Sample_ID
-                            $sampleID = $muestras[$packageId][0]['Sample_ID'] ?? $packageId;
-                            ?>
                             <h5 class="modal-title">Detalle del paquete: <?php echo htmlspecialchars($sampleID); ?></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                           </div>
@@ -207,16 +234,26 @@ include_once('../components/header.php');
                               <!-- Ensayos -->
                               <div class="card mb-3">
                                 <div class="card-body">
-                                  <h5 class="card-title">Ensayos del paquete</h5>
-                                  <?php foreach ($tests as $test):
-                                    $hecho = isset($entregas[$packageId]) && in_array($test, $entregas[$packageId]);
-                                  ?>
-                                    <code style="display:inline-block; margin-right:5px; padding:2px 4px; background:#f0f0f0; border-radius:3px;">
-                                      <?php echo htmlspecialchars($test) . ' ' . ($hecho ? "✅" : "❌"); ?>
-                                    </code>
+                                  <h5 class="card-title">Ensayos por muestra</h5>
+                                  <?php foreach ($muestras[$packageId] as $m): ?>
+                                    <div class="mb-2">
+                                      <p>
+                                        <code>
+                                          Muestra <?php echo htmlspecialchars($m['Sample_Number']); ?>:
+                                          <?php
+                                          // Los ensayos de este paquete están en $paquetes[$packageId]
+                                          foreach ($paquetes[$packageId] as $test) {
+                                            $hecho = isset($entregas[$packageId]) && in_array($test, $entregas[$packageId]);
+                                            echo htmlspecialchars($test) . ' ' . ($hecho ? "✅" : "❌") . ' ';
+                                          }
+                                          ?>
+                                        </code>
+                                      </p>
+                                    </div>
                                   <?php endforeach; ?>
                                 </div>
                               </div>
+
 
                               <!-- Comentarios de muestras -->
                               <div class="card mb-3">
