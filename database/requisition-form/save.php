@@ -16,8 +16,6 @@ if (isset($_POST['requisition-form'])) {
         $ProjectNumber = $db->escape($_POST['ProjectNumber']);
         $PackageID = make_ticket_code();
         $Structure = $db->escape($_POST['Structure']);
-        $Area = $db->escape($_POST['Area']);
-        $Source = $db->escape($_POST['Source']);
         $CollectionDate = $db->escape($_POST['CollectionDate']);
         $Cviaje = $db->escape($_POST['Cviaje']);
         $SampleBy = $db->escape($_POST['SampleBy']);
@@ -27,7 +25,7 @@ if (isset($_POST['requisition-form'])) {
         $sampleData = [];
 
         foreach ($_POST as $key => $value) {
-            if (preg_match('/^(SampleName|SampleNumber|DepthFrom|DepthTo|MType|SType|North|East|Elev|Comments)_(\d+)$/', $key, $matches)) {
+            if (preg_match('/^(SampleName|SampleNumber|Area|Source|DepthFrom|DepthTo|MType|SType|North|East|Elev|Comments)_(\d+)$/', $key, $matches)) {
                 $field = $matches[1];   // Campo base: SampleName, SampleNumber, etc.
                 $index = $matches[2];   // Índice del grupo: 1, 2, 3...
 
@@ -68,8 +66,6 @@ if (isset($_POST['requisition-form'])) {
         Project_Number,
         Package_ID,
         Structure,
-        Area,
-        Source,
         Sample_Date,
         Truck_Count,
         Sample_By,
@@ -77,6 +73,8 @@ if (isset($_POST['requisition-form'])) {
         Register_By,
         Sample_ID,
         Sample_Number,
+        Area,
+        Source,
         Depth_From,
         Depth_To,
         Material_Type,
@@ -93,8 +91,6 @@ if (isset($_POST['requisition-form'])) {
         '$ProjectNumber',
         '$PackageID',
         '$Structure',
-        '$Area',
-        '$Source',
         '$CollectionDate',
         '$Cviaje',
         '$SampleBy',
@@ -102,6 +98,8 @@ if (isset($_POST['requisition-form'])) {
         '$RegisterBy',
         '{$data['SampleName']}',
         '{$data['SampleNumber']}',
+        '{$data['Area']}',
+        '{$data['Source']}',
         '{$data['DepthFrom']}',
         '{$data['DepthTo']}',
         '{$data['MType']}',

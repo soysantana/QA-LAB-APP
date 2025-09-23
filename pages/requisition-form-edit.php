@@ -200,6 +200,8 @@ include_once('../components/header.php');
                         <option value="" selected>Elegir...</option>
                         <option value="Grab" <?php if ($row['Sample_Type'] == 'Grab') echo 'selected'; ?>>Grab</option>
                         <option value="Bulk" <?php if ($row['Sample_Type'] == 'Bulk') echo 'selected'; ?>>Bulk</option>
+                        <option value="Bag" <?php if ($row['Sample_Type'] == 'Bag') echo 'selected'; ?>>Bag</option>
+                        <option value="Sacks" <?php if ($row['Sample_Type'] == 'Sacks') echo 'selected'; ?>>Sacks</option>
                         <option value="Truck" <?php if ($row['Sample_Type'] == 'Truck') echo 'selected'; ?>>Truck</option>
                         <option value="Rock" <?php if ($row['Sample_Type'] == 'Rock') echo 'selected'; ?>>Rock</option>
                         <option value="Shelby" <?php if ($row['Sample_Type'] == 'Shelby') echo 'selected'; ?>>Shelby</option>
