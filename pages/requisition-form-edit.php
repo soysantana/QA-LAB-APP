@@ -87,6 +87,7 @@ include_once('../components/header.php');
                 <div class="col-md-3">
                   <label for="PackageID" class="form-label">Paquete ID</label>
                   <input type="text" class="form-control" name="PackageID" id="PackageID" value="<?php echo $Search['Package_ID']; ?>">
+                  <input type="hidden" name="OldPackageID" value="<?php echo $Search['Package_ID']; ?>" />
                 </div>
                 <div class="col-md-3">
                   <label for="Structure" class="form-label">Estructura</label>
