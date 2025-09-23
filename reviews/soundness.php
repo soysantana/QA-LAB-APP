@@ -7,20 +7,13 @@ $Search = find_by_id('soundness', $_GET['id']);
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['Update_SND'])) {
-    include('../database/soundness.php');
-  } elseif (isset($_POST['Repeat_SND'])) {
-    include('../database/soundness.php');
-  } elseif (isset($_POST['Reviewed_SND'])) {
-    include('../database/soundness.php');
-  } elseif (isset($_POST['delete_snd'])) {
-    include('../database/soundness.php');
+  if (isset($_POST['update-snd'])) {
+    include('../database/soundness/update.php');
   }
 }
 ?>
 
 <?php page_require_level(2); ?>
-<?php get_user_review(); ?>
 <?php include_once('../components/header.php');  ?>
 <main id="main" class="main">
   <div class="pagetitle">
@@ -35,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
   <!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="Soundness()">
+    <div class="row">
       <form class="row" action="soundness.php?id=<?php echo $Search['id']; ?>" method="post">
 
         <div class="col-md-4"><?php echo display_msg($msg); ?></div>
@@ -44,44 +37,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php include_once('../includes/sample-info-form.php'); ?>
         <!-- End Sample Information -->
 
+        <!-- Laboratory Information -->
         <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Trial Information</h5>
 
-              <!-- Multi Columns Form -->
               <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
                     <option selected>Choose...</option>
-                    <option <?php if ($Search['Standard'] == '') echo 'selected'; ?>></option>
                     <option <?php if ($Search['Standard'] == 'ASTM-C88') echo 'selected'; ?>>ASTM-C88</option>
                   </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>" />
                 </div>
-                <div class="col-md-6">
+                <div class=" col-md-4">
+                  <label for="PMethods" class="form-label">Preparation Methods</label>
+                  <select id="PMethods" class="form-select" name="PMethods">
+                    <option selected>Choose...</option>
+                    <option value="Oven Dried" <?php if ($Search['Preparation_Methods'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
+                    <option value="Air Dried" <?php if ($Search['Preparation_Methods'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
+                    <option value="Microwave Dried" <?php if ($Search['Preparation_Methods'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
+                    <option value="Wet" <?php if ($Search['Preparation_Methods'] == 'Wet') echo 'selected'; ?>>Wet</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="SMethods" class="form-label">Split Methods</label>
+                  <select id="SMethods" class="form-select" name="SMethods">
+                    <option selected>Choose...</option>
+                    <option value="Manual" <?php if ($Search['Split_Methods'] == 'Manual') echo 'selected'; ?>>Manual</option>
+                    <option value="Mechanical" <?php if ($Search['Split_Methods'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="TestMethod" class="form-label">Test Method</label>
+                  <input type="text" class="form-control" name="TestMethod" id="TestMethod" value="<?php echo ($Search['Methods']); ?>" />
+                </div>
+                <div class=" col-md-4">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>" />
                 </div>
-                <div class="col-12">
+                <div class=" col-12">
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px"><?php echo ($Search['Comments']); ?></textarea>
                 </div>
               </div>
-              <!-- End Multi Columns Form -->
             </div>
           </div>
         </div>
+        <!-- End Laboratory Information -->
 
+        <!-- Form the Grain Size Distribution for Soundness -->
         <div class="col-lg-6">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Grain Size Distribution</h5>
+              <h5 class="card-title">Grain Size Distribution for Soundness</h5>
 
+              <!-- Wet Dry and Washed g -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -94,89 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Wet Dry and Washed g -->
 
+              <!-- Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
               <?php
-              // Definimos los datos de la tabla
-              $data = [
-                ["Screen" => '4"', "mm" => 100],
-                ["Screen" => '3 1/2"', "mm" => 90],
-                ["Screen" => '3"', "mm" => 75],
-                ["Screen" => '2 1/2"', "mm" => 63],
-                ["Screen" => '2"', "mm" => 50],
-                ["Screen" => '1 1/2"', "mm" => 38],
-                ["Screen" => '1"', "mm" => 25],
-                ["Screen" => '3/4"', "mm" => 19],
-                ["Screen" => '1/2"', "mm" => 12.5],
-                ["Screen" => '3/8"', "mm" => 9.5],
-                ["Screen" => 'No. 4', "mm" => 4.75],
-                ["Screen" => 'No. 8', "mm" => 2.36],
-                ["Screen" => 'No. 16', "mm" => 1.18],
-                ["Screen" => 'No. 30', "mm" => 0.6],
-                ["Screen" => 'No. 50', "mm" => 0.3],
-                ["Screen" => 'No. 100', "mm" => 0.15],
-                ["Screen" => 'Pan', "mm" => ""],
-                ["Screen" => 'Total Pan', "mm" => ""],
-                ["Screen" => 'Total', "mm" => ""],
-              ];
-
-              echo '<table class="table table-bordered">';
-              echo '<thead>';
-              echo '  <tr>';
-              echo '    <th scope="col">Screen</th>';
-              echo '    <th scope="col">(mm)</th>';
-              echo '    <th scope="col">Wt. Ret</th>';
-              echo '    <th scope="col">% Ret</th>';
-              echo '  </tr>';
-              echo '</thead>';
-              echo '<tbody>';
-
-              $counter = 1; // Inicializamos un contador
-
-              // Iteramos sobre los datos para crear las filas de la tabla
-              foreach ($data as $row) {
-                // Verificamos si la fila es "Pan", "Total Pan" o "Total" y asignamos ID personalizados
-                if ($row['Screen'] === 'Pan') {
-                  $wtRetId = 'WtRetPan';
-                  $pctRetId = 'PctRetPan';
-                } elseif ($row['Screen'] === 'Total Pan') {
-                  $wtRetId = 'WtRetTotalPan';
-                  $pctRetId = 'PctRetTotalPan';
-                } elseif ($row['Screen'] === 'Total') {
-                  $wtRetId = 'WtRetTotal';
-                  $pctRetId = 'PctRetTotal';
-                } else {
-                  $wtRetId = 'WtRet' . $counter;
-                  $pctRetId = 'PctRet' . $counter;
-                }
-
-                echo '<tr>';
-                echo '<th scope="row">' . $row['Screen'] . '</th>';
-                echo '<th>' . $row['mm'] . '</th>';
-                echo '<td><input type="text" style="border: none" class="form-control" name="' . $wtRetId . '" id="' . $wtRetId . '" value="' . $Search[$wtRetId] . '" /></td>';
-                echo '<td><input type="text" style="border: none" class="form-control" name="' . $pctRetId . '" id="' . $pctRetId . '" value="' . $Search[$pctRetId] . '" readonly tabindex="-1" /></td>';
-                echo '</tr>';
-                $counter++; // Incrementamos el contador en cada iteración
-              }
-
-              echo '</tbody>';
-              echo '</table>';
-              ?>
-
-
-
-
-              <!-- End Bordered Table -->
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Grain Size Distribution for Soundness</h5>
-
-              <?php
-              // Define the data for the table
               $sizes = [
                 '4"' => 100,
                 '3 1/2"' => 90,
@@ -191,8 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'No. 4' => 4.75
               ];
               ?>
+              <!-- End Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
 
-              <table class="table table-bordered">
+              <!-- Table for Coarse Aggregate -->
+              <table class="table table-bordered" oninput="calculateGrainSizeCoarse()">
                 <thead>
                   <tr>
                     <th scope="col">Screen</th>
@@ -205,36 +144,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <tr>
                     <td colspan="4">Coarse Aggregate</td>
                   </tr>
-                  <?php $i = 1;
-                  foreach ($sizes as $size => $mm): ?>
+                  <?php
+                  // Obtener valores para WtRetCoarse y PctRetCoarse desde la BD
+                  $valuesString = $Search['WtRetCoarse'] ?? '';
+                  $valuesArray = !empty($valuesString) ? explode(',', $valuesString) : [];
+
+                  $pctString = $Search['PctRetCoarse'] ?? '';
+                  $pctArray = !empty($pctString) ? explode(',', $pctString) : [];
+
+                  $i = 1;
+                  foreach ($sizes as $size => $mm):
+                    // Valor WtRetCoarse
+                    $value = $valuesArray[$i - 1] ?? '';
+                    $value = trim($value);
+                    if ($value === 'null' || $value === '') {
+                      $value = '';
+                    }
+
+                    // Valor PctRetCoarse
+                    $pctValue = $pctArray[$i - 1] ?? '';
+                    $pctValue = trim($pctValue);
+                    if ($pctValue === 'null' || $pctValue === '') {
+                      $pctValue = '';
+                    }
+                  ?>
                     <tr>
                       <th scope="row"><?php echo htmlspecialchars($size); ?></th>
                       <th><?php echo htmlspecialchars($mm); ?></th>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="WtRetCoarse<?php echo $i; ?>" id="WtRetCoarse<?php echo $i; ?>" value="<?php echo ($Search['WtRetCoarse' . $i]); ?>" />
+                        <input type="text" style="border: none" class="form-control" name="WtRetCoarse<?php echo $i; ?>" id="WtRetCoarse<?php echo $i; ?>" value="<?php echo htmlspecialchars($value); ?>" />
                       </td>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="PctRetCoarse<?php echo $i; ?>" id="PctRetCoarse<?php echo $i; ?>" value="<?php echo ($Search['PctRetCoarse' . $i]); ?>" readonly tabindex="-1" />
+                        <input type="text" style="border: none" class="form-control" name="PctRetCoarse<?php echo $i; ?>" id="PctRetCoarse<?php echo $i; ?>" value="<?php echo htmlspecialchars($pctValue); ?>" readonly tabindex="-1" />
                       </td>
                     </tr>
-                  <?php $i++;
-                  endforeach; ?>
+                  <?php
+                    $i++;
+                  endforeach;
+                  ?>
+
                   <tr>
                     <th scope="row" colspan="2">Total</th>
                     <td>
-                      <input type="text" style="border: none" class="form-control" name="WtRetCoarseTotal" id="WtRetCoarseTotal" value="<?php echo ($Search['WtRetCoarseTotal']); ?>" readonly tabindex="-1" />
+                      <input type="text" style="border: none" class="form-control" name="WtRetCoarseTotal" id="WtRetCoarseTotal" readonly tabindex="-1" value="<?php echo ($Search['WtRetCoarseTotal']); ?>" />
                     </td>
                     <td>
-                      <input type="text" style="border: none" class="form-control" name="PctRetCoarseTotal" id="PctRetCoarseTotal" value="<?php echo ($Search['PctRetCoarseTotal']); ?>" readonly tabindex="-1" />
+                      <input type="text" style="border: none" class="form-control" name="PctRetCoarseTotal" id="PctRetCoarseTotal" readonly tabindex="-1" value="<?php echo ($Search['PctRetCoarseTotal']); ?>" />
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <!-- End Table for Coarse Aggregate -->
 
 
-
+              <!-- Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
               <?php
-              // Define the data for the table
               $sizes = [
                 'No. 4' => 4.75,
                 'No. 8' => 2.36,
@@ -245,22 +209,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'Pan' => '',
               ];
               ?>
+              <!-- End Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
 
-              <table class="table table-bordered">
+              <!-- Table for Fine Aggregate -->
+              <table class="table table-bordered" oninput="calculateGrainSizeFine()">
                 <tbody>
                   <tr>
                     <td colspan="4">Fine Aggregate</td>
                   </tr>
-                  <?php $i = 1;
-                  foreach ($sizes as $size => $mm): ?>
+                  <?php
+                  // Obtener valores para WtRetFine y PctRetFine desde la BD
+                  $valuesString = $Search['WtRetFine'] ?? '';
+                  $valuesArray = !empty($valuesString) ? explode(',', $valuesString) : [];
+
+                  $pctString = $Search['PctRetFine'] ?? '';
+                  $pctArray = !empty($pctString) ? explode(',', $pctString) : [];
+
+                  $i = 1;
+                  foreach ($sizes as $size => $mm):
+                    // Valor WtRetCoarse
+                    $value = $valuesArray[$i - 1] ?? '';
+                    $value = trim($value);
+                    if ($value === 'null' || $value === '') {
+                      $value = '';
+                    }
+
+                    // Valor PctRetCoarse
+                    $pctValue = $pctArray[$i - 1] ?? '';
+                    $pctValue = trim($pctValue);
+                    if ($pctValue === 'null' || $pctValue === '') {
+                      $pctValue = '';
+                    }
+                  ?>
                     <tr>
                       <th scope="row"><?php echo htmlspecialchars($size); ?></th>
                       <th><?php echo htmlspecialchars($mm); ?></th>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="WtRetFine<?php echo $i; ?>" id="WtRetFine<?php echo $i; ?>" value="<?php echo ($Search['WtRetFine' . $i]); ?>" />
+                        <input type="text" style="border: none" class="form-control" name="WtRetFine<?php echo $i; ?>" id="WtRetFine<?php echo $i; ?>" value="<?php echo htmlspecialchars($value); ?>" />
                       </td>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="PctRetFine<?php echo $i; ?>" id="PctRetFine<?php echo $i; ?>" value="<?php echo ($Search['PctRetFine' . $i]); ?>" readonly tabindex="-1" />
+                        <input type="text" style="border: none" class="form-control" name="PctRetFine<?php echo $i; ?>" id="PctRetFine<?php echo $i; ?>" readonly tabindex="-1" value="<?php echo htmlspecialchars($pctValue); ?>" />
                       </td>
                     </tr>
                   <?php $i++;
@@ -268,29 +256,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <tr>
                     <th scope="row" colspan="2">Total</th>
                     <td>
-                      <input type="text" style="border: none" class="form-control" name="WtRetFineTotal" id="WtRetFineTotal" value="<?php echo ($Search['WtRetFineTotal']); ?>" readonly tabindex="-1" />
+                      <input type="text" style="border: none" class="form-control" name="WtRetFineTotal" id="WtRetFineTotal" readonly tabindex="-1" value="<?php echo htmlspecialchars($Search['WtRetFineTotal']); ?>" />
                     </td>
                     <td>
-                      <input type="text" style="border: none" class="form-control" name="PctRetFineTotal" id="PctRetFineTotal" value="<?php echo ($Search['PctRetFineTotal']); ?>" readonly tabindex="-1" />
+                      <input type="text" style="border: none" class="form-control" name="PctRetFineTotal" id="PctRetFineTotal" readonly tabindex="-1" value="<?php echo htmlspecialchars($Search['PctRetFineTotal']); ?>" />
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <!-- End Table for Fine Aggregate -->
 
 
             </div>
           </div>
         </div>
+        <!-- End Form the Grain Size Distribution for Soundness -->
 
-        <div class="col-lg-5">
+        <!-- Soundness Test Cycles -->
+        <div class="col-lg-6">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Test Information</h5>
-
-              <?php
-              // Define the data for the table
-              $cycles = range(1, 5); // Array of cycle numbers
-              ?>
 
               <table class="table table-bordered">
                 <thead>
@@ -303,23 +289,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </thead>
                 <tbody>
-                  <?php foreach ($cycles as $cycle): ?>
+                  <?php
+                  $startDates = !empty($Search['StartDate']) ? explode(',', $Search['StartDate']) : [];
+                  $roomTemps = !empty($Search['RoomTemp']) ? explode(',', $Search['RoomTemp']) : [];
+                  $solutionTemps = !empty($Search['SolutionTemp']) ? explode(',', $Search['SolutionTemp']) : [];
+                  $specificGravities = !empty($Search['SpecificGravity']) ? explode(',', $Search['SpecificGravity']) : [];
+
+                  $cycles = range(1, 5);
+                  foreach ($cycles as $i => $cycle):
+                  ?>
                     <tr>
                       <th><?php echo htmlspecialchars($cycle); ?></th>
                       <td>
-                        <input type="date" style="border: none" class="form-control" name="StartDate<?php echo $cycle; ?>" id="StartDate<?php echo $cycle; ?>" value="<?php echo ($Search['StartDate' . $cycle]); ?>" tabindex="-1" />
+                        <input type="date" style="border: none" class="form-control"
+                          name="StartDate<?php echo $cycle; ?>"
+                          id="StartDate<?php echo $cycle; ?>"
+                          value="<?php echo isset($startDates[$i]) ? htmlspecialchars($startDates[$i]) : ''; ?>"
+                          tabindex="-1" />
                       </td>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="RoomTemp<?php echo $cycle; ?>" id="RoomTemp<?php echo $cycle; ?>" value="<?php echo ($Search['RoomTemp' . $cycle]); ?>" />
+                        <input type="text" style="border: none" class="form-control"
+                          name="RoomTemp<?php echo $cycle; ?>"
+                          id="RoomTemp<?php echo $cycle; ?>"
+                          value="<?php echo isset($roomTemps[$i]) ? htmlspecialchars($roomTemps[$i]) : ''; ?>" />
                       </td>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="SolutionTemp<?php echo $cycle; ?>" id="SolutionTemp<?php echo $cycle; ?>" value="<?php echo ($Search['SolutionTemp' . $cycle]); ?>" />
+                        <input type="text" style="border: none" class="form-control"
+                          name="SolutionTemp<?php echo $cycle; ?>"
+                          id="SolutionTemp<?php echo $cycle; ?>"
+                          value="<?php echo isset($solutionTemps[$i]) ? htmlspecialchars($solutionTemps[$i]) : ''; ?>" />
                       </td>
                       <td>
-                        <input type="text" style="border: none" class="form-control" name="SpecificGravity<?php echo $cycle; ?>" id="SpecificGravity<?php echo $cycle; ?>" value="<?php echo ($Search['SpecificGravity' . $cycle]); ?>" />
+                        <input type="text" style="border: none" class="form-control"
+                          name="SpecificGravity<?php echo $cycle; ?>"
+                          id="SpecificGravity<?php echo $cycle; ?>"
+                          value="<?php echo isset($specificGravities[$i]) ? htmlspecialchars($specificGravities[$i]) : ''; ?>" />
                       </td>
                     </tr>
                   <?php endforeach; ?>
+
                   <tr>
                     <th colspan="2">Solution Used</th>
                     <th colspan="3">Sodium Sulfate</th>
@@ -331,8 +339,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
         </div>
+        <!-- End Soundness Test Cycles -->
 
-        <div class="col-lg-7">
+        <!-- Qualitative Examination of Coarse Sizes -->
+        <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Qualitative Examination of Coarse Sizes</h5>
@@ -363,7 +373,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </thead>
                 <tbody>
                   <?php
-                  // Define sieve sizes from 1 to 8
+                  function cleanArrayValues($str)
+                  {
+                    // Convierte la cadena a array
+                    $arr = !empty($str) ? explode(',', $str) : [];
+                    // Reemplaza "null" o NULL real por cadena vacía
+                    return array_map(function ($v) {
+                      return (strtolower(trim($v)) === 'null' || $v === null) ? '' : trim($v);
+                    }, $arr);
+                  }
+
+                  // Convertimos cada campo de la BD
+                  $splittingNo      = cleanArrayValues($Search['SplittingNo'] ?? '');
+                  $splittingPct     = cleanArrayValues($Search['SplittingPct'] ?? '');
+                  $crumblingNo      = cleanArrayValues($Search['CrumblingNo'] ?? '');
+                  $crumblingPct     = cleanArrayValues($Search['CrumblingPct'] ?? '');
+                  $crackingNo       = cleanArrayValues($Search['CrackingNo'] ?? '');
+                  $crackingPct      = cleanArrayValues($Search['CrackingPct'] ?? '');
+                  $flakingNo        = cleanArrayValues($Search['FlakingNo'] ?? '');
+                  $flakingPct       = cleanArrayValues($Search['FlakingPct'] ?? '');
+                  $totalParticles   = cleanArrayValues($Search['TotalParticles'] ?? '');
+
+                  // Tamaños
                   $sieveSizes = [
                     "37.5mm(11⁄2 in) to 19.0 mm (3/4 in)",
                     "63 mm (2 1⁄2 in) to 37.5 mm (1 1⁄2 in)",
@@ -374,19 +405,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                   foreach ($sieveSizes as $index => $size) {
                     echo '<tr>';
-                    echo '<th>' . ($size) . '</th>'; // Use numbers 1 to 8
-                    echo '<td><input type="text" style="border: none" class="form-control" name="SplittingNo' . ($index + 1) . '" id="SplittingNo' . ($index + 1) . '" value="' . $Search['SplittingNo' . ($index + 1)] . '" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="SplittingPct' . ($index + 1) . '" id="SplittingPct' . ($index + 1) . '" value="' . $Search['SplittingPct' . ($index + 1)] . '" readonly tabindex="-1" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="CrumblingNo' . ($index + 1) . '" id="CrumblingNo' . ($index + 1) . '" value="' . $Search['CrumblingNo' . ($index + 1)] . '" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="CrumblingPct' . ($index + 1) . '" id="CrumblingPct' . ($index + 1) . '" value="' . $Search['CrumblingPct' . ($index + 1)] . '" readonly tabindex="-1" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="CrackingNo' . ($index + 1) . '" id="CrackingNo' . ($index + 1) . '" value="' . $Search['CrackingNo' . ($index + 1)] . '" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="CrackingPct' . ($index + 1) . '" id="CrackingPct' . ($index + 1) . '" value="' . $Search['CrackingPct' . ($index + 1)] . '" readonly tabindex="-1" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="FlakingNo' . ($index + 1) . '" id="FlakingNo' . ($index + 1) . '" value="' . $Search['FlakingNo' . ($index + 1)] . '" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="FlakingPct' . ($index + 1) . '" id="FlakingPct' . ($index + 1) . '" value="' . $Search['FlakingPct' . ($index + 1)] . '" readonly tabindex="-1" /></td>';
-                    echo '<td><input type="text" style="border: none" class="form-control" name="TotalParticles' . ($index + 1) . '" id="TotalParticles' . ($index + 1) . '" value="' . $Search['TotalParticles' . ($index + 1)] . '" /></td>';
+                    echo '<th>' . htmlspecialchars($size) . '</th>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="SplittingNo' . ($index + 1) . '" id="SplittingNo' . ($index + 1) . '"
+                    value="' . htmlspecialchars($splittingNo[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="SplittingPct' . ($index + 1) . '" id="SplittingPct' . ($index + 1) . '" readonly tabindex="-1"
+                    value="' . htmlspecialchars($splittingPct[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="CrumblingNo' . ($index + 1) . '" id="CrumblingNo' . ($index + 1) . '"
+                    value="' . htmlspecialchars($crumblingNo[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="CrumblingPct' . ($index + 1) . '" id="CrumblingPct' . ($index + 1) . '" readonly tabindex="-1"
+                    value="' . htmlspecialchars($crumblingPct[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="CrackingNo' . ($index + 1) . '" id="CrackingNo' . ($index + 1) . '"
+                    value="' . htmlspecialchars($crackingNo[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="CrackingPct' . ($index + 1) . '" id="CrackingPct' . ($index + 1) . '" readonly tabindex="-1"
+                    value="' . htmlspecialchars($crackingPct[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="FlakingNo' . ($index + 1) . '" id="FlakingNo' . ($index + 1) . '"
+                    value="' . htmlspecialchars($flakingNo[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="FlakingPct' . ($index + 1) . '" id="FlakingPct' . ($index + 1) . '" readonly tabindex="-1"
+                    value="' . htmlspecialchars($flakingPct[$index] ?? '') . '" /></td>';
+
+                    echo '<td><input type="text" class="form-control" style="border: none"
+                    name="TotalParticles' . ($index + 1) . '" id="TotalParticles' . ($index + 1) . '"
+                    value="' . htmlspecialchars($totalParticles[$index] ?? '') . '" /></td>';
+
                     echo '</tr>';
                   }
                   ?>
+
                 </tbody>
               </table>
 
@@ -395,12 +455,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
         </div>
+        <!-- End Qualitative Examination of Coarse Sizes -->
 
+        <!-- Table for Soundness Fine and Coarse Aggregate -->
         <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Test Results</h5>
-              <!-- Soundness Test of Fine Aggregate -->
               <?php
               $rows = [
                 ["Minus 150 µm (No. 100)", "100g", "StarWeightRet1", "---", "", "FinalWeightRet1", "PercentagePassing1", "WeightedLoss1"],
@@ -413,6 +474,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               ];
 
               $cols = count($rows[0]); // Número de columnas
+              ?>
+
+              <!-- Soundness Test of Fine Aggregate -->
+              <?php
+              // Convertimos las columnas reales de la BD a arrays
+              $starWeightRet      = explode(',', $Search['StarWeightRetFine'] ?? '');
+              $finalWeightRet     = explode(',', $Search['FinalWeightRetFine'] ?? '');
+              $percentagePassing  = explode(',', $Search['PercentagePassingFine'] ?? '');
+              $weightedLoss       = explode(',', $Search['WeightedLossFine'] ?? '');
+
+              // Reemplazamos "null" por vacío
+              $starWeightRet     = array_map(fn($v) => strtolower(trim($v)) === 'null' ? '' : $v, $starWeightRet);
+              $finalWeightRet    = array_map(fn($v) => strtolower(trim($v)) === 'null' ? '' : $v, $finalWeightRet);
+              $percentagePassing = array_map(fn($v) => strtolower(trim($v)) === 'null' ? '' : $v, $percentagePassing);
+              $weightedLoss      = array_map(fn($v) => strtolower(trim($v)) === 'null' ? '' : $v, $weightedLoss);
+
+              $cols = count($rows[0]);
               ?>
 
               <table class="table table-bordered">
@@ -431,18 +509,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <th colspan="8">Soundness Test of Fine Aggregate</th>
                   </tr>
 
-                  <?php foreach ($rows as $index => $row): ?>
+                  <?php foreach ($rows as $rowIndex => $row): ?>
                     <tr>
                       <?php for ($i = 0; $i < $cols; $i++): ?>
                         <td>
-                          <?php if ($i == 2 || $i == 5): // Campos sin readonly 
+                          <?php
+                          // Determinamos el valor real de la base según la columna
+                          if ($i == 2) $value = htmlspecialchars($starWeightRet[$rowIndex] ?? '');
+                          elseif ($i == 5) $value = htmlspecialchars($finalWeightRet[$rowIndex] ?? '');
+                          elseif ($i == 6) $value = htmlspecialchars($percentagePassing[$rowIndex] ?? '');
+                          elseif ($i == 7) $value = htmlspecialchars($weightedLoss[$rowIndex] ?? '');
+                          else $value = '';
+
+                          // Definimos readonly solo para columnas 6 y 7
+                          $readonly = in_array($i, [6, 7]) ? ' readonly tabindex="-1"' : '';
+
+                          if (in_array($i, [2, 5, 6, 7])):
                           ?>
                             <input type="text" style="border: none" class="form-control"
-                              name="<?= $row[$i] ?>" id="<?= $row[$i] ?>" value="<?= $Search[$row[$i]] ?>" />
-                          <?php elseif ($i == 6 || $i == 7): // PercentagePassing y WeightedLoss 
-                          ?>
-                            <input type="text" style="border: none" class="form-control"
-                              name="<?= $row[$i] ?>" id="<?= $row[$i] ?>" value="<?= $Search[$row[$i]] ?>" readonly tabindex="-1" />
+                              name="<?= $row[$i] ?>" id="<?= $row[$i] ?>" value="<?= $value ?>" <?= $readonly ?> />
                           <?php else: ?>
                             <?= $row[$i] ?>
                           <?php endif; ?>
@@ -451,22 +536,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </tr>
                   <?php endforeach; ?>
 
-
                   <tr>
                     <td colspan="2">Totals</td>
-                    <td><input type="text" style="border: none" class="form-control" name="TotalStarWeightRet" id="TotalStarWeightRet" value="<?php echo ($Search['TotalStarWeightRet']); ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="TotalStarWeightRet" id="TotalStarWeightRet" value="<?php echo ($Search['TotalStarWeightRetFine']); ?>" readonly tabindex="-1" /></td>
                     <td>---</td>
                     <td>---</td>
-                    <td><input type="text" style="border: none" class="form-control" name="TotalFinalWeightRet" id="TotalFinalWeightRet" value="<?php echo ($Search['TotalFinalWeightRet']); ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="TotalFinalWeightRet" id="TotalFinalWeightRet" value="<?php echo ($Search['TotalFinalWeightRetFine']); ?>" readonly tabindex="-1" /></td>
                     <td></td>
-                    <td><input type="text" style="border: none" class="form-control" name="TotalWeightedLoss" id="TotalWeightedLoss" value="<?php echo ($Search['TotalWeightedLoss']); ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="TotalWeightedLoss" id="TotalWeightedLoss" value="<?php echo ($Search['TotalWeightedLossFine']); ?>" readonly tabindex="-1" /></td>
                   </tr>
                 </tbody>
               </table>
 
+              <!-- End Soundness Test of Fine Aggregate -->
 
+              <!-- Soundness Test of Coarse Aggregate -->
+              <?php
+              // Función para obtener valor o vacío si es null
+              function getValue($search, $key, $index)
+              {
+                if (!isset($search[$key])) return '';
 
-              <!-- Soundness Test of Fine Aggregate -->
+                // Convertir la cadena separada por comas a arreglo
+                $values = explode(',', $search[$key]);
+
+                // Manejar el caso de 'null' como vacío
+                if (!isset($values[$index]) || strtolower(trim($values[$index])) === 'null') {
+                  return '';
+                }
+
+                return $values[$index];
+              }
+
+              ?>
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -475,87 +577,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <tr>
                     <td>9.5mm(3⁄8 in.) to 4.75 mm (No. 4)</td>
                     <td>(300+-5)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse1" id="StarWeightRetCoarse1" value="<?php echo ($Search['StarWeightRetCoarse1']); ?>" /></td>
-                    <td>---</td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse1" id="StarWeightRetCoarse1" value="<?= getValue($Search, 'StarWeightRetCoarse', 0) ?>" /></td>
                     <td>4.0 mm (No. 5)</td>
-                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse1" id="FinalWeightRetCoarse1" value="<?php echo ($Search['FinalWeightRetCoarse1']); ?>" /></td>
-                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse1" id="PercentagePassingCoarse1" value="<?php echo ($Search['PercentagePassingCoarse1']); ?>" readonly tabindex="-1" /></td>
-                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse1" id="WeightedLossCoarse1" value="<?php echo ($Search['WeightedLossCoarse1']); ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse1" id="FinalWeightRetCoarse1" value="<?= getValue($Search, 'FinalWeightRetCoarse', 0) ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse1" id="PercentagePassingCoarse1" value="<?= getValue($Search, 'PercentagePassingCoarse', 0) ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse1" id="WeightedLossCoarse1" value="<?= getValue($Search, 'WeightedLossCoarse', 0) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>12.5 mm (1⁄2 in) to 9.5 mm (3⁄8 in)</td>
                     <td>(330+-5)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse2" id="StarWeightRetCoarse2" value="<?php echo ($Search['StarWeightRetCoarse2']); ?>" /></td>
-                    <td rowspan="2">19.0mm(3⁄4 in) to 9.5mm(3⁄8 in)</td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse2" id="StarWeightRetCoarse2" value="<?= getValue($Search, 'StarWeightRetCoarse', 1) ?>" /></td>
                     <td rowspan="2">8.0 mm (5⁄16 in)</td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse2" id="FinalWeightRetCoarse2" value="<?php echo ($Search['FinalWeightRetCoarse2']); ?>" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse2" id="PercentagePassingCoarse2" value="<?php echo ($Search['PercentagePassingCoarse2']); ?>" readonly tabindex="-1" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse2" id="WeightedLossCoarse2" value="<?php echo ($Search['WeightedLossCoarse2']); ?>" readonly tabindex="-1" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse2" id="FinalWeightRetCoarse2" value="<?= getValue($Search, 'FinalWeightRetCoarse', 1) ?>" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse2" id="PercentagePassingCoarse2" value="<?= getValue($Search, 'PercentagePassingCoarse', 1) ?>" readonly tabindex="-1" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse2" id="WeightedLossCoarse2" value="<?= getValue($Search, 'WeightedLossCoarse', 1) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>19.0mm(3⁄4 in) to 12.5 mm (1⁄2 in)</td>
                     <td>(670+-10)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse3" id="StarWeightRetCoarse3" value="<?php echo ($Search['StarWeightRetCoarse3']); ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse3" id="StarWeightRetCoarse3" value="<?= getValue($Search, 'StarWeightRetCoarse', 2) ?>" /></td>
                   </tr>
                   <tr>
                     <td>25 mm (1 in) to 19.0 mm (3⁄4 in)</td>
                     <td>(500+-30)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse4" id="StarWeightRetCoarse4" value="<?php echo ($Search['StarWeightRetCoarse4']); ?>" /></td>
-                    <td rowspan="2">37.5mm(1 1⁄2 in) to 19.0mm(3⁄4 in)</td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse4" id="StarWeightRetCoarse4" value="<?= getValue($Search, 'StarWeightRetCoarse', 3) ?>" /></td>
                     <td rowspan="2">16.0 mm (5⁄8 in)</td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse3" id="FinalWeightRetCoarse3" value="<?php echo ($Search['FinalWeightRetCoarse3']); ?>" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse3" id="PercentagePassingCoarse3" value="<?php echo ($Search['PercentagePassingCoarse3']); ?>" readonly tabindex="-1" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse3" id="WeightedLossCoarse3" value="<?php echo ($Search['WeightedLossCoarse3']); ?>" readonly tabindex="-1" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse3" id="FinalWeightRetCoarse3" value="<?= getValue($Search, 'FinalWeightRetCoarse', 2) ?>" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse3" id="PercentagePassingCoarse3" value="<?= getValue($Search, 'PercentagePassingCoarse', 2) ?>" readonly tabindex="-1" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse3" id="WeightedLossCoarse3" value="<?= getValue($Search, 'WeightedLossCoarse', 2) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>37.5mm(11⁄2 in) to 25.0 mm (1 in.)</td>
                     <td>(1000+-50)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse5" id="StarWeightRetCoarse5" value="<?php echo ($Search['StarWeightRetCoarse5']); ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse5" id="StarWeightRetCoarse5" value="<?= getValue($Search, 'StarWeightRetCoarse', 4) ?>" /></td>
                   </tr>
                   <tr>
                     <td>50 mm (2 in) to 37.5 mm (1 1⁄2 in)</td>
                     <td>(2000+-200)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse6" id="StarWeightRetCoarse6" value="<?php echo ($Search['StarWeightRetCoarse6']); ?>" /></td>
-                    <td rowspan="2">63mm(2 1⁄2 in) to 37.5mm(1 1⁄2 in)</td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse6" id="StarWeightRetCoarse6" value="<?= getValue($Search, 'StarWeightRetCoarse', 5) ?>" /></td>
                     <td rowspan="2">31.5 mm (1 1⁄4 in)</td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse4" id="FinalWeightRetCoarse4" value="<?php echo ($Search['FinalWeightRetCoarse4']); ?>" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse4" id="PercentagePassingCoarse4" value="<?php echo ($Search['PercentagePassingCoarse4']); ?>" readonly tabindex="-1" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse4" id="WeightedLossCoarse4" value="<?php echo ($Search['WeightedLossCoarse4']); ?>" readonly tabindex="-1" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse4" id="FinalWeightRetCoarse4" value="<?= getValue($Search, 'FinalWeightRetCoarse', 3) ?>" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse4" id="PercentagePassingCoarse4" value="<?= getValue($Search, 'PercentagePassingCoarse', 3) ?>" readonly tabindex="-1" /></td>
+                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse4" id="WeightedLossCoarse4" value="<?= getValue($Search, 'WeightedLossCoarse', 3) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>63 mm (2 1⁄2 in) to 50 mm (2 in)</td>
                     <td>(3000+-300)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse7" id="StarWeightRetCoarse7" value="<?php echo ($Search['StarWeightRetCoarse7']); ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse7" id="StarWeightRetCoarse7" value="<?= getValue($Search, 'StarWeightRetCoarse', 6) ?>" /></td>
                   </tr>
                   <tr>
                     <td>75 mm (3 in) to 63 mm (2 1⁄2 in)</td>
                     <td>(7000+-100)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse8" id="StarWeightRetCoarse8" value="<?php echo ($Search['StarWeightRetCoarse8']); ?>" /></td>
-                    <td rowspan="3"> 100mm(4 in.) to 90mm(2 1⁄2 in.)</td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse8" id="StarWeightRetCoarse8" value="<?= getValue($Search, 'StarWeightRetCoarse', 7) ?>" /></td>
                     <td>50 mm (2 in)</td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse5" id="FinalWeightRetCoarse5" value="<?php echo ($Search['FinalWeightRetCoarse5']); ?>" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse5" id="PercentagePassingCoarse5" value="<?php echo ($Search['PercentagePassingCoarse5']); ?>" readonly tabindex="-1" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse5" id="WeightedLossCoarse5" value="<?php echo ($Search['WeightedLossCoarse5']); ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse5" id="FinalWeightRetCoarse5" value="<?= getValue($Search, 'FinalWeightRetCoarse', 4) ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse5" id="PercentagePassingCoarse5" value="<?= getValue($Search, 'PercentagePassingCoarse', 4) ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse5" id="WeightedLossCoarse5" value="<?= getValue($Search, 'WeightedLossCoarse', 4) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>90 mm (3 1⁄2 in) to 75 mm (3 in)</td>
                     <td>(7000+-1000)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse9" id="StarWeightRetCoarse9" value="<?php echo ($Search['StarWeightRetCoarse9']); ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse9" id="StarWeightRetCoarse9" value="<?= getValue($Search, 'StarWeightRetCoarse', 8) ?>" /></td>
                     <td>63 mm (2 1⁄2 in)</td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse6" id="FinalWeightRetCoarse6" value="<?= getValue($Search, 'FinalWeightRetCoarse', 5) ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse6" id="PercentagePassingCoarse6" value="<?= getValue($Search, 'PercentagePassingCoarse', 5) ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse6" id="WeightedLossCoarse6" value="<?= getValue($Search, 'WeightedLossCoarse', 5) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>100 mm (4 in) to 90 mm (3 1⁄2 in)</td>
                     <td>(7000+-1000)g</td>
-                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse10" id="StarWeightRetCoarse10" value="<?php echo ($Search['StarWeightRetCoarse10']); ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse10" id="StarWeightRetCoarse10" value="<?= getValue($Search, 'StarWeightRetCoarse', 9) ?>" /></td>
                     <td>75 mm (3 in)</td>
-                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse6" id="FinalWeightRetCoarse6" value="<?php echo ($Search['FinalWeightRetCoarse6']); ?>" /></td>
-                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse6" id="PercentagePassingCoarse6" value="<?php echo ($Search['PercentagePassingCoarse6']); ?>" readonly tabindex="-1" /></td>
-                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse6" id="WeightedLossCoarse6" value="<?php echo ($Search['WeightedLossCoarse6']); ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse7" id="FinalWeightRetCoarse7" value="<?= getValue($Search, 'FinalWeightRetCoarse', 6) ?>" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse7" id="PercentagePassingCoarse7" value="<?= getValue($Search, 'PercentagePassingCoarse', 6) ?>" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse7" id="WeightedLossCoarse7" value="<?= getValue($Search, 'WeightedLossCoarse', 6) ?>" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td colspan="2">Totals</td>
-                    <td><input type="text" style="border: none" class="form-control" name="TotalWeightRetCoarse" id="TotalWeightRetCoarse" value="<?php echo ($Search['TotalWeightRetCoarse']); ?>" readonly tabindex="-1" /></td>
-                    <td>---</td>
+                    <td><input type="text" style="border: none" class="form-control" name="TotalStarWeightRetCoarse" id="TotalStarWeightRetCoarse" value="<?php echo ($Search['TotalStarWeightRetCoarse']); ?>" readonly tabindex="-1" /></td>
                     <td>---</td>
                     <td><input type="text" style="border: none" class="form-control" name="TotalFinalWeightRetCoarse" id="TotalFinalWeightRetCoarse" value="<?php echo ($Search['TotalFinalWeightRetCoarse']); ?>" readonly tabindex="-1" /></td>
                     <td></td>
@@ -563,33 +662,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Soundness Test of Coarse Aggregate -->
 
-              <!-- End Default Table Example -->
             </div>
           </div>
         </div>
+        <!-- End Table for Soundness Fine and Coarse Aggregate -->
 
+        <!-- Actions -->
         <div class="col-md-4">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Actions</h5>
 
               <div class="d-grid gap-2 mt-3">
-                <button type="submit" class="btn btn-success" name="Update_SND">Update Essay</button>
-                <a href="../pdf/SND.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
-                <button type="submit" class="btn btn-danger" name="delete_snd"><i class="bi bi-trash"></i></button>
-                <?php if (user_can_access(1)): ?>
-                  <button type="submit" class="btn btn-primary" name="Repeat_SND">Repeat</button>
-                  <button type="submit" class="btn btn-primary" name="Reviewed_SND">Reviewed</button>
-                <?php endif; ?>
+                <button type="submit" class="btn btn-success" name="update-snd">Update Essay</button>
               </div>
 
             </div>
           </div>
         </div>
+        <!-- End Actions -->
 
       </form>
-      <!-- End Form -->
     </div>
   </section>
 </main>

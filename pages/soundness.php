@@ -29,50 +29,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
   <!-- End Page Title -->
   <section class="section">
-    <div class="row" oninput="Soundness()">
+    <div class="row">
       <form class="row" action="soundness.php" method="post">
-
-        <div id="product_info"></div>
 
         <div class="col-md-4"><?php echo display_msg($msg); ?></div>
 
+        <div id="product_info"></div>
+
+        <!-- Laboratory Information -->
         <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Trial Information</h5>
 
-              <!-- Multi Columns Form -->
               <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
                     <option selected>Choose...</option>
                     <option value="ASTM-C88">ASTM-C88</option>
                   </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="Technician" class="form-label">Technician</label>
-                  <input type="text" class="form-control" name="Technician" id="Technician" />
+                  <input type="text" class="form-control" name="Technician" id="Technician" required />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                  <label for="PMethods" class="form-label">Preparation Methods</label>
+                  <select id="PMethods" class="form-select" name="PMethods">
+                    <option selected>Choose...</option>
+                    <option value="Oven Dried">Oven Dried</option>
+                    <option value="Air Dried">Air Dried</option>
+                    <option value="Microwave Dried">Microwave Dried</option>
+                    <option value="Wet">Wet</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="SMethods" class="form-label">Split Methods</label>
+                  <select id="SMethods" class="form-select" name="SMethods">
+                    <option selected>Choose...</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Mechanical">Mechanical</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="TestMethod" class="form-label">Test Method</label>
+                  <input type="text" class="form-control" name="TestMethod" id="TestMethod">
+                </div>
+                <div class="col-md-4">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
-                  <input type="date" class="form-control" name="DateTesting" id="DateTesting" />
+                  <input type="date" class="form-control" name="DateTesting" id="DateTesting" required />
                 </div>
                 <div class="col-12">
                   <label for="Comments" class="form-label">Comments</label>
                   <textarea class="form-control" name="Comments" id="Comments" style="height: 100px"></textarea>
                 </div>
               </div>
-              <!-- End Multi Columns Form -->
             </div>
           </div>
         </div>
+        <!-- End Laboratory Information -->
 
+        <!-- Form the Grain Size Distribution for Soundness -->
         <div class="col-lg-6">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Grain Size Distribution</h5>
+              <h5 class="card-title">Grain Size Distribution for Soundness</h5>
 
+              <!-- Wet Dry and Washed g -->
               <table class="table table-bordered">
                 <tbody>
                   <tr>
@@ -85,89 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Wet Dry and Washed g -->
 
+              <!-- Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
               <?php
-              // Definimos los datos de la tabla
-              $data = [
-                ["Screen" => '4"', "mm" => 100],
-                ["Screen" => '3 1/2"', "mm" => 90],
-                ["Screen" => '3"', "mm" => 75],
-                ["Screen" => '2 1/2"', "mm" => 63],
-                ["Screen" => '2"', "mm" => 50],
-                ["Screen" => '1 1/2"', "mm" => 38],
-                ["Screen" => '1"', "mm" => 25],
-                ["Screen" => '3/4"', "mm" => 19],
-                ["Screen" => '1/2"', "mm" => 12.5],
-                ["Screen" => '3/8"', "mm" => 9.5],
-                ["Screen" => 'No. 4', "mm" => 4.75],
-                ["Screen" => 'No. 8', "mm" => 2.36],
-                ["Screen" => 'No. 16', "mm" => 1.18],
-                ["Screen" => 'No. 30', "mm" => 0.6],
-                ["Screen" => 'No. 50', "mm" => 0.3],
-                ["Screen" => 'No. 100', "mm" => 0.15],
-                ["Screen" => 'Pan', "mm" => ""],
-                ["Screen" => 'Total Pan', "mm" => ""],
-                ["Screen" => 'Total', "mm" => ""],
-              ];
-
-              echo '<table class="table table-bordered">';
-              echo '<thead>';
-              echo '  <tr>';
-              echo '    <th scope="col">Screen</th>';
-              echo '    <th scope="col">(mm)</th>';
-              echo '    <th scope="col">Wt. Ret</th>';
-              echo '    <th scope="col">% Ret</th>';
-              echo '  </tr>';
-              echo '</thead>';
-              echo '<tbody>';
-
-              $counter = 1; // Inicializamos un contador
-
-              // Iteramos sobre los datos para crear las filas de la tabla
-              foreach ($data as $row) {
-                // Verificamos si la fila es "Pan", "Total Pan" o "Total" y asignamos ID personalizados
-                if ($row['Screen'] === 'Pan') {
-                  $wtRetId = 'WtRetPan';
-                  $pctRetId = 'PctRetPan';
-                } elseif ($row['Screen'] === 'Total Pan') {
-                  $wtRetId = 'WtRetTotalPan';
-                  $pctRetId = 'PctRetTotalPan';
-                } elseif ($row['Screen'] === 'Total') {
-                  $wtRetId = 'WtRetTotal';
-                  $pctRetId = 'PctRetTotal';
-                } else {
-                  $wtRetId = 'WtRet' . $counter;
-                  $pctRetId = 'PctRet' . $counter;
-                }
-
-                echo '<tr>';
-                echo '<th scope="row">' . $row['Screen'] . '</th>';
-                echo '<th>' . $row['mm'] . '</th>';
-                echo '<td><input type="text" style="border: none" class="form-control" name="' . $wtRetId . '" id="' . $wtRetId . '" /></td>';
-                echo '<td><input type="text" style="border: none" class="form-control" name="' . $pctRetId . '" id="' . $pctRetId . '" readonly tabindex="-1" /></td>';
-                echo '</tr>';
-                $counter++; // Incrementamos el contador en cada iteración
-              }
-
-              echo '</tbody>';
-              echo '</table>';
-              ?>
-
-
-
-
-              <!-- End Bordered Table -->
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Grain Size Distribution for Soundness</h5>
-
-              <?php
-              // Define the data for the table
               $sizes = [
                 '4"' => 100,
                 '3 1/2"' => 90,
@@ -182,8 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'No. 4' => 4.75
               ];
               ?>
+              <!-- End Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
 
-              <table class="table table-bordered">
+              <!-- Table for Coarse Aggregate -->
+              <table class="table table-bordered" oninput="calculateGrainSizeCoarse()">
                 <thead>
                   <tr>
                     <th scope="col">Screen</th>
@@ -221,11 +168,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Table for Coarse Aggregate -->
 
 
-
+              <!-- Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
               <?php
-              // Define the data for the table
               $sizes = [
                 'No. 4' => 4.75,
                 'No. 8' => 2.36,
@@ -236,8 +183,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'Pan' => '',
               ];
               ?>
+              <!-- End Tamices para GS Coarse: Screen (pulgadas o No.) => abertura en mm -->
 
-              <table class="table table-bordered">
+              <!-- Table for Fine Aggregate -->
+              <table class="table table-bordered" oninput="calculateGrainSizeFine()">
                 <tbody>
                   <tr>
                     <td colspan="4">Fine Aggregate</td>
@@ -267,21 +216,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Table for Fine Aggregate -->
 
 
             </div>
           </div>
         </div>
+        <!-- End Form the Grain Size Distribution for Soundness -->
 
-        <div class="col-lg-5">
+        <!-- Soundness Test Cycles -->
+        <div class="col-lg-6">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Test Information</h5>
-
-              <?php
-              // Define the data for the table
-              $cycles = range(1, 5); // Array of cycle numbers
-              ?>
 
               <table class="table table-bordered">
                 <thead>
@@ -294,7 +241,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </thead>
                 <tbody>
-                  <?php foreach ($cycles as $cycle): ?>
+                  <?php
+                  $cycles = range(1, 5);
+                  foreach ($cycles as $cycle):
+                  ?>
                     <tr>
                       <th><?php echo htmlspecialchars($cycle); ?></th>
                       <td>
@@ -322,13 +272,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
         </div>
+        <!-- End Soundness Test Cycles -->
 
-        <div class="col-lg-7">
+        <!-- Qualitative Examination of Coarse Sizes -->
+        <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Qualitative Examination of Coarse Sizes</h5>
 
-              <table class="table table-bordered">
+              <table class="table table-bordered" oninput="calculateQualitativeExamination()">
                 <thead>
                   <tr>
                     <th rowspan="3">Sieve Size</th>
@@ -386,12 +338,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
         </div>
+        <!-- End Qualitative Examination of Coarse Sizes -->
 
+        <!-- Table for Soundness Fine and Coarse Aggregate -->
         <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Test Results</h5>
-              <!-- Soundness Test of Fine Aggregate -->
               <?php
               $rows = [
                 ["Minus 150 µm (No. 100)", "100g", "StarWeightRet1", "---", "", "FinalWeightRet1", "PercentagePassing1", "WeightedLoss1"],
@@ -406,7 +359,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $cols = count($rows[0]); // Número de columnas
               ?>
 
-              <table class="table table-bordered">
+              <!-- Soundness Test of Fine Aggregate -->
+              <table class="table table-bordered" oninput="calculateSoundnessFine()">
                 <tbody>
                   <tr>
                     <td>Screen</td>
@@ -430,7 +384,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           ?>
                             <input type="text" style="border: none" class="form-control"
                               name="<?= $row[$i] ?>" id="<?= $row[$i] ?>" value="" />
-                          <?php elseif ($i == 6 || $i == 7): // PercentagePassing y WeightedLoss 
+                          <?php elseif ($i == 6 || $i == 7): // Percentage Passing y WeightedLoss 
                           ?>
                             <input type="text" style="border: none" class="form-control"
                               name="<?= $row[$i] ?>" id="<?= $row[$i] ?>" value="" readonly tabindex="-1" />
@@ -454,11 +408,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Soundness Test of Fine Aggregate -->
 
-
-
-              <!-- Soundness Test of Fine Aggregate -->
-              <table class="table table-bordered">
+              <!-- Soundness Test of Coarse Aggregate -->
+              <table class="table table-bordered" oninput="calculateSoundnessCoarse()">
                 <tbody>
                   <tr>
                     <th colspan="8">Soundness Test of Coarse Aggregate</th>
@@ -467,7 +420,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td>9.5mm(3⁄8 in.) to 4.75 mm (No. 4)</td>
                     <td>(300+-5)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse1" id="StarWeightRetCoarse1" /></td>
-                    <td>---</td>
                     <td>4.0 mm (No. 5)</td>
                     <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse1" id="FinalWeightRetCoarse1" /></td>
                     <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse1" id="PercentagePassingCoarse1" readonly tabindex="-1" /></td>
@@ -477,7 +429,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td>12.5 mm (1⁄2 in) to 9.5 mm (3⁄8 in)</td>
                     <td>(330+-5)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse2" id="StarWeightRetCoarse2" /></td>
-                    <td rowspan="2">19.0mm(3⁄4 in) to 9.5mm(3⁄8 in)</td>
                     <td rowspan="2">8.0 mm (5⁄16 in)</td>
                     <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse2" id="FinalWeightRetCoarse2" /></td>
                     <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse2" id="PercentagePassingCoarse2" readonly tabindex="-1" /></td>
@@ -492,7 +443,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td>25 mm (1 in) to 19.0 mm (3⁄4 in)</td>
                     <td>(500+-30)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse4" id="StarWeightRetCoarse4" /></td>
-                    <td rowspan="2">37.5mm(1 1⁄2 in) to 19.0mm(3⁄4 in)</td>
                     <td rowspan="2">16.0 mm (5⁄8 in)</td>
                     <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse3" id="FinalWeightRetCoarse3" /></td>
                     <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse3" id="PercentagePassingCoarse3" readonly tabindex="-1" /></td>
@@ -507,7 +457,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td>50 mm (2 in) to 37.5 mm (1 1⁄2 in)</td>
                     <td>(2000+-200)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse6" id="StarWeightRetCoarse6" /></td>
-                    <td rowspan="2">63mm(2 1⁄2 in) to 37.5mm(1 1⁄2 in)</td>
                     <td rowspan="2">31.5 mm (1 1⁄4 in)</td>
                     <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse4" id="FinalWeightRetCoarse4" /></td>
                     <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse4" id="PercentagePassingCoarse4" readonly tabindex="-1" /></td>
@@ -522,31 +471,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td>75 mm (3 in) to 63 mm (2 1⁄2 in)</td>
                     <td>(7000+-100)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse8" id="StarWeightRetCoarse8" /></td>
-                    <td rowspan="3"> 100mm(4 in.) to 90mm(2 1⁄2 in.)</td>
                     <td>50 mm (2 in)</td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse5" id="FinalWeightRetCoarse5" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse5" id="PercentagePassingCoarse5" readonly tabindex="-1" /></td>
-                    <td rowspan="2"><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse5" id="WeightedLossCoarse5" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse5" id="FinalWeightRetCoarse5" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse5" id="PercentagePassingCoarse5" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse5" id="WeightedLossCoarse5" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>90 mm (3 1⁄2 in) to 75 mm (3 in)</td>
                     <td>(7000+-1000)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse9" id="StarWeightRetCoarse9" /></td>
                     <td>63 mm (2 1⁄2 in)</td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse6" id="FinalWeightRetCoarse6" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse6" id="PercentagePassingCoarse6" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse6" id="WeightedLossCoarse6" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td>100 mm (4 in) to 90 mm (3 1⁄2 in)</td>
                     <td>(7000+-1000)g</td>
                     <td><input type="text" style="border: none" class="form-control" name="StarWeightRetCoarse10" id="StarWeightRetCoarse10" /></td>
                     <td>75 mm (3 in)</td>
-                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse6" id="FinalWeightRetCoarse6" /></td>
-                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse6" id="PercentagePassingCoarse6" readonly tabindex="-1" /></td>
-                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse6" id="WeightedLossCoarse6" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="FinalWeightRetCoarse7" id="FinalWeightRetCoarse7" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="PercentagePassingCoarse7" id="PercentagePassingCoarse7" readonly tabindex="-1" /></td>
+                    <td><input type="text" style="border: none" class="form-control" name="WeightedLossCoarse7" id="WeightedLossCoarse7" readonly tabindex="-1" /></td>
                   </tr>
                   <tr>
                     <td colspan="2">Totals</td>
-                    <td><input type="text" style="border: none" class="form-control" name="TotalWeightRetCoarse" id="TotalWeightRetCoarse" readonly tabindex="-1" /></td>
-                    <td>---</td>
+                    <td><input type="text" style="border: none" class="form-control" name="TotalStarWeightRetCoarse" id="TotalStarWeightRetCoarse" readonly tabindex="-1" /></td>
                     <td>---</td>
                     <td><input type="text" style="border: none" class="form-control" name="TotalFinalWeightRetCoarse" id="TotalFinalWeightRetCoarse" readonly tabindex="-1" /></td>
                     <td></td>
@@ -554,12 +504,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                 </tbody>
               </table>
+              <!-- End Soundness Test of Coarse Aggregate -->
 
-              <!-- End Default Table Example -->
             </div>
           </div>
         </div>
+        <!-- End Table for Soundness Fine and Coarse Aggregate -->
 
+        <!-- Actions -->
         <div class="col-md-4">
           <div class="card">
             <div class="card-body">
@@ -572,9 +524,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
         </div>
+        <!-- End Actions -->
 
       </form>
-      <!-- End Form -->
     </div>
   </section>
 </main>

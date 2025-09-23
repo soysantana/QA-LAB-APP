@@ -29,12 +29,15 @@ if (isset($_POST['Soundness'])) {
         $East = $db->escape($_POST['East']);
         $Elev = $db->escape($_POST['Elev']);
         $SampleBy = $db->escape($_POST['SampleBy']);
-        // ohters
+        $FieldComment = $db->escape($_POST['FieldComment']);
+        // Information for the Laboratory sample
         $Standard = $db->escape($_POST['Standard']);
         $Technician = $db->escape($_POST['Technician']);
+        $PMethods = $db->escape($_POST['PMethods']);
+        $SMethods = $db->escape($_POST['SMethods']);
+        $TestMethod = $db->escape($_POST['TestMethod']);
         $DateTesting = $db->escape($_POST['DateTesting']);
         $Comments = $db->escape($_POST['Comments']);
-        $FieldComment = $db->escape($_POST['FieldComment']);
         $RegistedDate = make_date();
         $RegisterBy = $user['name'];
         $TestType = "SND";
@@ -42,12 +45,6 @@ if (isset($_POST['Soundness'])) {
 
         $WtDrySoil = $db->escape($_POST['WtDrySoil']);
         $WtWashed = $db->escape($_POST['WtWashed']);
-        $WtRetPan = $db->escape($_POST['WtRetPan']);
-        $PctRetPan = $db->escape($_POST['PctRetPan']);
-        $WtRetTotalPan = $db->escape($_POST['WtRetTotalPan']);
-        $PctRetTotalPan = $db->escape($_POST['PctRetTotalPan']);
-        $WtRetTotal = $db->escape($_POST['WtRetTotal']);
-        $PctRetTotal = $db->escape($_POST['PctRetTotal']);
 
         $WtRetCoarseTotal = $db->escape($_POST['WtRetCoarseTotal']);
         $PctRetCoarseTotal = $db->escape($_POST['PctRetCoarseTotal']);
@@ -58,60 +55,75 @@ if (isset($_POST['Soundness'])) {
         $TotalFinalWeightRet = $db->escape($_POST['TotalFinalWeightRet']);
         $TotalWeightedLoss = $db->escape($_POST['TotalWeightedLoss']);
 
-        $TotalWeightRetCoarse = $db->escape($_POST['TotalWeightRetCoarse']);
+        $TotalStarWeightRetCoarse = $db->escape($_POST['TotalStarWeightRetCoarse']);
         $TotalFinalWeightRetCoarse = $db->escape($_POST['TotalFinalWeightRetCoarse']);
         $TotalWeightedLossCoarse = $db->escape($_POST['TotalWeightedLossCoarse']);
 
-        for ($i = 1; $i <= 16; $i++) {
-            ${"WtRet" . $i} = $db->escape($_POST["WtRet$i"]);
-            ${"PctRet" . $i} = $db->escape($_POST["PctRet$i"]);
+        function buildCSV($name, $total, $db)
+        {
+            $data = [];
+            for ($i = 1; $i <= $total; $i++) {
+                $val = trim($_POST[$name . $i]);
+                $data[] = ($val === '') ? 'null' : $db->escape($val);
+            }
+            return implode(',', $data);
         }
 
-        for ($i = 1; $i <= 11; $i++) {
-            ${"WtRetCoarse" . $i} = $db->escape($_POST["WtRetCoarse$i"]);
-            ${"PctRetCoarse" . $i} = $db->escape($_POST["PctRetCoarse$i"]);
-        }
+        $WtRetCoarse = buildCSV('WtRetCoarse', 11, $db);
+        $PctRetCoarse = buildCSV('PctRetCoarse', 11, $db);
+        $WtRetFine = buildCSV('WtRetFine', 7, $db);
+        $PctRetFine = buildCSV('PctRetFine', 7, $db);
 
-        for ($i = 1; $i <= 7; $i++) {
-            ${"WtRetFine" . $i} = $db->escape($_POST["WtRetFine$i"]);
-            ${"PctRetFine" . $i} = $db->escape($_POST["PctRetFine$i"]);
-        }
+        $StartDate = buildCSV('StartDate', 5, $db);
+        $RoomTemp = buildCSV('RoomTemp', 5, $db);
+        $SolutionTemp = buildCSV('SolutionTemp', 5, $db);
+        $SpecificGravity = buildCSV('SpecificGravity', 5, $db);
 
-        for ($i = 1; $i <= 7; $i++) {
-            ${"StarWeightRet" . $i} = $db->escape($_POST["StarWeightRet$i"]);
-            ${"FinalWeightRet" . $i} = $db->escape($_POST["FinalWeightRet$i"]);
-            ${"PercentagePassing" . $i} = $db->escape($_POST["PercentagePassing$i"]);
-            ${"WeightedLoss" . $i} = $db->escape($_POST["WeightedLoss$i"]);
-        }
+        $StarWeightRetFine = buildCSV('StarWeightRet', 7, $db);
+        $FinalWeightRetFine = buildCSV('FinalWeightRet', 7, $db);
+        $PercentagePassingFine = buildCSV('PercentagePassing', 7, $db);
+        $WeightedLossFine = buildCSV('WeightedLoss', 7, $db);
 
-        for ($i = 1; $i <= 10; $i++) {
-            ${"StarWeightRetCoarse" . $i} = $db->escape($_POST["StarWeightRetCoarse$i"]);
-        }
+        $StarWeightRetCoarse = buildCSV('StarWeightRetCoarse', 10, $db);
+        $FinalWeightRetCoarse = buildCSV('FinalWeightRetCoarse', 7, $db);
+        $PercentagePassingCoarse = buildCSV('PercentagePassingCoarse', 7, $db);
+        $WeightedLossCoarse = buildCSV('WeightedLossCoarse', 7, $db);
 
-        for ($i = 1; $i <= 6; $i++) {
-            ${"FinalWeightRetCoarse" . $i} = $db->escape($_POST["FinalWeightRetCoarse$i"]);
-            ${"PercentagePassingCoarse" . $i} = $db->escape($_POST["PercentagePassingCoarse$i"]);
-            ${"WeightedLossCoarse" . $i} = $db->escape($_POST["WeightedLossCoarse$i"]);
-        }
+        $SplittingNo = buildCSV('SplittingNo', 5, $db);
+        $SplittingPct = buildCSV('SplittingPct', 5, $db);
+        $CrumblingNo = buildCSV('CrumblingNo', 5, $db);
+        $CrumblingPct = buildCSV('CrumblingPct', 5, $db);
+        $CrackingNo = buildCSV('CrackingNo', 5, $db);
+        $CrackingPct = buildCSV('CrackingPct', 5, $db);
+        $FlakingNo = buildCSV('FlakingNo', 5, $db);
+        $FlakingPct = buildCSV('FlakingPct', 5, $db);
+        $TotalParticles = buildCSV('TotalParticles', 5, $db);
 
-        for ($i = 1; $i <= 5; $i++) {
-            ${"SplittingNo" . $i} = $db->escape($_POST["SplittingNo$i"]);
-            ${"SplittingPct" . $i} = $db->escape($_POST["SplittingPct$i"]);
-            ${"CrumblingNo" . $i} = $db->escape($_POST["CrumblingNo$i"]);
-            ${"CrumblingPct" . $i} = $db->escape($_POST["CrumblingPct$i"]);
-            ${"CrackingNo" . $i} = $db->escape($_POST["CrackingNo$i"]);
-            ${"CrackingPct" . $i} = $db->escape($_POST["CrackingPct$i"]);
-            ${"FlakingNo" . $i} = $db->escape($_POST["FlakingNo$i"]);
-            ${"FlakingPct" . $i} = $db->escape($_POST["FlakingPct$i"]);
-            ${"TotalParticles" . $i} = $db->escape($_POST["TotalParticles$i"]);
-        }
+        // --- Verificar si ya existe el Sample_Number en esta prueba ---
+        $baseSampleNumber = $SampleNumber;
+        $sqlCheck = "SELECT Sample_Number 
+             FROM soundness
+             WHERE Sample_ID = '{$SampleID}'
+               AND Test_Type = '{$TestType}'
+               AND (Sample_Number = '{$baseSampleNumber}' OR Sample_Number LIKE '{$baseSampleNumber}-%')
+             ORDER BY id ASC";
 
-        for ($i = 1; $i <= 5; $i++) {
-            ${"StartDate" . $i} = $db->escape($_POST["StartDate$i"]);
-            ${"RoomTemp" . $i} = $db->escape($_POST["RoomTemp$i"]);
-            ${"SolutionTemp" . $i} = $db->escape($_POST["SolutionTemp$i"]);
-            ${"SpecificGravity" . $i} = $db->escape($_POST["SpecificGravity$i"]);
+        $resultCheck = $db->query($sqlCheck);
+
+        if ($db->num_rows($resultCheck) > 0) {
+            $maxSuffix = 0;
+            while ($row = $db->fetch_assoc($resultCheck)) {
+                if (preg_match('/-R(\d+)$/', $row['Sample_Number'], $matches)) {
+                    $num = (int)$matches[1];
+                    if ($num > $maxSuffix) {
+                        $maxSuffix = $num;
+                    }
+                }
+            }
+            // generar el nuevo SampleNumber con sufijo +1
+            $SampleNumber = $baseSampleNumber . '-R' . ($maxSuffix + 1);
         }
+        // --- Fin verificación ---
 
         $sql = "INSERT INTO soundness (
             id,
@@ -137,60 +149,49 @@ if (isset($_POST['Soundness'])) {
             Test_Type,
             Standard,
             Technician,
+            Preparation_Methods,
+            Split_Methods,
+            Methods,
             Test_Start_Date,
             Comments,
             FieldComment,
             WtDrySoil,
             WtWashed,
-            WtRetPan,
-            PctRetPan,
-            WtRetTotalPan,
-            PctRetTotalPan,
-            WtRetTotal,
-            PctRetTotal,
+            WtRetCoarse,
+            PctRetCoarse,
             WtRetCoarseTotal,
             PctRetCoarseTotal,
+            WtRetFine,
+            PctRetFine,
             WtRetFineTotal,
             PctRetFineTotal,
-            TotalStarWeightRet,
-            TotalFinalWeightRet,
-            TotalWeightedLoss,
-            TotalWeightRetCoarse,
+            StarWeightRetFine,
+            TotalStarWeightRetFine,
+            FinalWeightRetFine,
+            TotalFinalWeightRetFine,
+            PercentagePassingFine,
+            WeightedLossFine,
+            TotalWeightedLossFine,
+            StarWeightRetCoarse,
+            TotalStarWeightRetCoarse,
+            FinalWeightRetCoarse,
             TotalFinalWeightRetCoarse,
-            TotalWeightedLossCoarse";
-
-        // Add the dynamically generated fields to the query
-        for ($i = 1; $i <= 16; $i++) {
-            $sql .= ", WtRet$i, PctRet$i";
-        }
-
-        for ($i = 1; $i <= 11; $i++) {
-            $sql .= ", WtRetCoarse$i, PctRetCoarse$i";
-        }
-
-        for ($i = 1; $i <= 7; $i++) {
-            $sql .= ", WtRetFine$i, PctRetFine$i";
-        }
-
-        for ($i = 1; $i <= 7; $i++) {
-            $sql .= ", StarWeightRet$i, FinalWeightRet$i, PercentagePassing$i, WeightedLoss$i";
-        }
-
-        for ($i = 1; $i <= 10; $i++) {
-            $sql .= ", StarWeightRetCoarse$i";
-        }
-
-        for ($i = 1; $i <= 6; $i++) {
-            $sql .= ", FinalWeightRetCoarse$i, PercentagePassingCoarse$i, WeightedLossCoarse$i";
-        }
-
-        for ($i = 1; $i <= 5; $i++) {
-            $sql .= ", SplittingNo$i, SplittingPct$i, CrumblingNo$i, CrumblingPct$i, CrackingNo$i, CrackingPct$i, FlakingNo$i, FlakingPct$i, TotalParticles$i";
-        }
-
-        for ($i = 1; $i <= 5; $i++) {
-            $sql .= ", StartDate$i, RoomTemp$i, SolutionTemp$i, SpecificGravity$i";
-        }
+            PercentagePassingCoarse,
+            WeightedLossCoarse,
+            TotalWeightedLossCoarse,
+            StartDate,
+            RoomTemp,
+            SolutionTemp,
+            SpecificGravity,
+            SplittingNo, 
+            SplittingPct, 
+            CrumblingNo,
+            CrumblingPct,
+            CrackingNo,
+            CrackingPct,
+            FlakingNo,
+            FlakingPct,
+            TotalParticles";
 
         $sql .= ") VALUES (
             '$id',
@@ -216,68 +217,57 @@ if (isset($_POST['Soundness'])) {
             '$TestType',
             '$Standard',
             '$Technician',
+            '$PMethods',
+            '$SMethods',
+            '$TestMethod',
             '$DateTesting',
             '$Comments',
             '$FieldComment',
             '$WtDrySoil',
             '$WtWashed',
-            '$WtRetPan',
-            '$PctRetPan',
-            '$WtRetTotalPan',
-            '$PctRetTotalPan',
-            '$WtRetTotal',
-            '$PctRetTotal',
+            '$WtRetCoarse',
+            '$PctRetCoarse',
             '$WtRetCoarseTotal',
             '$PctRetCoarseTotal',
+            '$WtRetFine',
+            '$PctRetFine',
             '$WtRetFineTotal',
             '$PctRetFineTotal',
+            '$StarWeightRetFine',
             '$TotalStarWeightRet',
+            '$FinalWeightRetFine',
             '$TotalFinalWeightRet',
+            '$PercentagePassingFine',
+            '$WeightedLossFine',
             '$TotalWeightedLoss',
-            '$TotalWeightRetCoarse',
+            '$StarWeightRetCoarse',
+            '$TotalStarWeightRetCoarse',
+            '$FinalWeightRetCoarse',
             '$TotalFinalWeightRetCoarse',
-            '$TotalWeightedLossCoarse'";
-
-        // Add the dynamically generated values to the query
-        for ($i = 1; $i <= 16; $i++) {
-            $sql .= ", '${"WtRet$i"}', '${"PctRet$i"}'";
-        }
-
-        for ($i = 1; $i <= 11; $i++) {
-            $sql .= ", '${"WtRetCoarse$i"}', '${"PctRetCoarse$i"}'";
-        }
-
-        for ($i = 1; $i <= 7; $i++) {
-            $sql .= ", '${"WtRetFine$i"}', '${"PctRetFine$i"}'";
-        }
-
-        for ($i = 1; $i <= 7; $i++) {
-            $sql .= ", '${"StarWeightRet$i"}', '${"FinalWeightRet$i"}', '${"PercentagePassing$i"}', '${"WeightedLoss$i"}'";
-        }
-
-        for ($i = 1; $i <= 10; $i++) {
-            $sql .= ", '${"StarWeightRetCoarse$i"}'";
-        }
-
-        for ($i = 1; $i <= 6; $i++) {
-            $sql .= ", '${"FinalWeightRetCoarse$i"}', '${"PercentagePassingCoarse$i"}', '${"WeightedLossCoarse$i"}'";
-        }
-
-        for ($i = 1; $i <= 5; $i++) {
-            $sql .= ", '${"SplittingNo$i"}', '${"SplittingPct$i"}', '${"CrumblingNo$i"}', '${"CrumblingPct$i"}', '${"CrackingNo$i"}', '${"CrackingPct$i"}', '${"FlakingNo$i"}', '${"FlakingPct$i"}', '${"TotalParticles$i"}'";
-        }
-
-        for ($i = 1; $i <= 5; $i++) {
-            $sql .= ", '${"StartDate$i"}', '${"RoomTemp$i"}', '${"SolutionTemp$i"}', '${"SpecificGravity$i"}'";
-        }
+            '$PercentagePassingCoarse',
+            '$WeightedLossCoarse',
+            '$TotalWeightedLossCoarse',
+            '$StartDate',
+            '$RoomTemp',
+            '$SolutionTemp',
+            '$SpecificGravity',
+            '$SplittingNo', 
+            '$SplittingPct', 
+            '$CrumblingNo',
+            '$CrumblingPct',
+            '$CrackingNo',
+            '$CrackingPct',
+            '$FlakingNo',
+            '$FlakingPct',
+            '$TotalParticles'";
 
         $sql .= ")";
 
         if ($db->query($sql)) {
-            $session->msg('s', "Essay added successfully.");
+            $session->msg('s', "Ensayo agregado exitosamente.");
             redirect('../pages/soundness.php', false);
         } else {
-            $session->msg('d', 'Sorry, the essay could not be added.');
+            $session->msg('d', 'Lo siento, el ensayo no pudo ser agregado.');
             redirect('../pages/soundness.php', false);
         }
     } else {
