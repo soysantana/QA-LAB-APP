@@ -1,5 +1,5 @@
 <?php
-$packageId = $_GET['package_id'] ?? '';
+$packageId = $_POST['PackageID'] ?? '';
 $rowId     = $_GET['id'] ?? '';
 
 if (isset($_POST['update-requisition'])) {

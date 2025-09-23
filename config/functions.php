@@ -161,8 +161,8 @@ function make_ticket_code($length = 5)
   $time  = strtoupper($time);    // 8:35AM
   // Prefijo fijo
   $prefix = "PKG";
-  // Caracteres permitidos (mayúsculas, minúsculas, números y símbolos)
-  $chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+  // Solo letras y números
+  $chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   // Generar cadena aleatoria
   $random = "";
   for ($i = 0; $i < $length; $i++) {
