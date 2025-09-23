@@ -322,18 +322,16 @@ if (!$session->isUserLoggedIn(true)) {
 
                         // Buscar en otras tablas adicionales
                         $GrainResultsCoarse = find_by_sql("SELECT * FROM grain_size_coarse WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                        $GrainResultsCoarseThan = find_by_sql("SELECT * FROM grain_size_coarsethan WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                        $GrainResultsCoarseFilter = find_by_sql("SELECT * FROM grain_size_coarse_filter WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
                         $GrainResultsFine = find_by_sql("SELECT * FROM grain_size_fine WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
                         $GrainResultsLPF = find_by_sql("SELECT * FROM grain_size_lpf WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
                         $GrainResultsUpstream = find_by_sql("SELECT * FROM grain_size_upstream_transition_fill WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
 
                         // Combinamos los resultados de las tablas
-                        foreach ([$GrainResults, $GrainResultsCoarse, $GrainResultsCoarseThan, $GrainResultsCoarseFilter, $GrainResultsFine, $GrainResultsLPF, $GrainResultsUpstream] as $GrainResults) :
+                        foreach ([$GrainResults, $GrainResultsCoarse, $GrainResultsFine, $GrainResultsLPF, $GrainResultsUpstream] as $GrainResults) :
                           foreach ($GrainResults as $Grain) :
                             if ($Grain) :
                               // Asignar valores de las columnas de las tablas dependiendo de la tabla
-                              if ($GrainResults === $GrainResultsCoarse || $GrainResults === $GrainResultsCoarseThan) {
+                              if ($GrainResults === $GrainResultsCoarse) {
                                 $T3p4 = (float)$Grain['CumRet9'] ?? 0;
                                 $T3p8 = (float)$Grain['CumRet10'] ?? 0;
                                 $TNo4 = (float)$Grain['CumRet11'] ?? 0;
@@ -341,7 +339,7 @@ if (!$session->isUserLoggedIn(true)) {
                                 $T3p4 = (float)$Grain['CumRet9'] ?? 0;
                                 $T3p8 = (float)$Grain['CumRet11'] ?? 0;
                                 $TNo4 = (float)$Grain['CumRet12'] ?? 0;
-                              } elseif ($GrainResults === $GrainResultsCoarseFilter || $GrainResults === $GrainResultsLPF) {
+                              } elseif ($GrainResults === $GrainResultsLPF) {
                                 $T3p4 = (float)$Grain['CumRet5'] ?? 0;
                                 $T3p8 = (float)$Grain['CumRet6'] ?? 0;
                                 $TNo4 = (float)$Grain['CumRet7'] ?? 0;

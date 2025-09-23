@@ -39,14 +39,16 @@ include_once('../components/header.php');
           <div class="card">
             <div class="card-body">
               <h5 class="card-title"></h5>
+
               <?php
+
               $twoMonthsAgo = date('Y-m-d', strtotime('-2 months'));
 
               // Traer requisiciones recientes
-              $query = "SELECT id, Package_ID, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
-                        FROM lab_test_requisition_form 
-                        WHERE Registed_Date >= '$twoMonthsAgo' 
-                        ORDER BY Registed_Date DESC";
+              $query = "SELECT Package_ID, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
+          FROM lab_test_requisition_form 
+          WHERE Registed_Date >= '$twoMonthsAgo' 
+          ORDER BY Registed_Date DESC";
               $RequisitionRows = find_by_sql($query);
 
               // Agrupar por Package_ID
@@ -57,82 +59,61 @@ include_once('../components/header.php');
               foreach ($RequisitionRows as $row) {
                 $packageId = trim($row['Package_ID']);
 
-                // Si no hay Package_ID, usar el id único como identificador
-                if (empty($packageId)) {
-                  $uniqueKey = 'row_' . $row['id'];  // clave única para manejar este registro
-                  $paquetes[$uniqueKey][] = $row['Test_Type'];
-
-                  $paquetesInfo[$uniqueKey] = [
-                    'Comment'       => $row['Comment'],
-                    'Sample_By'     => $row['Sample_By'],
-                    'Sample_Date'   => $row['Sample_Date'],
-                    'Registed_Date' => $row['Registed_Date']
-                  ];
-
-                  $muestras[$uniqueKey][] = [
-                    'Sample_ID'     => $row['Sample_ID'],
-                    'Sample_Number' => $row['Sample_Number'],
-                    'Comment'       => $row['Comment']
-                  ];
-
-                  // Guardar referencia al id real
-                  $paquetesInfo[$uniqueKey]['real_id'] = $row['id'];
-                } else {
-                  // Caso normal (agrupado por Package_ID)
-                  $tests = array_map('trim', explode(',', $row['Test_Type']));
-                  foreach ($tests as $t) {
-                    if (!empty($t)) {
-                      $paquetes[$packageId][] = $t;
-                    }
-                  }
-
-                  $paquetesInfo[$packageId] = [
-                    'Comment'       => $row['Comment'],
-                    'Sample_By'     => $row['Sample_By'],
-                    'Sample_Date'   => $row['Sample_Date'],
-                    'Registed_Date' => $row['Registed_Date']
-                  ];
-
-                  $muestras[$packageId][] = [
-                    'Sample_ID'     => $row['Sample_ID'],
-                    'Sample_Number' => $row['Sample_Number'],
-                    'Comment'       => $row['Comment']
-                  ];
+                // Saltar registros sin Package_ID válido
+                if (empty($packageId) || $packageId === '-') {
+                  continue;
                 }
-              }
 
+                // ---- Ensayos solicitados ----
+                $tests = array_map('trim', explode(',', $row['Test_Type']));
+                $ensayosSolicitados = count(array_filter($tests)); // total solicitados
 
-              // Calcular entregas desde test_delivery
-              $package_ids = array_unique(array_column($RequisitionRows, 'Package_ID'));
-              $entregas = [];
+                // ---- Ensayos entregados ----
+                $sampleId = trim($row['Sample_ID']);
+                $sampleNumber = trim($row['Sample_Number']);
 
-              if (!empty($package_ids)) {
-                // buscar entregas de todas las muestras vinculadas a esos paquetes
-                $samplePairs = [];
-                foreach ($RequisitionRows as $row) {
-                  $samplePairs[] = "('" . $db->escape($row['Sample_ID']) . "', '" . $db->escape($row['Sample_Number']) . "')";
-                }
-                $pairsSql = implode(',', $samplePairs);
+                $deliveryQuery = "SELECT COUNT(DISTINCT Test_Type) AS entregados
+                      FROM test_delivery
+                      WHERE Sample_ID = '{$sampleId}'
+                        AND Sample_Number = '{$sampleNumber}'";
+                $deliveryResult = find_by_sql($deliveryQuery);
+                $ensayosEntregados = !empty($deliveryResult) ? (int)$deliveryResult[0]['entregados'] : 0;
 
-                $query = "SELECT Sample_ID, Sample_Number, Test_Type 
-                FROM test_delivery 
-                WHERE (Sample_ID, Sample_Number) IN ($pairsSql)";
+                // ---- Porcentaje ----
+                $porcentaje = $ensayosSolicitados > 0
+                  ? round(($ensayosEntregados / $ensayosSolicitados) * 100, 2)
+                  : 0;
 
-                $result = $db->query($query);
-
-                if ($result) {
-                  while ($row = $result->fetch_assoc()) {
-                    // relacionar entrega con su Package_ID original
-                    foreach ($RequisitionRows as $r) {
-                      if ($r['Sample_ID'] == $row['Sample_ID'] && $r['Sample_Number'] == $row['Sample_Number']) {
-                        $entregas[$r['Package_ID']][] = $row['Test_Type'];
-                      }
-                    }
+                // Agrupar todos los ensayos del paquete
+                foreach ($tests as $t) {
+                  if (!empty($t)) {
+                    $paquetes[$packageId][] = $t;
                   }
                 }
+
+                // Guardar info del paquete
+                $paquetesInfo[$packageId] = [
+                  'Comment'       => $row['Comment'],
+                  'Sample_By'     => $row['Sample_By'],
+                  'Sample_Date'   => $row['Sample_Date'],
+                  'Registed_Date' => $row['Registed_Date']
+                ];
+
+                // Guardar muestras con info de ensayos
+                $muestras[$packageId][] = [
+                  'Sample_ID'          => $row['Sample_ID'],
+                  'Sample_Number'      => $row['Sample_Number'],
+                  'Comment'            => $row['Comment'],
+                  'ensayos_solicitados' => $ensayosSolicitados,
+                  'ensayos_entregados' => $ensayosEntregados,
+                  'porcentaje'         => $porcentaje
+                ];
               }
+
 
               ?>
+
+
 
               <!-- Tabla -->
               <table class="table datatable">
@@ -150,19 +131,6 @@ include_once('../components/header.php');
                 <tbody>
                   <?php foreach ($paquetes as $packageId => $tests): ?>
                     <?php
-                    $count_solicitados = count($tests);
-                    $count_entregados = 0;
-
-                    foreach ($tests as $t) {
-                      if (isset($entregas[$packageId]) && in_array($t, $entregas[$packageId])) {
-                        $count_entregados++;
-                      }
-                    }
-
-                    $porce_entregados = $count_solicitados > 0
-                      ? round(($count_entregados / $count_solicitados) * 100)
-                      : 0;
-
                     // Sample_ID y lista de Sample_Number
                     $sampleID = $muestras[$packageId][0]['Sample_ID'] ?? $packageId;
                     $sampleNumbers = array_map(fn($m) => $m['Sample_Number'], $muestras[$packageId] ?? []);
@@ -180,12 +148,12 @@ include_once('../components/header.php');
                           <span class="badge bg-secondary"><?php echo htmlspecialchars($sn); ?></span>
                         <?php endforeach; ?>
                       </td>
-                      <td><span class="badge bg-primary"><?php echo $count_solicitados; ?></span></td>
-                      <td><span class="badge bg-success"><?php echo $count_entregados; ?></span></td>
+                      <td><span class="badge bg-primary"><?php echo $ensayosSolicitados; ?></span></td>
+                      <td><span class="badge bg-success"><?php echo $ensayosEntregados; ?></span></td>
                       <td>
                         <div class="progress">
-                          <div class="progress-bar" style="width: <?php echo $porce_entregados; ?>%">
-                            <?php echo $porce_entregados; ?>%
+                          <div class="progress-bar" style="width: <?php /*echo $porce_entregados; */ ?>%">
+                            <?php /*echo $porce_entregados; */ ?>%
                           </div>
                         </div>
                       </td>
@@ -238,16 +206,19 @@ include_once('../components/header.php');
                                   <?php foreach ($muestras[$packageId] as $m): ?>
                                     <div class="mb-2">
                                       <p>
-                                        <code>
+                                        <span class="small">
                                           Muestra <?php echo htmlspecialchars($m['Sample_Number']); ?>:
                                           <?php
-                                          // Los ensayos de este paquete están en $paquetes[$packageId]
-                                          foreach ($paquetes[$packageId] as $test) {
+                                          $vistos_tests = [];
+                                          foreach ($paquetes[$packageId] as $test):
+                                            if (in_array($test, $vistos_tests)) continue; // Saltar duplicados
+                                            $vistos_tests[] = $test;
+
                                             $hecho = isset($entregas[$packageId]) && in_array($test, $entregas[$packageId]);
                                             echo htmlspecialchars($test) . ' ' . ($hecho ? "✅" : "❌") . ' ';
-                                          }
+                                          endforeach;
                                           ?>
-                                        </code>
+                                        </span>
                                       </p>
                                     </div>
                                   <?php endforeach; ?>
@@ -260,16 +231,20 @@ include_once('../components/header.php');
                                 <div class="card-body">
                                   <h5 class="card-title">Comentarios por muestra</h5>
                                   <?php foreach ($muestras[$packageId] as $m): ?>
-                                    <div class="mb-2">
-                                      <p>
-                                        <code>Muestra <?php echo htmlspecialchars($m['Sample_Number']); ?>:
-                                          <?php echo htmlspecialchars($m['Comment']); ?>
-                                        </code>
-                                      </p>
-                                    </div>
+                                    <?php if (!empty($m['Comment'])): // Solo mostrar si hay comentario 
+                                    ?>
+                                      <div class="mb-2">
+                                        <p>
+                                          <code>Muestra <?php echo htmlspecialchars($m['Sample_Number']); ?>:
+                                            <?php echo htmlspecialchars($m['Comment']); ?>
+                                          </code>
+                                        </p>
+                                      </div>
+                                    <?php endif; ?>
                                   <?php endforeach; ?>
                                 </div>
                               </div>
+
 
                               <!-- Otros datos -->
                               <div class="card">

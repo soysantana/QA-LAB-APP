@@ -34,7 +34,6 @@ include_once('../components/header.php');
                     'grain_size_general' => 'Grain Size General',
                     'grain_size_coarse' => 'Grain Size Coarse Filter',
                     'grain_size_fine' => 'Grain Size Fine Filter',
-                    'grain_size_coarsethan' => 'Grain Size Coarsethan',
                     'soundness' => 'Soundness',
                     'specific_gravity' => 'Specific Gravity',
                     'specific_gravity_coarse' => 'Specific Gravity Coarse',
