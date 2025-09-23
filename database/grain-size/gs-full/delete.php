@@ -1,8 +1,10 @@
 <?php
- if (isset($_POST['delete_gs_coarse']) && isset($_GET['id'])) {
+require_once('../config/load.php');
+
+if (isset($_POST['DeleteGSFul']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
-    $ID = delete_by_id('grain_size_coarse', $delete);
+    $ID = delete_by_id('grain_size_full', $delete);
 
     if ($ID) {
         $session->msg("s", "Borrado exitosamente");
@@ -11,5 +13,5 @@
     }
 
     redirect('../pages/essay.php');
- }
+}
 ?>

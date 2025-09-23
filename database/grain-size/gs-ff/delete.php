@@ -10,6 +10,6 @@
         $session->msg("d", "No encontrado");
     }
 
-    redirect('/pages/essay.php');
+    redirect('../pages/essay.php');
  }
 ?>

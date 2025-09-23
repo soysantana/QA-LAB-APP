@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" class="form-control" name="Technician[<?php echo $Seach['id']; ?>]" autocomplete="off" value="<?php echo $Seach['Technician']; ?>">
                       </td>
                       <td>
-                        <?php echo $Seach['Start_Date']; ?>
+                       <input type="date" name="Start_Date[<?= $Seach['id'] ?>]"  value="<?= $Seach['Start_Date'] ?>" class="form-control form-control-sm">
                       </td>
                     </tr>
                   <?php endforeach; ?>

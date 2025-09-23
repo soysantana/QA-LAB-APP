@@ -13,7 +13,7 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
-$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 15:59:59"));
+$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 16:00:00"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
 function get_count($table, $field, $start, $end) {
@@ -89,28 +89,8 @@ function count_by_sample($table, $sample, $field = 'Sample_ID') {
 }
 
 function muestras_nuevas($start, $end) {
-    // Accede a la variable global de conexión si es necesario
-    global $db;
-
-    $sql = "
-        SELECT 
-            Sample_ID,
-            Sample_Number,
-            Structure,
-            Client,
-            Test_Type,
-            Registed_Date
-        FROM 
-            lab_test_requisition_form
-        WHERE 
-            Registed_Date BETWEEN '{$start}' AND '{$end}'
-        ORDER BY 
-            Registed_Date ASC
-    ";
-
-    return find_by_sql($sql);
+  return find_by_sql("SELECT Sample_ID, Sample_Number, Structure, Client, Test_Type FROM lab_test_requisition_form WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'");
 }
-
 
 // Función auxiliar para detectar columnas existentes
 function get_columns_for_table($tabla) {
@@ -127,7 +107,7 @@ function get_columns_for_table($tabla) {
 function ensayos_pendientes($start, $end) {
   // Obtener requisiciones dentro del rango
   $requisitions = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date
+    SELECT Sample_ID, Sample_Number,Client, Test_Type, Sample_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
   ");
@@ -168,6 +148,7 @@ function ensayos_pendientes($start, $end) {
 
   foreach ($requisitions as $r) {
     $sample_id   = strtoupper(trim($r['Sample_ID']));
+    $client   = strtoupper(trim($r['Client']));
     $sample_num  = strtoupper(trim($r['Sample_Number']));
     $tipos_raw   = str_replace(';', ',', $r['Test_Type']); // Unificar separadores
     $tipos       = explode(',', $tipos_raw);
@@ -185,6 +166,7 @@ function ensayos_pendientes($start, $end) {
 
       if (!isset($indexados[$key])) {
         $pendientes[] = [
+          'Client'     => $r['Client'],
           'Sample_ID'     => $r['Sample_ID'],
           'Sample_Number' => $r['Sample_Number'],
           'Test_Type'     => $tipo_raw,
@@ -313,33 +295,27 @@ $dia = $this->day_of_week;
 // GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
 // =============================
 if (in_array($dia, [0, 1, 2, 3])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+  $this->MultiCell(0, 6, "Lab Tecnichian: Jordany Amparo", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
-  $this->MultiCell(0, 6, "Field Technicians: Jordany Amparo", 0, 'L');
+  $this->MultiCell(0, 6, "Field Supervisor: Adelqui Acosta", 0, 'L');
 }
 
-// =============================
-// GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
-// =============================
 if (in_array($dia, [3, 4, 5, 6])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+  $this->MultiCell(0, 6, "Lab Technicians: Luis Monegro", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
   $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
-  $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
+  $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
 }
 
-// =============================
-// YAMILEXI + WENDIN — Rotación semanal
-// =============================
 if (
   ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
   ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
 ) {
-  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');
-   $this->MultiCell(0, 6, "Field Supervisor: Victor Mercedes", 0, 'L');
   $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
 }
+
+// Nota siempre visible
+$this->MultiCell(0, 6, "Note: No technician from the contractor was present during the daily activities due to the absence of an approved or issued purchase order at the time of execution.", 0, 'L');
 
 
 
@@ -452,6 +428,7 @@ $rows = [];
 foreach ($pendientes as $p) {
   if (!empty($p['Test_Type'])) { // Excluir los que tengan Test_Type vacío o null
     $rows[] = [
+      $p['Client'],
       $p['Sample_ID'],
       $p['Sample_Number'],
       $p['Test_Type'],
@@ -460,7 +437,7 @@ foreach ($pendientes as $p) {
   }
 }
 
-$pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 60, 40]);
+$pdf->section_table([ "Client","Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 30, 40, 40]);
 
 
 

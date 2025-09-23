@@ -24,12 +24,12 @@ $solicitudes = find_by_sql("
 ");
 
 // Obtener entregas desde `ensayos_reporte`
-$entregas = find_by_sql("SELECT Sample_Name, Sample_Number, Test_Type FROM test_delivery");
+$entregas = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery");
 
 // Organizar entregas
 $entregado_map = [];
 foreach ($entregas as $e) {
-  $key = $e['Sample_Name'] . '|' . $e['Sample_Number'] . '|' . $e['Test_Type'];
+  $key = $e['Sample_ID'] . '|' . $e['Sample_Number'] . '|' . $e['Test_Type'];
   $entregado_map[$key] = true;
 }
 
