@@ -23,7 +23,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(560, 470));
 
-$pdf->setSourceFile('template/PV-F-83828_Laboratory sieve Grain size Coarse Aggregates_Rev 6.pdf');
+$pdf->setSourceFile('template/PV-F-02271_Laboratory Sieve Grain Size for Diorite Coarse Filter_Rev 0.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -41,11 +41,11 @@ if (
     $pass1p5 == 100 &&
     $pass1 >= 87 && $pass1 <= 100 &&
     $pass3p4 >= 80 && $pass3p4 <= 100 &&
-    $pass3p8 >= 50 && $pass3p8 <= 100 &&
-    $passn4 >= 14.5 && $passn4 <= 60 &&
-    $passn10 >= 2 && $passn10 <= 15 &&
+    $pass3p8 >= 40 && $pass3p8 <= 100 &&
+    $passn4 >= 7 && $passn4 <= 60 &&
+    $passn10 >= 0 && $passn10 <= 15 &&
     $passn20 >= 0 && $passn20 <= 7 &&
-    $passn200 >= 0 && $passn200 <= 2.4
+    $passn200 >= 0 && $passn200 <= 2
 ) {
     $resultado = 'Acepted';
 } else {
