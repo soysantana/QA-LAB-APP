@@ -45,7 +45,7 @@ if (
     $passn4 >= 7 && $passn4 <= 60 &&
     $passn10 >= 0 && $passn10 <= 15 &&
     $passn20 >= 0 && $passn20 <= 7 &&
-    $passn200 >= 0 && $passn200 <= 2
+    $passn200 >= 0 && $passn200 <= 2.4
 ) {
     $resultado = 'Acepted';
 } else {
