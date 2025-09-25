@@ -59,10 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="specsType" class="form-label">Especificaciones</label>
                   <select id="specsType" class="form-select" name="specsType">
                     <option selected>Choose...</option>
+                    <option value="FF-C">Construccion</option>
+                    <option value="FF-D">Diorita</option>
                     <option value="FF-I">Agregado Investigacion</option>
-                    <option value="FF-C">Contruccion</option>
+                    <option value="FF-A">Agregado</option>
                     <option value="FF-N">Naranjo</option>
-                    <option value="FF-A">Acopio</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -406,6 +407,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" data-exportar="GS-FF-Build">Contruccion</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-FF-Naranjo">Naranjo</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-FF-Diorite">Diorita</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-FF-Acopio">Agregado Investigacion</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-FF-Acopio">Acopio</a></li>
                   </ul>
                 </div>
