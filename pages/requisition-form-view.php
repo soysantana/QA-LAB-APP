@@ -141,33 +141,31 @@ include_once('../components/header.php');
                 <tbody>
                   <?php foreach ($paquetes as $packageId => $tests): ?>
                     <?php
-                    // Sample_ID y lista de Sample_Number (seguro)
+                    // Sample_ID y lista de Sample_Number
                     $sampleID = $muestras[$packageId][0]['Sample_ID'] ?? $packageId;
                     $sampleNumbers = array_map(fn($m) => $m['Sample_Number'] ?? '', $muestras[$packageId] ?? []);
 
-                    // --- A nivel paquete: unir todos los tests solicitados y entregados y deduplicar ---
+                    // --- A nivel paquete: unir todos los tests solicitados y entregados ---
                     $allSolicitados = [];
                     $allEntregados  = [];
 
                     if (!empty($muestras[$packageId]) && is_array($muestras[$packageId])) {
                       foreach ($muestras[$packageId] as $mItem) {
-                        $allSolicitados = array_merge($allSolicitados, $mItem['tests_solicitados'] ?? []);
-                        $allEntregados  = array_merge($allEntregados, $mItem['tests_entregados'] ?? []);
+                        // Asegurarse que sean arrays
+                        $allSolicitados = array_merge($allSolicitados, (array)($mItem['tests_solicitados'] ?? []));
+                        $allEntregados  = array_merge($allEntregados, (array)($mItem['tests_entregados'] ?? []));
                       }
                     }
 
-                    // Limpiar y quitar duplicados
-                    $allSolicitados = array_unique(array_filter(array_map('trim', $allSolicitados)));
-                    $allEntregados  = array_unique(array_filter(array_map('trim', $allEntregados)));
-
-                    // Contar
-                    $ensayosSolicitados = count($allSolicitados);
-                    $ensayosEntregados  = count($allEntregados);
+                    // Limpiar y contar (sin quitar duplicados)
+                    $ensayosSolicitados = count(array_filter(array_map('trim', $allSolicitados)));
+                    $ensayosEntregados  = count(array_filter(array_map('trim', $allEntregados)));
 
                     $porce_entregados = $ensayosSolicitados > 0
                       ? round(($ensayosEntregados / $ensayosSolicitados) * 100, 2)
                       : 0;
                     ?>
+
 
 
 
@@ -194,19 +192,19 @@ include_once('../components/header.php');
                             <!-- Ver -->
                             <button type="button" class="btn btn-success"
                               data-bs-toggle="modal"
-                              data-bs-target="#requisitionview<?php echo htmlspecialchars($packageId); ?>">
+                              data-bs-target="#requisitionview<?php echo $packageId; ?>">
                               <i class="bi bi-eye"></i>
                             </button>
                             <!-- Editar -->
 
-                            <input type="hidden" name="package_id" value="<?php echo htmlspecialchars($packageId); ?>">
+                            <input type="hidden" name="package_id" value="<?php echo $packageId; ?>">
                             <button type="submit" class="btn btn-warning">
                               <i class="bi bi-pen"></i>
                             </button>
 
                             <!-- Eliminar -->
                             <button type="button" class="btn btn-danger"
-                              onclick="modaldelete('<?php echo htmlspecialchars($packageId); ?>')">
+                              onclick="modaldelete('<?php echo $packageId; ?>')">
                               <i class="bi bi-trash"></i>
                             </button>
 
@@ -226,42 +224,34 @@ include_once('../components/header.php');
                           <div class="modal-body">
                             <div class="container">
 
-                              <!-- Ensayos por muestra (con checks) -->
+                              <!-- Ensayos por muestra -->
                               <div class="card mb-3">
                                 <div class="card-body">
                                   <h5 class="card-title">Ensayos por muestra</h5>
 
                                   <?php if (!empty($muestras[$packageId]) && is_array($muestras[$packageId])): ?>
                                     <?php foreach ($muestras[$packageId] as $mItem): ?>
-                                      <div class="mb-3">
-                                        <h6>Muestra <?php echo htmlspecialchars($mItem['Sample_Number']); ?></h6>
-                                        <p>
-                                          <?php
-                                          $testsReq = $mItem['tests_solicitados'] ?? [];
-                                          $testsDel = $mItem['tests_entregados'] ?? [];
-                                          // normalizar
-                                          $testsReq = array_map('trim', $testsReq);
-                                          $testsDel = array_map('trim', $testsDel);
+                                      <p>
+                                        <code class="small">Muestra: <?php echo htmlspecialchars($mItem['Sample_Number']); ?></code>
+                                        <?php
+                                        $testsReq = $mItem['tests_solicitados'] ?? [];
+                                        $testsDel = $mItem['tests_entregados'] ?? [];
+                                        $testsReq = array_map('trim', $testsReq);
+                                        $testsDel = array_map('trim', $testsDel);
+                                        ?>
+                                        <?php if (!empty($testsReq)): ?>
+                                          <?php foreach ($testsReq as $t):
+                                            $hecho = in_array($t, $testsDel, true);
+                                            $icono = $hecho ? '✅' : '❌';
                                           ?>
-                                          <?php if (empty($testsReq)): ?>
-                                            <em>No hay ensayos solicitados.</em>
-                                          <?php else: ?>
-                                            <?php foreach ($testsReq as $t):
-                                              $hecho = in_array($t, $testsDel, true);
-                                              $icono = $hecho ? '✅' : '❌';
-                                            ?>
-                                              <span class="badge bg-light text-dark me-1">
-                                                <?php echo htmlspecialchars($t) . ' ' . $icono; ?>
-                                              </span>
-                                            <?php endforeach; ?>
-                                          <?php endif; ?>
-                                        </p>
-                                        <small>
-                                          Solicitados: <span class="badge bg-primary"><?php echo $mItem['ensayos_solicitados']; ?></span>
-                                          | Entregados: <span class="badge bg-success"><?php echo $mItem['ensayos_entregados']; ?></span>
-                                          | Porcentaje: <span class="badge bg-info text-dark"><?php echo $mItem['porcentaje']; ?>%</span>
-                                        </small>
-                                      </div>
+                                            <span class="badge bg-light text-dark me-1" style="font-size:0.85em;">
+                                              <?php echo htmlspecialchars($t) . ' ' . $icono; ?>
+                                            </span>
+                                          <?php endforeach; ?>
+                                        <?php else: ?>
+                                          <em>No hay ensayos solicitados.</em>
+                                        <?php endif; ?>
+                                      </p>
                                     <?php endforeach; ?>
                                   <?php else: ?>
                                     <p><em>No hay muestras en este paquete.</em></p>
@@ -269,6 +259,8 @@ include_once('../components/header.php');
 
                                 </div>
                               </div>
+
+
 
                               <!-- Comentarios de muestras -->
                               <div class="card mb-3">
