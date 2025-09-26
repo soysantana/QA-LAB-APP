@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="card-body">
             <h5 class="card-title">LISTA DE MUESTRAS EN ENTREGA</h5>
 
-            <?php $week = date('Y-m-d', strtotime('-364 days')); ?>
+            <?php $week = date('Y-m-d', strtotime('-14 days')); ?>
             <?php $realization = "(SELECT 1 FROM test_review WHERE Sample_ID = p.Sample_ID AND Sample_Number = p.Sample_Number AND Test_Type = p.Test_Type)"; ?>
             <?php $Seach = find_by_sql("SELECT id, Sample_ID, Sample_Number, Test_Type, Technician, Start_Date FROM test_delivery p WHERE Start_Date >= '{$week}' AND NOT EXISTS $realization ORDER BY Register_Date DESC"); ?>
 
