@@ -204,7 +204,7 @@ if (isset($_POST['update-signed'])) {
                 </div>
 
             </div>
-
+            <?php /*
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
@@ -353,7 +353,7 @@ if (isset($_POST['update-signed'])) {
                     </div><!-- End Modal-->
                 </form>
             <?php endforeach; ?>
-
+*/ ?>
 
 
 
