@@ -13,8 +13,8 @@ if (isset($_POST['update-signed'])) {
     $testTypeMappings = [
         'AL' => ['AL'],
         'BTS' => ['BTS'],
-        'GS' => ['GS_Fine', 'GS_Coarse', 'GS_CoarseThan', 'GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'],
-        'LAA' => ['LAA_Coarse_Filter', 'LAA_Coarse_Aggregate'],
+        'GS' => ['GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'],
+        'LAA' => ['LAA_Large', 'LAA_Small'],
         'MC' => ['MC_Oven', 'MC_Microwave', 'MC_Constant_Mass', 'MC_Scale'],
         'PLT' => ['PLT'],
         'SG' => ['SG_Coarse', 'SG_Fine'],
