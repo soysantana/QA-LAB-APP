@@ -86,7 +86,13 @@ include_once('../components/header.php');
                 </div>
                 <div class="col-md-3">
                   <label for="PackageID" class="form-label">Paquete ID</label>
-                  <input type="text" class="form-control" name="PackageID" id="PackageID" value="<?php echo $Search['Package_ID']; ?>">
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="PackageID"
+                    id="PackageID"
+                    value="<?php echo $Search['Package_ID']; ?>"
+                    <?php if (!user_can_access(2)) echo 'readonly'; ?>>
                   <input type="hidden" name="OldPackageID" value="<?php echo $Search['Package_ID']; ?>" />
                 </div>
                 <div class="col-md-3">
