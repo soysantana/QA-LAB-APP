@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-md-3">
                   <label for="PackageID" class="form-label">Paquete ID</label>
-                  <input type="text" class="form-control" name="PackageID" id="PackageID">
+                  <input type="text" class="form-control" name="PackageID" id="PackageID" disabled>
                 </div>
                 <div class="col-md-3">
                   <label for="Structure" class="form-label">Estructura</label>
