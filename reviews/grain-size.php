@@ -350,5 +350,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script type="module" src="../js/grain-size/gs-general.js?v.01"></script>
+<script type="module" src="../js/grain-size/gs-general.js"></script>
 <?php include_once('../components/footer.php');  ?>
