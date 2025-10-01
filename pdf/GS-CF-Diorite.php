@@ -102,7 +102,7 @@ $pdf->SetXY(295, 135);
 $pdf->Cell(30, 6, $Search['East'], 0, 1, 'C');
 
 $pdf->SetXY(400, 80);
-$pdf->Cell(30, 6, $Search['Sample_Date'], 0, 1, 'C');
+$pdf->Cell(30, 6, $Search['ProductionDate'], 0, 1, 'C');
 
 // Testing Information
 $pdf->SetFont('Arial', '', 11);
