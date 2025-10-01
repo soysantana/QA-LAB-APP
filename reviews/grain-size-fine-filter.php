@@ -99,7 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
+                  <label for="ProductionDate" class="form-label">Production Date</label>
+                  <input type="date" class="form-control" name="ProductionDate" id="ProductionDate" value="<?php echo ($Search['ProductionDate']); ?>">
+                </div>
+                <div class="col-md-6">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
                 </div>

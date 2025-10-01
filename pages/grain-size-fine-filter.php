@@ -91,7 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician">
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
+                  <label for="ProductionDate" class="form-label">Production Date</label>
+                  <input type="date" class="form-control" name="ProductionDate" id="ProductionDate">
+                </div>
+                <div class="col-md-6">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting">
                 </div>

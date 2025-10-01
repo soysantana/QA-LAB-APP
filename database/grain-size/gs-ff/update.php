@@ -33,6 +33,7 @@ if (isset($_POST['update-gs-fine'])) {
         $Standard = $db->escape($_POST['Standard']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
+        $ProductionDate = $db->escape($_POST['ProductionDate']);
         $Comments = $db->escape($_POST['Comments']);
         $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
@@ -114,6 +115,7 @@ if (isset($_POST['update-gs-fine'])) {
         $query .= "Standard = '{$Standard}', ";
         $query .= "Technician = '{$Technician}', ";
         $query .= "Test_Start_Date = '{$DateTesting}', ";
+        $query .= "ProductionDate = '{$ProductionDate}', ";
         $query .= "Comments = '{$Comments}', ";
         $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";

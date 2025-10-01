@@ -39,25 +39,21 @@ if (isset($_POST['requisition-form'])) {
 
         foreach ($_POST as $key => $value) {
             if (preg_match('/^TestType_(\d+)$/', $key, $matches)) {
-                $index = $matches[1];
+                $index = (int)$matches[1]; // número de muestra
 
-                if (!isset($sampleData[$index])) {
-                    $sampleData[$index] = [];
-                }
-
-                // Escapar cada test y luego unirlos con coma (u otro separador)
+                // Escapar valores
                 $escapedTests = array_map(function ($test) use ($db) {
                     return $db->escape($test);
-                }, $value);
+                }, (array)$value);
 
-                // Guardar en una sola cadena separada por comas
-                $sampleData[$index]["TestType"] = implode(',', $escapedTests);
+                // Guardar como string separado por coma
+                $sampleData[$index]['TestType'] = implode(',', $escapedTests);
             }
         }
 
 
         foreach ($sampleData as $index => $data) {
-            $id = uuid(); // O usa un ID general si todas son parte de la misma requisición
+            $id = uuid();
 
             $sql = "INSERT INTO lab_test_requisition_form (
         id,

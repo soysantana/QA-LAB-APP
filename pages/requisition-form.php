@@ -300,10 +300,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (el.htmlFor) {
         el.htmlFor = el.htmlFor.replace(/_\d+$/, "_" + sampleCount);
       }
-      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-        el.value = ""; // limpiar valores
-        if (el.type === "checkbox" || el.type === "radio") el.checked = false;
+
+      if (el.tagName === "INPUT") {
+        if (el.type === "text") el.value = ""; // limpiar solo inputs de texto
+        if (el.type === "checkbox" || el.type === "radio") el.checked = false; // solo resetear selección
       }
+
+      if (el.tagName === "TEXTAREA") {
+        el.value = ""; // limpiar textarea
+      }
+
       if (el.tagName === "SELECT") {
         el.selectedIndex = 0; // resetear select
       }
