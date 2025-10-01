@@ -33,7 +33,11 @@ if (isset($_POST['grain-size-coarse'])) {
         $Standard = $db->escape($_POST['Standard']);
         $Technician = $db->escape($_POST['Technician']);
         $DateTesting = $db->escape($_POST['DateTesting']);
-        $ProductionDate = $db->escape($_POST['ProductionDate']);
+        if (!empty($_POST['ProductionDate'])) {
+            $ProductionDate = "'" . $db->escape($_POST['ProductionDate']) . "'";
+        } else {
+            $ProductionDate = "NULL";
+        }
         $Comments = $db->escape($_POST['Comments']);
         $FieldComment = $db->escape($_POST['FieldComment']);
         $PMethods = $db->escape($_POST['PMethods']);
@@ -219,7 +223,7 @@ if (isset($_POST['grain-size-coarse'])) {
             '$Standard',
             '$Technician',
             '$DateTesting',
-            '$ProductionDate',
+            $ProductionDate,
             '$Comments',
             '$FieldComment',
             '$PMethods',
