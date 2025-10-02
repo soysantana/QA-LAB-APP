@@ -216,6 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       "PH" => "Pinhole (PH)",
                       "Permeability" => "Permeabilidad",
                       "SHAPE" => "Formas de Particulas (SHAPE)",
+                      "DENSIDAD-VIBRATORIO" => "Densidad Vibratorio",
                       "DENSITY" => "Densidad",
                       "CRUMBS" => "Crumbs",
                       "Actividad" => "Actividad",
