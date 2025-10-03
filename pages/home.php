@@ -815,7 +815,6 @@ if (!$session->isUserLoggedIn(true)) {
       fila.style.display = textoFila.includes(filtro) ? '' : 'none';
     });
   });
-
-  <
-  /main><!-- End #main -->
-  <?php include_once('../components/footer.php'); ?>
+</script>
+</main><!-- End #main -->
+<?php include_once('../components/footer.php'); ?>
