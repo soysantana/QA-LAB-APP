@@ -35,22 +35,40 @@ $passn50 = $Search['Pass16'];
 $passn60 = $Search['Pass17'];
 $passn200 = $Search['Pass18'];
 
-// Condición para "Acepted"
-if (
-    $pass3p8 == 100 &&
-    $passn4 >= 95 && $passn4 <= 100 &&
-    $passn10 >= 75 && $passn10 <= 100 &&
-    $passn16 >= 50 && $passn16 <= 85 &&
-    $passn50 >= 5 && $passn50 <= 30 &&
-    $passn60 >= 0 && $passn60 <= 25 &&
-    $passn200 >= 0 && $passn200 <= 2.4
-) {
-    $resultado = 'Acepted';
-} else {
-    $resultado = 'Rejected';
+$pdf->SetFont('Arial', '', 11);
+
+$values = [
+    ['value' => $pass3p8,   'min' => 100,   'max' => 100, 'x' => 365, 'y' => 252],
+    ['value' => $passn4,    'min' => 95,    'max' => 100, 'x' => 365, 'y' => 258],
+    ['value' => $passn10,   'min' => 75,    'max' => 100, 'x' => 365, 'y' => 264],
+    ['value' => $passn16,   'min' => 50,    'max' => 85,  'x' => 365, 'y' => 271],
+    ['value' => $passn50,   'min' => 5,     'max' => 30,  'x' => 365, 'y' => 284],
+    ['value' => $passn60,   'min' => 0,     'max' => 25,  'x' => 365, 'y' => 289.5],
+    ['value' => $passn200,  'min' => 0,     'max' => 2.4, 'x' => 365, 'y' => 296],
+];
+
+function printColoredValue($pdf, $value, $inRange, $x, $y, $width = 43, $height = 4)
+{
+    $pdf->SetXY($x, $y);
+    $pdf->SetTextColor($inRange ? 0 : 255, 0, 0);
+    $pdf->Cell($width, $height, $value, 0, 1, 'C');
 }
 
+foreach ($values as $v) {
+    $inRange = $v['value'] >= $v['min'] && $v['value'] <= $v['max'];
+    printColoredValue($pdf, $v['value'], $inRange, $v['x'], $v['y']);
+}
+
+$resultado = array_reduce($values, function ($carry, $item) {
+    return $carry && ($item['value'] >= $item['min'] && $item['value'] <= $item['max']);
+}, true) ? 'Accepted' : 'Rejected';
+
+$pdf->SetXY(310, 430);
+$pdf->SetTextColor($resultado === 'Accepted' ? 0 : 255, 0, 0);
+$pdf->Cell(152, 4, $resultado, 0, 1, 'C');
+
 $pdf->SetFont('Arial', 'B', 10);
+$pdf->SetTextColor(0, 0, 0);
 
 //Information for the essay
 $pdf->SetXY(105, 94);
@@ -255,8 +273,6 @@ $pdf->SetXY(299, 252);
 $pdf->Cell(29, 4, $Search['Ret11'], 0, 1, 'C');
 $pdf->SetXY(338, 252);
 $pdf->Cell(21, 4, $Search['CumRet11'], 0, 1, 'C');
-$pdf->SetXY(365, 252);
-$pdf->Cell(43, 4, $Search['Pass11'], 0, 1, 'C');
 $pdf->SetXY(407, 252);
 $pdf->Cell(43, 4, $Search['Specs11'], 0, 1, 'C');
 
@@ -266,8 +282,6 @@ $pdf->SetXY(299, 258);
 $pdf->Cell(29, 4, $Search['Ret12'], 0, 1, 'C');
 $pdf->SetXY(338, 258);
 $pdf->Cell(21, 4, $Search['CumRet12'], 0, 1, 'C');
-$pdf->SetXY(365, 258);
-$pdf->Cell(43, 4, $Search['Pass12'], 0, 1, 'C');
 $pdf->SetXY(407, 258);
 $pdf->Cell(43, 4, $Search['Specs12'], 0, 1, 'C');
 
@@ -277,8 +291,6 @@ $pdf->SetXY(299, 264);
 $pdf->Cell(29, 4, $Search['Ret13'], 0, 1, 'C');
 $pdf->SetXY(338, 264);
 $pdf->Cell(21, 4, $Search['CumRet13'], 0, 1, 'C');
-$pdf->SetXY(365, 264);
-$pdf->Cell(43, 4, $Search['Pass13'], 0, 1, 'C');
 $pdf->SetXY(407, 264);
 $pdf->Cell(43, 4, $Search['Specs13'], 0, 1, 'C');
 
@@ -288,8 +300,6 @@ $pdf->SetXY(299, 271);
 $pdf->Cell(29, 4, $Search['Ret14'], 0, 1, 'C');
 $pdf->SetXY(338, 271);
 $pdf->Cell(21, 4, $Search['CumRet14'], 0, 1, 'C');
-$pdf->SetXY(365, 271);
-$pdf->Cell(43, 4, $Search['Pass14'], 0, 1, 'C');
 $pdf->SetXY(407, 271);
 $pdf->Cell(43, 4, $Search['Specs14'], 0, 1, 'C');
 
@@ -310,8 +320,6 @@ $pdf->SetXY(299, 284);
 $pdf->Cell(29, 4, $Search['Ret16'], 0, 1, 'C');
 $pdf->SetXY(338, 284);
 $pdf->Cell(21, 4, $Search['CumRet16'], 0, 1, 'C');
-$pdf->SetXY(365, 284);
-$pdf->Cell(43, 4, $Search['Pass16'], 0, 1, 'C');
 $pdf->SetXY(407, 284);
 $pdf->Cell(43, 4, $Search['Specs16'], 0, 1, 'C');
 
@@ -321,8 +329,6 @@ $pdf->SetXY(299, 289.5);
 $pdf->Cell(29, 4, $Search['Ret17'], 0, 1, 'C');
 $pdf->SetXY(338, 289.5);
 $pdf->Cell(21, 4, $Search['CumRet17'], 0, 1, 'C');
-$pdf->SetXY(365, 289.5);
-$pdf->Cell(43, 4, $Search['Pass17'], 0, 1, 'C');
 $pdf->SetXY(407, 289.5);
 $pdf->Cell(43, 4, $Search['Specs17'], 0, 1, 'C');
 
@@ -332,8 +338,6 @@ $pdf->SetXY(299, 296);
 $pdf->Cell(29, 4, $Search['Ret18'], 0, 1, 'C');
 $pdf->SetXY(338, 296);
 $pdf->Cell(21, 4, $Search['CumRet18'], 0, 1, 'C');
-$pdf->SetXY(365, 296);
-$pdf->Cell(43, 4, $Search['Pass18'], 0, 1, 'C');
 $pdf->SetXY(407, 296);
 $pdf->Cell(43, 4, $Search['Specs18'], 0, 1, 'C');
 
@@ -380,10 +384,6 @@ $pdf->SetXY(280, 404);
 $pdf->Cell(152, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
 $pdf->SetXY(280, 410);
 $pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
-
-// Grain Size Test Results
-$pdf->SetXY(310, 430);
-$pdf->Cell(152, 4, $resultado, 0, 1, 'C');
 
 // Comments and Observations
 $pdf->SetXY(54, 480);
