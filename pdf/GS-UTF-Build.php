@@ -27,20 +27,35 @@ $pdf->setSourceFile('template/PV-F-01725 Laboratory Sieve Grain Size Distributio
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
+$pdf->SetFont('Arial', '', 11);
+
 $Sand = $Search['Sand'];
 $Fines = $Search['Fines'];
 
+$pdf->SetXY(339, 295);
+$pdf->SetTextColor($Sand < 35 ? 255 : 0, $Sand < 35 ? 0 : 0, $Sand < 35 ? 0 : 0);
+$pdf->Cell(43, 4, $Sand, 0, 1, 'C');
+$pdf->SetXY(339, 301);
+$pdf->SetTextColor($Fines > 6 ? 255 : 0, $Fines > 6 ? 0 : 0, $Fines > 6 ? 0 : 0);
+$pdf->Cell(43, 4, $Fines, 0, 1, 'C');
+
 // Condición para "Acepted"
 if (
-    $Sand >= 34.5 &&
-    $Fines <= 6.4
+    $Sand >= 35 &&
+    $Fines <= 6
 ) {
     $resultado = 'Acepted';
+    $pdf->SetTextColor(0, 0, 0);
 } else {
     $resultado = 'Rejected';
+    $pdf->SetTextColor(255, 0, 0);
 }
 
+$pdf->SetXY(367, 383);
+$pdf->Cell(73, 6, $resultado, 0, 1, 'C');
+
 $pdf->SetFont('Arial', 'B', 10);
+$pdf->SetTextColor(0, 0, 0);
 
 //Information for the essay
 $pdf->SetXY(100, 84);
@@ -298,10 +313,6 @@ $pdf->SetXY(339, 283);
 $pdf->Cell(43, 4, $Search['Coarser_than_Gravel'], 0, 1, 'C');
 $pdf->SetXY(339, 289);
 $pdf->Cell(43, 4, $Search['Gravel'], 0, 1, 'C');
-$pdf->SetXY(339, 295);
-$pdf->Cell(43, 4, $Search['Sand'], 0, 1, 'C');
-$pdf->SetXY(339, 301);
-$pdf->Cell(43, 4, $Search['Fines'], 0, 1, 'C');
 $pdf->SetXY(368, 308);
 $pdf->Cell(43, 4, $Search['D10'], 0, 1, 'C');
 $pdf->SetXY(368, 313);
@@ -322,10 +333,6 @@ $pdf->SetXY(285, 360);
 $pdf->Cell(152, 6, $Search['ClassificationUSCS1'], 0, 1, 'C');
 $pdf->SetXY(285, 365);
 $pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
-
-// Grain Size Test Results
-$pdf->SetXY(367, 383);
-$pdf->Cell(73, 6, $resultado, 0, 1, 'C');
 
 // Comments and observations
 $pdf->SetXY(52, 478);
