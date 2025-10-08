@@ -323,7 +323,7 @@ if (in_array($dia, [0, 1, 2, 3])) {
 // GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
 // =============================
 if (in_array($dia, [3, 4, 5, 6])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Joel Ledesma", 0, 'L');
+  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
   $this->MultiCell(0, 6, "PV Laboratory Supervisors: Laura Sanchez", 0, 'L');
   $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
   $this->MultiCell(0, 6, "Field Technicians: Luis Monegro", 0, 'L');
@@ -420,7 +420,7 @@ foreach ($tec as $r) {
 $pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
 $pdf->SetFont('Arial', '', 8);
 $pdf->Cell(0, 4, 'Tech. Legend: WM= Wilson Martinez, JV= Jonathan Vargas, RV= Roni Vargas, RL =Rafy Leocadio,', 0, 1);
-$pdf->Cell(0, 4, 'RR= Rafael Reyes, JL= Joel Ledesma, DF= Darielvy Felix, JA= Jordany Almonte , ', 0, 1);
+$pdf->Cell(0, 4, 'RR= Rafael Reyes, MC= Melvin Castillo, DF= Darielvy Felix, JA= Jordany Almonte , ', 0, 1);
 $pdf->Ln(5);
 
 
