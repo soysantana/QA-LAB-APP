@@ -58,10 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="specsType" class="form-label">Especificaciones</label>
                   <select id="specsType" class="form-select" name="specsType">
                     <option selected>Choose...</option>
-                    <option value="AGGINV">Agregado Investigacion</option>
-                    <option value="Build">Contruccion</option>
-                    <option value="Naranjo">Naranjo</option>
-                    <option value="Acopio">Acopio</option>
+                    <option value="CF-C">Construccion</option>
+                    <option value="CF-D">Diorita</option>
+                    <option value="CF-I">Agregado Investigacion</option>
+                    <option value="CF-A">Agregado</option>
+                    <option value="CF-N">Naranjo</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -97,7 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="Technician" class="form-label">Technician</label>
                   <input type="text" class="form-control" name="Technician" id="Technician" value="<?php echo ($Search['Technician']); ?>">
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
+                  <label for="ProductionDate" class="form-label">Production Date</label>
+                  <input type="date" class="form-control" name="ProductionDate" id="ProductionDate" value="<?php echo ($Search['ProductionDate']); ?>">
+                </div>
+                <div class="col-md-6">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                   <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
                 </div>
@@ -409,6 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" data-exportar="GS-CF-Build">Contruccion</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-CF-Naranjo">Naranjo</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-CF-Diorite">Diorita</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-CF-Acopio">Acopio</a></li>
                   </ul>
                 </div>

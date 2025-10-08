@@ -41,67 +41,67 @@ if (isset($_POST['product_name']) && strlen($_POST['product_name'])) {
 
         $html .= '<div class="row g-3">';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="ProjectName" class="form-label">Project Name</label>';
         $html .= '<input type="text" class="form-control" name="ProjectName" id="ProjectName" value="' . $result['Project_Name'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="Client" class="form-label">Client</label>';
         $html .= '<input type="text" class="form-control" name="Client" id="Client" value="' . $result['Client'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="ProjectNumber" class="form-label">Project Number</label>';
         $html .= '<input type="text" class="form-control" name="ProjectNumber" id="ProjectNumber" value="' . $result['Project_Number'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="Structure" class="form-label">Structure</label>';
         $html .= '<input type="text" class="form-control" name="Structure" id="Structure" value="' . $result['Structure'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="Area" class="form-label">Work Area</label>';
         $html .= '<input type="text" class="form-control" name="Area" id="Area" value="' . $result['Area'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="Source" class="form-label">Borrow Source</label>';
         $html .= '<input type="text" class="form-control" name="Source" id="Source" value="' . $result['Source'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="MType" class="form-label">Material Type</label>';
         $html .= '<input type="text" class="form-control" name="MType" id="MType" value="' . $result['Material_Type'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="SType" class="form-label">Sample Type</label>';
         $html .= '<input type="text" class="form-control" name="SType" id="SType" value="' . $result['Sample_Type'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="SampleName" class="form-label">Sample Name</label>';
         $html .= '<input type="text" class="form-control" name="SampleName" id="SampleName" value="' . $result['Sample_ID'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="SampleNumber" class="form-label">Sample Number</label>';
         $html .= '<input type="text" class="form-control" name="SampleNumber" id="SampleNumber" value="' . $result['Sample_Number'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="Sample Date" class="form-label">Sample Date</label>';
         $html .= '<input type="text" class="form-control" name="CollectionDate" id="Sample Date" value="' . $result['Sample_Date'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="SampleBy" class="form-label">Sample By</label>';
         $html .= '<input type="text" class="form-control" name="SampleBy" id="SampleBy" value="' . $result['Sample_By'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-4">';
+        $html .= '<div class="col-md-2">';
         $html .= '<label for="Depth From" class="form-label">Depth From</label>';
         $html .= '<input type="text" class="form-control" name="DepthFrom" id="Depth From" value="' . $result['Depth_From'] . '">';
         $html .= '</div>';
@@ -121,7 +121,7 @@ if (isset($_POST['product_name']) && strlen($_POST['product_name'])) {
         $html .= '<input type="text" class="form-control" name="East" id="East" value="' . $result['East'] . '">';
         $html .= '</div>';
 
-        $html .= '<div class="col-md-2">';
+        $html .= '<div class="col-md-4">';
         $html .= '<label for="Elevation" class="form-label">Elevation</label>';
         $html .= '<input type="text" class="form-control" name="Elev" id="Elevation" value="' . $result['Elev'] . '">';
         $html .= '</div>';

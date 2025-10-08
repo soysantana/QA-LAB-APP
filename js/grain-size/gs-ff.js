@@ -1,79 +1,9 @@
 import { calcularParametrosGranulometricos } from './gs-summary.js';
 import { enviarImagenAlServidor } from '../export/export-chart.js';
 import { UpdateGraph } from '../../charts/grain-size/gs-chart.js';
+import { initSpecsSelect } from '../../js/grain-size/specs-gs.js';
 
 function FineFilter() {
-
-  // Array para almacenar los IDs de los elementos del DOM
-  const specElements = [
-    "Specs11",
-    "Specs12",
-    "Specs13",
-    "Specs14",
-    "Specs16",
-    "Specs17",
-    "Specs18",
-  ];
-
-  const specsType = document.getElementById("specsType");
-
-  // Especificaciones de investigación y agregado
-  const specs = {
-    I: {
-      Specs11: "100",
-      Specs12: "95-100",
-      Specs13: "75-100",
-      Specs14: "60-85",
-      Specs16: "10-30",
-      Specs17: "5-25",
-      Specs18: "0-2",
-    },
-    C: {
-      Specs11: "100",
-      Specs12: "95-100",
-      Specs13: "65-100",
-      Specs14: "50-85",
-      Specs16: "5-30",
-      Specs17: "0-25",
-      Specs18: "0-5",
-    },
-    N: {
-      Specs11: "100",
-      Specs12: "95-100",
-      Specs13: "75-100",
-      Specs14: "50-85",
-      Specs16: "5-30",
-      Specs17: "0-25",
-      Specs18: "0-1.7",
-    },
-    A: {
-      Specs11: "100",
-      Specs12: "95-100",
-      Specs13: "75-100",
-      Specs14: "60-85",
-      Specs16: "10-30",
-      Specs17: "5-25",
-      Specs18: "0-2",
-    },
-  };
-
-  // Función que actualiza los valores de las especificaciones dinámicamente
-  function updateSpecs(selectedType) {
-    const selectedSpecs = specs[selectedType];
-
-    specElements.forEach((id) => {
-      document.getElementById(id).value = selectedSpecs[id];
-    });
-  }
-
-  // Evento que detecta cambios en el select
-  specsType.addEventListener("change", function () {
-    // Obtener el valor seleccionado ("Investigacion" o "agregado")
-    const selectedValue = specsType.value;
-
-    // Llamar a la función para actualizar las especificaciones
-    updateSpecs(selectedValue);
-  });
 
   const cumRetArray = [0];
   const PassArray = new Array(18).fill(null);
@@ -218,9 +148,12 @@ function FineFilter() {
   ];
 
   calcularParametrosGranulometricos(datos);
-
   UpdateGraph()
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  initSpecsSelect();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form.row");

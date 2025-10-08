@@ -13,8 +13,8 @@ if (isset($_POST['update-signed'])) {
     $testTypeMappings = [
         'AL' => ['AL'],
         'BTS' => ['BTS'],
-        'GS' => ['GS_Fine', 'GS_Coarse', 'GS_CoarseThan', 'GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'],
-        'LAA' => ['LAA_Coarse_Filter', 'LAA_Coarse_Aggregate'],
+        'GS' => ['GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'],
+        'LAA' => ['LAA_Large', 'LAA_Small'],
         'MC' => ['MC_Oven', 'MC_Microwave', 'MC_Constant_Mass', 'MC_Scale'],
         'PLT' => ['PLT'],
         'SG' => ['SG_Coarse', 'SG_Fine'],
@@ -115,15 +115,12 @@ if (isset($_POST['update-signed'])) {
                                     'AL' => '../reviews/atterberg-limit.php',
                                     'BTS' => '../reviews/brazilian.php',
                                     'GS' => '../reviews/grain-size.php',
-                                    'GS-Fine' => '../reviews/grain-size-fine-agg.php',
-                                    'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
-                                    'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
                                     'GS_FF' => '../reviews/grain-size-fine-filter.php',
                                     'GS_CF' => '../reviews/grain-size-coarse-filter.php',
                                     'GS_LPF' => '../reviews/grain-size-lpf.php',
                                     'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php',
-                                    'LAA_Coarse_Aggregate' => '../reviews/LAA-Large.php',
-                                    'LAA_Coarse_Filter' => '../reviews/LAA-Small.php',
+                                    'LAA_Large' => '../reviews/LAA-Large.php',
+                                    'LAA_Small' => '../reviews/LAA-Small.php',
                                     'MC_Oven' => '../reviews/moisture-oven.php',
                                     'MC_Microwave' => '../reviews/moisture-microwave.php',
                                     'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
@@ -170,15 +167,12 @@ if (isset($_POST['update-signed'])) {
                                     'AL' => '../reviews/atterberg-limit.php',
                                     'BTS' => '../reviews/brazilian.php',
                                     'GS' => '../reviews/grain-size.php',
-                                    'GS-Fine' => '../reviews/grain-size-fine-agg.php',
-                                    'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
-                                    'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php',
                                     'GS_FF' => '../reviews/grain-size-fine-filter.php',
                                     'GS_CF' => '../reviews/grain-size-coarse-filter.php',
                                     'GS_LPF' => '../reviews/grain-size-lpf.php',
                                     'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php',
-                                    'LAA_Coarse_Aggregate' => '../reviews/LAA-Large.php',
-                                    'LAA_Coarse_Filter' => '../reviews/LAA-Small.php',
+                                    'LAA_Large' => '../reviews/LAA-Large.php',
+                                    'LAA_Small' => '../reviews/LAA-Small.php',
                                     'MC_Oven' => '../reviews/moisture-oven.php',
                                     'MC_Microwave' => '../reviews/moisture-microwave.php',
                                     'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
@@ -210,7 +204,7 @@ if (isset($_POST['update-signed'])) {
                 </div>
 
             </div>
-
+            <?php /*
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
@@ -359,7 +353,7 @@ if (isset($_POST['update-signed'])) {
                     </div><!-- End Modal-->
                 </form>
             <?php endforeach; ?>
-
+*/ ?>
 
 
 

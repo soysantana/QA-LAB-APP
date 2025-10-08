@@ -395,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </button>
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" data-exportar="GS-UTF-Build">Contruccion</a></li>
-                    <li><a class="dropdown-item" data-exportar="GS-UTF-Build">Acopio</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-UTF-Acopio">Acopio</a></li>
                   </ul>
                 </div>
 
