@@ -19,7 +19,7 @@ $pdf->SetMargins(0, 0, 0);
 
 $pdf->AddPage('P', array(560, 430));
 
-$pdf->setSourceFile('template/PV-F-01720_Laboratory Soundness Test.pdf');
+$pdf->setSourceFile('template/PV-F-01720_Laboratory_Soundness_SND_Rev2.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 
@@ -65,9 +65,9 @@ $pdf->Cell(30, 6, $Search['Client'], 0, 1, 'C');
 $pdf->SetXY(360, 77);
 $pdf->Cell(30, 6, $Search['Methods'], 0, 1, 'C');
 $pdf->SetXY(360, 85);
-$pdf->Cell(30, 6, '', 0, 1, 'C');
+$pdf->Cell(30, 6, $Search['Preparation_Methods'], 0, 1, 'C');
 $pdf->SetXY(360, 93);
-$pdf->Cell(30, 6, '', 0, 1, 'C');
+$pdf->Cell(30, 6, $Search['Split_Methods'], 0, 1, 'C');
 $pdf->SetXY(360, 112);
 $pdf->Cell(30, 6, $Search['Depth_From'], 0, 1, 'C');
 $pdf->SetXY(360, 120);
@@ -87,156 +87,449 @@ $pdf->SetXY(65, 155);
 $pdf->Cell(40, 23, $Search['WtWashed'], 0, 1, 'C');
 
 // Coarse Aggregate
+$values = $Search['WtRetCoarse'];
+
+$valuesArray = explode(',', $values);
+
+foreach ($valuesArray as $k => $v) {
+    if ($v === 'null') $valuesArray[$k] = '';
+}
+
 $pdf->SetXY(105, 194);
-$pdf->Cell(25, 5, $Search['WtRetCoarse1'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[0], 0, 1, 'C');
 $pdf->SetXY(105, 199);
-$pdf->Cell(25, 5, $Search['WtRetCoarse2'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[1], 0, 1, 'C');
 $pdf->SetXY(105, 204);
-$pdf->Cell(25, 6, $Search['WtRetCoarse3'], 0, 1, 'C');
+$pdf->Cell(25, 6, $valuesArray[2], 0, 1, 'C');
 $pdf->SetXY(105, 209);
-$pdf->Cell(25, 5, $Search['WtRetCoarse4'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[3], 0, 1, 'C');
 $pdf->SetXY(105, 215);
-$pdf->Cell(25, 5, $Search['WtRetCoarse5'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[4], 0, 1, 'C');
 $pdf->SetXY(105, 220);
-$pdf->Cell(25, 5, $Search['WtRetCoarse6'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[5], 0, 1, 'C');
 $pdf->SetXY(105, 225);
-$pdf->Cell(25, 6, $Search['WtRetCoarse7'], 0, 1, 'C');
+$pdf->Cell(25, 6, $valuesArray[6], 0, 1, 'C');
 $pdf->SetXY(105, 230);
-$pdf->Cell(25, 6, $Search['WtRetCoarse8'], 0, 1, 'C');
+$pdf->Cell(25, 6, $valuesArray[7], 0, 1, 'C');
 $pdf->SetXY(105, 236);
-$pdf->Cell(25, 5, $Search['WtRetCoarse9'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[8], 0, 1, 'C');
 $pdf->SetXY(105, 241);
-$pdf->Cell(25, 5, $Search['WtRetCoarse10'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[9], 0, 1, 'C');
 $pdf->SetXY(105, 246);
-$pdf->Cell(25, 5, $Search['WtRetCoarse11'], 0, 1, 'C');
+$pdf->Cell(25, 5, $valuesArray[10], 0, 1, 'C');
 $pdf->SetXY(105, 251);
 $pdf->Cell(25, 5, $Search['WtRetCoarseTotal'], 0, 1, 'C');
 
-$pdf->SetXY(130, 194);
-$pdf->Cell(20, 5, $Search['PctRetCoarse1'], 0, 1, 'C');
-$pdf->SetXY(130, 199);
-$pdf->Cell(20, 5, $Search['PctRetCoarse2'], 0, 1, 'C');
-$pdf->SetXY(130, 204);
-$pdf->Cell(20, 6, $Search['PctRetCoarse3'], 0, 1, 'C');
-$pdf->SetXY(130, 209);
-$pdf->Cell(20, 6, $Search['PctRetCoarse4'], 0, 1, 'C');
-$pdf->SetXY(130, 215);
-$pdf->Cell(20, 5, $Search['PctRetCoarse5'], 0, 1, 'C');
-$pdf->SetXY(130, 220);
-$pdf->Cell(20, 5, $Search['PctRetCoarse6'], 0, 1, 'C');
-$pdf->SetXY(130, 225);
-$pdf->Cell(20, 6, $Search['PctRetCoarse7'], 0, 1, 'C');
-$pdf->SetXY(130, 230);
-$pdf->Cell(20, 6, $Search['PctRetCoarse8'], 0, 1, 'C');
-$pdf->SetXY(130, 236);
-$pdf->Cell(20, 5, $Search['PctRetCoarse9'], 0, 1, 'C');
-$pdf->SetXY(130, 241);
-$pdf->Cell(20, 5, $Search['PctRetCoarse10'], 0, 1, 'C');
-$pdf->SetXY(130, 246);
-$pdf->Cell(20, 5, $Search['PctRetCoarse11'], 0, 1, 'C');
+// Fine Aggregate Percentages
+$pctValues = $Search['PctRetCoarse'];
+
+$pctArray = explode(',', $pctValues);
+
+foreach ($pctArray as $k => $v) {
+    if ($v === 'null') $pctArray[$k] = '';
+}
+
+$y = 194;
+for ($i = 0; $i < count($pctArray); $i++) {
+    $pdf->SetXY(130, $y);
+    $pdf->Cell(20, 5, $pctArray[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 6) ? 6 : 5;
+}
 $pdf->SetXY(130, 251);
 $pdf->Cell(20, 5, $Search['PctRetCoarseTotal'], 0, 1, 'C');
 
 // Fine Aggregate
-$pdf->SetXY(105, 262);
-$pdf->Cell(25, 5, $Search['WtRetFine1'], 0, 1, 'C');
-$pdf->SetXY(105, 267);
-$pdf->Cell(25, 5, $Search['WtRetFine2'], 0, 1, 'C');
-$pdf->SetXY(105, 272);
-$pdf->Cell(25, 6, $Search['WtRetFine3'], 0, 1, 'C');
-$pdf->SetXY(105, 277);
-$pdf->Cell(25, 6, $Search['WtRetFine4'], 0, 1, 'C');
-$pdf->SetXY(105, 282);
-$pdf->Cell(25, 6, $Search['WtRetFine5'], 0, 1, 'C');
-$pdf->SetXY(105, 288);
-$pdf->Cell(25, 5, $Search['WtRetFine6'], 0, 1, 'C');
-$pdf->SetXY(105, 294);
-$pdf->Cell(25, 6, $Search['WtRetFine7'], 0, 1, 'C');
+$fineValues = $Search['WtRetFine'];
+
+$fineArray = explode(',', $fineValues);
+
+foreach ($fineArray as $k => $v) {
+    if ($v === 'null') $fineArray[$k] = '';
+}
+
+$y = 262;
+for ($i = 0; $i < count($fineArray); $i++) {
+    $pdf->SetXY(105, $y);
+    $pdf->Cell(25, 5, $fineArray[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 5) ? 6 : 5;
+}
 $pdf->SetXY(105, 304);
 $pdf->Cell(25, 5, $Search['WtRetFineTotal'], 0, 1, 'C');
 
-$pdf->SetXY(130, 262);
-$pdf->Cell(20, 5, $Search['PctRetFine1'], 0, 1, 'C');
-$pdf->SetXY(130, 267);
-$pdf->Cell(20, 5, $Search['PctRetFine2'], 0, 1, 'C');
-$pdf->SetXY(130, 272);
-$pdf->Cell(20, 6, $Search['PctRetFine3'], 0, 1, 'C');
-$pdf->SetXY(130, 277);
-$pdf->Cell(20, 6, $Search['PctRetFine4'], 0, 1, 'C');
-$pdf->SetXY(130, 282);
-$pdf->Cell(20, 6, $Search['PctRetFine5'], 0, 1, 'C');
-$pdf->SetXY(130, 288);
-$pdf->Cell(20, 5, $Search['PctRetFine6'], 0, 1, 'C');
-$pdf->SetXY(130, 294);
-$pdf->Cell(20, 6, $Search['PctRetFine7'], 0, 1, 'C');
+$pctFineValues = $Search['PctRetFine'];
+
+$pctFineArray = explode(',', $pctFineValues);
+
+foreach ($pctFineArray as $k => $v) {
+    if ($v === 'null') $pctFineArray[$k] = '';
+}
+
+$y = 262;
+for ($i = 0; $i < count($pctFineArray); $i++) {
+    $pdf->SetXY(130, $y);
+    $pdf->Cell(20, 5, $pctFineArray[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 5) ? 6 : 5;
+}
 $pdf->SetXY(130, 304);
 $pdf->Cell(20, 5, $Search['PctRetFineTotal'], 0, 1, 'C');
 
 // Soundness Test Fine Aggregate
-$pdf->SetXY(280, 183);
-$pdf->Cell(28, 5, $Search['StarWeightRet1'], 0, 1, 'C');
-$pdf->SetXY(280, 188);
-$pdf->Cell(28, 5, $Search['StarWeightRet2'], 0, 1, 'C');
-$pdf->SetXY(280, 194);
-$pdf->Cell(28, 5, $Search['StarWeightRet3'], 0, 1, 'C');
-$pdf->SetXY(280, 199);
-$pdf->Cell(28, 6, $Search['StarWeightRet4'], 0, 1, 'C');
-$pdf->SetXY(280, 204);
-$pdf->Cell(28, 6, $Search['StarWeightRet5'], 0, 1, 'C');
-$pdf->SetXY(280, 209);
-$pdf->Cell(28, 6, $Search['StarWeightRet6'], 0, 1, 'C');
-$pdf->SetXY(280, 215);
-$pdf->Cell(28, 5, $Search['StarWeightRet7'], 0, 1, 'C');
+$starValues = $Search['StarWeightRetFine'];
 
-$pdf->SetXY(337, 183);
-$pdf->Cell(22, 5, $Search['FinalWeightRet1'], 0, 1, 'C');
-$pdf->SetXY(337, 188);
-$pdf->Cell(22, 6, $Search['FinalWeightRet2'], 0, 1, 'C');
-$pdf->SetXY(337, 194);
-$pdf->Cell(22, 6, $Search['FinalWeightRet3'], 0, 1, 'C');
-$pdf->SetXY(337, 199);
-$pdf->Cell(22, 6, $Search['FinalWeightRet4'], 0, 1, 'C');
-$pdf->SetXY(337, 204);
-$pdf->Cell(22, 6, $Search['FinalWeightRet5'], 0, 1, 'C');
-$pdf->SetXY(337, 209);
-$pdf->Cell(22, 5, $Search['FinalWeightRet6'], 0, 1, 'C');
-$pdf->SetXY(337, 215);
-$pdf->Cell(22, 5, $Search['FinalWeightRet7'], 0, 1, 'C');
+$starArray = explode(',', $starValues);
 
-$pdf->SetXY(359, 183);
-$pdf->Cell(22, 5, $Search['PercentagePassing1'], 0, 1, 'C');
-$pdf->SetXY(359, 188);
-$pdf->Cell(22, 6, $Search['PercentagePassing2'], 0, 1, 'C');
-$pdf->SetXY(359, 194);
-$pdf->Cell(22, 6, $Search['PercentagePassing3'], 0, 1, 'C');
-$pdf->SetXY(359, 199);
-$pdf->Cell(22, 6, $Search['PercentagePassing4'], 0, 1, 'C');
-$pdf->SetXY(359, 204);
-$pdf->Cell(22, 6, $Search['PercentagePassing5'], 0, 1, 'C');
-$pdf->SetXY(359, 209);
-$pdf->Cell(22, 5, $Search['PercentagePassing6'], 0, 1, 'C');
-$pdf->SetXY(359, 215);
-$pdf->Cell(22, 5, $Search['PercentagePassing7'], 0, 1, 'C');
+foreach ($starArray as $k => $v) {
+    if ($v === 'null') $starArray[$k] = '';
+}
 
-$pdf->SetXY(381, 183);
-$pdf->Cell(22, 5, $Search['WeightedLoss1'], 0, 1, 'C');
-$pdf->SetXY(381, 188);
-$pdf->Cell(22, 6, $Search['WeightedLoss2'], 0, 1, 'C');
-$pdf->SetXY(381, 194);
-$pdf->Cell(22, 6, $Search['WeightedLoss3'], 0, 1, 'C');
-$pdf->SetXY(381, 199);
-$pdf->Cell(22, 6, $Search['WeightedLoss4'], 0, 1, 'C');
-$pdf->SetXY(381, 204);
-$pdf->Cell(22, 6, $Search['WeightedLoss5'], 0, 1, 'C');
-$pdf->SetXY(381, 209);
-$pdf->Cell(22, 5, $Search['WeightedLoss6'], 0, 1, 'C');
-$pdf->SetXY(381, 215);
-$pdf->Cell(22, 5, $Search['WeightedLoss7'], 0, 1, 'C');
+$y = 183;
+for ($i = 0; $i < count($starArray); $i++) {
+    $pdf->SetXY(280, $y);
+    $pdf->Cell(28, 5, $starArray[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+}
+$pdf->SetXY(280, 220);
+$pdf->Cell(28, 5, $Search['TotalStarWeightRetFine'], 0, 1, 'C');
+
+$Values = $Search['FinalWeightRetFine'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 183;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(337, $y);
+    $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+}
+$pdf->SetXY(337, 220);
+$pdf->Cell(22, 5, $Search['TotalFinalWeightRetFine'], 0, 1, 'C');
+
+$Values = $Search['PercentagePassingFine'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 183;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(359, $y);
+    $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+}
+
+$Values = $Search['WeightedLossFine'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 183;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(381, $y);
+    $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+}
+
+$Values = $Search['StarWeightRetCoarse'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 231;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(280, $y);
+    $pdf->Cell(28, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 2 || $i == 3 || $i == 4) ? 5 : 5.2;
+}
+$pdf->SetXY(280, 283);
+$pdf->Cell(28, 5, $Search['TotalStarWeightRetCoarse'], 0, 1, 'C');
+
+$Values = $Search['FinalWeightRetCoarse'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 231;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(337, $y);
+    $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 4 || $i == 5 || $i == 6 || $i == 7) ? 5 : 9;
+}
+$pdf->SetXY(337, 283);
+$pdf->Cell(22, 5, $Search['TotalFinalWeightRetCoarse'], 0, 1, 'C');
+
+$Values = $Search['PercentagePassingCoarse'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 231;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(359, $y);
+    $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 4 || $i == 5 || $i == 6 || $i == 7) ? 5 : 9;
+}
+
+$Values = $Search['WeightedLossCoarse'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 231;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(381, $y);
+    $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 4 || $i == 5 || $i == 6 || $i == 7) ? 5 : 9;
+}
+
+// Cycle Information
+$Values = $Search['StartDate'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 315;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(225, $y);
+    $pdf->Cell(24, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3 || $i == 2) ? 4.5 : 6.5;
+}
+
+$Values = $Search['RoomTemp'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 315;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(249, $y);
+    $pdf->Cell(31, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3 || $i == 2) ? 4.5 : 6.5;
+}
+
+$Values = $Search['SolutionTemp'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 315;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(280, $y);
+    $pdf->Cell(28, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3 || $i == 2) ? 4.5 : 6.5;
+}
+
+$Values = $Search['SpecificGravity'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 315;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(308, $y);
+    $pdf->Cell(28, 5, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3 || $i == 2) ? 4.5 : 6.5;
+}
+// Particles Distress Qualitative
+$Values = $Search['SplittingNo'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(66, $y);
+    $pdf->Cell(38, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['SplittingPct'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(105, $y);
+    $pdf->Cell(25, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['CrumblingNo'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(128, $y);
+    $pdf->Cell(25, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['CrumblingPct'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(150, $y);
+    $pdf->Cell(22, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['CrackingNo'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(172, $y);
+    $pdf->Cell(52, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['CrackingPct'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(224, $y);
+    $pdf->Cell(25, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['FlakingNo'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(249, $y);
+    $pdf->Cell(31, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['FlakingPct'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(280, $y);
+    $pdf->Cell(28, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
+
+$Values = $Search['TotalParticles'];
+
+$Array = explode(',', $Values);
+
+foreach ($Array as $k => $v) {
+    if ($v === 'null') $Array[$k] = '';
+}
+
+$y = 388;
+for ($i = 0; $i < count($Array); $i++) {
+    $pdf->SetXY(308, $y);
+    $pdf->Cell(29, 10, $Array[$i], 0, 1, 'C');
+    $y += ($i == 3) ? 10 : 11;
+}
 
 
 // Comments and Observations
 $pdf->SetXY(27, 451);
 $pdf->MultiCell(195, 4, $Search['Comments'], 0, 'L');
+$pdf->SetXY(225, 451);
+$pdf->MultiCell(110, 4, $Search['FieldComment'], 0, 'L');
 
+// Test Result Passed or Failed
+$pdf->SetFont('Arial', '', 12);
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$a = $Search['TotalWeightedLossFine'];
+$b = $Search['TotalWeightedLossCoarse'];
+
+$pdf->SetXY(381, 220);
+$pdf->SetTextColor($a >= 12 ? 255 : 0, $a >= 12 ? 0 : 0, $a >= 12 ? 0 : 0);
+$pdf->Cell(22, 5, $a, 0, 1, 'C');
+$pdf->SetXY(381, 283);
+$pdf->SetTextColor($b >= 12 ? 255 : 0, $b >= 12 ? 0 : 0, $b >= 12 ? 0 : 0);
+$pdf->Cell(22, 5, $b, 0, 1, 'C');
+
+// Condición para "Acepted"
+if (
+    $a < 12 &&
+    $b < 12
+) {
+    $resultado = 'Passed';
+    $pdf->SetTextColor(0, 0, 0);
+} else {
+    $resultado = 'Failed';
+    $pdf->SetTextColor(255, 0, 0);
+}
+$pdf->SetXY(65, 327);
+$pdf->Cell(65, 6, $resultado, 0, 1, 'C');
+
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SND' . '-' . $Search['Material_Type'] . '.pdf', 'I');

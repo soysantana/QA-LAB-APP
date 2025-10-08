@@ -215,19 +215,19 @@ function calculateSoundnessCoarse() {
     const WeightedLossCoarse = [];
 
     WeightedLossCoarse[1] = (PercentagePassingCoarse1 * PctRetCoarseArray[10]) / 100;
-    WeightedLossCoarse[2] = (PercentagePassingCoarse2 * PctRetCoarseArray[9] + PctRetCoarseArray[8]) / 100;
-    WeightedLossCoarse[3] = (PercentagePassingCoarse3 * PctRetCoarseArray[6] + PctRetCoarseArray[7]) / 100;
-    WeightedLossCoarse[4] = (PercentagePassingCoarse4 * PctRetCoarseArray[4] + PctRetCoarseArray[5]) / 100;
+    WeightedLossCoarse[2] = (PercentagePassingCoarse2 * (PctRetCoarseArray[9] + PctRetCoarseArray[8])) / 100;
+    WeightedLossCoarse[3] = (PercentagePassingCoarse3 * (PctRetCoarseArray[7] + PctRetCoarseArray[6])) / 100;
+    WeightedLossCoarse[4] = (PercentagePassingCoarse4 * (PctRetCoarseArray[4] + PctRetCoarseArray[5])) / 100;
     WeightedLossCoarse[5] = (PercentagePassingCoarse5 * PctRetCoarseArray[3]) / 100;
     WeightedLossCoarse[6] = (PercentagePassingCoarse6 * PctRetCoarseArray[2]) / 100;
     WeightedLossCoarse[7] = (PercentagePassingCoarse7 * PctRetCoarseArray[1]) / 100;
 
     // Decimales por índice
     const decimalPlaces = {
-        1: 3,
-        2: 3,
-        3: 3,
-        4: 3,
+        1: 2,
+        2: 2,
+        3: 2,
+        4: 2,
         5: 5,
         6: 5,
         7: 5

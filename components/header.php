@@ -52,6 +52,8 @@
 
         $urls = [
           'AL' => '../reviews/atterberg-limit.php',
+          'AR-FF' => '../reviews/reactivity-fine.php',
+          'AR-CF' => '../reviews/reactivity-coarse.php',
           'BTS' => '../reviews/brazilian.php',
           'GS' => '../reviews/grain-size.php',
           'GS-Fine' => '../reviews/grain-size-fine-agg.php',
@@ -67,6 +69,7 @@
           'MC_Microwave' => '../reviews/moisture-microwave.php',
           'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
           'PLT' => '../reviews/point-Load.php',
+          'SND' => '../reviews/soundness.php',
           'SG' => '../reviews/specific-gravity.php',
           'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
           'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php',

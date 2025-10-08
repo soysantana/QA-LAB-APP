@@ -7,8 +7,14 @@ $Search = find_by_id('soundness', $_GET['id']);
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['update-snd'])) {
+  if (isset($_POST['update'])) {
     include('../database/soundness/update.php');
+  } elseif (isset($_POST['reviewed'])) {
+    include('../database/soundness/reviewed.php');
+  } elseif (isset($_POST['repeat'])) {
+    include('../database/soundness/repeat.php');
+  } elseif (isset($_POST['delete'])) {
+    include('../database/soundness/delete.php');
   }
 }
 ?>
@@ -676,7 +682,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <h5 class="card-title">Actions</h5>
 
               <div class="d-grid gap-2 mt-3">
-                <button type="submit" class="btn btn-success" name="update-snd">Update Essay</button>
+                <button type="submit" class="btn btn-success" name="update">Update Essay</button>
+                <a href="../pdf/SND.php?id=<?php echo $Search['id']; ?>" class="btn btn-secondary"><i class="bi bi-printer"></i></a>
+                <button type="submit" class="btn btn-danger" name="delete"><i class="bi bi-trash"></i></button>
+                <?php if (user_can_access(1)): ?>
+                  <button type="submit" class="btn btn-primary" name="repeat">Repeat</button>
+                  <button type="submit" class="btn btn-primary" name="reviewed">Reviewed</button>
+                <?php endif; ?>
               </div>
 
             </div>
