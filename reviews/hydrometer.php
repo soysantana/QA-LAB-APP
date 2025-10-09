@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         include('../database/grain-size/hydrometer/repeat.php');
     } elseif (isset($_POST['ReviewedHydrometer'])) {
         include('../database/grain-size/hydrometer/reviewed.php');
-    } elseif (isset($_POST['DeleteHydrometer'])) {
+    } elseif (isset($_POST['DeleteHY'])) {
         include('../database/grain-size/hydrometer/delete.php');
     }
 }
