@@ -750,6 +750,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/hydrometer/hy.js"></script>
+<script type="module" src="../js/hydrometer/hy.js"></script>
 <script src="../libs/graph/hydrometer.js"></script>
 <?php include_once('../components/footer.php');  ?>
