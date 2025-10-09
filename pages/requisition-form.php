@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="TSF LLagal">TSF LLagal</option>
                     <option value="TSF Naranjo">TSF Naranjo</option>
                     <option value="Capital Project">Capital Project</option>
+                    <option value="PV Project">PV Project</option>
                     <option value="MRM">MRM</option>
                     <option value="Geotecnia">Geotecnia</option>
                     <option value="Hidrogeologia">Hidrogeologia</option>

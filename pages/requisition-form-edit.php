@@ -75,6 +75,7 @@ include_once('../components/header.php');
                     <option <?php if ($Search['Client'] == 'TSF LLagal') echo 'selected'; ?>>TSF LLagal</option>
                     <option <?php if ($Search['Client'] == 'TSF Naranjo') echo 'selected'; ?>>TSF Naranjo</option>
                     <option <?php if ($Search['Client'] == 'Capital Project') echo 'selected'; ?>>Capital Project</option>
+                    <option <?php if ($Search['Client'] == 'PV Project') echo 'selected'; ?>>PV Project</option>
                     <option <?php if ($Search['Client'] == 'MRM') echo 'selected'; ?>>MRM</option>
                     <option <?php if ($Search['Client'] == 'Geotecnia') echo 'selected'; ?>>Geotecnia</option>
                     <option <?php if ($Search['Client'] == 'Hidrogeologia') echo 'selected'; ?>>Hidrogeologia</option>
