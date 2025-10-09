@@ -2,7 +2,7 @@
 $user = current_user();
 
 $Search = $_GET['id'];
-if (isset($_POST['update-snd'])) {
+if (isset($_POST['update'])) {
     $req_fields = array(
         'SampleName',
         'Standard',
@@ -169,10 +169,10 @@ if (isset($_POST['update-snd'])) {
         $result = $db->query($query);
 
         if ($result && $db->affected_rows() === 1) {
-            $session->msg('s', 'Sample has been updated');
+            $session->msg('s', 'La muestra ha sido actualizada exitosamente.');
             redirect('../reviews/soundness.php?id=' . $Search, false);
         } else {
-            $session->msg('w', 'No changes were made');
+            $session->msg('w', 'No se realizaron cambios');
             redirect('../reviews/soundness.php?id=' . $Search, false);
         }
     } else {
