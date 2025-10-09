@@ -55,6 +55,7 @@
           'AR-FF' => '../reviews/reactivity-fine.php',
           'AR-CF' => '../reviews/reactivity-coarse.php',
           'BTS' => '../reviews/brazilian.php',
+          'HY' => '../reviews/hydrometer.php',
           'GS' => '../reviews/grain-size.php',
           'GS-Fine' => '../reviews/grain-size-fine-agg.php',
           'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',

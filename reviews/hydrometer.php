@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php include_once('../includes/sample-info-form.php'); ?>
                 <!-- End Sample Information -->
 
+                <!-- Test Information -->
                 <div class="col-lg-12">
-
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Trial Information</h5>
@@ -118,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                 </div>
+                <!-- End Test Information -->
 
                 <!-- Hydrometer Analysis -->
                 <div class="col-lg-5">
@@ -506,10 +507,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                     <?php
                                     // Convertir cada cadena en un array
-                                    $hyCalibrationTemps = explode(',', $Search["HyCalibrationTemp"]);
-                                    $hyCalibrationReads = explode(',', $Search["HyCalibrationRead"]);
-                                    $hyMeasureTemps = explode(',', $Search["HyMeasureTemp"]);
-                                    $hyMeasureFluids = explode(',', $Search["HyMeasureFluid"]);
+                                    $hyCalibrationTemps = explode(',', str_replace('null', '', $Search["HyCalibrationTemp"]));
+                                    $hyCalibrationReads = explode(',', str_replace('null', '', $Search["HyCalibrationRead"]));
+                                    $hyMeasureTemps = explode(',', str_replace('null', '', $Search["HyMeasureTemp"]));
+                                    $hyMeasureFluids = explode(',', str_replace('null', '', $Search["HyMeasureFluid"]));
+
 
                                     for ($i = 1; $i <= 9; $i++) {
                                         $tempValue   = isset($hyCalibrationTemps[$i - 1]) ? trim($hyCalibrationTemps[$i - 1]) : '';
@@ -572,17 +574,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <th scope="row">passing percentage respect to the total sample</th>
                                     </tr>
                                     <?php
-                                    $readingTimeValues             = explode(',', $Search["ReadingTimeT"]);
-                                    $dateValues                    = explode(',', $Search["Date"]);
-                                    $hourValues                    = explode(',', $Search["Hour"]);
-                                    $temps                         = explode(',', $Search["Temp"]);
-                                    $hyReadings                    = explode(',', $Search["HyReading"]);
-                                    $abDependingHy                = explode(',', $Search["ABdependingHy"]);
-                                    $offsetReading                = explode(',', $Search["OffsetReading"]);
-                                    $massPercentFiner             = explode(',', $Search["MassPercentFiner"]);
-                                    $effectiveLength              = explode(',', $Search["EffectiveLength"]);
-                                    $dmm                           = explode(',', $Search["DMm"]);
-                                    $passingPerceTotalSample      = explode(',', $Search["PassingPerceTotalSample"]);
+                                    $readingTimeValues             = explode(',',  str_replace('null', '', $Search["ReadingTimeT"]));
+                                    $dateValues                    = explode(',',  str_replace('null', '', $Search["Date"]));
+                                    $hourValues                    = explode(',',  str_replace('null', '', $Search["Hour"]));
+                                    $temps                         = explode(',',  str_replace('null', '', $Search["Temp"]));
+                                    $hyReadings                    = explode(',',  str_replace('null', '', $Search["HyReading"]));
+                                    $abDependingHy                 = explode(',',  str_replace('null', '', $Search["ABdependingHy"]));
+                                    $offsetReading                 = explode(',',  str_replace('null', '', $Search["OffsetReading"]));
+                                    $massPercentFiner              = explode(',',  str_replace('null', '', $Search["MassPercentFiner"]));
+                                    $effectiveLength               = explode(',',  str_replace('null', '', $Search["EffectiveLength"]));
+                                    $dmm                           = explode(',',  str_replace('null', '', $Search["DMm"]));
+                                    $passingPerceTotalSample       = explode(',',  str_replace('null', '', $Search["PassingPerceTotalSample"]));
 
                                     for ($i = 1; $i <= 9; $i++) {
                                         $readingTimeValue       = isset($readingTimeValues[$i - 1]) ? trim($readingTimeValues[$i - 1]) : '';
@@ -625,14 +627,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <!-- end Information Calculation Hydrometer Table -->
 
+                <!-- Actions Buttons -->
                 <div class="col-lg-3">
-
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Actions</h5>
                             <!-- Actions Buttons -->
                             <div class="d-grid gap-2 mt-3">
                                 <button type="submit" class="btn btn-success" name="UpdateHydrometer">Update Hydrometer</button>
+
+                                <div class="btn-group dropup" role="group">
+                                    <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" data-exportar="HY-Naranjo">Naranjo</a></li>
+                                        <li><a class="dropdown-item" data-exportar="SP-Build">Contruccion</a></li>
+                                    </ul>
+                                </div>
+
                                 <button type="submit" class="btn btn-danger" name="DeleteHY"><i class="bi bi-trash"></i></button>
                                 <?php if (user_can_access(1)): ?>
                                     <button type="submit" class="btn btn-primary" name="RepeatHydrometer">Repeat</button>
@@ -642,8 +655,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         </div>
                     </div>
-
                 </div>
+                <!-- End Actions Buttons -->
 
             </form>
 
@@ -652,6 +665,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/hydrometer/hy.js"></script>
+<script type="module" src="../js/hydrometer/hy.js"></script>
 <script src="../libs/graph/hydrometer.js"></script>
 <?php include_once('../components/footer.php');  ?>

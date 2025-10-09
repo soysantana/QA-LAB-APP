@@ -3,7 +3,7 @@
  * */
 
 echarts.init(document.querySelector("#HydrometerGraph")).setOption({
-    xAxis: {
+  xAxis: {
     type: 'log',
     inverse: true,
     min: 0.001,
@@ -15,7 +15,8 @@ echarts.init(document.querySelector("#HydrometerGraph")).setOption({
   yAxis: {
     type: 'value',
     min: 0,
-    max: 100
+    max: 100,
+    interval: 10
   },
   series: [
     {
@@ -56,7 +57,7 @@ echarts.init(document.querySelector("#HydrometerGraph")).setOption({
         [document.getElementById("DMm9").value, document.getElementById("PassingPerceTotalSample9").value]
       ]
     },
-        {
+    {
       data: [
         [300, 0],
         [300, 100]
@@ -136,7 +137,7 @@ echarts.init(document.querySelector("#HydrometerGraph")).setOption({
       smooth: true
     }
   ],
-   graphic: [
+  graphic: [
     {
       type: 'text',
       left: '17%',

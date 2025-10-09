@@ -104,97 +104,39 @@ if (isset($_POST['UpdateHydrometer'])) {
         $TotalCumRet = $db->escape($_POST['TotalCumRet']);
         $TotalPass = $db->escape($_POST['TotalPass']);
 
-        $inputValues = array();
+        function buildCSV($name, $total, $db)
+        {
+            $data = [];
+            for ($i = 1; $i <= $total; $i++) {
+                $val = trim($_POST[$name . $i]);
+                $data[] = ($val === '') ? 'null' : $db->escape($val);
+            }
+            return implode(',', $data);
+        }
 
-        $combinedHyCalibrationTemp = "";
-        $combinedHyCalibrationRead = "";
-        $combinedHyMeasureTemp = "";
-        $combinedHyMeasureFluid = "";
-        $combinedDates = "";
-        $combinedHour = "";
-        $combinedReadingTimeT = "";
-        $combinedTemp = "";
-        $combinedHyReading = "";
-        $combinedABdependingHy = "";
-        $combinedOffsetReading = "";
-        $combinedMassPercentFiner = "";
-        $combinedEffectiveLength = "";
-        $combinedDMm = "";
-        $combinedPassingPerceTotalSample = "";
+        $combinedHyCalibrationTemp = buildCSV('HyCalibrationTemp', 9, $db);
+        $combinedHyCalibrationRead = buildCSV('HyCalibrationRead', 9, $db);
+        $combinedHyMeasureTemp = buildCSV('HyMeasureTemp', 9, $db);
+        $combinedHyMeasureFluid = buildCSV('HyMeasureFluid', 9, $db);
+        $combinedDates = buildCSV('Date', 9, $db);
+        $combinedHour = buildCSV('Hour', 9, $db);
+        $combinedReadingTimeT = buildCSV('ReadingTimeT', 9, $db);
+        $combinedTemp = buildCSV('Temp', 9, $db);
+        $combinedHyReading = buildCSV('HyReading', 9, $db);
+        $combinedABdependingHy = buildCSV('ABdependingHy', 9, $db);
+        $combinedOffsetReading = buildCSV('OffsetReading', 9, $db);
+        $combinedMassPercentFiner = buildCSV('MassPercentFiner', 9, $db);
+        $combinedEffectiveLength = buildCSV('EffectiveLength', 9, $db);
+        $combinedDMm = buildCSV('DMm', 9, $db);
+        $combinedPassingPerceTotalSample = buildCSV('PassingPerceTotalSample', 9, $db);
 
         // Grain Size
+        $inputValues = array();
         for ($i = 1; $i <= 17; $i++) {
             $inputValues["WtRet" . $i] = $db->escape($_POST["WtRet$i"]);
             $inputValues["Ret" . $i]   = $db->escape($_POST["Ret$i"]);
             $inputValues["CumRet" . $i] = $db->escape($_POST["CumRet$i"]);
             $inputValues["Pass" . $i]  = $db->escape($_POST["Pass$i"]);
-        }
-
-
-        // Hydrometer Calibration & Analysis
-        for ($i = 1; $i <= 9; $i++) {
-            ${"HyCalibrationTemp" . $i} = $db->escape($_POST["HyCalibrationTemp$i"]);
-            ${"HyCalibrationRead" . $i} = $db->escape($_POST["HyCalibrationRead$i"]);
-            ${"HyMeasureTemp" . $i} = $db->escape($_POST["HyMeasureTemp$i"]);
-            ${"HyMeasureFluid" . $i} = $db->escape($_POST["HyMeasureFluid$i"]);
-            ${"Date" . $i} = $db->escape($_POST["Date$i"]);
-            ${"Hour" . $i} = $db->escape($_POST["Hour$i"]);
-            ${"ReadingTimeT" . $i} = $db->escape($_POST["ReadingTimeT$i"]);
-            ${"Temp" . $i} = $db->escape($_POST["Temp$i"]);
-            ${"HyReading" . $i} = $db->escape($_POST["HyReading$i"]);
-            ${"ABdependingHy" . $i} = $db->escape($_POST["ABdependingHy$i"]);
-            ${"OffsetReading" . $i} = $db->escape($_POST["OffsetReading$i"]);
-            ${"MassPercentFiner" . $i} = $db->escape($_POST["MassPercentFiner$i"]);
-            ${"EffectiveLength" . $i} = $db->escape($_POST["EffectiveLength$i"]);
-            ${"DMm" . $i} = $db->escape($_POST["DMm$i"]);
-            ${"PassingPerceTotalSample" . $i} = $db->escape($_POST["PassingPerceTotalSample$i"]);
-
-            // Concatenar si el campo tiene valor
-            if (!empty(${"HyCalibrationTemp" . $i})) {
-                $combinedHyCalibrationTemp .= ($combinedHyCalibrationTemp ? ", " : "") . ${"HyCalibrationTemp" . $i};
-            }
-            if (!empty(${"HyCalibrationRead" . $i})) {
-                $combinedHyCalibrationRead .= ($combinedHyCalibrationRead ? ", " : "") . ${"HyCalibrationRead" . $i};
-            }
-            if (!empty(${"HyMeasureTemp" . $i})) {
-                $combinedHyMeasureTemp .= ($combinedHyMeasureTemp ? ", " : "") . ${"HyMeasureTemp" . $i};
-            }
-            if (!empty(${"HyMeasureFluid" . $i})) {
-                $combinedHyMeasureFluid .= ($combinedHyMeasureFluid ? ", " : "") . ${"HyMeasureFluid" . $i};
-            }
-            if (!empty(${"Date" . $i})) {
-                $combinedDates .= ($combinedDates ? ", " : "") . ${"Date" . $i};
-            }
-            if (!empty(${"Hour" . $i})) {
-                $combinedHour .= ($combinedHour ? ", " : "") . ${"Hour" . $i};
-            }
-            if (!empty(${"ReadingTimeT" . $i})) {
-                $combinedReadingTimeT .= ($combinedReadingTimeT ? ", " : "") . ${"ReadingTimeT" . $i};
-            }
-            if (!empty(${"Temp" . $i})) {
-                $combinedTemp .= ($combinedTemp ? ", " : "") . ${"Temp" . $i};
-            }
-            if (!empty(${"HyReading" . $i})) {
-                $combinedHyReading .= ($combinedHyReading ? ", " : "") . ${"HyReading" . $i};
-            }
-            if (!empty(${"ABdependingHy" . $i})) {
-                $combinedABdependingHy .= ($combinedABdependingHy ? ", " : "") . ${"ABdependingHy" . $i};
-            }
-            if (!empty(${"OffsetReading" . $i})) {
-                $combinedOffsetReading .= ($combinedOffsetReading ? ", " : "") . ${"OffsetReading" . $i};
-            }
-            if (!empty(${"MassPercentFiner" . $i})) {
-                $combinedMassPercentFiner .= ($combinedMassPercentFiner ? ", " : "") . ${"MassPercentFiner" . $i};
-            }
-            if (!empty(${"EffectiveLength" . $i})) {
-                $combinedEffectiveLength .= ($combinedEffectiveLength ? ", " : "") . ${"EffectiveLength" . $i};
-            }
-            if (!empty(${"DMm" . $i})) {
-                $combinedDMm .= ($combinedDMm ? ", " : "") . ${"DMm" . $i};
-            }
-            if (!empty(${"PassingPerceTotalSample" . $i})) {
-                $combinedPassingPerceTotalSample .= ($combinedPassingPerceTotalSample ? ", " : "") . ${"PassingPerceTotalSample" . $i};
-            }
         }
 
         $query = "UPDATE hydrometer SET ";
