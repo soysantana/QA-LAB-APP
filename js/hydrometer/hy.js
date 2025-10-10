@@ -82,7 +82,7 @@ function GS() {
     const PanRet = (PanWtRen / WtDrySoil) * 100;
     const TotalRet = (TotalWtRet / WtDrySoil) * 100;
     const TotalCumRet = cumRetArray[17] + TotalRet;
-    const TotalPass = 100 - TotalCumRet;
+    const TotalPass = Math.abs(100 - TotalCumRet);
 
     setValue("TotalWtRet", TotalWtRet === 0 ? '' : TotalWtRet.toFixed(2));
     setValue("PanRet", isNaN(PanRet) ? '' : PanRet.toFixed(2));
