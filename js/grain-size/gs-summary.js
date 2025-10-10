@@ -93,8 +93,9 @@ function calcularParametrosGranulometricos(datos) {
   const clasificacion = clasificarSuelo(gravel, sand, fines, Cu, Cc);
 
   // Asignar los valores a los inputs
-  document.getElementById("ClassificationUSCS1").value = clasificacion.description;
-  document.getElementById("ClassificationUSCS2").value = clasificacion.code;
+  document.getElementById("ClassificationUSCS1")?.setAttribute("value", clasificacion.description);
+  document.getElementById("ClassificationUSCS2")?.setAttribute("value", clasificacion.code);
+
 
   document.getElementById("CoarserGravel").value = !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
   document.getElementById("Gravel").value = !isNaN(gravel) ? gravel.toFixed(2) : "";

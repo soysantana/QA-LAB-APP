@@ -74,7 +74,8 @@ if (isset($_POST['GSFull'])) {
         $D85 = $db->escape($_POST['D85']);
         $Cc = $db->escape($_POST['Cc']);
         $Cu = $db->escape($_POST['Cu']);
-        $ClassificationUSCS1 = $db->escape($_POST['classification']);
+        $Classification1 = $db->escape($_POST['classificationCombined']);
+        $Classification2 = $db->escape($_POST['ClassificationUSCS2']);
 
         $combinedScreen40 = "";
         $combinedScreen30 = "";
@@ -381,6 +382,7 @@ if (isset($_POST['GSFull'])) {
             CumRet,
             Pass,
             Specs,
+            specs_type,
             Coarser_than_Gravel,
             Gravel,
             Sand,
@@ -395,7 +397,8 @@ if (isset($_POST['GSFull'])) {
             MoistureContentAvg,
             TotalDryWtSampleLess3g,
             ConvertionFactor,
-            ClassificationUSCS1";
+            Classification1,
+            Classification2";
 
         $sql .= ") VALUES (
             '$id',
@@ -476,6 +479,7 @@ if (isset($_POST['GSFull'])) {
             '$combinedCumRet',
             '$combinedPass',
             '$combinedSpecs',
+            '$Material',
             '$CoarserGravel',
             '$Gravel',
             '$Sand',
@@ -490,7 +494,8 @@ if (isset($_POST['GSFull'])) {
             '$MoistureContentAvg',
             '$TotalDryWtSampleLess3g',
             '$ConvertionFactor',
-            '$ClassificationUSCS1'";
+            '$Classification1',
+            '$Classification2'";
 
         $sql .= ")";
 

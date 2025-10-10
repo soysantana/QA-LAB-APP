@@ -84,12 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="materialSelect" class="form-label">Material</label>
                   <select id="materialSelect" class="form-select" name="materialSelect">
                     <option value="">-- Selecciona un material --</option>
-                    <option <?php if ($Search['Material_Type'] == 'TRF') echo 'selected'; ?>>TRF</option>
-                    <option <?php if ($Search['Material_Type'] == 'UFF') echo 'selected'; ?>>UFF</option>
-                    <option <?php if ($Search['Material_Type'] == 'FRF') echo 'selected'; ?>>FRF</option>
-                    <option <?php if ($Search['Material_Type'] == 'IRF') echo 'selected'; ?>>IRF</option>
-                    <option <?php if ($Search['Material_Type'] == 'RF') echo 'selected'; ?>>RF</option>
-                    <option <?php if ($Search['Material_Type'] == 'BF') echo 'selected'; ?>>BF</option>
+                    <option <?php if ($Search['specs_type'] == 'TRF') echo 'selected'; ?>>TRF</option>
+                    <option <?php if ($Search['specs_type'] == 'UFF') echo 'selected'; ?>>UFF</option>
+                    <option <?php if ($Search['specs_type'] == 'FRF') echo 'selected'; ?>>FRF</option>
+                    <option <?php if ($Search['specs_type'] == 'IRF') echo 'selected'; ?>>IRF</option>
+                    <option <?php if ($Search['specs_type'] == 'RF') echo 'selected'; ?>>RF</option>
+                    <option <?php if ($Search['specs_type'] == 'BF') echo 'selected'; ?>>BF</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -604,8 +604,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <!-- end Grain Size Graph For the GrainSizeRockGraph -->
 
               <h5 class="card-title">Classification as per ASTM D2487:</h5>
-              <div><input type="text" class="form-control" name="classification" id="classification" value="<?php echo ($Search['ClassificationUSCS1']); ?>" readonly tabindex="-1"></div>
-
+              <div>
+                <input type="hidden" name="ClassificationUSCS1" id="ClassificationUSCS1">
+                <input type="text" class="form-control-plaintext" name="classificationCombined" id="classificationCombined" value="<?php echo ($Search['Classification1']); ?>" readonly tabindex="-1">
+                <input type="text" class="form-control-plaintext" name="ClassificationUSCS2" id="ClassificationUSCS2" value="<?php echo ($Search['Classification2']); ?>" readonly tabindex="-1">
+              </div>
             </div>
 
           </div>
@@ -704,10 +707,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" onclick="enviarImagenAlServidor()">Contruccion</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-<?php echo remove_junk(($Search['Material_Type'])); ?>-Build">Contruccion</a></li>
                   </ul>
                 </div>
-                <button type="submit" class="btn btn-danger" name="DeleteGSFul"><i class="bi bi-trash"></i></button>
+                <button type="submit" class="btn btn-danger" name="DeleteGSFull"><i class="bi bi-trash"></i></button>
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="RepeatGSFull">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="ReviewedGSFull">Reviewed</button>
@@ -729,6 +732,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 <script src="../js/grain-size/specs.js"></script>
-<script src="../js/grain-size/gs-full.js"></script>
-<script src="../libs/graph/Grain-Size-Full.js"></script>
+<script type="module" src="../js/grain-size/gs-full.js"></script>
 <?php include_once('../components/footer.php');  ?>

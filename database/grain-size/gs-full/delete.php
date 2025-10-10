@@ -1,7 +1,7 @@
 <?php
 require_once('../config/load.php');
 
-if (isset($_POST['DeleteGSFul']) && isset($_GET['id'])) {
+if (isset($_POST['DeleteGSFull']) && isset($_GET['id'])) {
     $delete = $_GET['id'];
 
     $ID = delete_by_id('grain_size_full', $delete);
@@ -14,4 +14,3 @@ if (isset($_POST['DeleteGSFul']) && isset($_GET['id'])) {
 
     redirect('../pages/essay.php');
 }
-?>

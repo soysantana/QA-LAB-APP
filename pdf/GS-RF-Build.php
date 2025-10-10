@@ -13,7 +13,7 @@ class PDF extends Fpdi
 
 // Leer JSON recibido
 $input = json_decode(file_get_contents('php://input'), true);
-$base64Image = $input['imagen'] ?? null;
+$Chart = $input['GrainSizeRockGraph'] ?? null;
 
 $Search = find_by_id('grain_size_full', $_GET['id']);
 
@@ -79,24 +79,25 @@ $pdf->SetXY(320, 102);
 $pdf->Cell(30, 6, $Search['East'], 0, 1, 'C');
 
 // Testing Information
+$pdf->SetFont('Arial', '', 10);
 $pdf->SetXY(122, 121);
-$pdf->Cell(37, 8, number_format($Search['TotalPesoSecoSucio'], 1), 0, 1, 'C');
+$pdf->Cell(37, 8, $Search['TotalPesoSecoSucio'], 0, 1, 'R');
 $pdf->SetXY(122, 129);
-$pdf->Cell(37, 7, $Search['More3p'], 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['More3p'], 0, 1, 'R');
 $pdf->SetXY(122, 137);
-$pdf->Cell(37, 7, $Search['Lees3P'], 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['Lees3P'], 0, 1, 'R');
 $pdf->SetXY(122, 144);
-$pdf->Cell(37, 7, $Search['MoistureContentAvg'] . '%', 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['MoistureContentAvg'] . '%', 0, 1, 'R');
 $pdf->SetXY(122, 151);
-$pdf->Cell(37, 8, $Search['TotalDryWtSampleLess3g'], 0, 1, 'C');
+$pdf->Cell(37, 8, $Search['TotalDryWtSampleLess3g'], 0, 1, 'R');
 $pdf->SetXY(122, 159);
-$pdf->Cell(37, 7, $Search['TotalPesoLavado'], 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['TotalPesoLavado'], 0, 1, 'R');
 $pdf->SetXY(122, 167);
-$pdf->Cell(37, 7, $Search['PerdidaPorLavado'], 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['PerdidaPorLavado'], 0, 1, 'R');
 $pdf->SetXY(122, 174);
-$pdf->Cell(37, 7, $Search['ConvertionFactor'], 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['ConvertionFactor'], 0, 1, 'R');
 $pdf->SetXY(122, 181);
-$pdf->Cell(37, 7, $Search['PesoSecoSucio'], 0, 1, 'C');
+$pdf->Cell(37, 7, $Search['PesoSecoSucio'], 0, 1, 'R');
 
 // Summary Parameter
 $pdf->SetXY(122, 205);
@@ -121,12 +122,6 @@ $pdf->SetXY(122, 263);
 $pdf->Cell(37, 8, $Search['Cc'], 0, 1, 'C');
 $pdf->SetXY(122, 270);
 $pdf->Cell(37, 6, $Search['Cu'], 0, 1, 'C');
-
-// Classification as per ASTM-D2487
-$pdf->SetXY(30, 286);
-$pdf->Cell(92, 7, $Search['ClassificationUSCS1'], 0, 1, 'C');
-$pdf->SetXY(30, 293);
-$pdf->Cell(92, 6, '', 0, 1, 'C');
 
 // Grain Size Distribution
 $wtRetArray = explode(',', $Search['WtRet']);
@@ -210,24 +205,28 @@ $pdf->Cell(24, 7, $Search['TotalCumRet'], 0, 1, 'C');
 $pdf->SetXY(321, 270);
 $pdf->Cell(20, 7, $Search['TotalPass'], 0, 1, 'C');
 
+// Classification as per ASTM-D2487
+$pdf->SetXY(30, 284);
+$pdf->MultiCell(92, 6, $Search['Classification1'] . "\n" . $Search['Classification2'], 0, 'C');
+
+// Comments and Observation
 $pdf->SetXY(30, 385);
 $pdf->MultiCell(105, 4, utf8_decode($Search['Comments']), 0, 'L');
 $pdf->SetXY(160, 388);
 $pdf->MultiCell(105, 4, utf8_decode($Search['FieldComment']), 0, 'L');
 
-
-// Insertar la imagen base64 en el PDF
-if ($base64Image) {
-    $base64String = preg_replace('#^data:image/\w+;base64,#i', '', $base64Image);
-    $imageData = base64_decode($base64String);
-
-    $tmpFile = tempnam(sys_get_temp_dir(), 'img') . '.png';
-    file_put_contents($tmpFile, $imageData);
-
-    // Ajusta X, Y, ancho, alto según tu layout
-    $pdf->Image($tmpFile, 200, 280, 150, 95);
-
-    unlink($tmpFile);
+// Function to insert base64 image into PDF
+function insertarImagenBase64($pdf, $base64Str, $x, $y, $w, $h)
+{
+    if ($base64Str) {
+        $base64Str = preg_replace('#^data:image/\w+;base64,#i', '', $base64Str);
+        $imageData = base64_decode($base64Str);
+        $tmpFile = tempnam(sys_get_temp_dir(), 'img') . '.png';
+        file_put_contents($tmpFile, $imageData);
+        $pdf->Image($tmpFile, $x, $y, $w, $h);
+        unlink($tmpFile);
+    }
 }
+insertarImagenBase64($pdf, $Chart, 190, 278, 0, 100); // ajusta X, Y, ancho, alto
 
 $pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');

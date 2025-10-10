@@ -73,7 +73,8 @@ if (isset($_POST['UpdateGSFull'])) {
         $D85 = $db->escape($_POST['D85']);
         $Cc = $db->escape($_POST['Cc']);
         $Cu = $db->escape($_POST['Cu']);
-        $ClassificationUSCS1 = $db->escape($_POST['classification']);
+        $Classification1 = $db->escape($_POST['classificationCombined']);
+        $Classification2 = $db->escape($_POST['ClassificationUSCS2']);
 
         $combinedScreen40 = "";
         $combinedScreen30 = "";
@@ -329,7 +330,8 @@ if (isset($_POST['UpdateGSFull'])) {
         $query .= "D85 = '{$D85}', ";
         $query .= "Cc = '{$Cc}', ";
         $query .= "Cu = '{$Cu}', ";
-        $query .= "ClassificationUSCS1 = '{$ClassificationUSCS1}', ";
+        $query .= "Classification1 = '{$Classification1}', ";
+        $query .= "Classification2 = '{$Classification2}', ";
         $query .= "Screen40 = '{$combinedScreen40}', ";
         $query .= "Screen30 = '{$combinedScreen30}', ";
         $query .= "Screen20 = '{$combinedScreen20}', ";
@@ -365,10 +367,10 @@ if (isset($_POST['UpdateGSFull'])) {
         $query .= "CumRet = '{$combinedCumRet}', ";
         $query .= "Pass = '{$combinedPass}', ";
         $query .= "Specs = '{$combinedSpecs}', ";
+        $query .= "specs_type = '{$Material}', ";
         $query .= "MoistureContentAvg = '{$MoistureContentAvg}', ";
         $query .= "TotalDryWtSampleLess3g = '{$TotalDryWtSampleLess3g}', ";
-        $query .= "ConvertionFactor = '{$ConvertionFactor}', ";
-        $query .= "Graph = '{$Graph64}' ";
+        $query .= "ConvertionFactor = '{$ConvertionFactor}'";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);

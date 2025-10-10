@@ -460,7 +460,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <!-- end Grain Size Graph For the GrainSizeRockGraph -->
 
               <h5 class="card-title">Classification as per ASTM D2487:</h5>
-              <div><input type="text" class="form-control" name="classification" id="classification" readonly tabindex="-1"></div>
+              <div>
+                <input type="hidden" name="ClassificationUSCS1" id="ClassificationUSCS1">
+                <input type="text" class="form-control-plaintext" name="classificationCombined" id="classificationCombined" readonly tabindex="-1">
+                <input type="text" class="form-control-plaintext" name="ClassificationUSCS2" id="ClassificationUSCS2" readonly tabindex="-1">
+              </div>
 
             </div>
 
@@ -566,6 +570,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 <script src="../js/grain-size/specs.js"></script>
-<script src="../js/grain-size/gs-full.js"></script>
-<script src="../libs/graph/Grain-Size-Full.js"></script>
+<script type="module" src="../js/grain-size/gs-full.js"></script>
 <?php include_once('../components/footer.php');  ?>
