@@ -29,15 +29,15 @@ $POSIBLES_BANDEJAS = [
 $TABLES = [
   ['name'=>'atterberg_limit',                        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'hydrometer',                             'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
-  ['name'=>'moisture_content',                       'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'moisture_oven',                       'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'grain_size_general',                     'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'grain_size_coarse',                      'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'grain_size_fine',                        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'grain_size_lpf',                         'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'grain_size_upstream_transition_fill',    'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
   ['name'=>'standard_proctor',                       'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
-  ['name'=>'specific_gravity_fine_aggregate',        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
-  ['name'=>'specific_gravity_coarse_aggregates',     'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'specific_gravity_fine',        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'specific_gravity_coarse',     'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
 ];
 // EJEMPLO si sabes que una tabla sí tiene discarded:
 // ['name'=>'moisture_content', 'date_col'=>'Test_Start_Date', 'discard_col'=>'discarded', 'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
