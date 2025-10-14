@@ -5,24 +5,63 @@ $class_home = " ";
 require_once "../config/load.php";
 if (!$session->isUserLoggedIn(true)) { redirect("/index.php", false); }
 
-// ------------------------------
-// Helpers
-// ------------------------------
+// ==============================
+// Helpers básicos
+// ==============================
 function N($v){ return strtoupper(trim((string)$v)); }
 function K($sid,$num,$tt){ return N($sid).'|'.N($num).'|'.N($tt); }
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
-// Detecta una columna de fecha viable en una tabla
-function pick_date_col(string $table, array $candidates = ['Start_Date','Delivery_Date','Register_Date','Registed_Date','Created_At','CreatedAt','Date','Updated_At']){
+// Detecta una columna de fecha válida en una tabla
+function pick_date_col(string $table, array $candidates = [
+  'Start_Date','Delivery_Date','Register_Date','Registed_Date',
+  'Created_At','CreatedAt','Date','Updated_At'
+]){
   global $db;
   foreach ($candidates as $col) {
-    $res = $db->query("SHOW COLUMNS FROM `{$table}` LIKE '{$col}'");
+    $res = $db->query("SHOW COLUMNS FROM `{$table}` LIKE '{$db->escape($col)}'");
     if ($res && $res->num_rows>0) return $col;
   }
   return null;
 }
 
-// Badge/labels
+// ¿Existe tabla/col?
+function table_exists(string $table): bool {
+  global $db;
+  $res = $db->query("SHOW TABLES LIKE '{$db->escape($table)}'");
+  return $res && $res->num_rows > 0;
+}
+function col_exists(string $table, string $col): bool {
+  global $db;
+  $res = $db->query("SHOW COLUMNS FROM `{$table}` LIKE '{$db->escape($col)}'");
+  return $res && $res->num_rows > 0;
+}
+
+// Trae un trío (t34,t38,tNo4) de una tabla si existen columnas
+function try_fetch_triplet(string $table, array $map, string $sid, string $num): ?array {
+  global $db;
+  if (!table_exists($table)) return null;
+  foreach ($map as $alias=>$col) {
+    if (!col_exists($table, $col)) return null;
+  }
+  $sidEsc = $db->escape($sid);
+  $numEsc = $db->escape($num);
+  $sql = sprintf(
+    "SELECT `%s` AS t34, `%s` AS t38, `%s` AS tNo4 FROM `%s` WHERE Sample_ID='%s' AND Sample_Number='%s' LIMIT 1",
+    $map['t34'], $map['t38'], $map['tNo4'], $table, $sidEsc, $numEsc
+  );
+  $rows = find_by_sql($sql);
+  if (!$rows || empty($rows)) return null;
+  $r = $rows[0];
+  return [
+    'src'  => $table,
+    't34'  => (float)($r['t34']  ?? 0),
+    't38'  => (float)($r['t38']  ?? 0),
+    'tNo4' => (float)($r['tNo4'] ?? 0),
+  ];
+}
+
+// Badges/labels
 function status_badge($s){
   switch ($s) {
     case 'Preparation': return 'primary';
@@ -44,21 +83,21 @@ function status_label($s){
   }
 }
 
-// ------------------------------
+// ==============================
 // Parámetros de UI (GET)
-// ------------------------------
-$range = isset($_GET['r']) ? (int)$_GET['r'] : 14;      // días para ventana “Proceso”
-$limit = isset($_GET['l']) ? (int)$_GET['l'] : 200;     // máximo filas a mostrar
+// ==============================
+$range = isset($_GET['r']) ? (int)$_GET['r'] : 14;      // días para “Proceso”
+$limit = isset($_GET['l']) ? (int)$_GET['l'] : 200;     // máximo filas
 $range = ($range>=1 && $range<=60)? $range : 14;
 $limit = ($limit>=50 && $limit<=1000)? $limit : 200;
 
-$fromDate   = date('Y-m-d', strtotime("-{$range} days"));
-$from7      = date('Y-m-d', strtotime('-7 days'));
-$from31     = date('Y-m-d', strtotime('-31 days'));
+$fromDate = date('Y-m-d', strtotime("-{$range} days"));
+$from7    = date('Y-m-d', strtotime('-7 days'));
+$from31   = date('Y-m-d', strtotime('-31 days'));
 
-// ------------------------------
+// ==============================
 // 1) Requisiciones recientes (limitadas)
-// ------------------------------
+// ==============================
 $Requisitions = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type, Registed_Date
   FROM lab_test_requisition_form
@@ -67,18 +106,15 @@ $Requisitions = find_by_sql("
   LIMIT {$limit}
 ");
 
-// ------------------------------
-// 2) Cargar ESTADOS una sola vez (con filtro por fecha auto-detectado)
-//    Creamos un “set” (mapa) por estado: Preparation / Realization / Delivery / Review / Repeat
-// ------------------------------
+// ==============================
+// 2) Sets de ESTADO (por tabla, con filtro por fecha detectado)
+// ==============================
 $sets = ['Preparation'=>[], 'Realization'=>[], 'Delivery'=>[], 'Review'=>[], 'Repeat'=>[]];
 
 // Preparation
 if ($col = pick_date_col('test_preparation')) {
   $rows = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation WHERE `{$col}` >= '{$fromDate}'");
-} else {
-  $rows = []; // si no hay fecha, evitamos cargar todo
-}
+} else { $rows = []; }
 foreach ($rows as $r){ $sets['Preparation'][ K($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true; }
 
 // Realization
@@ -93,7 +129,7 @@ if ($col = pick_date_col('test_delivery')) {
 } else { $rows = []; }
 foreach ($rows as $r){ $sets['Delivery'][ K($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true; }
 
-// Review (excluir los que ya están en reviewed)
+// Review excluyendo reviewed
 if ($col = pick_date_col('test_review')) {
   $rows = find_by_sql("
     SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
@@ -113,16 +149,15 @@ if ($col = pick_date_col('test_review')) {
 }
 foreach ($rows as $r){ $sets['Review'][ K($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true; }
 
-// Repeat (para sección específica usamos 7 días, para el mapa usamos ventana general)
+// Repeat (para mapa usamos ventana general)
 if ($col = pick_date_col('test_repeat')) {
   $rows = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_repeat WHERE `{$col}` >= '{$fromDate}'");
 } else { $rows = []; }
 foreach ($rows as $r){ $sets['Repeat'][ K($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true; }
 
-// ------------------------------
-// 3) Construir tabla “Proceso de muestreo” + contadores
-//    Prioridad: Repeat > Review > Delivery > Realization > Preparation
-// ------------------------------
+// ==============================
+// 3) Proceso de muestreo + contadores
+// ==============================
 $statusCounts = ['Preparation'=>0,'Realization'=>0,'Delivery'=>0,'Review'=>0,'Repeat'=>0];
 $procesoRows  = [];
 
@@ -131,7 +166,7 @@ foreach ($Requisitions as $req) {
   $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
   $types = array_filter(array_map('trim', explode(',', $req['Test_Type'])));
   foreach ($types as $ttRaw) {
-    $tt = N($ttRaw);
+    $tt  = N($ttRaw);
     $key = K($sid,$num,$tt);
 
     $st = null;
@@ -143,16 +178,14 @@ foreach ($Requisitions as $req) {
 
     if ($st) {
       $statusCounts[$st]++;
-      $procesoRows[] = [
-        'sid'=>$sid,'num'=>$num,'tt'=>$tt,'st'=>$st
-      ];
+      $procesoRows[] = ['sid'=>$sid,'num'=>$num,'tt'=>$tt,'st'=>$st];
     }
   }
 }
 
-// ------------------------------
+// ==============================
 // 4) Ensayos en Repetición (últimos 7 días)
-// ------------------------------
+// ==============================
 $repeatDateCol = pick_date_col('test_repeat') ?: 'Start_Date';
 $repeatRows = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type, `{$repeatDateCol}` AS SD, Send_By
@@ -161,10 +194,9 @@ $repeatRows = find_by_sql("
   ORDER BY `{$repeatDateCol}` DESC
 ");
 
-// ------------------------------
-// 5) Método Proctor (SP) – últimos 31 días, solo pendientes (no en Preparation/Review)
-//    Busca 1 registro de granulometría en las tablas conocidas (UNION ALL LIMIT 1)
-// ------------------------------
+// ==============================
+// 5) Método Proctor (SP) – robusto sin UNION
+// ==============================
 $ReqSP = find_by_sql("
   SELECT Sample_ID, Sample_Number, Sample_Date, Test_Type
   FROM lab_test_requisition_form
@@ -175,58 +207,57 @@ $spRows = [];
 foreach ($ReqSP as $req) {
   if (empty($req['Test_Type'])) continue;
   $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
-  $types = array_filter(array_map('trim', explode(',', $req['Test_Type'])));
-  foreach ($types as $tt) {
-    if (N($tt) !== 'SP') continue;
-    $key = K($sid,$num,'SP');
-    if (isset($sets['Preparation'][$key]) || isset($sets['Review'][$key])) continue; // solo pendientes
 
-    // Escapar para SQL
-    $sidEsc  = $db->escape($sid);
-    $numEsc  = $db->escape($num);
+  // ¿Incluye SP?
+  $hasSP = false;
+  foreach (array_filter(array_map('trim', explode(',', $req['Test_Type']))) as $tt) {
+    if (N($tt)==='SP'){ $hasSP=true; break; }
+  }
+  if (!$hasSP) continue;
 
-    $gs = find_by_sql("
-      SELECT 'general'  AS src, CumRet11 AS t34, CumRet13 AS t38, CumRet14 AS tNo4
-        FROM grain_size_general WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' LIMIT 1
-      UNION ALL
-      SELECT 'coarse',  CumRet9,  CumRet10, CumRet11
-        FROM grain_size_coarse  WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' LIMIT 1
-      UNION ALL
-      SELECT 'fine',    CumRet9,  CumRet11, CumRet12
-        FROM grain_size_fine    WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' LIMIT 1
-      UNION ALL
-      SELECT 'lpf',     CumRet5,  CumRet6,  CumRet7
-        FROM grain_size_lpf     WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' LIMIT 1
-      UNION ALL
-      SELECT 'upstream',CumRet8,  CumRet10, CumRet11
-        FROM grain_size_upstream_transition_fill
-        WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' LIMIT 1
-      LIMIT 1
-    ");
+  // Solo pendientes (no en Preparation ni Review)
+  $key = K($sid,$num,'SP');
+  if (isset($sets['Preparation'][$key]) || isset($sets['Review'][$key])) continue;
 
-    if (!empty($gs)) {
-      $g    = $gs[0];
-      $T3p4 = (float)($g['t34']  ?? 0);
-      $T3p8 = (float)($g['t38']  ?? 0);
-      $TNo4 = (float)($g['tNo4'] ?? 0);
+  // Probar tablas en orden: general, coarse, fine, lpf, upstream
+  $triplet = null;
 
-      if     ($T3p4 > 0)                                 $metodo = 'C';
-      elseif ($T3p8 > 0 && $T3p4 == 0)                   $metodo = 'B';
-      elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0)     $metodo = 'A';
-      else                                               $metodo = 'No se puede determinar el método';
+  $triplet = $triplet ?: try_fetch_triplet('grain_size_general',
+              ['t34'=>'CumRet11','t38'=>'CumRet13','tNo4'=>'CumRet14'],$sid,$num);
 
-      $corr = ($T3p4 > 5) ? 'Corrección por Sobre Tamaño (hacer SG finas y gruesas)' : '';
+  $triplet = $triplet ?: try_fetch_triplet('grain_size_coarse',
+              ['t34'=>'CumRet9','t38'=>'CumRet10','tNo4'=>'CumRet11'],$sid,$num);
 
-      $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>$metodo,'note'=>$corr];
-    } else {
-      $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>'No data','note'=>'Sin granulometría para inferir método'];
-    }
+  $triplet = $triplet ?: try_fetch_triplet('grain_size_fine',
+              ['t34'=>'CumRet9','t38'=>'CumRet11','tNo4'=>'CumRet12'],$sid,$num);
+
+  $triplet = $triplet ?: try_fetch_triplet('grain_size_lpf',
+              ['t34'=>'CumRet5','t38'=>'CumRet6','tNo4'=>'CumRet7'],$sid,$num);
+
+  $triplet = $triplet ?: try_fetch_triplet('grain_size_upstream_transition_fill',
+              ['t34'=>'CumRet8','t38'=>'CumRet10','tNo4'=>'CumRet11'],$sid,$num);
+
+  if ($triplet) {
+    $T3p4 = $triplet['t34'];
+    $T3p8 = $triplet['t38'];
+    $TNo4 = $triplet['tNo4'];
+
+    if     ($T3p4 > 0)                             $metodo = 'C';
+    elseif ($T3p8 > 0 && $T3p4 == 0)               $metodo = 'B';
+    elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) $metodo = 'A';
+    else                                           $metodo = 'No se puede determinar el método';
+
+    $corr = ($T3p4 > 5) ? 'Corrección por Sobre Tamaño (hacer SG finas y gruesas)' : '';
+
+    $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>$metodo,'note'=>$corr];
+  } else {
+    $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>'No data','note'=>'Sin granulometría válida o columnas/tabla no existen'];
   }
 }
 
-// ------------------------------
-// 6) Pendientes por tipo (cuántos no aparecen en ningún estado)
-// ------------------------------
+// ==============================
+// 6) Pendientes por tipo (no aparecen en ningún estado)
+// ==============================
 $pendCounts = [];
 $seen = [];
 foreach ($Requisitions as $req) {
@@ -436,5 +467,4 @@ foreach ($Requisitions as $req) {
     </div>
   </section>
 </main>
-
 <?php include_once('../components/footer.php'); ?>
