@@ -83,7 +83,12 @@ $hastaDT = $db->escape($hasta.' 23:59:59');
 
 // (Opción A) Descubrir todas las tablas del esquema
 $tablas = [];
-$resTab = $db->query("SHOW TABLES");
+$tablas = [
+  'atterberg_limit','hydrometer','moisture_content','grain_size_general',
+  'grain_size_coarse','grain_size_fine','grain_size_lpf','grain_size_upstream_transition_fill',
+  // añade las que uses
+];
+
 while ($r = $resTab->fetch_row()) { $tablas[] = $r[0]; }
 
 // (Opción B) Mejor performance (whitelist). Descomenta y comenta la opción A si ya conoces tus tablas:
