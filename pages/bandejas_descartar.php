@@ -1,24 +1,15 @@
 <?php
-// /pages/bandejas_descartar.php
+// /pages/bandejas_descartar.php (versión robusta con fallback de columnas)
 $page_title = 'Bandejas a Botar';
 require_once('../config/load.php');
-page_require_level(2); // seguridad (ajusta el nivel si hace falta)
+page_require_level(2);
 
-/* ─────────────────────────────────────────────────────────────
-   Helpers
-────────────────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
-/**
- * OJO: $db es tu wrapper MySqli_DB (no mysqli nativo), así que
- * no tipeamos como mysqli aquí. Solo exigimos que tenga ->query().
- */
-function colExiste($db, string $tabla, string $col): bool {
-  $q = $db->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$col}'");
-  return $q && $q->num_rows > 0;
-}
-
-/* Columnas candidatas a "bandeja" */
+// columnas candidatas para “bandeja”
 $POSIBLES_BANDEJAS = [
   'Tare_Name',
   'Container','Container1','Container2','Container3','Container4','Container5','Container6',
@@ -27,120 +18,148 @@ $POSIBLES_BANDEJAS = [
   'TareMc','Tare_Name_MC_Before','Tare_Name_MC_After'
 ];
 
-/* Whitelist de tablas con muestras físicas (EDITA ESTA LISTA A TU ESQUEMA) */
-$TABLAS_WHITELIST = [
-  'atterberg_limit',
-  'hydrometer',
-  'moisture_oven',
-   'moisture_microwave',
-    'moisture_scale',
-     'moisture_constant_mass',
-  'grain_size_general',
-  'grain_size_coarse',
-  'grain_size_fine',
-  'grain_size_lpf',
-  'grain_size_upstream_transition_fill',
-  'standard_proctor',
-  'specific_gravity_coarse',
-  'specific_gravity_fine',
+/**
+ * CONFIGURACIÓN POR TABLA (EDITA PARA TU SERVIDOR)
+ * - name: nombre exacto de la tabla (ojo con mayúsculas en Linux)
+ * - date_col: columna de fecha para el rango (obligatoria)
+ * - discard_col: pon 'discarded' SOLO si esa tabla realmente tiene esa columna. Si no, deja null.
+ * - discarded_at_col: alternativa si tu tabla guarda fecha de descarte (si no, null).
+ * - bandeja_cols: deja la lista global o personalízala por tabla.
+ */
+$TABLES = [
+  ['name'=>'atterberg_limit',                        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'hydrometer',                             'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'moisture_content',                       'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'grain_size_general',                     'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'grain_size_coarse',                      'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'grain_size_fine',                        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'grain_size_lpf',                         'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'grain_size_upstream_transition_fill',    'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'standard_proctor',                       'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'specific_gravity_fine_aggregate',        'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
+  ['name'=>'specific_gravity_coarse_aggregates',     'date_col'=>'Test_Start_Date', 'discard_col'=>null,         'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
 ];
+// EJEMPLO si sabes que una tabla sí tiene discarded:
+// ['name'=>'moisture_content', 'date_col'=>'Test_Start_Date', 'discard_col'=>'discarded', 'discarded_at_col'=>null, 'bandeja_cols'=>$POSIBLES_BANDEJAS],
 
-/* ─────────────────────────────────────────────────────────────
-   POST: Marcar seleccionadas como descartadas
-────────────────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────────
+// POST: marcar seleccionadas como descartadas
+// ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['descartar']) && !empty($_POST['items'])) {
-  $ok = 0; $fail = 0;
+  $ok=0; $fail=0;
+  $byName=[]; foreach($TABLES as $t){ $byName[$t['name']]=$t; }
 
-  foreach ($_POST['items'] as $packed) {
-    $parts = explode('|', $packed, 2);
-    if (count($parts) !== 2) { $fail++; continue; }
-    [$tabla, $id] = $parts;
-
-    if (!in_array($tabla, $TABLAS_WHITELIST, true)) { $fail++; continue; }
+  foreach($_POST['items'] as $packed){
+    $parts = explode('|',$packed,2);
+    if(count($parts)!==2){ $fail++; continue; }
+    [$tabla,$id] = $parts;
+    if(!isset($byName[$tabla])){ $fail++; continue; }
+    $cfg = $byName[$tabla];
     $idEsc = (int)$id;
-    if ($idEsc <= 0) { $fail++; continue; }
+    if($idEsc<=0){ $fail++; continue; }
 
-    if (colExiste($db, $tabla, 'discarded')) {
-      $q = "UPDATE `{$tabla}` SET `discarded`=1 WHERE `id`={$idEsc} LIMIT 1";
-    } elseif (colExiste($db, $tabla, 'Discarded_At')) {
-      $q = "UPDATE `{$tabla}` SET `Discarded_At`=NOW() WHERE `id`={$idEsc} LIMIT 1";
-    } else {
-      $q = null; // no hay campo de descarte; omite
+    $q=null;
+    if(!empty($cfg['discard_col'])){
+      $col=$cfg['discard_col'];
+      $q="UPDATE `{$tabla}` SET `{$col}`=1 WHERE `id`={$idEsc} LIMIT 1";
+    }elseif(!empty($cfg['discarded_at_col'])){
+      $col=$cfg['discarded_at_col'];
+      $q="UPDATE `{$tabla}` SET `{$col}`=NOW() WHERE `id`={$idEsc} LIMIT 1";
     }
-
-    if ($q) {
-      $res = $db->query($q);
-      $res ? $ok++ : $fail++;
+    if($q){
+      try{
+        $res=$db->query($q);
+        $res?$ok++:$fail++;
+      }catch(Throwable $e){
+        $fail++;
+        error_log("DESCARTAR fallo en {$tabla}: ".$e->getMessage());
+      }
     }
   }
 
-  if ($ok > 0)  $session->msg('s', "Se marcaron {$ok} registro(s) como descartados.");
-  if ($fail> 0) $session->msg('d', "No se pudo marcar {$fail} registro(s).");
-  redirect('bandejas_descartar.php'); // evita re-envío
+  if($ok>0)  $session->msg('s',"Se marcaron {$ok} registro(s) como descartados.");
+  if($fail>0) $session->msg('d',"No se pudo marcar {$fail} registro(s).");
+  redirect('bandejas_descartar.php'); exit;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   GET: Filtros (rango de fechas + búsqueda)
-────────────────────────────────────────────────────────────── */
-$hoy       = date('Y-m-d');
-$desde_def = date('Y-m-d', strtotime('-7 days'));
+// ─────────────────────────────────────────────────────────────
+// GET: filtros
+// ─────────────────────────────────────────────────────────────
+$hoy=date('Y-m-d'); $desde_def=date('Y-m-d',strtotime('-7 days'));
+$desde = ($_GET['desde']??'') ?: $desde_def;
+$hasta = ($_GET['hasta']??'') ?: $hoy;
+$busca = trim($_GET['q']??'');
 
-$desde = isset($_GET['desde']) && $_GET['desde'] !== '' ? $_GET['desde'] : $desde_def;
-$hasta = isset($_GET['hasta']) && $_GET['hasta'] !== '' ? $_GET['hasta'] : $hoy;
-$busca = isset($_GET['q']) ? trim($_GET['q']) : '';
+if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$desde)) $desde=$desde_def;
+if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$hasta)) $hasta=$hoy;
 
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) $desde = $desde_def;
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) $hasta = $hoy;
+$desdeDT=$db->escape($desde.' 00:00:00');
+$hastaDT=$db->escape($hasta.' 23:59:59');
 
-$desdeDT = $db->escape($desde.' 00:00:00');
-$hastaDT = $db->escape($hasta.' 23:59:59');
+// ─────────────────────────────────────────────────────────────
+$muestras=[];
 
-/* ─────────────────────────────────────────────────────────────
-   Recolección de muestras con bandeja
-────────────────────────────────────────────────────────────── */
-$muestras = [];
+foreach($TABLES as $cfg){
+  $tabla=$cfg['name']; $dateCol=$cfg['date_col'];
+  if(empty($dateCol)) continue;
 
-foreach ($TABLAS_WHITELIST as $tabla) {
-  if (!colExiste($db, $tabla, 'Test_Start_Date')) continue;
+  // base WHERE (fecha)
+  $where = " WHERE `{$dateCol}` BETWEEN '{$desdeDT}' AND '{$hastaDT}'";
 
-  $cols = ["id","Sample_ID","Sample_Number","test_type"];
-  if (colExiste($db, $tabla, 'Material_Type')) $cols[] = "Material_Type";
-
-  $colBandeja = null;
-  foreach ($POSIBLES_BANDEJAS as $c) {
-    if (colExiste($db, $tabla, $c)) { $colBandeja = $c; break; }
-  }
-  if ($colBandeja) $cols[] = "`{$colBandeja}` AS Bandeja";
-
-  $colsSQL = implode(', ', array_map(function($c){
-    return (str_contains($c, '`') || str_contains($c, ' AS ')) ? $c : "`{$c}`";
-  }, $cols));
-
-  $q = "SELECT {$colsSQL} FROM `{$tabla}` WHERE `Test_Start_Date` BETWEEN '{$desdeDT}' AND '{$hastaDT}'";
-
-  if (colExiste($db, $tabla, 'discarded')) {
-    $q .= " AND (`discarded` IS NULL OR `discarded`=0)";
+  // búsqueda simple
+  $andSearch='';
+  if($busca!==''){
+    $b=$db->escape('%'.$busca.'%');
+    $andSearch = " AND (Sample_ID LIKE '{$b}' OR Sample_Number LIKE '{$b}' OR test_type LIKE '{$b}')";
   }
 
-  if ($busca !== '') {
-    $b = $db->escape('%'.$busca.'%');
-    $q .= " AND (Sample_ID LIKE '{$b}' OR Sample_Number LIKE '{$b}' OR test_type LIKE '{$b}')";
+  // arma SQL con filtro de descartados si está configurado
+  $sql = "SELECT * FROM `{$tabla}`{$where}{$andSearch}";
+  if(!empty($cfg['discard_col'])){
+    $col=$cfg['discard_col'];
+    $sql .= " AND (`{$col}` IS NULL OR `{$col}`=0)";
   }
 
-  $res = $db->query($q);
-  if ($res) {
-    while ($row = $res->fetch_assoc()) {
-      if ($colBandeja && empty($row['Bandeja'])) continue;
-      $row['tabla'] = $tabla;
-      $muestras[] = $row;
+  // intenta ejecutar; si falla por columna desconocida, reintenta sin filtro de descartados
+  try{
+    $res = $db->query($sql);
+  }catch(Throwable $e){
+    if(stripos($e->getMessage(),"Unknown column")!==false){
+      // reintento sin el filtro de descartados
+      $sql = "SELECT * FROM `{$tabla}`{$where}{$andSearch}";
+      $res = $db->query($sql);
+    }else{
+      error_log("SELECT fallo en {$tabla}: ".$e->getMessage());
+      continue;
     }
-    if (method_exists($res, 'free')) { $res->free(); }
-  } else {
-    error_log("Query bandejas fallo en {$tabla}: ".$db->error);
   }
+
+  while($row=$res->fetch_assoc()){
+    // detectar bandeja según prioridad
+    $bandeja=null;
+    $candidatas = $cfg['bandeja_cols'] ?: $POSIBLES_BANDEJAS;
+    foreach($candidatas as $c){
+      if(array_key_exists($c,$row) && $row[$c]!==null && $row[$c]!==''){
+        $bandeja=$row[$c]; break;
+      }
+    }
+    // si quieres solo filas con bandeja real, descomenta:
+    // if($bandeja===null || $bandeja==='') continue;
+
+    $muestras[] = [
+      'tabla'         => $tabla,
+      'id'            => $row['id']            ?? null,
+      'Sample_ID'     => $row['Sample_ID']     ?? null,
+      'Sample_Number' => $row['Sample_Number'] ?? null,
+      'Material_Type' => $row['Material_Type'] ?? null,
+      'test_type'     => $row['test_type']     ?? null,
+      'Bandeja'       => $bandeja,
+    ];
+  }
+  if(method_exists($res,'free')) $res->free();
 }
 
-usort($muestras, function($a,$b){
+usort($muestras,function($a,$b){
   return [$a['Sample_ID'],$a['Sample_Number']] <=> [$b['Sample_ID'],$b['Sample_Number']];
 });
 
@@ -207,9 +226,7 @@ include_once('../components/header.php');
             <table class="table table-hover align-middle" id="tablaBandejas">
               <thead class="table-light">
                 <tr>
-                  <th style="width:40px;">
-                    <input type="checkbox" id="chkAll">
-                  </th>
+                  <th style="width:40px;"><input type="checkbox" id="chkAll"></th>
                   <th>Sample</th>
                   <th>Número</th>
                   <th>Material</th>
@@ -227,7 +244,9 @@ include_once('../components/header.php');
                   <?php foreach ($muestras as $m): ?>
                     <tr>
                       <td>
-                        <input class="form-check-input row-check" type="checkbox" name="items[]" value="<?= h($m['tabla'].'|'.$m['id']) ?>">
+                        <?php if (!empty($m['id'])): ?>
+                          <input class="form-check-input row-check" type="checkbox" name="items[]" value="<?= h($m['tabla'].'|'.$m['id']) ?>">
+                        <?php endif; ?>
                       </td>
                       <td><span class="fw-semibold"><?= h($m['Sample_ID'] ?? '-') ?></span></td>
                       <td><?= h($m['Sample_Number'] ?? '-') ?></td>
