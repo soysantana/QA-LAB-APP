@@ -6,7 +6,6 @@ if (!$session->isUserLoggedIn(true)) {
   redirect("/index.php", false);
 }
 ?>
-
 <?php include_once('../components/header.php'); ?>
 <main id="main" class="main">
 
@@ -18,28 +17,126 @@ if (!$session->isUserLoggedIn(true)) {
         <li class="breadcrumb-item active">Panel Control</li>
       </ol>
     </nav>
-  </div><!-- End Page Title -->
+  </div>
 
   <?php echo display_msg($msg); ?>
 
-  <section class="section dashboard" class="">
+  <?php
+  /* =========================
+     Helpers & utilidades
+  ========================== */
+  function normalize_str($v) { return strtoupper(trim((string)$v)); }
+  function make_key($sid,$num,$tt){ return normalize_str($sid) . '|' . normalize_str($num) . '|' . normalize_str($tt); }
+
+  function getBadgeClass($status) {
+    switch ($status) {
+      case 'Preparation': return 'primary';
+      case 'Realization': return 'secondary';
+      case 'Delivery':    return 'success';
+      case 'Review':      return 'dark';
+      case 'Repeat':      return 'warning';
+      default:            return 'danger';
+    }
+  }
+  function translateStatus($status) {
+    switch ($status) {
+      case 'Preparation': return 'Preparación';
+      case 'Realization': return 'Realización';
+      case 'Delivery':    return 'Entrega';
+      case 'Review':      return 'Revisión';
+      case 'Repeat':      return 'Repetición';
+      default:            return $status;
+    }
+  }
+
+  /* =========================
+     Caché simple (archivo)
+  ========================== */
+  function cache_get($key, $ttl=600){
+    $file = sys_get_temp_dir()."/{$key}.cache.php";
+    if (!is_file($file)) return null;
+    if (filemtime($file) + $ttl < time()) return null;
+    return include $file; // retorna array
+  }
+  function cache_set($key, $data){
+    $file = sys_get_temp_dir()."/{$key}.cache.php";
+    @file_put_contents($file, "<?php\nreturn ".var_export($data,true).";");
+  }
+
+  /* =========================
+     Ventana temporal y datos
+  ========================== */
+  $week14 = date('Y-m-d', strtotime('-14 days'));
+  $week7  = date('Y-m-d', strtotime('-7 days'));
+  $week31 = date('Y-m-d', strtotime('-31 days'));
+
+  // Requisiciones recientes (LIMIT para no cargar de más)
+  $Requisitions = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Registed_Date
+    FROM lab_test_requisition_form
+    WHERE Registed_Date >= '{$week14}'
+    ORDER BY Registed_Date DESC
+    LIMIT 200
+  ");
+
+  /* =========================
+     Precarga en SETS (hash) con filtro + caché
+  ========================== */
+  // NOTA: ajusta los nombres de campos de fecha si difieren (Start_Date / Created_At / etc.)
+  function mk($sid,$num,$tt){ return strtoupper(trim($sid)).'|'.strtoupper(trim($num)).'|'.strtoupper(trim($tt)); }
+
+  $sets = cache_get('dashboard_sets_fast', 600);
+  if (!$sets) {
+    $sets = ['Preparation'=>[], 'Realization'=>[], 'Delivery'=>[], 'Review'=>[], 'Repeat'=>[]];
+
+    // preparation
+    $pre  = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation WHERE Start_Date >= '{$week14}'");
+    foreach ($pre as $r)  $sets['Preparation'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // realization
+    $real = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_realization WHERE Start_Date >= '{$week14}'");
+    foreach ($real as $r) $sets['Realization'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // delivery (ajusta el nombre si tu tabla usa otro campo de fecha)
+    $delv = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery WHERE Register_Date >= '{$week14}'");
+    foreach ($delv as $r) $sets['Delivery'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // repeat
+    $rep  = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_repeat WHERE Start_Date >= '{$week14}'");
+    foreach ($rep as $r)  $sets['Repeat'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // review (excluye reviewed) + filtro fecha
+    $rev  = find_by_sql("
+      SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
+      FROM test_review p
+      LEFT JOIN test_reviewed r
+        ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
+      WHERE r.Sample_ID IS NULL
+        AND p.Start_Date >= '{$week14}'
+    ");
+    foreach ($rev as $r)  $sets['Review'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    cache_set('dashboard_sets_fast', $sets);
+  }
+
+  // Contadores de estado
+  $statusCounts = ['Preparation'=>0,'Realization'=>0,'Delivery'=>0,'Review'=>0,'Repeat'=>0];
+  ?>
+
+  <section class="section dashboard">
     <div class="row">
 
-      <!-- Left side columns -->
+      <!-- Left -->
       <div class="col-lg-8">
         <div class="row">
 
-          <!-- Process Database Requision -->
+          <!-- Proceso de muestreo -->
           <div class="col-12">
             <div class="card recent-sales overflow-auto">
-
               <div class="filter">
                 <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                  <li class="dropdown-header text-start">
-                    <h6>Filter</h6>
-                  </li>
-
+                  <li class="dropdown-header text-start"><h6>Filtrar</h6></li>
                   <li><a class="dropdown-item" href="#">Hoy</a></li>
                   <li><a class="dropdown-item" href="#">Este mes</a></li>
                   <li><a class="dropdown-item" href="#">Este año</a></li>
@@ -47,576 +144,268 @@ if (!$session->isUserLoggedIn(true)) {
               </div>
 
               <div class="card-body">
-                <h5 class="card-title">Proceso de muestreo <span>| Hoy</span></h5>
-
+                <h5 class="card-title">Proceso de muestreo <span>| Últimos 14 días (máx. 200)</span></h5>
                 <table class="table table-borderless datatable">
                   <thead>
                     <tr>
-                      <th scope="col">Muestra</th>
-                      <th scope="col">Numero de muestra</th>
-                      <th scope="col">Tipo de prueba</th>
-                      <th scope="col">Estado</th>
+                      <th>Muestra</th>
+                      <th>Número</th>
+                      <th>Tipo de prueba</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <?php
+                  foreach ($Requisitions as $req) {
+                    if (empty($req['Test_Type'])) continue;
+                    $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
+                    $types = array_filter(array_map(fn($t)=> normalize_str($t), explode(',', $req['Test_Type'])));
+                    foreach ($types as $tt) {
+                      $k = make_key($sid,$num,$tt);
+                      // prioridad de estado
+                      if     (isset($sets['Repeat'][$k]))      $st='Repeat';
+                      elseif (isset($sets['Review'][$k]))      $st='Review';
+                      elseif (isset($sets['Delivery'][$k]))    $st='Delivery';
+                      elseif (isset($sets['Realization'][$k])) $st='Realization';
+                      elseif (isset($sets['Preparation'][$k])) $st='Preparation';
+                      else continue;
+
+                      $statusCounts[$st]++;
+                      echo '<tr>';
+                      echo '<td>'.htmlspecialchars($sid).'</td>';
+                      echo '<td>'.htmlspecialchars($num).'</td>';
+                      echo '<td>'.htmlspecialchars($tt).'</td>';
+                      echo '<td><span class="badge bg-'.getBadgeClass($st).'">'.translateStatus($st).'</span></td>';
+                      echo '</tr>';
+                    }
+                  }
+                  ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- /Proceso de muestreo -->
+
+          <!-- Ensayos en Repetición -->
+          <div class="col-12">
+            <div class="card recent-sales overflow-auto">
+              <div class="filter">
+                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                  <li class="dropdown-header text-start"><h6>Filtrar</h6></li>
+                  <li><a class="dropdown-item" href="#">Hoy</a></li>
+                  <li><a class="dropdown-item" href="#">Este mes</a></li>
+                  <li><a class="dropdown-item" href="#">Este año</a></li>
+                </ul>
+              </div>
+
+              <div class="card-body">
+                <h5 class="card-title">Ensayos en Repetición <span>| Últimos 7 días</span></h5>
+                <?php
+                $repeatRows = find_by_sql("
+                  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date, Send_By
+                  FROM test_repeat
+                  WHERE Start_Date >= '{$week7}'
+                  ORDER BY Start_Date DESC
+                ");
+                ?>
+                <table class="table table-borderless datatable">
+                  <thead>
+                    <tr>
+                      <th>Muestra</th>
+                      <th>Número</th>
+                      <th>Tipo</th>
+                      <th>Fecha</th>
+                      <th>Enviado por</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($repeatRows as $r): ?>
+                      <tr>
+                        <td><?= htmlspecialchars($r['Sample_ID']) ?></td>
+                        <td><?= htmlspecialchars($r['Sample_Number']) ?></td>
+                        <td><?= htmlspecialchars($r['Test_Type']) ?></td>
+                        <td><?= htmlspecialchars(date('Y-m-d', strtotime($r['Start_Date']))) ?></td>
+                        <td><?= htmlspecialchars($r['Send_By']) ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- /Ensayos en Repetición -->
+          <!-- Método Proctor (SP) -->
+          <div class="col-12">
+            <div class="card recent-sales overflow-auto">
+
+              <div class="filter">
+                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                  <li class="dropdown-header text-start"><h6>Filtrar</h6></li>
+                  <li><a class="dropdown-item" href="#">Hoy</a></li>
+                  <li><a class="dropdown-item" href="#">Este mes</a></li>
+                  <li><a class="dropdown-item" href="#">Este año</a></li>
+                </ul>
+              </div>
+
+              <div class="card-body">
+                <h5 class="card-title">Método para Proctor <span>| Últimos 31 días</span></h5>
+                <table class="table table-borderless datatable">
+                  <thead>
+                    <tr>
+                      <th>Muestra</th>
+                      <th>Método</th>
+                      <th>Comentario</th>
                     </tr>
                   </thead>
                   <tbody>
                     <?php
-                    $week = date('Y-m-d', strtotime('-14 days'));
-                    //$Requisitions = find_all('lab_test_requisition_form');
-                    $Requisitions = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM lab_test_requisition_form WHERE Registed_Date >= '{$week}' ORDER BY Registed_Date DESC");
-                    $testTypes = [];
-                    $statusCounts = [
-                      'Preparation' => 0,
-                      'Realization' => 0,
-                      'Delivery' => 0,
-                      'Review' => 0,
-                      'Repeat' => 0,
-                    ];
+                    // Requisiciones últimas 31d
+                    $ReqSP = find_by_sql("
+                      SELECT Sample_ID, Sample_Number, Sample_Date, Test_Type
+                      FROM lab_test_requisition_form
+                      WHERE Registed_Date >= '{$week31}'
+                      ORDER BY Registed_Date DESC
+                    ");
 
-                    // Cargar los datos de todas las tablas una sola vez
-                    $Reviewed = "(SELECT 1 FROM test_reviewed WHERE Tracking = p.Tracking)";
-                    $preparationData = find_all('test_preparation');
-                    $realizationData = find_all('test_realization');
-                    $deliveryData = find_all('test_delivery');
-                    $reviewData = find_by_sql("SELECT * FROM test_review p  WHERE NOT EXISTS $Reviewed");
-                    $repeatData = find_all('test_repeat');
+                    foreach ($ReqSP as $req) {
+                      if (empty($req['Test_Type'])) continue;
+                      $sid   = $req['Sample_ID'];
+                      $snum  = $req['Sample_Number'];
+                      $types = array_filter(array_map(fn($t)=> normalize_str($t), explode(',', $req['Test_Type'])));
 
-                    // Crear un array para cada tabla con las muestras y su estado
-                    $testDataByTable = [
-                      'Preparation' => $preparationData,
-                      'Realization' => $realizationData,
-                      'Delivery' => $deliveryData,
-                      'Review' => $reviewData,
-                      'Repeat' => $repeatData,
-                    ];
+                      foreach ($types as $tt) {
+                        if ($tt !== 'SP') continue;
 
-                    foreach ($Requisitions as $requisition) {
-                      if (!empty($requisition['Test_Type'])) {
-                        // Separar los tipos de prueba por comas
-                        $testTypesArray = array_map('trim', explode(',', $requisition['Test_Type']));
+                        // Solo pendientes (no en Preparation ni Review)
+                        $k = make_key($sid,$snum,'SP');
+                        if (isset($sets['Preparation'][$k]) || isset($sets['Review'][$k])) continue;
 
-                        foreach ($testTypesArray as $type) {
-                          $type = normalize($type); // Normaliza si es necesario
-                          $testTypes[$type][] = [
-                            'Sample_ID' => $requisition['Sample_ID'],
-                            'Sample_Number' => $requisition['Sample_Number'],
-                            'Test_Type' => $type,
-                          ];
-                        }
-                      }
-                    }
+                        // Escapar para consulta
+                        $sidEsc  = $db->escape($sid);
+                        $snumEsc = $db->escape($snum);
 
+                        // Traer la primera granulometría disponible: UNION ALL + LIMIT 1
+                        $gs = find_by_sql("
+                          SELECT 'general'  as src, CumRet11 as t34, CumRet13 as t38, CumRet14 as tNo4
+                            FROM grain_size_general  WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$snumEsc}' LIMIT 1
+                          UNION ALL
+                          SELECT 'coarse',  CumRet9,  CumRet10, CumRet11
+                            FROM grain_size_coarse   WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$snumEsc}' LIMIT 1
+                          UNION ALL
+                          SELECT 'fine',    CumRet9,  CumRet11, CumRet12
+                            FROM grain_size_fine     WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$snumEsc}' LIMIT 1
+                          UNION ALL
+                          SELECT 'lpf',     CumRet5,  CumRet6,  CumRet7
+                            FROM grain_size_lpf      WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$snumEsc}' LIMIT 1
+                          UNION ALL
+                          SELECT 'upstream',CumRet8,  CumRet10, CumRet11
+                            FROM grain_size_upstream_transition_fill
+                            WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$snumEsc}' LIMIT 1
+                          LIMIT 1
+                        ");
 
-                    foreach ($testTypes as $testType => $data) {
-                      foreach ($data as $item) {
-                        $status = getStatus($item['Sample_ID'], $item['Sample_Number'], $item['Test_Type'], $testDataByTable);
-                        if ($status !== 'NoStatusFound') {
-                          $statusCounts[$status]++; // Incrementa el contador del estado correspondiente
+                        if (!empty($gs)) {
+                          $g    = $gs[0];
+                          $T3p4 = (float)($g['t34']  ?? 0);
+                          $T3p8 = (float)($g['t38']  ?? 0);
+                          $TNo4 = (float)($g['tNo4'] ?? 0);
+
+                          if     ($T3p4 > 0)                                 $metodo = 'C';
+                          elseif ($T3p8 > 0 && $T3p4 == 0)                   $metodo = 'B';
+                          elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0)     $metodo = 'A';
+                          else                                               $metodo = 'No se puede determinar el método';
+
+                          $corr = ($T3p4 > 5) ? 'Corrección por Sobre Tamaño, realizar SG Partículas Finas y Gruesas' : '';
 
                           echo '<tr>';
-                          echo '<td>' . $item['Sample_ID'] . '</td>';
-                          echo '<td>' . $item['Sample_Number'] . '</td>';
-                          echo '<td>' . $item['Test_Type'] . '</td>';
-                          echo '<td><span class="badge bg-' . getBadgeClass($status) . '">' . translateStatus($status) . '</span></td>';
+                          echo '<td>'.htmlspecialchars($sid.'-'.$snum.'-SP').'</td>';
+                          echo '<td>'.htmlspecialchars($metodo).'</td>';
+                          echo '<td>'.htmlspecialchars($corr).'</td>';
+                          echo '</tr>';
+                        } else {
+                          echo '<tr>';
+                          echo '<td>'.htmlspecialchars($sid.'-'.$snum.'-SP').'</td>';
+                          echo '<td>No data</td>';
+                          echo '<td>Sin resultados de granulometría para inferir método</td>';
                           echo '</tr>';
                         }
                       }
                     }
-
-                    function getStatus($sampleID, $sampleNumber, $testType, $testDataByTable)
-                    {
-                      // Verificar los estados en el orden correcto
-                      foreach (['Repeat', 'Review', 'Delivery', 'Realization', 'Preparation'] as $statusType) {
-                        $status = getStatusFromTable($sampleID, $sampleNumber, $testType, $testDataByTable[$statusType]);
-                        if ($status !== 'NoStatusFound') {
-                          return $status;
-                        }
-                      }
-                      return 'NoStatusFound';
-                    }
-
-                    function getStatusFromTable($sampleID, $sampleNumber, $testType, $tableData)
-                    {
-                      foreach ($tableData as $row) {
-                        if ($row['Sample_ID'] == $sampleID && $row['Sample_Number'] == $sampleNumber && $row['Test_Type'] == $testType) {
-                          return $row['Status'];
-                        }
-                      }
-                      return 'NoStatusFound';
-                    }
-
-                    function getBadgeClass($status)
-                    {
-                      switch ($status) {
-                        case 'Preparation':
-                          return 'primary';
-                        case 'Realization':
-                          return 'secondary';
-                        case 'Delivery':
-                          return 'success';
-                        case 'Review':
-                          return 'dark';
-                        case 'Repeat':
-                          return 'warning';
-                        default:
-                          return 'danger'; // Para NoStatusFound, pero no se mostrará
-                      }
-                    }
-
-                    function translateStatus($status)
-                    {
-                      switch ($status) {
-                        case 'Preparation':
-                          return 'Preparación';
-                        case 'Realization':
-                          return 'Realización';
-                        case 'Delivery':
-                          return 'Entrega';
-                        case 'Review':
-                          return 'Revisión';
-                        case 'Repeat':
-                          return 'Repetición';
-                        default:
-                          return $status; // Para NoStatusFound, pero no se mostrará
-                      }
-                    }
                     ?>
-
-
-
                   </tbody>
                 </table>
-
-              </div>
-
-            </div>
-          </div><!-- End Process Database Requision -->
-
-          <!-- ENSAYOS EN REPETICION -->
-          <div class="col-12">
-            <div class="card recent-sales overflow-auto">
-
-              <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                  <li class="dropdown-header text-start">
-                    <h6>Filtrar</h6>
-                  </li>
-
-                  <li><a class="dropdown-item" href="#">Hoy</a></li>
-                  <li><a class="dropdown-item" href="#">Este mes</a></li>
-                  <li><a class="dropdown-item" href="#">Este año</a></li>
-                </ul>
-              </div>
-
-              <div class="card-body">
-                <h5 class="card-title">Ensayos en Repeticion <span>| Hoy</span></h5>
-                <?php $week = date('Y-m-d', strtotime('-7 days')); ?>
-                <?php $Seach = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type, Start_Date, Send_By FROM test_repeat WHERE Start_Date >= '{$week}'"); ?>
-                <table class="table table-borderless datatable">
-                  <thead>
-                    <tr>
-                      <th scope="col">Muestra</th>
-                      <th scope="col">Numero de muestra</th>
-                      <th scope="col">Tipo de prueba</th>
-                      <th scope="col">Fecha</th>
-                      <th scope="col">Enviado Por</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php foreach ($Seach as $Seach): ?>
-                      <tr>
-                        <td><?php echo $Seach['Sample_ID']; ?></td>
-                        <td><?php echo $Seach['Sample_Number']; ?></td>
-                        <td><?php echo $Seach['Test_Type']; ?></td>
-                        <td><?php echo date('Y-m-d', strtotime($Seach['Start_Date'])); ?></td>
-                        <td><?php echo $Seach['Send_By']; ?></td>
-                      </tr>
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-
-
               </div>
 
             </div>
           </div>
-          <!-- End Method Proctor -->
-
-          <!-- Method Proctor -->
-          <div class="col-12">
-            <div class="card recent-sales overflow-auto">
-
-              <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                  <li class="dropdown-header text-start">
-                    <h6>Filtrar</h6>
-                  </li>
-
-                  <li><a class="dropdown-item" href="#">Hoy</a></li>
-                  <li><a class="dropdown-item" href="#">Este mes</a></li>
-                  <li><a class="dropdown-item" href="#">Este año</a></li>
-                </ul>
-              </div>
-
-              <div class="card-body">
-                <h5 class="card-title">Metodo Para Proctor <span>| Hoy</span></h5>
-
-                <table class="table table-borderless datatable">
-                  <thead>
-                    <tr>
-                      <th scope="col">Muestra</th>
-                      <th scope="col">Metodo</th>
-                      <th scope="col">Comentario</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php
-                    $week = date('Y-m-d', strtotime('-31 days'));
-                    $Requisition = find_by_sql("SELECT * FROM lab_test_requisition_form WHERE Registed_Date >= '{$week}' ORDER BY Registed_Date DESC");
-                    $Preparation = find_all("test_preparation");
-                    $Review = find_all("test_review");
-                    $testTypes = [];
-
-                    foreach ($Requisition as $requisition) {
-                      // Convertir Test_Type a un array
-                      $testTypesArray = array_map('trim', explode(',', $requisition["Test_Type"]));
-
-                      foreach ($testTypesArray as $testType) {
-                        if ($testType !== "") {
-                          // Filtrar Preparation
-                          $matchingPreparations = array_filter($Preparation, function ($preparation) use ($requisition, $testType) {
-                            return $preparation["Sample_ID"] === $requisition["Sample_ID"] &&
-                              $preparation["Sample_Number"] === $requisition["Sample_Number"] &&
-                              $preparation["Test_Type"] === $testType;
-                          });
-
-                          // Filtrar Review
-                          $matchingReviews = array_filter($Review, function ($review) use ($requisition, $testType) {
-                            return $review["Sample_ID"] === $requisition["Sample_ID"] &&
-                              $review["Sample_Number"] === $requisition["Sample_Number"] &&
-                              $review["Test_Type"] === $testType;
-                          });
-
-                          // Si no está en Preparation ni Review, se agrega
-                          if (empty($matchingPreparations) && empty($matchingReviews)) {
-                            $testTypes[] = [
-                              "Sample_ID" => $requisition["Sample_ID"],
-                              "Sample_Number" => $requisition["Sample_Number"],
-                              "Sample_Date" => $requisition["Sample_Date"],
-                              "Test_Type" => $testType,
-                            ];
-                          }
-                        }
-                      }
-                    }
-
-                    usort($testTypes, function ($a, $b) {
-                      return strcmp($a["Test_Type"], $b["Test_Type"]);
-                    });
-
-                    foreach ($testTypes as $index => $sample) :
-                      if ($sample['Test_Type'] === 'SP') :
-                        // Buscar en la tabla grain_size_general
-                        $GrainResults = find_by_sql("SELECT * FROM grain_size_general WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-
-                        // Buscar en otras tablas adicionales
-                        $GrainResultsCoarse = find_by_sql("SELECT * FROM grain_size_coarse WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                        $GrainResultsFine = find_by_sql("SELECT * FROM grain_size_fine WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                        $GrainResultsLPF = find_by_sql("SELECT * FROM grain_size_lpf WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-                        $GrainResultsUpstream = find_by_sql("SELECT * FROM grain_size_upstream_transition_fill WHERE Sample_ID = '{$sample['Sample_ID']}' AND Sample_Number = '{$sample['Sample_Number']}' LIMIT 1");
-
-                        // Combinamos los resultados de las tablas
-                        foreach ([$GrainResults, $GrainResultsCoarse, $GrainResultsFine, $GrainResultsLPF, $GrainResultsUpstream] as $GrainResults) :
-                          foreach ($GrainResults as $Grain) :
-                            if ($Grain) :
-                              // Asignar valores de las columnas de las tablas dependiendo de la tabla
-                              if ($GrainResults === $GrainResultsCoarse) {
-                                $T3p4 = (float)$Grain['CumRet9'] ?? 0;
-                                $T3p8 = (float)$Grain['CumRet10'] ?? 0;
-                                $TNo4 = (float)$Grain['CumRet11'] ?? 0;
-                              } elseif ($GrainResults === $GrainResultsFine) {
-                                $T3p4 = (float)$Grain['CumRet9'] ?? 0;
-                                $T3p8 = (float)$Grain['CumRet11'] ?? 0;
-                                $TNo4 = (float)$Grain['CumRet12'] ?? 0;
-                              } elseif ($GrainResults === $GrainResultsLPF) {
-                                $T3p4 = (float)$Grain['CumRet5'] ?? 0;
-                                $T3p8 = (float)$Grain['CumRet6'] ?? 0;
-                                $TNo4 = (float)$Grain['CumRet7'] ?? 0;
-                              } elseif ($GrainResults === $GrainResultsUpstream) {
-                                $T3p4 = (float)$Grain['CumRet8'] ?? 0;
-                                $T3p8 = (float)$Grain['CumRet10'] ?? 0;
-                                $TNo4 = (float)$Grain['CumRet11'] ?? 0;
-                              } else {
-                                // Default para grain_size_general
-                                $T3p4 = (float)$Grain['CumRet11'] ?? 0;
-                                $T3p8 = (float)$Grain['CumRet13'] ?? 0;
-                                $TNo4 = (float)$Grain['CumRet14'] ?? 0;
-                              }
-
-                              $resultado = '';
-                              $CorrecionPorTamano = '';
-
-                              if ($T3p4 > 0) {
-                                $resultado = "C";
-                              } elseif ($T3p8 > 0 && $T3p4 == 0) {
-                                $resultado = "B";
-                              } elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) {
-                                $resultado = "A";
-                              } else {
-                                $resultado = "No se puede determinar el método";
-                              }
-
-                              if ($T3p4 > 5) {
-                                $CorrecionPorTamano = "Correcion Por Sobre Tamaño, realizar SG Particulas Finas y Gruesas";
-                              }
-                    ?>
-                              <tr>
-                                <td><?php echo $sample['Sample_ID'] . "-" . $sample['Sample_Number'] . "-" . $sample['Test_Type']; ?></td>
-                                <td><?php echo $resultado; ?></td>
-                                <td><?php echo $CorrecionPorTamano; ?></td>
-                              </tr>
-                    <?php endif;
-                          endforeach;
-                        endforeach;
-                      endif;
-                    endforeach; ?>
-
-                  </tbody>
-                </table>
-
-
-              </div>
-
-            </div>
-          </div><!-- End Method Proctor -->
-
-          <!-- Muestras Registradas -->
-          <?php /*
-          <div class="col-lg-12">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title">Muestras Registradas</h5>
-                <!-- Table with stripped rows -->
-                <table class="table datatable">
-                  <thead>
-                    <tr>
-                      <th scope="col">Muestra</th>
-                      <th scope="col">Numero de muestra</th>
-                      <th scope="col">Solicitados</th>
-                      <th scope="col">Entregados</th>
-                      <th scope="col">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php foreach ($Requisition as $ReqViews): ?>
-                      <?php
-                      $count_solicitados = 0;
-                      $count_entregados = 0;
-
-                      // Consulta para obtener todas las entregas de la muestra actual
-                      $query = "SELECT Test_Type FROM test_delivery WHERE Sample_Name = '{$ReqViews['Sample_ID']}' AND Sample_Number = '{$ReqViews['Sample_Number']}'";
-                      $result = $db->query($query);
-                      $entregados = [];
-                      while ($row = $result->fetch_assoc()) {
-                        $entregados[] = $row['Test_Type'];
-                      }
-
-                      // Contar los ensayos solicitados y entregados
-                      if (!empty($ReqViews['Test_Type'])) {
-                        $testTypesArray = array_map('trim', explode(',', $ReqViews['Test_Type']));
-
-                        foreach ($testTypesArray as $type) {
-                          $count_solicitados++;
-                          if (in_array($type, $entregados)) {
-                            $count_entregados++;
-                          }
-                        }
-                      }
-
-
-                      // Calcular el porcentaje de ensayos entregados
-                      $porce_entregados = ($count_solicitados > 0) ? round(($count_entregados / $count_solicitados) * 100) : 0;
-                      ?>
-                      <tr>
-                        <td><?php echo $ReqViews['Sample_ID']; ?></td>
-                        <td><?php echo $ReqViews['Sample_Number']; ?></td>
-                        <td><span class="badge bg-primary rounded-pill me-2"><?php echo $count_solicitados; ?></span></td>
-                        <td><span class="badge bg-success rounded-pill me-2"><?php echo $count_entregados; ?></span></td>
-                        <td>
-                          <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#requisitionview<?php echo $ReqViews['id']; ?>"><i class="bi bi-eye"></i></button>
-                            <a href="requisition-form-edit.php?id=<?php echo $ReqViews['id']; ?>" class="btn btn-warning"><i class="bi bi-pen"></i></a>
-                          </div>
-                        </td>
-                      </tr>
-
-                      <div class="modal" id="requisitionview<?php echo $ReqViews['id']; ?>" tabindex="-1">
-                        <div class="modal-dialog">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title">Detalle del ensayo</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <div class="container">
-                                <div class="card">
-                                  <div class="card-body">
-                                    <h5 class="card-title">Muestra</h5>
-                                    <h5><?php echo $ReqViews['Sample_ID'] . "-" . $ReqViews['Sample_Number']; ?></h5>
-                                  </div>
-                                </div>
-
-                                <div class="card">
-                                  <div class="card-body">
-                                    <h5 class="card-title">Ensayos solicitados</h5>
-                                    <ul class="list-group">
-                                      <?php for ($i = 1; $i <= 20; $i++) {
-                                        $testTypeValue = $ReqViews['Test_Type' . $i];
-                                        if (!empty($testTypeValue)) { ?>
-                                          <li class="list-group-item"><?php echo $testTypeValue; ?></li>
-                                      <?php }
-                                      } ?>
-                                    </ul>
-                                  </div>
-                                </div>
-
-                                <div class="card">
-                                  <div class="card-body">
-                                    <h5 class="card-title">Comentario</h5>
-                                    <ul class="list-group">
-                                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <h5><code><?php echo $ReqViews['Comment']; ?></code></h5>
-                                      </li>
-                                    </ul>
-                                  </div>
-                                </div>
-
-                                <div class="card">
-                                  <div class="card-body">
-                                    <h5 class="card-title">Otros datos</h5>
-                                    <ul class="list-group">
-                                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <h5><code>Fecha de la muestra</code></h5>
-                                        <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Sample_Date']; ?></span>
-                                      </li>
-                                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <h5><code>Fecha de Registro</code></h5>
-                                        <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Registed_Date']; ?></span>
-                                      </li>
-                                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <h5><code>Muestra por</code></h5>
-                                        <span class="badge bg-primary rounded-pill"><?php echo $ReqViews['Sample_By']; ?></span>
-                                      </li>
-                                    </ul>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div><!-- End Modal -->
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-                <!-- End Table with stripped rows -->
-              </div>
-            </div>
-          </div>
-          */ ?>
-          <!-- End Muestras Registradas -->
+          <!-- /Método Proctor (SP) -->
 
         </div>
-      </div><!-- End Left side columns -->
+      </div>
+      <!-- /Left -->
 
-      <!-- Right side columns -->
+      <!-- Right -->
       <div class="col-lg-4">
 
         <!-- Cantidades en Proceso -->
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Cantidades en Proceso</h5>
-
             <ul class="list-group">
               <?php foreach ($statusCounts as $status => $count): ?>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <?php echo translateStatus($status); ?>
-                  <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
+                  <?= htmlspecialchars(translateStatus($status)) ?>
+                  <span class="badge bg-primary rounded-pill"><?= (int)$count ?></span>
                 </li>
               <?php endforeach; ?>
             </ul>
-
           </div>
         </div>
-        <!-- End Cantidades en Proceso -->
+        <!-- /Cantidades en Proceso -->
 
-        <!-- CANTIDAD DE ENSAYOS PENDIENTES -->
+        <!-- Cantidad de Ensayos Pendientes -->
         <div class="col-12">
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
               <ul class="list-group">
                 <?php
-                function normalize($v)
-                {
-                  return strtoupper(trim($v));
-                }
-
-                $tables_to_check = [
-                  'test_preparation',
-                  'test_delivery',
-                  'test_realization',
-                  'test_repeat',
-                  'test_review',
-                  'test_reviewed'
-                ];
-
-                $indexed_status = [];
-
-                foreach ($tables_to_check as $table) {
-                  $rows = find_all($table);
-                  foreach ($rows as $row) {
-                    $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-                    $indexed_status[$key] = true;
-                  }
-                }
-
+                // Reusa Requisitions y los sets de estado ya cargados
                 $typeCount = [];
                 $seen = [];
 
-                foreach ($Requisitions as $requisition) {
-                  if (empty($requisition['Test_Type'])) continue;
+                foreach ($Requisitions as $req) {
+                  if (empty($req['Test_Type'])) continue;
+                  $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
+                  $types = array_filter(array_map(fn($t)=> normalize_str($t), explode(',', $req['Test_Type'])));
+                  foreach ($types as $tt) {
+                    $k = make_key($sid,$num,$tt);
+                    if (isset($seen[$k])) continue;
+                    $seen[$k] = true;
 
-                  $sampleID = normalize($requisition['Sample_ID']);
-                  $sampleNumber = normalize($requisition['Sample_Number']);
-
-                  $testTypesArray = array_map('trim', explode(',', $requisition['Test_Type']));
-
-                  foreach ($testTypesArray as $testTypeRaw) {
-                    $testType = normalize($testTypeRaw);
-                    $uniqueKey = $sampleID . "|" . $sampleNumber . "|" . $testType;
-
-                    if (isset($seen[$uniqueKey])) continue;
-                    $seen[$uniqueKey] = true;
-
-                    if (!isset($indexed_status[$uniqueKey])) {
-                      $typeCount[$testType] = ($typeCount[$testType] ?? 0) + 1;
+                    // Pendiente: no aparece en ninguno de los sets
+                    if (
+                      !isset($sets['Preparation'][$k]) &&
+                      !isset($sets['Realization'][$k]) &&
+                      !isset($sets['Delivery'][$k]) &&
+                      !isset($sets['Review'][$k]) &&
+                      !isset($sets['Repeat'][$k])
+                    ) {
+                      $typeCount[$tt] = ($typeCount[$tt] ?? 0) + 1;
                     }
                   }
                 }
-
 
                 if (empty($typeCount)) {
                   echo '<li class="list-group-item">✅ No hay ensayos pendientes</li>';
                 } else {
                   foreach ($typeCount as $testType => $count) {
                     echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
-                    echo '<h5><code>' . htmlspecialchars($testType) . '</code></h5>';
-                    echo '<span class="badge bg-primary rounded-pill">' . $count . '</span>';
+                    echo '<h5><code>'.htmlspecialchars($testType).'</code></h5>';
+                    echo '<span class="badge bg-primary rounded-pill">'.(int)$count.'</span>';
                     echo '</li>';
                   }
                 }
@@ -625,82 +414,27 @@ if (!$session->isUserLoggedIn(true)) {
             </div>
           </div>
         </div>
-        <!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
-
+        <!-- /Cantidad de Ensayos Pendientes -->
       </div>
-      <!-- End Right side columns -->
-
-    </div>
-
-    </ul>
-    </div>
-    </div>
-
-    </div>
-    </div><!-- End CANTIDAD DE ENSAYOS PENDIENTES -->
-
-    </div><!-- End Right side columns -->
+      <!-- /Right -->
 
     </div>
   </section>
-  <?php
-  function obtenerMuestrasABotar($conexion, $tablas, $fechaLimite)
-  {
-    $muestras = [];
-    foreach ($tablas as $tabla) {
-      $columns = "id, Sample_ID, Sample_Number, test_type";
+</main>
 
-      $checkColumnQuery = "SHOW COLUMNS FROM $tabla LIKE 'Tare_Name'";
-      $checkColumnResult = mysqli_query($conexion, $checkColumnQuery);
-      if (mysqli_num_rows($checkColumnResult) > 0) {
-        $columns .= ", Tare_Name";
-      }
-
-      $checkMaterialTypeQuery = "SHOW COLUMNS FROM $tabla LIKE 'Material_Type'";
-      $checkMaterialTypeResult = mysqli_query($conexion, $checkMaterialTypeQuery);
-      if (mysqli_num_rows($checkMaterialTypeResult) > 0) {
-        $columns .= ", Material_Type";
-      }
-
-      $query = "SELECT $columns FROM $tabla WHERE Test_Start_Date >= '$fechaLimite'";
-      $result = mysqli_query($conexion, $query);
-      if ($result) {
-        while ($row = mysqli_fetch_assoc($result)) {
-          $muestras[] = $row;
-        }
-      }
-    }
-
-    $queryEnsayos = "SELECT Sample_ID, Sample_Number, test_type FROM ensayos_en_revision WHERE Test_Start_Date >= '$fechaLimite'";
-    $resultEnsayos = mysqli_query($conexion, $queryEnsayos);
-    if ($resultEnsayos) {
-      while ($row = mysqli_fetch_assoc($resultEnsayos)) {
-        $muestras[] = $row;
-      }
-    }
-
-    return $muestras;
-  }
-  ?>
-
-
-
-  </section>
-</main><!-- End #main -->
-</script>
-
-
-
-<!-- Búsqueda instantánea -->
+<!-- Búsqueda instantánea (si vuelves a activar módulos con tablas buscables) -->
 <script>
-  document.getElementById('buscarMuestras').addEventListener('keyup', function() {
-    const filtro = this.value.toLowerCase();
-    const filas = document.querySelectorAll('#tablaMuestras tbody tr');
-    filas.forEach(fila => {
-      const textoFila = fila.textContent.toLowerCase();
-      fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+  const input = document.getElementById('buscarMuestras');
+  if (input) {
+    input.addEventListener('keyup', function() {
+      const filtro = this.value.toLowerCase();
+      const filas = document.querySelectorAll('#tablaMuestras tbody tr');
+      filas.forEach(fila => {
+        const textoFila = fila.textContent.toLowerCase();
+        fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+      });
     });
-  });
+  }
 </script>
-</main><!-- End #main -->
+
 <?php include_once('../components/footer.php'); ?>
