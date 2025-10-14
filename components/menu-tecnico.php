@@ -25,6 +25,7 @@ $dCliente = !empty($dCliente) ? $dCliente : "collapsed";
 $rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
+$hojatrabajos = !empty($hojatrabajos) ? $hojatrabajos : "collapsed";
 
 ?>
   <!-- ======= Sidebar ======= -->
@@ -77,7 +78,12 @@ $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
     <span>Bandejas a Botar</span>
   </a>
 </li><!-- End Bandejas a Botar -->
-
+     <li class="nav-item">
+  <a class="nav-link <?php echo $hojatrabajos; ?>" href="/components/hojastrabajos.php">
+    <i class="bi bi-clipboard-check"></i>
+    <span>Hojas de Trabajos</span>
+  </a>
+</li>
 
       <li class="nav-heading">paginas</li>
 

@@ -84,7 +84,12 @@ $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
     <span>Bandejas a Botar</span>
   </a>
 </li><!-- End Bandejas a Botar -->
-
+     <li class="nav-item">
+  <a class="nav-link <?php echo $hojatrabajos; ?>" href="/components/menu_hojastrabajos.php">
+    <i class="bi bi-clipboard-check"></i>
+    <span>Hojas de Trabajos</span>
+  </a>
+</li>
 
     <li class="nav-heading">paginas</li>
 
