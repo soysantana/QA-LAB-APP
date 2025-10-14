@@ -642,7 +642,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" data-exportar="HY-Naranjo">Naranjo</a></li>
-                                        <li><a class="dropdown-item" data-exportar="SP-Build">Contruccion</a></li>
+                                        <li><a class="dropdown-item" data-exportar="HY-Build">Contruccion</a></li>
                                     </ul>
                                 </div>
 
