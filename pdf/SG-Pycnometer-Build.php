@@ -130,4 +130,4 @@ $pdf->MultiCell(154, 4.2, $Search['Comments'], 0, 'L');
 $pdf->SetXY(172, 293);
 $pdf->MultiCell(130, 4.2, $Search['FieldComment'], 0, 'L');
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . $Search['Material_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . $Search['Material_Type'] . '.pdf', 'D');
