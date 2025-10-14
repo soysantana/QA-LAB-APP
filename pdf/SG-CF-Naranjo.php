@@ -155,4 +155,4 @@ $pdf->SetXY(16, 275);
 $pdf->MultiCell(205, 4, $Search['Comments'], 0, 'L');
 
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . 'Coarse Particles' . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . 'Coarse Particles' . '.pdf', 'D');

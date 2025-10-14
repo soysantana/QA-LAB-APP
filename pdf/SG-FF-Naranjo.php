@@ -101,4 +101,4 @@ $pdf->SetFont('Arial', '', 12);
 $pdf->SetXY(154, 115);
 $pdf->MultiCell(90, 4, $Search['Comments'], 0, 'L');
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . 'Fine Particles' . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . 'Fine Particles' . '.pdf', 'D');
