@@ -83,7 +83,7 @@ $pdf->SetFont('Arial', '', 12);
 $pdf->SetXY(135, 140);
 $pdf->Cell(36, 7, $Search['Pycnometer_Used'], 0, 1, 'C');
 $pdf->SetXY(135, 148);
-$pdf->Cell(36, 5, $Search['Pycnometer_Number'], 0, 1, 'C');
+$pdf->Cell(36, 5, utf8_decode($Search['Pycnometer_Number']), 0, 1, 'C');
 $pdf->SetXY(135, 156);
 $pdf->Cell(36, 5, $Search['Test_Temperatur'], 0, 1, 'C');
 $pdf->SetXY(135, 163);
@@ -130,4 +130,4 @@ $pdf->MultiCell(154, 4.2, $Search['Comments'], 0, 'L');
 $pdf->SetXY(172, 293);
 $pdf->MultiCell(130, 4.2, $Search['FieldComment'], 0, 'L');
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . $Search['Material_Type'] . '.pdf', 'I');

@@ -80,7 +80,7 @@ $pdf->Cell(21, 5, $Search['East'], 0, 1, 'C');
 // Testing Information
 $pdf->SetFont('Arial', '', 12);
 $pdf->SetXY(103, 144);
-$pdf->Cell(39, 11, $Search['Pycnometer_Number'], 0, 1, 'C');
+$pdf->Cell(39, 11, utf8_decode($Search['Pycnometer_Number']), 0, 1, 'C');
 $pdf->SetXY(103, 155);
 $pdf->Cell(39, 9, $Search['Weight_Pycnometer'], 0, 1, 'C');
 $pdf->SetXY(103, 164);
@@ -130,4 +130,4 @@ $pdf->MultiCell(114, 4, $Search['Comments'], 0, 'L');
 $pdf->SetXY(143, 260);
 $pdf->MultiCell(114, 4, $Search['FieldComment'], 0, 'L');
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . $Search['Material_Type'] . '-' . 'Fine Particles' . '.pdf', 'I');

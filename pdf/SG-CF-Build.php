@@ -176,4 +176,4 @@ $pdf->SetXY(148, 256);
 $pdf->MultiCell(100, 4, $Search['FieldComment'], 0, 'L');
 
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'SG' . '-' . $Search['Material_Type'] . '-' . 'Coarse Particles' . '.pdf', 'I');
