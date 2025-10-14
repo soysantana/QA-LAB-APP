@@ -1,19 +1,24 @@
 <?php
-// bandejas_descartar.php
+// /pages/bandejas_descartar.php
 $page_title = 'Bandejas a Botar';
 require_once('../config/load.php');
-page_require_level(2); // seguridad básica
+page_require_level(2); // seguridad (ajusta el nivel si hace falta)
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Utilitarios
-// ─────────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
+   Helpers
+────────────────────────────────────────────────────────────── */
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-function colExiste($db, $tabla, $col) {
+
+/**
+ * OJO: $db es tu wrapper MySqli_DB (no mysqli nativo), así que
+ * no tipeamos como mysqli aquí. Solo exigimos que tenga ->query().
+ */
+function colExiste($db, string $tabla, string $col): bool {
   $q = $db->query("SHOW COLUMNS FROM `{$tabla}` LIKE '{$col}'");
   return $q && $q->num_rows > 0;
 }
 
-// Columnas candidatas para “bandeja”
+/* Columnas candidatas a "bandeja" */
 $POSIBLES_BANDEJAS = [
   'Tare_Name',
   'Container','Container1','Container2','Container3','Container4','Container5','Container6',
@@ -22,30 +27,45 @@ $POSIBLES_BANDEJAS = [
   'TareMc','Tare_Name_MC_Before','Tare_Name_MC_After'
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Manejo POST: marcar como descartadas
-// ─────────────────────────────────────────────────────────────────────────────
+/* Whitelist de tablas con muestras físicas (EDITA ESTA LISTA A TU ESQUEMA) */
+$TABLAS_WHITELIST = [
+  'atterberg_limit',
+  'hydrometer',
+  'moisture_oven',
+   'moisture_microwave',
+    'moisture_scale',
+     'moisture_constant_mass',
+  'grain_size_general',
+  'grain_size_coarse',
+  'grain_size_fine',
+  'grain_size_lpf',
+  'grain_size_upstream_transition_fill',
+  'standard_proctor',
+  'specific_gravity_coarse',
+  'specific_gravity_fine',
+];
+
+/* ─────────────────────────────────────────────────────────────
+   POST: Marcar seleccionadas como descartadas
+────────────────────────────────────────────────────────────── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['descartar']) && !empty($_POST['items'])) {
   $ok = 0; $fail = 0;
+
   foreach ($_POST['items'] as $packed) {
-    // packed = table|id
-    [$tabla, $id] = explode('|', $packed, 2);
-    $tablaEsc = preg_replace('/[^a-zA-Z0-9_\-]/', '', $tabla);
+    $parts = explode('|', $packed, 2);
+    if (count($parts) !== 2) { $fail++; continue; }
+    [$tabla, $id] = $parts;
+
+    if (!in_array($tabla, $TABLAS_WHITELIST, true)) { $fail++; continue; }
     $idEsc = (int)$id;
+    if ($idEsc <= 0) { $fail++; continue; }
 
-    if (!$tablaEsc || !$idEsc) { $fail++; continue; }
-
-    // si la tabla tiene 'discarded', marcamos 1; sinó, intentamos borrar la bandeja (opcional)
-    if (colExiste($db, $tablaEsc, 'discarded')) {
-      $q = "UPDATE `{$tablaEsc}` SET `discarded`=1 WHERE `id`={$idEsc} LIMIT 1";
+    if (colExiste($db, $tabla, 'discarded')) {
+      $q = "UPDATE `{$tabla}` SET `discarded`=1 WHERE `id`={$idEsc} LIMIT 1";
+    } elseif (colExiste($db, $tabla, 'Discarded_At')) {
+      $q = "UPDATE `{$tabla}` SET `Discarded_At`=NOW() WHERE `id`={$idEsc} LIMIT 1";
     } else {
-      // opción alternativa si no hay 'discarded': solo registrar fecha de descarte si existe
-      if (colExiste($db, $tablaEsc, 'Discarded_At')) {
-        $q = "UPDATE `{$tablaEsc}` SET `Discarded_At`=NOW() WHERE `id`={$idEsc} LIMIT 1";
-      } else {
-        // si no hay ninguna de las dos, igual no fallamos: simplemente no hacemos nada destructivo
-        $q = null;
-      }
+      $q = null; // no hay campo de descarte; omite
     }
 
     if ($q) {
@@ -56,12 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['descartar']) && !empt
 
   if ($ok > 0)  $session->msg('s', "Se marcaron {$ok} registro(s) como descartados.");
   if ($fail> 0) $session->msg('d', "No se pudo marcar {$fail} registro(s).");
-  redirect('bandejas_descartar.php'); // evitar repost
+  redirect('bandejas_descartar.php'); // evita re-envío
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Filtros GET: rango de fechas + búsqueda
-// ─────────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
+   GET: Filtros (rango de fechas + búsqueda)
+────────────────────────────────────────────────────────────── */
 $hoy       = date('Y-m-d');
 $desde_def = date('Y-m-d', strtotime('-7 days'));
 
@@ -69,64 +89,39 @@ $desde = isset($_GET['desde']) && $_GET['desde'] !== '' ? $_GET['desde'] : $desd
 $hasta = isset($_GET['hasta']) && $_GET['hasta'] !== '' ? $_GET['hasta'] : $hoy;
 $busca = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-// Validar fechas simples
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) $desde = $desde_def;
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) $hasta = $hoy;
 
-// Rango datetime
 $desdeDT = $db->escape($desde.' 00:00:00');
 $hastaDT = $db->escape($hasta.' 23:59:59');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Recolección de muestras con bandeja
-// ─────────────────────────────────────────────────────────────────────────────
-
-// (Opción A) Descubrir todas las tablas del esquema
-$tablas = [];
-$tablas = [
-  'atterberg_limit','hydrometer','moisture_content','grain_size_general',
-  'grain_size_coarse','grain_size_fine','grain_size_lpf','grain_size_upstream_transition_fill',
-  // añade las que uses
-];
-
-while ($r = $resTab->fetch_row()) { $tablas[] = $r[0]; }
-
-// (Opción B) Mejor performance (whitelist). Descomenta y comenta la opción A si ya conoces tus tablas:
-// $tablas = [
-//   'atterberg_limit','hydrometer','moisture_content','grain_size_general',
-//   'grain_size_coarse','grain_size_fine','grain_size_lpf','grain_size_upstream_transition_fill',
-//   'standard_proctor','specific_gravity_fine_aggregate','specific_gravity_coarse_aggregates',
-// ];
-
+/* ─────────────────────────────────────────────────────────────
+   Recolección de muestras con bandeja
+────────────────────────────────────────────────────────────── */
 $muestras = [];
-foreach ($tablas as $tabla) {
-  // Debe tener fecha de inicio
+
+foreach ($TABLAS_WHITELIST as $tabla) {
   if (!colExiste($db, $tabla, 'Test_Start_Date')) continue;
 
-  // Columnas mínimas a traer
   $cols = ["id","Sample_ID","Sample_Number","test_type"];
   if (colExiste($db, $tabla, 'Material_Type')) $cols[] = "Material_Type";
 
-  // Detectar columna de bandeja
   $colBandeja = null;
   foreach ($POSIBLES_BANDEJAS as $c) {
     if (colExiste($db, $tabla, $c)) { $colBandeja = $c; break; }
   }
   if ($colBandeja) $cols[] = "`{$colBandeja}` AS Bandeja";
 
-  // Construir SELECT
   $colsSQL = implode(', ', array_map(function($c){
     return (str_contains($c, '`') || str_contains($c, ' AS ')) ? $c : "`{$c}`";
   }, $cols));
 
   $q = "SELECT {$colsSQL} FROM `{$tabla}` WHERE `Test_Start_Date` BETWEEN '{$desdeDT}' AND '{$hastaDT}'";
 
-  // Excluir descartados si existe la columna
   if (colExiste($db, $tabla, 'discarded')) {
     $q .= " AND (`discarded` IS NULL OR `discarded`=0)";
   }
 
-  // Búsqueda básica si hay término
   if ($busca !== '') {
     $b = $db->escape('%'.$busca.'%');
     $q .= " AND (Sample_ID LIKE '{$b}' OR Sample_Number LIKE '{$b}' OR test_type LIKE '{$b}')";
@@ -135,15 +130,16 @@ foreach ($tablas as $tabla) {
   $res = $db->query($q);
   if ($res) {
     while ($row = $res->fetch_assoc()) {
-      // Solo interesan filas donde haya info de bandeja (si se detectó)
       if ($colBandeja && empty($row['Bandeja'])) continue;
       $row['tabla'] = $tabla;
       $muestras[] = $row;
     }
+    if (method_exists($res, 'free')) { $res->free(); }
+  } else {
+    error_log("Query bandejas fallo en {$tabla}: ".$db->error);
   }
 }
 
-// Orden simple (por Sample_ID, Sample_Number)
 usort($muestras, function($a,$b){
   return [$a['Sample_ID'],$a['Sample_Number']] <=> [$b['Sample_ID'],$b['Sample_Number']];
 });
@@ -156,7 +152,7 @@ include_once('../components/header.php');
     <h1>Bandejas a Botar</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="../pages/home.php">Home</a></li>
+        <li class="breadcrumb-item"><a href="/pages/home.php">Home</a></li>
         <li class="breadcrumb-item active">Bandejas a Botar</li>
       </ol>
     </nav>
@@ -167,6 +163,8 @@ include_once('../components/header.php');
 
     <div class="card shadow-sm">
       <div class="card-body p-4">
+
+        <!-- Filtros -->
         <form class="row g-3 align-items-end mb-3" method="get" action="">
           <div class="col-md-3">
             <label class="form-label">Desde</label>
@@ -185,6 +183,7 @@ include_once('../components/header.php');
           </div>
         </form>
 
+        <!-- Acciones -->
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div class="d-flex gap-2">
             <button type="button" id="selectAll" class="btn btn-outline-secondary btn-sm">
@@ -195,18 +194,22 @@ include_once('../components/header.php');
             </button>
           </div>
           <div class="d-flex gap-2">
-            <a href="../pdf/exportar_muestra_botar.php?desde=<?= h($desde) ?>&hasta=<?= h($hasta) ?>&q=<?= urlencode($busca) ?>" target="_blank" class="btn btn-outline-danger btn-sm">
+            <a href="../pdf/exportar_muestra_botar.php?desde=<?= h($desde) ?>&hasta=<?= h($hasta) ?>&q=<?= urlencode($busca) ?>"
+               target="_blank" class="btn btn-outline-danger btn-sm">
               <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
             </a>
           </div>
         </div>
 
+        <!-- Tabla -->
         <form method="post" id="formDescartar" onsubmit="return confirm('¿Marcar las bandejas seleccionadas como descartadas?');">
           <div class="table-responsive">
             <table class="table table-hover align-middle" id="tablaBandejas">
               <thead class="table-light">
                 <tr>
-                  <th style="width:40px;"></th>
+                  <th style="width:40px;">
+                    <input type="checkbox" id="chkAll">
+                  </th>
                   <th>Sample</th>
                   <th>Número</th>
                   <th>Material</th>
@@ -224,7 +227,7 @@ include_once('../components/header.php');
                   <?php foreach ($muestras as $m): ?>
                     <tr>
                       <td>
-                        <input class="form-check-input" type="checkbox" name="items[]" value="<?= h($m['tabla'].'|'.$m['id']) ?>">
+                        <input class="form-check-input row-check" type="checkbox" name="items[]" value="<?= h($m['tabla'].'|'.$m['id']) ?>">
                       </td>
                       <td><span class="fw-semibold"><?= h($m['Sample_ID'] ?? '-') ?></span></td>
                       <td><?= h($m['Sample_Number'] ?? '-') ?></td>
@@ -254,22 +257,31 @@ include_once('../components/header.php');
   </div>
 </main>
 
-<!-- Interacciones UI -->
+<!-- UI: seleccionar/limpiar + master checkbox -->
 <script>
-  // seleccionar/limpiar
-  (function() {
-    const selectAll = document.getElementById('selectAll');
-    const clearAll  = document.getElementById('clearAll');
-    const checkboxes = () => document.querySelectorAll('input[type="checkbox"][name="items[]"]');
+(function(){
+  const chkAll = document.getElementById('chkAll');
+  const rowChecks = () => document.querySelectorAll('.row-check');
 
-    if (selectAll) selectAll.addEventListener('click', () => {
-      checkboxes().forEach(ch => ch.checked = true);
+  if (chkAll) {
+    chkAll.addEventListener('change', function() {
+      rowChecks().forEach(ch => ch.checked = chkAll.checked);
     });
+  }
 
-    if (clearAll) clearAll.addEventListener('click', () => {
-      checkboxes().forEach(ch => ch.checked = false);
-    });
-  })();
+  const btnSelectAll = document.getElementById('selectAll');
+  const btnClearAll  = document.getElementById('clearAll');
+
+  if (btnSelectAll) btnSelectAll.addEventListener('click', () => {
+    rowChecks().forEach(ch => ch.checked = true);
+    if (chkAll) chkAll.checked = true;
+  });
+
+  if (btnClearAll) btnClearAll.addEventListener('click', () => {
+    rowChecks().forEach(ch => ch.checked = false);
+    if (chkAll) chkAll.checked = false;
+  });
+})();
 </script>
 
 <?php include_once('../components/footer.php'); ?>
