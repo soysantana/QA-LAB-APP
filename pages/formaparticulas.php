@@ -500,7 +500,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
   });
 
   // Fila demo
-  addRow({ SZ:'3/8"', L1:51.42, L2:41.37, A1:26.46, A2:21.36, E1:16.97, E2:21.47 });
+  addRow({ SZ:'3/8"', L1:, L2:, A1:, A2:, E1:, E2: });
 
 })();
 </script>
