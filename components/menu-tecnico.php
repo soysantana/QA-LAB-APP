@@ -24,6 +24,8 @@ $user_group = !empty($user_group) ? $user_group : "collapsed";
 $dCliente = !empty($dCliente) ? $dCliente : "collapsed";
 $rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
+$bandejas = !empty($bandejas) ? $bandejas : "collapsed";
+
 ?>
   <!-- ======= Sidebar ======= -->
   <aside id="sidebar" class="sidebar">
@@ -69,6 +71,13 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
           </li>
         </ul>
       </li><!-- End Tracking Nav -->
+      <li class="nav-item">
+  <a class="nav-link <?php echo $bandejas; ?>" href="/pages/bandejas_descartar.php">
+    <i class="bi bi-trash3"></i>
+    <span>Bandejas a Botar</span>
+  </a>
+</li><!-- End Bandejas a Botar -->
+
 
       <li class="nav-heading">paginas</li>
 
