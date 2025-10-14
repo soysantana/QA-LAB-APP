@@ -425,41 +425,182 @@ foreach ($Requisitions as $req) {
       <!-- /Izquierda -->
 
       <!-- Derecha -->
-      <div class="col-lg-4">
-        <!-- Cantidades en Proceso (de la página actual) -->
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title">Cantidades en Proceso</h5>
-            <ul class="list-group">
-              <?php foreach ($statusCounts as $st=>$cnt): ?>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <?= h(status_label($st)) ?>
-                  <span class="badge bg-primary rounded-pill"><?= (int)$cnt ?></span>
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          </div>
-        </div>
+     <?php
+/* ===============================
+   CONTEOS GLOBALES “ACTUALES” POR PROCESO
+   - Exclusión por prioridad: Repeat > Review(sin firmar) > Delivery > Realization > Preparation
+   - Independiente de la paginación
+   =============================== */
 
-        <!-- Pendientes por tipo (de la página actual) -->
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Cantidad de Ensayos Pendientes</h5>
-            <ul class="list-group">
-              <?php if (empty($pendCounts)): ?>
-                <li class="list-group-item">✅ No hay ensayos pendientes</li>
-              <?php else: ?>
-                <?php foreach ($pendCounts as $tt=>$cnt): ?>
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <code><?= h($tt) ?></code>
-                    <span class="badge bg-primary rounded-pill"><?= (int)$cnt ?></span>
-                  </li>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </ul>
-          </div>
-        </div>
-      </div>
+/* Helpers */
+if (!function_exists('normalize_key')) {
+  function normalize_key($sid,$num,$tt){
+    return strtoupper(trim((string)$sid)).'|'.strtoupper(trim((string)$num)).'|'.strtoupper(trim((string)$tt));
+  }
+}
+if (!function_exists('set_minus')) {
+  function set_minus(array $A, array $B): array {
+    foreach ($B as $k=>$_) { if (isset($A[$k])) unset($A[$k]); }
+    return $A;
+  }
+}
+
+/* Si quisieras limitar por tiempo, descomenta y configura:
+$FROM_SQL = " AND `Start_Date` >= DATE_SUB(NOW(), INTERVAL 90 DAY) ";
+*/
+// Por defecto, SIN filtro de fecha (todos los registros):
+$FROM_SQL = "";
+
+/* Obtiene un set (distinct triples) desde una tabla */
+function table_set_distinct(string $table, string $dateFilter = ""): array {
+  // Nota: si tu columna de fecha se llama distinto, cambia `Start_Date` en $dateFilter
+  $rows = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
+    FROM `{$table}`
+    WHERE 1=1 {$dateFilter}
+    GROUP BY Sample_ID, Sample_Number, Test_Type
+  ");
+  $set = [];
+  foreach ($rows as $r) {
+    $k = normalize_key($r['Sample_ID'] ?? '', $r['Sample_Number'] ?? '', $r['Test_Type'] ?? '');
+    if ($k !== '||') $set[$k] = true;
+  }
+  return $set;
+}
+
+/* Review sin firmar: test_review EXCLUYENDO los que aparecen en test_reviewed */
+function review_unreviewed_set(string $dateFilter = ""): array {
+  // $dateFilter debe referirse a la columna de fecha de test_review; ajusta si usas otra columna
+  $rows = find_by_sql("
+    SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
+    FROM test_review p
+    LEFT JOIN test_reviewed r
+      ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
+    WHERE r.Sample_ID IS NULL {$dateFilter}
+    GROUP BY p.Sample_ID, p.Sample_Number, p.Test_Type
+  ");
+  $set = [];
+  foreach ($rows as $r) {
+    $k = normalize_key($r['Sample_ID'] ?? '', $r['Sample_Number'] ?? '', $r['Test_Type'] ?? '');
+    if ($k !== '||') $set[$k] = true;
+  }
+  return $set;
+}
+
+/* Cargar sets base (puedes cambiar Start_Date por tu columna real si lo necesitas en $FROM_SQL) */
+$Sprep = table_set_distinct('test_preparation', $FROM_SQL);            // Preparation
+$Sreal = table_set_distinct('test_realization', $FROM_SQL);            // Realization
+$Sdelv = table_set_distinct('test_delivery',    str_replace('Start_Date','Register_Date',$FROM_SQL)); // Delivery (usa Register_Date si aplica)
+$Srept = table_set_distinct('test_repeat',      $FROM_SQL);            // Repeat
+$Srev  = review_unreviewed_set($FROM_SQL);                             // Review sin firmar
+
+/* Exclusión por prioridad para que cada muestra cuente en UN solo estado “actual” */
+$CURrepeat = $Srept;
+
+$CURreview = set_minus($Srev,  $CURrepeat);
+
+$CURdelivery = set_minus($Sdelv, $CURreview + $CURrepeat);
+
+$CURreal = set_minus($Sreal,   $CURdelivery + $CURreview + $CURrepeat);
+
+$CURprep = set_minus($Sprep,   $CURreal + $CURdelivery + $CURreview + $CURrepeat);
+
+/* Conteos finales */
+$cntPreparation = count($CURprep);
+$cntRealization = count($CURreal);
+$cntDelivery    = count($CURdelivery);
+$cntReview      = count($CURreview);
+$cntRepeat      = count($CURrepeat);
+
+/* (Opcional) Pendiente lógico global:
+   Ensayos solicitados (de todas las requisiciones con Test_Type) que NO aparecen en ningún estado actual
+*/
+$reqAll = find_by_sql("
+  SELECT Sample_ID, Sample_Number, Test_Type
+  FROM lab_test_requisition_form
+  WHERE Test_Type IS NOT NULL AND Test_Type <> ''
+");
+$requested = [];
+foreach ($reqAll as $rq) {
+  $sid = $rq['Sample_ID'] ?? ''; $num = $rq['Sample_Number'] ?? '';
+  $types = array_filter(array_map('trim', explode(',', $rq['Test_Type'] ?? '')));
+  foreach ($types as $t) {
+    $requested[ normalize_key($sid,$num,$t) ] = true;
+  }
+}
+$inAnyCurrent = $CURprep + $CURreal + $CURdelivery + $CURreview + $CURrepeat;
+$pendingLogical = 0;
+foreach ($requested as $k=>$_) { if (!isset($inAnyCurrent[$k])) $pendingLogical++; }
+
+// Pendientes globales por tipo
+$pendingByType = [];
+foreach ($requested as $k => $_) {
+  if (!isset($inAnyCurrent[$k])) {
+    // $k = SID|NUM|TT
+    $parts = explode('|', $k);
+    $tt = $parts[2] ?? '';
+    if ($tt !== '') $pendingByType[$tt] = ($pendingByType[$tt] ?? 0) + 1;
+  }
+}
+
+?>
+
+<!-- Derecha -->
+<div class="col-lg-4">
+
+  <!-- Conteos globales (estado actual) -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Cantidades en Procesos</h5>
+      <ul class="list-group">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Preparación
+          <span class="badge bg-primary rounded-pill"><?= (int)$cntPreparation ?></span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Realización
+          <span class="badge bg-secondary rounded-pill"><?= (int)$cntRealization ?></span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Entrega
+          <span class="badge bg-success rounded-pill"><?= (int)$cntDelivery ?></span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Revisión 
+          <span class="badge bg-dark rounded-pill"><?= (int)$cntReview ?></span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Repetición
+          <span class="badge bg-warning rounded-pill"><?= (int)$cntRepeat ?></span>
+        </li>
+      
+      </ul>
+    </div>
+  </div>
+
+  <!-- Pendientes globales por tipo -->
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Ensayos Pendiente de Realizar</h5>
+      <ul class="list-group">
+        <?php if (empty($pendingByType)): ?>
+          <li class="list-group-item">✅ No hay ensayos pendientes</li>
+        <?php else: ?>
+          <?php foreach ($pendingByType as $tt => $cnt): ?>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <code><?= htmlspecialchars($tt) ?></code>
+              <span class="badge bg-danger rounded-pill"><?= (int)$cnt ?></span>
+            </li>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </ul>
+    </div>
+  </div>
+
+</div>
+<!-- /Derecha -->
+
+
       <!-- /Derecha -->
 
     </div>
