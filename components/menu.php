@@ -25,6 +25,8 @@ $dCliente = !empty($dCliente) ? $dCliente : "collapsed";
 $rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 $control_concreto = !empty($control_concreto) ? $control_concreto : "collapsed";
+$bandejas = !empty($bandejas) ? $bandejas : "collapsed";
+
 
 ?>
 <!-- ======= Sidebar ======= -->
@@ -76,6 +78,12 @@ $control_concreto = !empty($control_concreto) ? $control_concreto : "collapsed";
         <i class="bi bi-box"></i>
         <span>Inventarios</span>
       </a>
+<li class="nav-item">
+  <a class="nav-link <?php echo $bandejas; ?>" href="/pages/bandejas_descartar.php">
+    <i class="bi bi-trash3"></i>
+    <span>Bandejas a Botar</span>
+  </a>
+</li><!-- End Bandejas a Botar -->
 
 
     <li class="nav-heading">paginas</li>
