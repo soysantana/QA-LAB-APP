@@ -425,11 +425,13 @@ foreach ($Requisitions as $req) {
       <!-- /Izquierda -->
 
       <!-- Derecha -->
-     <?php
+<?php
 /* ===============================
-   CONTEOS GLOBALES “ACTUALES” POR PROCESO
-   - Exclusión por prioridad: Repeat > Review(sin firmar) > Delivery > Realization > Preparation
-   - Independiente de la paginación
+   CONTEOS GLOBALES EXCLUSIVOS (3 MESES)
+   - Solo cuenta si el triple (SID|NUM|TT) aparece en EXACTAMENTE UNA tabla
+   - Ventana: últimos 90 días (3 meses aprox)
+   - Review = test_review EXCLUYENDO los que estén en test_reviewed
+   - Delivery usa Register_Date (ajusta si tu campo es otro)
    =============================== */
 
 /* Helpers */
@@ -438,26 +440,18 @@ if (!function_exists('normalize_key')) {
     return strtoupper(trim((string)$sid)).'|'.strtoupper(trim((string)$num)).'|'.strtoupper(trim((string)$tt));
   }
 }
-if (!function_exists('set_minus')) {
-  function set_minus(array $A, array $B): array {
-    foreach ($B as $k=>$_) { if (isset($A[$k])) unset($A[$k]); }
-    return $A;
-  }
-}
 
-/* Si quisieras limitar por tiempo, descomenta y configura:
-$FROM_SQL = " AND `Start_Date` >= DATE_SUB(NOW(), INTERVAL 90 DAY) ";
-*/
-// Por defecto, SIN filtro de fecha (todos los registros):
-$FROM_SQL = "";
-
-/* Obtiene un set (distinct triples) desde una tabla */
-function table_set_distinct(string $table, string $dateFilter = ""): array {
-  // Nota: si tu columna de fecha se llama distinto, cambia `Start_Date` en $dateFilter
+/**
+ * Carga un set de triples (SID|NUM|TT) desde una tabla en un rango desde $fromDate
+ * @param string $table
+ * @param string $dateCol
+ * @param string $fromDate 'Y-m-d'
+ */
+function table_set_in_range(string $table, string $dateCol, string $fromDate): array {
   $rows = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type
     FROM `{$table}`
-    WHERE 1=1 {$dateFilter}
+    WHERE `{$dateCol}` >= '{$fromDate}'
     GROUP BY Sample_ID, Sample_Number, Test_Type
   ");
   $set = [];
@@ -468,15 +462,19 @@ function table_set_distinct(string $table, string $dateFilter = ""): array {
   return $set;
 }
 
-/* Review sin firmar: test_review EXCLUYENDO los que aparecen en test_reviewed */
-function review_unreviewed_set(string $dateFilter = ""): array {
-  // $dateFilter debe referirse a la columna de fecha de test_review; ajusta si usas otra columna
+/**
+ * Review sin firmar dentro del rango (excluye lo que está en test_reviewed)
+ * @param string $fromDate 'Y-m-d'
+ */
+function review_unreviewed_set_in_range(string $fromDate): array {
+  // Asegura calificar la columna de fecha de test_review como p.Start_Date
   $rows = find_by_sql("
     SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
-    FROM test_review p
-    LEFT JOIN test_reviewed r
+    FROM test_review AS p
+    LEFT JOIN test_reviewed AS r
       ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
-    WHERE r.Sample_ID IS NULL {$dateFilter}
+    WHERE r.Sample_ID IS NULL
+      AND p.Start_Date >= '{$fromDate}'
     GROUP BY p.Sample_ID, p.Sample_Number, p.Test_Type
   ");
   $set = [];
@@ -487,63 +485,100 @@ function review_unreviewed_set(string $dateFilter = ""): array {
   return $set;
 }
 
-/* Cargar sets base (puedes cambiar Start_Date por tu columna real si lo necesitas en $FROM_SQL) */
-$Sprep = table_set_distinct('test_preparation', $FROM_SQL);            // Preparation
-$Sreal = table_set_distinct('test_realization', $FROM_SQL);            // Realization
-$Sdelv = table_set_distinct('test_delivery',    str_replace('Start_Date','Register_Date',$FROM_SQL)); // Delivery (usa Register_Date si aplica)
-$Srept = table_set_distinct('test_repeat',      $FROM_SQL);            // Repeat
-$Srev  = review_unreviewed_set($FROM_SQL);                             // Review sin firmar
+/* ====== Ventana de 3 meses ====== */
+$FROM_90 = date('Y-m-d', strtotime('-90 days'));
 
-/* Exclusión por prioridad para que cada muestra cuente en UN solo estado “actual” */
-$CURrepeat = $Srept;
+/* ====== Sets por proceso (dentro del rango) ====== */
+$Sprep = table_set_in_range('test_preparation', 'Start_Date',   $FROM_90); // Preparation
+$Sreal = table_set_in_range('test_realization', 'Start_Date',   $FROM_90); // Realization
+$Sdelv = table_set_in_range('test_delivery',    'Register_Date',$FROM_90); // Delivery (ajusta si tu col es otra)
+$Srept = table_set_in_range('test_repeat',      'Start_Date',   $FROM_90); // Repeat
+$Srev  = review_unreviewed_set_in_range($FROM_90);                           // Review sin firmar
 
-$CURreview = set_minus($Srev,  $CURrepeat);
+/* ====== Exclusión “estricta” entre procesos en la misma ventana ======
+   - Contar solo los triples que aparecen en UNA sola tabla
+   - Si aparece en 2 o más (cualquier combinación), se excluye de todas
+*/
+$allSets = [
+  'Preparation' => $Sprep,
+  'Realization' => $Sreal,
+  'Delivery'    => $Sdelv,
+  'Review'      => $Srev,
+  'Repeat'      => $Srept,
+];
 
-$CURdelivery = set_minus($Sdelv, $CURreview + $CURrepeat);
+/* Conteo de apariciones (para detectar duplicados entre procesos) */
+$freq = [];  // k => cuántas tablas lo contienen
+foreach ($allSets as $set) {
+  foreach ($set as $k => $_) {
+    $freq[$k] = ($freq[$k] ?? 0) + 1;
+  }
+}
 
-$CURreal = set_minus($Sreal,   $CURdelivery + $CURreview + $CURrepeat);
+/* Filtrar cada set para dejar SOLO los k con frecuencia = 1 */
+function filter_unique_only(array $set, array $freq): array {
+  $out = [];
+  foreach ($set as $k => $_) {
+    if (($freq[$k] ?? 0) === 1) $out[$k] = true;
+  }
+  return $out;
+}
 
-$CURprep = set_minus($Sprep,   $CURreal + $CURdelivery + $CURreview + $CURrepeat);
+$CURprep = filter_unique_only($Sprep, $freq);
+$CURreal = filter_unique_only($Sreal, $freq);
+$CURdelv = filter_unique_only($Sdelv, $freq);
+$CURrev  = filter_unique_only($Srev,  $freq);
+$CURrept = filter_unique_only($Srept, $freq);
 
-/* Conteos finales */
+/* ====== Conteos finales (exclusivos en 3M) ====== */
 $cntPreparation = count($CURprep);
 $cntRealization = count($CURreal);
-$cntDelivery    = count($CURdelivery);
-$cntReview      = count($CURreview);
-$cntRepeat      = count($CURrepeat);
+$cntDelivery    = count($CURdelv);
+$cntReview      = count($CURrev);
+$cntRepeat      = count($CURrept);
 
-/* (Opcional) Pendiente lógico global:
-   Ensayos solicitados (de todas las requisiciones con Test_Type) que NO aparecen en ningún estado actual
+/* (Opcional) Pendientes lógicos globales EN EL RANGO de 3 meses:
+   - Tomamos requisiciones de los últimos 90 días
+   - Expandimos Test_Type por comas
+   - Excluimos cualquier triple que aparezca en alguna tabla (aunque haya sido excluido por la exclusividad)
 */
-$reqAll = find_by_sql("
+$reqRange = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type
   FROM lab_test_requisition_form
-  WHERE Test_Type IS NOT NULL AND Test_Type <> ''
+  WHERE Registed_Date >= '{$FROM_90}'
+    AND Test_Type IS NOT NULL AND Test_Type <> ''
 ");
 $requested = [];
-foreach ($reqAll as $rq) {
+foreach ($reqRange as $rq) {
   $sid = $rq['Sample_ID'] ?? ''; $num = $rq['Sample_Number'] ?? '';
   $types = array_filter(array_map('trim', explode(',', $rq['Test_Type'] ?? '')));
   foreach ($types as $t) {
     $requested[ normalize_key($sid,$num,$t) ] = true;
   }
 }
-$inAnyCurrent = $CURprep + $CURreal + $CURdelivery + $CURreview + $CURrepeat;
-$pendingLogical = 0;
-foreach ($requested as $k=>$_) { if (!isset($inAnyCurrent[$k])) $pendingLogical++; }
 
-// Pendientes globales por tipo
-$pendingByType = [];
+/* “Vistos en procesos” (aunque luego fueran descartados por exclusividad, aquí cuentan como vistos) */
+$seenAny = $Sprep + $Sreal + $Sdelv + $Srev + $Srept;
+
+/* Pendientes lógicos en 3M: solicitados en rango que NO aparecen en ningún proceso del rango */
+$pendingLogical = 0;
+$pendingByType  = [];
 foreach ($requested as $k => $_) {
-  if (!isset($inAnyCurrent[$k])) {
-    // $k = SID|NUM|TT
+  if (!isset($seenAny[$k])) {
+    $pendingLogical++;
     $parts = explode('|', $k);
     $tt = $parts[2] ?? '';
     if ($tt !== '') $pendingByType[$tt] = ($pendingByType[$tt] ?? 0) + 1;
   }
 }
 
+/* Ahora puedes renderizar:
+   - $cntPreparation, $cntRealization, $cntDelivery, $cntReview, $cntRepeat
+   - $pendingLogical (opcional)
+   - $pendingByType (opcional)
+*/
 ?>
+
 
 <!-- Derecha -->
 <div class="col-lg-4">
