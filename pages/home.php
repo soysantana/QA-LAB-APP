@@ -425,10 +425,11 @@ foreach ($Requisitions as $req) {
       <!-- /Izquierda -->
 
       <!-- Derecha -->
-<?php
+     <?php
 /* ===============================
-   CONTEOS GLOBALES “ACTUALES” POR PROCESO (últimos 4 meses)
-   Prioridad: Repeat > Review(sin firmar) > Delivery > Realization > Preparation
+   CONTEOS GLOBALES “ACTUALES” POR PROCESO
+   - Exclusión por prioridad: Repeat > Review(sin firmar) > Delivery > Realization > Preparation
+   - Independiente de la paginación
    =============================== */
 
 /* Helpers */
@@ -444,34 +445,19 @@ if (!function_exists('set_minus')) {
   }
 }
 
-/* Últimos 4 meses */
-$fromDate = date('Y-m-d', strtotime('-4 months'));
+/* Si quisieras limitar por tiempo, descomenta y configura:
+$FROM_SQL = " AND `Start_Date` >= DATE_SUB(NOW(), INTERVAL 90 DAY) ";
+*/
+// Por defecto, SIN filtro de fecha (todos los registros):
+$FROM_SQL = "";
 
-/* Mapa de columnas de fecha por tabla (ajústalo si tus nombres difieren) */
-$dateCol = [
-  'lab_test_requisition_form' => 'Registed_Date',
-  'test_preparation'          => 'Start_Date',
-  'test_realization'          => 'Start_Date',
-  'test_delivery'             => 'Register_Date',   // <- cambia si usas otra
-  'test_repeat'               => 'Start_Date',
-  'test_review'               => 'Start_Date',
-  // Para reviewed NO filtra por fecha en el JOIN (evita ambigüedad)
-];
-
-/* Filtro por fecha para una tabla concreta (calificado) */
-function date_filter_sql(string $table, string $alias, string $fromDate, array $dateCol): string {
-  $col = $dateCol[$table] ?? null;
-  if (!$col) return '';
-  return " AND {$alias}.`{$col}` >= '{$fromDate}' ";
-}
-
-/* Set de triples distintos dentro del rango para una tabla simple (sin joins) */
-function table_set_distinct_in_range(string $table, string $fromDate, array $dateCol): array {
-  $whereDate = date_filter_sql($table, $table, $fromDate, $dateCol); // alias = nombre tabla
+/* Obtiene un set (distinct triples) desde una tabla */
+function table_set_distinct(string $table, string $dateFilter = ""): array {
+  // Nota: si tu columna de fecha se llama distinto, cambia `Start_Date` en $dateFilter
   $rows = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type
     FROM `{$table}`
-    WHERE 1=1 {$whereDate}
+    WHERE 1=1 {$dateFilter}
     GROUP BY Sample_ID, Sample_Number, Test_Type
   ");
   $set = [];
@@ -482,20 +468,15 @@ function table_set_distinct_in_range(string $table, string $fromDate, array $dat
   return $set;
 }
 
-/* Review SIN firmar: test_review (p) dentro del rango, EXCLUYENDO los que ya están en test_reviewed (r) */
-function review_unreviewed_set_in_range(string $fromDate, array $dateCol): array {
-  // Aplica fecha SOLO sobre p (test_review) para evitar ambigüedad
-  $pDate = date_filter_sql('test_review', 'p', $fromDate, $dateCol);
-
+/* Review sin firmar: test_review EXCLUYENDO los que aparecen en test_reviewed */
+function review_unreviewed_set(string $dateFilter = ""): array {
+  // $dateFilter debe referirse a la columna de fecha de test_review; ajusta si usas otra columna
   $rows = find_by_sql("
     SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
     FROM test_review p
     LEFT JOIN test_reviewed r
-      ON r.Sample_ID = p.Sample_ID
-     AND r.Sample_Number = p.Sample_Number
-     AND r.Test_Type = p.Test_Type
-    WHERE r.Sample_ID IS NULL
-      {$pDate}
+      ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
+    WHERE r.Sample_ID IS NULL {$dateFilter}
     GROUP BY p.Sample_ID, p.Sample_Number, p.Test_Type
   ");
   $set = [];
@@ -506,33 +487,38 @@ function review_unreviewed_set_in_range(string $fromDate, array $dateCol): array
   return $set;
 }
 
-/* Cargar sets SOLO últimos 4 meses */
-$Sprep = table_set_distinct_in_range('test_preparation', $fromDate, $dateCol);
-$Sreal = table_set_distinct_in_range('test_realization', $fromDate, $dateCol);
-$Sdelv = table_set_distinct_in_range('test_delivery',    $fromDate, $dateCol);
-$Srept = table_set_distinct_in_range('test_repeat',      $fromDate, $dateCol);
-$Srev  = review_unreviewed_set_in_range($fromDate, $dateCol);
+/* Cargar sets base (puedes cambiar Start_Date por tu columna real si lo necesitas en $FROM_SQL) */
+$Sprep = table_set_distinct('test_preparation', $FROM_SQL);            // Preparation
+$Sreal = table_set_distinct('test_realization', $FROM_SQL);            // Realization
+$Sdelv = table_set_distinct('test_delivery',    str_replace('Start_Date','Register_Date',$FROM_SQL)); // Delivery (usa Register_Date si aplica)
+$Srept = table_set_distinct('test_repeat',      $FROM_SQL);            // Repeat
+$Srev  = review_unreviewed_set($FROM_SQL);                             // Review sin firmar
 
-/* Exclusión por prioridad */
-$CURrepeat   = $Srept;
-$CURreview   = set_minus($Srev,  $CURrepeat);
+/* Exclusión por prioridad para que cada muestra cuente en UN solo estado “actual” */
+$CURrepeat = $Srept;
+
+$CURreview = set_minus($Srev,  $CURrepeat);
+
 $CURdelivery = set_minus($Sdelv, $CURreview + $CURrepeat);
-$CURreal     = set_minus($Sreal, $CURdelivery + $CURreview + $CURrepeat);
-$CURprep     = set_minus($Sprep, $CURreal + $CURdelivery + $CURreview + $CURrepeat);
 
-/* Conteos finales (4 meses) */
+$CURreal = set_minus($Sreal,   $CURdelivery + $CURreview + $CURrepeat);
+
+$CURprep = set_minus($Sprep,   $CURreal + $CURdelivery + $CURreview + $CURrepeat);
+
+/* Conteos finales */
 $cntPreparation = count($CURprep);
 $cntRealization = count($CURreal);
 $cntDelivery    = count($CURdelivery);
 $cntReview      = count($CURreview);
 $cntRepeat      = count($CURrepeat);
 
-/* Pendiente lógico (requisiciones de los últimos 4 meses que NO están en ningún estado actual del mismo rango) */
-$reqWhere = date_filter_sql('lab_test_requisition_form', 'f', $fromDate, $dateCol);
+/* (Opcional) Pendiente lógico global:
+   Ensayos solicitados (de todas las requisiciones con Test_Type) que NO aparecen en ningún estado actual
+*/
 $reqAll = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type
-  FROM lab_test_requisition_form f
-  WHERE f.Test_Type IS NOT NULL AND f.Test_Type <> '' {$reqWhere}
+  FROM lab_test_requisition_form
+  WHERE Test_Type IS NOT NULL AND Test_Type <> ''
 ");
 $requested = [];
 foreach ($reqAll as $rq) {
@@ -542,22 +528,22 @@ foreach ($reqAll as $rq) {
     $requested[ normalize_key($sid,$num,$t) ] = true;
   }
 }
-
-/* Unión de todos los “actuales” en 4 meses */
 $inAnyCurrent = $CURprep + $CURreal + $CURdelivery + $CURreview + $CURrepeat;
-
-/* Conteo de pendiente + por tipo */
 $pendingLogical = 0;
-$pendingByType  = [];
+foreach ($requested as $k=>$_) { if (!isset($inAnyCurrent[$k])) $pendingLogical++; }
+
+// Pendientes globales por tipo
+$pendingByType = [];
 foreach ($requested as $k => $_) {
   if (!isset($inAnyCurrent[$k])) {
-    $pendingLogical++;
-    $tt = explode('|', $k)[2] ?? '';
+    // $k = SID|NUM|TT
+    $parts = explode('|', $k);
+    $tt = $parts[2] ?? '';
     if ($tt !== '') $pendingByType[$tt] = ($pendingByType[$tt] ?? 0) + 1;
   }
 }
-?>
 
+?>
 
 <!-- Derecha -->
 <div class="col-lg-4">
