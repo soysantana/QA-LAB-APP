@@ -81,7 +81,7 @@ $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
 <li class="nav-item">
   <a class="nav-link <?php echo $bandejas; ?>" href="/pages/bandejas_descartar.php">
     <i class="bi bi-trash3"></i>
-    <span>Bandejas a Botar</span>
+    <span>Muestras a Botar</span>
   </a>
 </li><!-- End Bandejas a Botar -->
      <li class="nav-item">
