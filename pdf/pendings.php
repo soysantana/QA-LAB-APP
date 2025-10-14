@@ -5,24 +5,31 @@ require_once('../config/load.php');
 
 use setasign\Fpdi\Fpdi;
 
-// ========= Parámetro =========
-$type = isset($_GET['type']) ? strtoupper(trim($_GET['type'])) : '';
-
-// ========= Utilitarios =========
+/* ===========================
+   Parámetros y utilitarios
+   =========================== */
 function normalize($v){ return strtoupper(trim((string)$v)); }
 
 function explode_tests_normalized($testStr){
   if(!$testStr) return [];
-  // separa por comas, limpia espacios y vacíos
   $parts = array_map('trim', explode(',', $testStr));
   $parts = array_filter($parts, fn($s)=>$s!=='');
   return array_map(fn($s)=>normalize($s), $parts);
 }
 
-// ========= Carga de datos =========
+$type_raw  = isset($_GET['type']) ? $_GET['type'] : '';
+$type_norm = normalize($type_raw);
+
+// Para escapes SQL (según tu wrapper)
+$db = $GLOBALS['db'];
+$type_esc = $db->escape($type_norm);
+
+/* ===========================
+   Carga de datos base
+   =========================== */
 $data = [
   "Requisition" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type, Sample_Date FROM lab_test_requisition_form"),
-  // Usa las mismas tablas que la vista web:
+  // mismas tablas que la vista:
   "Preparation" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation"),
   "Delivery"    => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery"),
   "Realization" => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_realization"),
@@ -31,7 +38,9 @@ $data = [
   "Reviewed"    => find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_reviewed"),
 ];
 
-// ========= Índice de “ya realizado/en curso” =========
+/* ===========================
+   Índice de “ya procesados”
+   =========================== */
 $indexedStatus = [];
 $follow_tables = ["Preparation","Delivery","Realization","Repeat","Review","Reviewed"];
 
@@ -44,10 +53,12 @@ foreach ($follow_tables as $category) {
   }
 }
 
-// ========= Construcción de pendientes SOLO del tipo solicitado =========
+/* ===========================
+   Construcción de pendientes
+   (solo del tipo solicitado)
+   =========================== */
 $testTypes = [];
 $seen = [];
-$type_norm = $type; // ya viene en upper+trim desde arriba
 
 foreach ($data["Requisition"] as $r) {
   if (empty($r["Test_Type"])) continue;
@@ -56,10 +67,9 @@ foreach ($data["Requisition"] as $r) {
   $sampleNumber = normalize($r["Sample_Number"]);
   $date         = $r["Sample_Date"];
 
-  // tokeniza igual que en la vista
   $tokens = explode_tests_normalized($r["Test_Type"]);
 
-  // filtra por el tipo solicitado, coincidencia EXACTA
+  // Coincidencia EXACTA del tipo solicitado
   if (!in_array($type_norm, $tokens, true)) continue;
 
   $key = $sampleID."|".$sampleNumber."|".$type_norm;
@@ -76,7 +86,32 @@ foreach ($data["Requisition"] as $r) {
   }
 }
 
-// ========= PDF =========
+/* ===========================
+   Ordenación por fecha
+   =========================== */
+/*
+  Orden principal: Sample_Date ASC
+  Desempates: Sample_ID, Sample_Number, Test_Type
+  Nota: si quieres DESC (más recientes primero), cambia la
+  comparación de $a['Sample_Date'] vs $b['Sample_Date'].
+*/
+usort($testTypes, function($a, $b){
+  $da = $a['Sample_Date'] ?? '';
+  $db = $b['Sample_Date'] ?? '';
+  if ($da !== $db) {
+    return strcmp($da, $db); // ASCendente; para DESC usa strcmp($db, $da)
+  }
+  // desempates
+  $c = strcmp(normalize($a['Sample_ID']), normalize($b['Sample_ID']));
+  if ($c !== 0) return $c;
+  $c = strcmp(normalize($a['Sample_Number']), normalize($b['Sample_Number']));
+  if ($c !== 0) return $c;
+  return strcmp(normalize($a['Test_Type']), normalize($b['Test_Type']));
+});
+
+/* ===========================
+   PDF
+   =========================== */
 class PDF extends Fpdi {
   function Header() {}
   function Footer() {}
@@ -115,9 +150,6 @@ $pdf->Cell(45, 10, 'Metodo',       1, 1, 'C', true);
 
 // Cuerpo
 $pdf->SetFont('Arial', '', 10);
-
-// Escapes
-$db = $GLOBALS['db']; // según tu framework
 
 foreach ($testTypes as $sample) {
   $pdf->SetX($tableX);
@@ -162,6 +194,7 @@ foreach ($testTypes as $sample) {
       $pdf->Cell(45, 10, $resultado,             1, 1, 'C');
 
     } else {
+      // sin datos de granulometría
       $pdf->Cell(45, 10, $sampleDate,            1, 0, 'C');
       $pdf->Cell(45, 10, $sid . '-' . $snum,     1, 0, 'C');
       $pdf->Cell(45, 10, $testType,              1, 0, 'C');
@@ -169,6 +202,7 @@ foreach ($testTypes as $sample) {
     }
 
   } else {
+    // Otros tipos: método en blanco
     $pdf->Cell(45, 10, $sampleDate,              1, 0, 'C');
     $pdf->Cell(45, 10, $sid . '-' . $snum,       1, 0, 'C');
     $pdf->Cell(45, 10, $testType,                1, 0, 'C');
