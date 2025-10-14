@@ -98,7 +98,7 @@ if (!$session->isUserLoggedIn(true)) {
     foreach ($real as $r) $sets['Realization'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
 
     // delivery (ajusta el nombre si tu tabla usa otro campo de fecha)
-    $delv = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery WHERE Delivery_Date >= '{$week14}'");
+    $delv = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery WHERE Register_Date >= '{$week14}'");
     foreach ($delv as $r) $sets['Delivery'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
 
     // repeat
