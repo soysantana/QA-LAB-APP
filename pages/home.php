@@ -50,56 +50,79 @@ if (!$session->isUserLoggedIn(true)) {
   }
 
   /* =========================
+     Caché simple (archivo)
+  ========================== */
+  function cache_get($key, $ttl=600){
+    $file = sys_get_temp_dir()."/{$key}.cache.php";
+    if (!is_file($file)) return null;
+    if (filemtime($file) + $ttl < time()) return null;
+    return include $file; // retorna array
+  }
+  function cache_set($key, $data){
+    $file = sys_get_temp_dir()."/{$key}.cache.php";
+    @file_put_contents($file, "<?php\nreturn ".var_export($data,true).";");
+  }
+
+  /* =========================
      Ventana temporal y datos
   ========================== */
   $week14 = date('Y-m-d', strtotime('-14 days'));
   $week7  = date('Y-m-d', strtotime('-7 days'));
   $week31 = date('Y-m-d', strtotime('-31 days'));
 
-  // Requisiciones recientes (solo columnas necesarias)
+  // Requisiciones recientes (LIMIT para no cargar de más)
   $Requisitions = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Registed_Date
     FROM lab_test_requisition_form
     WHERE Registed_Date >= '{$week14}'
     ORDER BY Registed_Date DESC
+    LIMIT 200
   ");
 
   /* =========================
-     Precarga en SETS (hash) para O(1)
+     Precarga en SETS (hash) con filtro + caché
   ========================== */
-  $sets = [
-    'Preparation' => [],
-    'Realization' => [],
-    'Delivery'    => [],
-    'Review'      => [],
-    'Repeat'      => [],
-  ];
+  // NOTA: ajusta los nombres de campos de fecha si difieren (Start_Date / Created_At / etc.)
+  function mk($sid,$num,$tt){ return strtoupper(trim($sid)).'|'.strtoupper(trim($num)).'|'.strtoupper(trim($tt)); }
 
-  foreach (['Preparation'=>'test_preparation','Realization'=>'test_realization','Delivery'=>'test_delivery','Repeat'=>'test_repeat'] as $label=>$table) {
-    $rows = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM {$table}");
-    foreach ($rows as $r) {
-      $k = make_key($r['Sample_ID'] ?? '', $r['Sample_Number'] ?? '', $r['Test_Type'] ?? '');
-      $sets[$label][$k] = true;
-    }
-  }
+  $sets = cache_get('dashboard_sets_fast', 600);
+  if (!$sets) {
+    $sets = ['Preparation'=>[], 'Realization'=>[], 'Delivery'=>[], 'Review'=>[], 'Repeat'=>[]];
 
-  // Review: excluir ya “reviewed”
-  $reviewRows = find_by_sql("
-    SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
-    FROM test_review p
-    LEFT JOIN test_reviewed r
-      ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
-    WHERE r.Sample_ID IS NULL
-  ");
-  foreach ($reviewRows as $r) {
-    $k = make_key($r['Sample_ID'] ?? '', $r['Sample_Number'] ?? '', $r['Test_Type'] ?? '');
-    $sets['Review'][$k] = true;
+    // preparation
+    $pre  = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation WHERE Start_Date >= '{$week14}'");
+    foreach ($pre as $r)  $sets['Preparation'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // realization
+    $real = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_realization WHERE Start_Date >= '{$week14}'");
+    foreach ($real as $r) $sets['Realization'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // delivery (ajusta el nombre si tu tabla usa otro campo de fecha)
+    $delv = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery WHERE Delivery_Date >= '{$week14}'");
+    foreach ($delv as $r) $sets['Delivery'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // repeat
+    $rep  = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_repeat WHERE Start_Date >= '{$week14}'");
+    foreach ($rep as $r)  $sets['Repeat'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    // review (excluye reviewed) + filtro fecha
+    $rev  = find_by_sql("
+      SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
+      FROM test_review p
+      LEFT JOIN test_reviewed r
+        ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
+      WHERE r.Sample_ID IS NULL
+        AND p.Start_Date >= '{$week14}'
+    ");
+    foreach ($rev as $r)  $sets['Review'][ mk($r['Sample_ID'],$r['Sample_Number'],$r['Test_Type']) ] = true;
+
+    cache_set('dashboard_sets_fast', $sets);
   }
 
   // Contadores de estado
   $statusCounts = ['Preparation'=>0,'Realization'=>0,'Delivery'=>0,'Review'=>0,'Repeat'=>0];
-
   ?>
+
   <section class="section dashboard">
     <div class="row">
 
@@ -121,7 +144,7 @@ if (!$session->isUserLoggedIn(true)) {
               </div>
 
               <div class="card-body">
-                <h5 class="card-title">Proceso de muestreo <span>| Últimos 14 días</span></h5>
+                <h5 class="card-title">Proceso de muestreo <span>| Últimos 14 días (máx. 200)</span></h5>
                 <table class="table table-borderless datatable">
                   <thead>
                     <tr>
@@ -256,7 +279,7 @@ if (!$session->isUserLoggedIn(true)) {
                       foreach ($types as $tt) {
                         if ($tt !== 'SP') continue;
 
-                        // Si ya está en Preparation o Review, saltar (solo pendientes)
+                        // Solo pendientes (no en Preparation ni Review)
                         $k = make_key($sid,$snum,'SP');
                         if (isset($sets['Preparation'][$k]) || isset($sets['Review'][$k])) continue;
 
@@ -264,7 +287,7 @@ if (!$session->isUserLoggedIn(true)) {
                         $sidEsc  = $db->escape($sid);
                         $snumEsc = $db->escape($snum);
 
-                        // Traer la primera granulometría disponible (UNION ALL + LIMIT 1)
+                        // Traer la primera granulometría disponible: UNION ALL + LIMIT 1
                         $gs = find_by_sql("
                           SELECT 'general'  as src, CumRet11 as t34, CumRet13 as t38, CumRet14 as tNo4
                             FROM grain_size_general  WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$snumEsc}' LIMIT 1
@@ -392,13 +415,13 @@ if (!$session->isUserLoggedIn(true)) {
           </div>
         </div>
         <!-- /Cantidad de Ensayos Pendientes -->
-
       </div>
       <!-- /Right -->
 
     </div>
   </section>
 </main>
+
 <!-- Búsqueda instantánea (si vuelves a activar módulos con tablas buscables) -->
 <script>
   const input = document.getElementById('buscarMuestras');
