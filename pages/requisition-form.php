@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-md-3">
                       <label for="MType_1" class="form-label">Tipo de material</label>
                       <select id="MType_1" class="form-select" name="MType_1" required>
-                        <option selected>Elegir...</option>
+                        <option value="" selected disabled>Elegir...</option>
                         <option value="Soil">Suelo</option>
                         <option value="Rock">Roca</option>
                         <option value="Crudo">Crudo</option>
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-md-3">
                       <label for="SType_1" class="form-label">Tipo de muestra</label>
                       <select id="SType_1" class="form-select" name="SType_1" required>
-                        <option selected>Elegir...</option>
+                        <option value="" selected disabled>Elegir...</option>
                         <option value="Grab">Grab</option>
                         <option value="Bag">Bag</option>
                         <option value="Sacks">Sacks</option>
