@@ -54,6 +54,7 @@ include_once('../components/header.php');
                     'los_angeles_abrasion_large' => 'LAA Large',
                     'pinhole_test' => 'Pinhole',
                     'hydrometer' => 'Hydrometer',
+                    'double_hydrometer' => 'Double Hydrometer',
                     'reactivity' => 'Reactivity',
                 ]); ?>
             </div>
@@ -117,6 +118,7 @@ function getTestLink($testType, $id)
         'GS-RF' => '../reviews/grain-size-full.php?id=',
         'GS-BF' => '../reviews/grain-size-full.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
+        'DHY' => '../reviews/double-hydrometer.php?id=',
         'AR-CF' => '../reviews/reactivity-coarse.php?id=',
         'AR-FF' => '../reviews/reactivity-fine.php?id=',
     ];

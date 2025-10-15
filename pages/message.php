@@ -6,7 +6,10 @@ page_require_level(2); // ✔ Seguridad: antes de manejar POST
 /* ===========================
    Utilitarios
    =========================== */
-function norm($v){ return strtoupper(trim((string)$v)); }
+function norm($v)
+{
+  return strtoupper(trim((string)$v));
+}
 
 /**
  * Normaliza y resuelve la URL del review según el tipo.
@@ -15,7 +18,8 @@ function norm($v){ return strtoupper(trim((string)$v)); }
  * - Primero busca coincidencia exacta en el mapa
  * - Luego aplica reglas por prefijo (familias completas)
  */
-function route_for_test_type(string $rawType): ?string {
+function route_for_test_type(string $rawType): ?string
+{
   $t = norm($rawType);
   $t_norm = str_replace('-', '_', $t);
 
@@ -24,6 +28,7 @@ function route_for_test_type(string $rawType): ?string {
     'AL' => '../reviews/atterberg-limit.php',
     'BTS' => '../reviews/brazilian.php',
     'HY' => '../reviews/hydrometer.php',
+    'DHY' => '../reviews/double-hydrometer.php',
     'PLT' => '../reviews/point-Load.php',
     'SND' => '../reviews/soundness.php',
     'SP'  => '../reviews/standard-proctor.php',
@@ -49,27 +54,21 @@ function route_for_test_type(string $rawType): ?string {
   ];
   if (isset($exact[$t_norm])) return $exact[$t_norm];
 
-  // Prefijos (familias que van al mismo review)
   if (strpos($t_norm, 'GS_') === 0 || $t_norm === 'GS') {
-    // Ej.: GS_TRF, GS_UFF, GS_FRF, GS_IRF, GS_RF, GS_BF
     return '../reviews/grain-size-full.php';
   }
 
-  return null; // sin ruta conocida
+  return null;
 }
 
-/* ===========================
-   POST: update-signed
-   =========================== */
 if (isset($_POST['update-signed'])) {
   $sample_id     = $db->escape($_POST['Sample_ID'] ?? '');
   $sample_number = $db->escape($_POST['Sample_Number'] ?? '');
 
-  // Mapeo principal -> subtipos (usar '_' consistentemente)
   $testTypeMappings = [
     'AL'  => ['AL'],
     'BTS' => ['BTS'],
-    'GS'  => ['GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'], // ajusta según tu nomenclatura real
+    'GS'  => ['GS_FF', 'GS_CF', 'GS_LPF', 'GS_UTF'],
     'LAA' => ['LAA_Large', 'LAA_Small'],
     'MC'  => ['MC_Oven', 'MC_Microwave', 'MC_Constant_Mass', 'MC_Scale'],
     'PLT' => ['PLT'],
@@ -78,11 +77,10 @@ if (isset($_POST['update-signed'])) {
     'UCS' => ['UCS'],
   ];
 
-  // Normaliza claves del mapeo (guiones -> underscores y upper)
   $normalizedMappings = [];
   foreach ($testTypeMappings as $k => $arr) {
     $k2 = str_replace('-', '_', norm($k));
-    $normalizedMappings[$k2] = array_map(function($v){
+    $normalizedMappings[$k2] = array_map(function ($v) {
       return str_replace('-', '_', norm($v));
     }, $arr);
   }
@@ -93,18 +91,14 @@ if (isset($_POST['update-signed'])) {
     $testTypeKey      = 'Test_Type' . $i;
     $testTypeValueKey = 'Test_Type' . $i . '_value';
 
-    // Valor oculto del tipo (el "macro")
     $testTypeValue = $_POST[$testTypeValueKey] ?? '';
-    $testTypeValue = str_replace('-', '_', norm($testTypeValue)); // normaliza
+    $testTypeValue = str_replace('-', '_', norm($testTypeValue));
 
-    // Checkbox marcado => 1; si no viene, 0
     $signed = isset($_POST[$testTypeKey]) ? 1 : 0;
 
-    // Resuelve subtipos mapeados
     $mappedValues = $normalizedMappings[$testTypeValue] ?? [];
 
     foreach ($mappedValues as $mappedValue) {
-      // UPDATE primero
       $qUpdate = "
         UPDATE test_reviewed
            SET Signed = '{$signed}'
@@ -114,18 +108,15 @@ if (isset($_POST['update-signed'])) {
       ";
       $ok = $db->query($qUpdate);
       if (!$ok) {
-        error_log('test_reviewed UPDATE error: '.$db->error);
+        error_log('test_reviewed UPDATE error: ' . $db->error);
         continue;
       }
 
       $aff = (int)$db->affected_rows();
       if ($aff > 0) {
-        $update_count += $aff; // se cambió valor existente
+        $update_count += $aff;
         continue;
       }
-
-      // Si no afectó filas, puede ser porque no existe el registro
-      // Revisamos existencia:
       $qExist = "
         SELECT 1
           FROM test_reviewed
@@ -137,7 +128,6 @@ if (isset($_POST['update-signed'])) {
       $exists = find_by_sql($qExist);
 
       if (empty($exists)) {
-        // INSERT nuevo
         $qInsert = "
           INSERT INTO test_reviewed
             (Sample_ID, Sample_Number, Test_Type, Signed, Start_Date)
@@ -146,13 +136,11 @@ if (isset($_POST['update-signed'])) {
         ";
         $ok2 = $db->query($qInsert);
         if (!$ok2) {
-          error_log('test_reviewed INSERT error: '.$db->error);
+          error_log('test_reviewed INSERT error: ' . $db->error);
         } else {
           $update_count += 1;
         }
       } else {
-        // Existía pero no cambió (mismo valor Signed)
-        // No sumamos al contador
       }
     }
   }
@@ -190,11 +178,11 @@ include_once('../components/header.php');
       </div>
 
       <?php
-        // Rango de días configurable (?days=14), por defecto 6
-        $days = isset($_GET['days']) ? max(1, (int)$_GET['days']) : 6;
+      // Rango de días
+      $days = isset($_GET['days']) ? max(1, (int)$_GET['days']) : 6;
 
-        // Reviewed (últimos N días, con LIMIT para evitar listados enormes)
-        $RevNotify = find_by_sql("
+      // Reviewed
+      $RevNotify = find_by_sql("
           SELECT Sample_ID, Sample_Number, Test_Type, Tracking, Start_Date
             FROM test_reviewed
            WHERE Start_Date >= NOW() - INTERVAL {$days} DAY
@@ -202,8 +190,8 @@ include_once('../components/header.php');
            LIMIT 200
         ");
 
-        // Repeat (últimos N días)
-        $RepNotify = find_by_sql("
+      // Repeat
+      $RepNotify = find_by_sql("
           SELECT Sample_ID, Sample_Number, Test_Type, Tracking, Start_Date
             FROM test_repeat
            WHERE Start_Date >= NOW() - INTERVAL {$days} DAY
@@ -220,10 +208,10 @@ include_once('../components/header.php');
               <?php if (empty($RevNotify)): ?>
                 <span class="list-group-item text-muted">Sin registros en este periodo.</span>
               <?php else: ?>
-                <?php foreach ($RevNotify as $revNotify): 
+                <?php foreach ($RevNotify as $revNotify):
                   $id       = htmlspecialchars($revNotify['Sample_ID']);
                   $number   = htmlspecialchars($revNotify['Sample_Number']);
-                  $testType = $revNotify['Test_Type']; // normalizo en route
+                  $testType = $revNotify['Test_Type'];
                   $tracking = urlencode($revNotify['Tracking']);
                   $url      = route_for_test_type($testType);
                 ?>
@@ -251,7 +239,7 @@ include_once('../components/header.php');
               <?php if (empty($RepNotify)): ?>
                 <span class="list-group-item text-muted">Sin registros en este periodo.</span>
               <?php else: ?>
-                <?php foreach ($RepNotify as $repNotify): 
+                <?php foreach ($RepNotify as $repNotify):
                   $id       = htmlspecialchars($repNotify['Sample_ID']);
                   $number   = htmlspecialchars($repNotify['Sample_Number']);
                   $testType = $repNotify['Test_Type'];
@@ -273,8 +261,6 @@ include_once('../components/header.php');
           </div>
         </div>
       </div>
-
-      <!-- Si quieres reactivar la sección de Signed con modal, te la adapto a este patrón DRY y segura -->
 
     </div>
   </section>

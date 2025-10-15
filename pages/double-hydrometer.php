@@ -6,8 +6,8 @@ require_once('../config/load.php');
 <?php
 // Manejo de los formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['SaveHydrometer'])) {
-        include('../database/grain-size/hydrometer/save.php');
+    if (isset($_POST['Save'])) {
+        include('../database/double-hydrometer/save.php');
     }
 }
 ?>
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-                <li class="breadcrumb-item">Forms</li>
+                <li class="breadcrumb-item"><a href="dispercion-menu.php">Forms</a></li>
                 <li class="breadcrumb-item active">Double Hydrometer</li>
             </ol>
         </nav>
@@ -35,8 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php echo display_msg($msg); ?>
                 </div>
 
+                <!-- Sample Information -->
                 <div id="product_info"></div>
+                <!-- Sample Information -->
 
+                <!-- Test Information -->
                 <div class="col-lg-12">
 
                     <div class="card">
@@ -48,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="col-md-6">
                                     <label for="Standard" class="form-label">Standard</label>
                                     <select id="Standard" class="form-select" name="Standard">
-                                        <option value="ASTM-D7928">ASTM-D7928</option>
+                                        <option value="ASTM-D4221">ASTM-D4221</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -109,7 +112,166 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                 </div>
+                <!-- Test Information -->
 
+                <!-- Moisture Content 25g -->
+                <div class="col-lg-3">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Moisture Content Companion Sample 25g</h5>
+
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Trial No.</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TrialNo1" id="TrialNo1" value="1" disabled></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare Name</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareName1" id="TareName1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Oven Temperature (°C)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OvenTemp1" id="OvenTemp1" value="110 º C" tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare Plus Wet Soil (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareWetSoil1" id="TareWetSoil1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare Plus Dry Soil (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareDrySoil1" id="TareDrySoil1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Water, Ww (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="WaterWw1" id="WaterWw1" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareMc1" id="TareMc1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Dry Soil, Ws (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DrySoilWs1" id="DrySoilWs1" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Moisture Content (%)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MC1" id="MC1" readonly tabindex="-1"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- end Moisture Content 25g -->
+
+                <!-- Moisture Content 50g -->
+                <div class="col-lg-3">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Moisture Content Companion Sample 50g</h5>
+
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Trial No.</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TrialNo2" id="TrialNo2" value="1" disabled></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare Name</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareName2" id="TareName2"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Oven Temperature (°C)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OvenTemp2" id="OvenTemp2" value="110 º C" tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare Plus Wet Soil (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareWetSoil2" id="TareWetSoil2"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare Plus Dry Soil (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareDrySoil2" id="TareDrySoil2"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Water, Ww (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="WaterWw2" id="WaterWw2" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Tare (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TareMc2" id="TareMc2"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Dry Soil, Ws (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DrySoilWs2" id="DrySoilWs2" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Moisture Content (%)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MC2" id="MC2" readonly tabindex="-1"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- end Moisture Content 50g -->
+
+                <!-- Correction Hydrometer 25g & 50g -->
+                <div class="col-lg-4">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title"></h5>
+                            <!-- Data Correction Table -->
+                            <table class="table table-bordered">
+                                <thead>
+                                    <th></th>
+                                    <th>25g</th>
+                                    <th>50g</th>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Air dried mass hidrometer specimen (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="AirDriedMassHydrometer1" id="AirDriedMassHydrometer1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="AirDriedMassHydrometer2" id="AirDriedMassHydrometer2"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Dry mass of Hidrometer Specimen (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHydrometer1" id="DryMassHydrometer1" readonly tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHydrometer2" id="DryMassHydrometer2" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Mass retained on No. 200 after Hidrometer (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassRetainedAfterHy1" id="MassRetainedAfterHy1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassRetainedAfterHy2" id="MassRetainedAfterHy2"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Dry mass of hidrometer Specimen passing No. 200 (gr)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHySpecimenPassing1" id="DryMassHySpecimenPassing1" readonly tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHySpecimenPassing2" id="DryMassHySpecimenPassing2" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Fine Content of Hidrometer Specimen (%)</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="FineContentHySpecimen1" id="FineContentHySpecimen1" readonly tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="FineContentHySpecimen2" id="FineContentHySpecimen2" readonly tabindex="-1"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- end Data Correction Table -->
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- Correction Hydrometer 25g & 50g -->
+
+                <!-- Hydrometer Limit Specific Gravity -->
                 <div class="col-lg-4">
 
                     <div class="card">
@@ -148,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                     <tr>
                                         <th scope="row">Meniscus Correction, Cm </th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MeniscusCorrection" id="MeniscusCorrection" value="1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MeniscusCorrection" id="MeniscusCorrection" value="-0.5"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -186,212 +348,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                 </div>
+                <!-- Hydrometer Limit Specific Gravity -->
 
-                <!-- Companion Moisture Content Test 50 g Table -->
+                <!-- Hydrometer Calibration 25g -->
                 <div class="col-lg-4">
-
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">Companion Moisture Content Test 50 g</h5>
+                            <h5 class="card-title">25g</h5>
 
-                            <table class="table table-bordered">
-                                <tbody>
-                                    <tr>
-                                        <th scope="row">Trial No.</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TrialNo1" id="TrialNo1" value="1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare Name</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareName1" id="TareName1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Oven Temperature (°C)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OvenTemp1" id="OvenTemp1" value="110 º C"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare Plus Wet Soil (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareWetSoil1" id="TareWetSoil1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare Plus Dry Soil (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareDrySoil1" id="TareDrySoil1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Water, Ww (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="WaterWw1" id="WaterWw1" readonly tabindex="-1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareMc1" id="TareMc1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Dry Soil, Ws (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DrySoilWs1" id="DrySoilWs1" readonly tabindex="-1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Moisture Content (%)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MC1" id="MC1" readonly tabindex="-1"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                        </div>
-                    </div>
-
-                </div>
-                <!-- end Companion Moisture Content Test 50 g Table -->
-
-                <!-- Companion Moisture Content Test 25 g Table -->
-                <div class="col-lg-4">
-
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Companion Moisture Content Test 25 g</h5>
-
-                            <table class="table table-bordered">
-                                <tbody>
-                                    <tr>
-                                        <th scope="row">Trial No.</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TrialNo2" id="TrialNo2" value="2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare Name</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareName2" id="TareName2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Oven Temperature (°C)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OvenTemp2" id="OvenTemp2" value="110 º C"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare Plus Wet Soil (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareWetSoil2" id="TareWetSoil2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare Plus Dry Soil (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareDrySoil2" id="TareDrySoil2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Water, Ww (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="WaterWw2" id="WaterWw2" readonly tabindex="-1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Tare (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TareMc2" id="TareMc2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Dry Soil, Ws (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DrySoilWs2" id="DrySoilWs2" readonly tabindex="-1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Moisture Content (%)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MC2" id="MC2" readonly tabindex="-1"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                        </div>
-                    </div>
-
-                </div>
-                <!-- end Companion Moisture Content Test 25 g Table -->
-
-                <!-- Data Correction Table -->
-                <div class="col-lg-3">
-
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title"></h5>
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>Weight</th>
-                                        <th>50g</th>
-                                        <th>25g</th>
+                                        <th scope="row" colspan="2">Hydrometer Calibration</th>
+                                        <th scope="row" colspan="2">Hydrometer measure of fluid</th>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" colspan="2">Hydrometer ID</th>
+                                        <th scope="row" colspan="2">Hydrometer ID</th>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Temperature (ºC)</th>
+                                        <th scope="row">Actual Reading</th>
+                                        <th scope="row">Temperature (ºC)</th>
+                                        <th scope="row">Actual Reading</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <th scope="row">Air dried mass hidrometer specimen (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="AirDriedMassHydrometer1" id="AirDriedMassHydrometer1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="AirDriedMassHydrometer2" id="AirDriedMassHydrometer2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Dry mass of Hidrometer Specimen (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHydrometer1" id="DryMassHydrometer1" readonly tabindex="-1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHydrometer2" id="DryMassHydrometer2" readonly tabindex="-1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Mass retained on No. 200 after Hidrometer (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassRetainedAfterHy1" id="MassRetainedAfterHy1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassRetainedAfterHy2" id="MassRetainedAfterHy2"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Dry mass of hidrometer Specimen passing No. 200 (gr)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHySpecimenPassing1" id="DryMassHySpecimenPassing1" readonly tabindex="-1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DryMassHySpecimenPassing2" id="DryMassHySpecimenPassing2" readonly tabindex="-1"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Fine Content of Hidrometer Specimen (%)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="FineContentHySpecimen1" id="FineContentHySpecimen1" readonly tabindex="-1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="FineContentHySpecimen2" id="FineContentHySpecimen2" readonly tabindex="-1"></td>
-                                    </tr>
+                                    <?php for ($i = 1; $i <= 9; $i++): ?>
+                                        <tr>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp<?= $i ?>" id="HyCalibrationTemp<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead<?= $i ?>" id="HyCalibrationRead<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp<?= $i ?>" id="HyMeasureTemp<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid<?= $i ?>" id="HyMeasureFluid<?= $i ?>"></td>
+                                        </tr>
+                                    <?php endfor; ?>
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
 
-                </div>
-                <!-- end Data Correction Table -->
-
-                <!-- Hydrometer Calibration Table 50g -->
-                <div class="col-lg-5">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title"></h5>
-
-                            <table class="table table-bordered">
-                                <tbody>
-                                    <tr>
-                                        <th scope="row" colspan="2">Hydrometer Calibration</th>
-                                        <th scope="row" colspan="2">Hydrometer measure of fluid</th>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row" colspan="2">Hydrometer ID</th>
-                                        <th scope="row" colspan="2">Hydrometer ID</th>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">Temperature (ºC)</th>
-                                        <th scope="row">Actual Reading</th>
-                                        <th scope="row">Temperature (ºC)</th>
-                                        <th scope="row">Actual Reading</th>
-                                    </tr>
-                                    <?php
-                                        for ($i = 1; $i <= 9; $i++) {
-                                            echo '<tr>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp50g' . $i . '" id="HyCalibrationTemp50g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead50g' . $i . '" id="HyCalibrationRead50g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp50g' . $i . '" id="HyMeasureTemp50g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid50g' . $i . '" id="HyMeasureFluid50g' . $i . '"></td>
-                                            </tr>';
-                                        }
-                                    ?>
-                                </tbody>
-                            </table>
 
                         </div>
                     </div>
 
                 </div>
-                <!-- end Hydrometer Calibration Table 50g -->
+                <!-- end Hydrometer Calibration 25g -->
 
-                <!-- Hydrometer Calibration Table 25g -->
+                <!-- Hydrometer Calibration 50g -->
                 <div class="col-lg-4">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title"></h5>
+                            <h5 class="card-title">50g</h5>
 
                             <table class="table table-bordered">
-                                <tbody>
+                                <thead>
                                     <tr>
                                         <th scope="row" colspan="2">Hydrometer Calibration</th>
                                         <th scope="row" colspan="2">Hydrometer measure of fluid</th>
@@ -406,131 +414,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <th scope="row">Temperature (ºC)</th>
                                         <th scope="row">Actual Reading</th>
                                     </tr>
-                                    <?php
-                                        for ($i = 1; $i <= 9; $i++) {
-                                            echo '<tr>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp25g' . $i . '" id="HyCalibrationTemp25g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead25g' . $i . '" id="HyCalibrationRead25g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp25g' . $i . '" id="HyMeasureTemp25g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid25g' . $i . '" id="HyMeasureFluid25g' . $i . '"></td>
-                                            </tr>';
-                                        }
-                                    ?>
+                                </thead>
+                                <tbody>
+                                    <?php for ($i = 1; $i <= 9; $i++): ?>
+                                        <tr>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp50g<?= $i ?>" id="HyCalibrationTemp50g<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead50g<?= $i ?>" id="HyCalibrationRead50g<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp50g<?= $i ?>" id="HyMeasureTemp50g<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid50g<?= $i ?>" id="HyMeasureFluid50g<?= $i ?>"></td>
+                                        </tr>
+                                    <?php endfor; ?>
                                 </tbody>
                             </table>
+
 
                         </div>
                     </div>
 
                 </div>
-                <!-- end Hydrometer Calibration Table 25g -->
+                <!-- end Hydrometer Calibration 50g -->
 
-                <!-- Information Calculation Hydrometer Table 50g -->
+                <!-- Calculation Hydrometer Table 25g -->
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title"></h5>
+                            <h5 class="card-title">25g</h5>
 
                             <table class="table table-bordered table-sm">
-                                <tbody>
+                                <thead>
                                     <tr>
-                                        <th scope="row">Reading for 50g</th>
-                                        <th scope="row">Date</th>
-                                        <th scope="row">Hour</th>
-                                        <th scope="row">Reading Time, T (min)</th>
-                                        <th scope="row">Temp °C</th>
-                                        <th scope="row">Hydrometer Readings (Rm)</th>
-                                        <th scope="row">A or B depending of the Hydrometer type</th>
-                                        <th scope="row">Offset at Reading (rdm)</th>
-                                        <th scope="row">Mass Percent Finer (Nm) (%)</th>
-                                        <th scope="row">Effective Length(Hm)</th>
-                                        <th scope="row">D, mm</th>
-                                        <th scope="row">passing percentage respect to the total sample</th>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Hour</th>
+                                        <th>Reading Time, T (min)</th>
+                                        <th>Temp °C</th>
+                                        <th>Hydrometer Readings (Rm)</th>
+                                        <th>A or B depending of the Hydrometer type</th>
+                                        <th>Offset at Reading (rdm)</th>
+                                        <th>Mass Percent Finer (Nm) (%)</th>
+                                        <th>Effective Length (Hm)</th>
+                                        <th>D, mm</th>
                                     </tr>
+                                </thead>
+                                <tbody>
                                     <?php
-                                        $readingTimeDefaults = [1, 2, 4, 15, 30, 60, 240, 340, 1440];
-                                        for ($i = 1; $i <= 9; $i++) {
-                                            $readingTime = isset($readingTimeDefaults[$i - 1]) ? $readingTimeDefaults[$i - 1] : '';
-                                            echo '<tr>
-                                            <th scope="row">' . $i . '</th>
-                                            <td><input type="date" style="border: none;" class="form-control" name="Date50g' . $i . '" id="Date50g' . $i . '"></td>
-                                            <td><input type="time" style="border: none;" class="form-control" name="Hour50g' . $i . '" id="Hour50g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT50g' . $i . '" id="ReadingTimeT50g' . $i . '" value="' . $readingTime . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="Temp50g' . $i . '" id="Temp50g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyReading50g' . $i . '" id="HyReading50g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy50g' . $i . '" id="ABdependingHy50g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="OffsetReading50g' . $i . '" id="OffsetReading50g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner50g' . $i . '" id="MassPercentFiner50g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength50g' . $i . '" id="EffectiveLength50g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="DMm50g' . $i . '" id="DMm50g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample50g' . $i . '" id="PassingPerceTotalSample50g' . $i . '" readonly tabindex="-1"></td>
-                                            </tr>';
-                                        }
-                                    ?>
+                                    // Valores predefinidos para "Reading Time, T (min)"
+                                    $readingTimes = [1, 2, 4, 15, 30, 60, 240, 360, 1440];
 
+                                    for ($i = 1; $i <= 9; $i++):
+                                    ?>
+                                        <tr>
+                                            <th scope="row"><?= $i ?></th>
+                                            <td><input type="date" style="border: none;" class="form-control" name="Date<?= $i ?>" id="Date<?= $i ?>" tabindex="-1"></td>
+                                            <td><input type="time" style="border: none;" class="form-control" name="Hour<?= $i ?>" id="Hour<?= $i ?>" tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT<?= $i ?>" id="ReadingTimeT<?= $i ?>" value="<?= $readingTimes[$i - 1] ?>" tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="Temp<?= $i ?>" id="Temp<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyReading<?= $i ?>" id="HyReading<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy<?= $i ?>" id="ABdependingHy<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="OffsetReading<?= $i ?>" id="OffsetReading<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner<?= $i ?>" id="MassPercentFiner<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength<?= $i ?>" id="EffectiveLength<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="DMm<?= $i ?>" id="DMm<?= $i ?>" readonly tabindex="-1"></td>
+                                        </tr>
+                                    <?php endfor; ?>
                                 </tbody>
                             </table>
-
-
                         </div>
                     </div>
-
                 </div>
-                <!-- end Information Calculation Hydrometer Table 50g -->
+                <!-- end Calculation Hydrometer Table 25g -->
 
-                <!-- Information Calculation Hydrometer Table 25g -->
+                <!-- Calculation Hydrometer Table 50g -->
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title"></h5>
+                            <h5 class="card-title">50g</h5>
 
                             <table class="table table-bordered table-sm">
-                                <tbody>
+                                <thead>
                                     <tr>
-                                        <th scope="row">Reading for 25g</th>
-                                        <th scope="row">Date</th>
-                                        <th scope="row">Hour</th>
-                                        <th scope="row">Reading Time, T (min)</th>
-                                        <th scope="row">Temp °C</th>
-                                        <th scope="row">Hydrometer Readings (Rm)</th>
-                                        <th scope="row">A or B depending of the Hydrometer type</th>
-                                        <th scope="row">Offset at Reading (rdm)</th>
-                                        <th scope="row">Mass Percent Finer (Nm) (%)</th>
-                                        <th scope="row">Effective Length(Hm)</th>
-                                        <th scope="row">D, mm</th>
-                                        <th scope="row">passing percentage respect to the total sample</th>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Hour</th>
+                                        <th>Reading Time, T (min)</th>
+                                        <th>Temp °C</th>
+                                        <th>Hydrometer Readings (Rm)</th>
+                                        <th>A or B depending of the Hydrometer type</th>
+                                        <th>Offset at Reading (rdm)</th>
+                                        <th>Mass Percent Finer (Nm) (%)</th>
+                                        <th>Effective Length (Hm)</th>
+                                        <th>D, mm</th>
                                     </tr>
+                                </thead>
+                                <tbody>
                                     <?php
-                                        $readingTimeDefaults = [1, 2, 4, 15, 30, 60, 240, 340, 1440];
-                                        for ($i = 1; $i <= 9; $i++) {
-                                            $readingTime = isset($readingTimeDefaults[$i - 1]) ? $readingTimeDefaults[$i - 1] : '';
-                                            echo '<tr>
-                                            <th scope="row">' . $i . '</th>
-                                            <td><input type="date" style="border: none;" class="form-control" name="Date25g' . $i . '" id="Date25g' . $i . '"></td>
-                                            <td><input type="time" style="border: none;" class="form-control" name="Hour25g' . $i . '" id="Hour25g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT25g' . $i . '" id="ReadingTimeT25g' . $i . '" value="' . $readingTime . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="Temp25g' . $i . '" id="Temp25g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="HyReading25g' . $i . '" id="HyReading25g' . $i . '"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy25g' . $i . '" id="ABdependingHy25g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="OffsetReading25g' . $i . '" id="OffsetReading25g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner25g' . $i . '" id="MassPercentFiner25g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength25g' . $i . '" id="EffectiveLength25g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="DMm25g' . $i . '" id="DMm25g' . $i . '" readonly tabindex="-1"></td>
-                                            <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample25g' . $i . '" id="PassingPerceTotalSample25g' . $i . '" readonly tabindex="-1"></td>
-                                            </tr>';
-                                        }
-                                    ?>
+                                    // Valores predefinidos para "Reading Time, T (min)"
+                                    $readingTimes = [1, 2, 4, 15, 30, 60, 240, 360, 1440];
 
+                                    for ($i = 1; $i <= 9; $i++):
+                                    ?>
+                                        <tr>
+                                            <th scope="row"><?= $i ?></th>
+                                            <td><input type="date" style="border: none;" class="form-control" name="Date50g<?= $i ?>" id="Date50g<?= $i ?>" tabindex="-1"></td>
+                                            <td><input type="time" style="border: none;" class="form-control" name="Hour50g<?= $i ?>" id="Hour50g<?= $i ?>" tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT50g<?= $i ?>" id="ReadingTimeT50g<?= $i ?>" value="<?= $readingTimes[$i - 1] ?>" tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="Temp50g<?= $i ?>" id="Temp50g<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="HyReading50g<?= $i ?>" id="HyReading50g<?= $i ?>"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy50g<?= $i ?>" id="ABdependingHy50g<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="OffsetReading50g<?= $i ?>" id="OffsetReading50g<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner50g<?= $i ?>" id="MassPercentFiner50g<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength50g<?= $i ?>" id="EffectiveLength50g<?= $i ?>" readonly tabindex="-1"></td>
+                                            <td><input type="text" style="border: none;" class="form-control" name="DMm50g<?= $i ?>" id="DMm50g<?= $i ?>" readonly tabindex="-1"></td>
+                                        </tr>
+                                    <?php endfor; ?>
                                 </tbody>
                             </table>
-
-
                         </div>
                     </div>
-
                 </div>
-                <!-- end Information Calculation Hydrometer Table 25g -->
+                <!-- end Calculation Hydrometer Table 50g -->
 
+                <!-- Actions -->
                 <div class="col-lg-3">
 
                     <div class="card">
@@ -538,13 +542,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h5 class="card-title">Actions</h5>
                             <!-- Actions Buttons -->
                             <div class="d-grid gap-2 mt-3">
-                                <button type="submit" class="btn btn-success" name="SaveDHY">Save Double Hydrometer</button>
+                                <button type="submit" class="btn btn-success" name="Save">Save Double Hydrometer</button>
                             </div>
 
                         </div>
                     </div>
 
                 </div>
+                <!-- Actions -->
 
             </form>
 
@@ -553,5 +558,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/hydrometer/dhy.js"></script>
+<script type="module" src="../js/hydrometer/dhy.js"></script>
 <?php include_once('../components/footer.php');  ?>
