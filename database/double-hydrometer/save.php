@@ -126,6 +126,8 @@ if (isset($_POST['Save'])) {
         $combinedEffectiveLength50g = buildCSV('EffectiveLength50g', 9, $db);
         $combinedDMm50g = buildCSV('DMm50g', 9, $db);
 
+        $combinedNm2umDispersed = buildCSV('Nm2umDispersed', 4, $db);
+
         // --- Verificar si ya existe el Sample_Number en esta prueba ---
         $baseSampleNumber = $SampleNumber;
         $sqlCheck = "SELECT Sample_Number 
@@ -242,7 +244,8 @@ if (isset($_POST['Save'])) {
             OffsetReading50g,
             MassPercentFiner50g,
             EffectiveLength50g,
-            DMm50g";
+            DMm50g,
+            Classification";
 
         $sql .= ") VALUES (
             '$id',
@@ -335,7 +338,8 @@ if (isset($_POST['Save'])) {
             '$combinedOffsetReading50g',
             '$combinedMassPercentFiner50g',
             '$combinedEffectiveLength50g',
-            '$combinedDMm50g'";
+            '$combinedDMm50g',
+            '$combinedNm2umDispersed'";
 
         $sql .= ")";
 
