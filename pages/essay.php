@@ -33,6 +33,7 @@ include_once('../components/header.php');
                 'grain_size_lpf',
                 'grain_size_upstream_transition_fill',
                 'hydrometer',
+                'double_hydrometer',
                 'los_angeles_abrasion_large',
                 'los_angeles_abrasion_small',
                 'moisture_constant_mass',
@@ -195,6 +196,7 @@ function get_test_link($testType, $id)
         'GS-RF' => '../reviews/grain-size-full.php?id=',
         'GS-BF' => '../reviews/grain-size-full.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
+        'DHY' => '../reviews/double-hydrometer.php?id=',
         'AR-CF' => '../reviews/reactivity-coarse.php?id=',
         'AR-FF' => '../reviews/reactivity-fine.php?id='
     ];

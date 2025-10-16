@@ -707,7 +707,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" data-exportar="GS-<?php echo remove_junk(($Search['Material_Type'])); ?>-Build">Contruccion</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-<?php echo $Search['Material_Type']; ?>-Build">Contruccion</a></li>
                   </ul>
                 </div>
                 <button type="submit" class="btn btn-danger" name="DeleteGSFull"><i class="bi bi-trash"></i></button>
@@ -722,7 +722,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         </div>
         <!-- End Buttons for realized actions -->
-
 
       </form>
 
