@@ -6,65 +6,87 @@ require_once('../config/load.php');
 page_require_level(2);
 include_once('../components/header.php');
 
-// ====== Filtros ======
+// =======================
+// Filtros (GET)
+// =======================
 $anio    = isset($_GET['anio'])    ? trim($_GET['anio'])    : '';
 $mes     = isset($_GET['mes'])     ? trim($_GET['mes'])     : '';
 $cliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
 
+// =======================
 // Combos
+// =======================
 $years   = find_by_sql("SELECT DISTINCT YEAR(Sample_Date) AS y FROM lab_test_requisition_form ORDER BY y DESC");
 $clients = find_by_sql("SELECT DISTINCT Client FROM lab_test_requisition_form ORDER BY Client");
 
-// ====== WHERE dinámico para consultas sobre alias 'e' (expandidas) ======
+// =======================
+// Util: expresión SQL de normalización de Test_Type
+// LOWER + TRIM + elimina espacios + reemplaza í -> i
+// =======================
+function sql_norm($col) {
+  // Devuelve una cadena SQL segura para usar en queries
+  // Ej.: sql_norm('e.Test_Type') => "LOWER(REPLACE(REPLACE(TRIM(e.Test_Type),' ',''),'í','i'))"
+  return "LOWER(REPLACE(REPLACE(TRIM($col),' ',''),'í','i'))";
+}
+$norm_e = sql_norm('e.Test_Type');
+$norm_d = sql_norm('d.Test_Type');
+
+// =======================
+// Subconsulta de expansión por comas (hasta 30 tokens)
+// Nota: NO filtramos 'envio' aquí; lo hacemos en la principal y modales para no duplicar condiciones.
+// =======================
+$numbers = "SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL
+            SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL
+            SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL
+            SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20 UNION ALL
+            SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24 UNION ALL SELECT 25 UNION ALL
+            SELECT 26 UNION ALL SELECT 27 UNION ALL SELECT 28 UNION ALL SELECT 29 UNION ALL SELECT 30";
+
+$expandedSubquery = "
+  SELECT 
+    r.Client,
+    r.Sample_ID,
+    r.Sample_Number,
+    r.Sample_Date,
+    -- token n-ésimo sin espacios ni comillas
+    TRIM(BOTH '\"' FROM TRIM(
+      SUBSTRING_INDEX(
+        SUBSTRING_INDEX(
+          REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','),
+          ',', n.n
+        ),
+        ',', -1
+      )
+    )) AS Test_Type
+  FROM lab_test_requisition_form r
+  JOIN ( $numbers ) n
+    ON n.n <= 1 
+      + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
+      - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
+";
+
+// =======================
+// WHERE dinámico (como ANDs; sin palabra WHERE aún)
+// =======================
 $whereExp = [];
 if ($anio   !== '') $whereExp[] = "YEAR(e.Sample_Date) = '". $db->escape($anio) ."'";
 if ($mes    !== '') $whereExp[] = "MONTH(e.Sample_Date) = '". (int)$mes ."'";
 if ($cliente!== '') $whereExp[] = "e.Client = '". $db->escape($cliente) ."'";
-$whereSqlExp = count($whereExp) ? 'WHERE ' . implode(' AND ', $whereExp) : '';
 
-// ====== Subconsulta (EXPANSIÓN por comas, compatible MySQL 5.7/8.0) ======
-$expandedSubquery = "
-  SELECT 
-    t.Client,
-    t.Sample_ID,
-    t.Sample_Number,
-    t.Sample_Date,
-    t.Test_Type
-  FROM (
-    SELECT 
-      r.Client,
-      r.Sample_ID,
-      r.Sample_Number,
-      r.Sample_Date,
-      -- Token n-ésimo, sin espacios ni comillas
-      TRIM(BOTH '\"' FROM TRIM(
-        SUBSTRING_INDEX(
-          SUBSTRING_INDEX(
-            REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','),
-            ',', n.n
-          ),
-          ',', -1
-        )
-      )) AS Test_Type
-    FROM lab_test_requisition_form r
-    JOIN (
-      SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-      UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
-      UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
-      UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
-    ) n
-      ON n.n <= 1 
-           + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
-           - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
-  ) t
-  WHERE t.Test_Type IS NOT NULL 
-    AND t.Test_Type <> ''
-    -- Normaliza acento y compara contra 'envio'
-    AND LOWER(REPLACE(t.Test_Type,'í','i')) <> 'envio'
-";
+// Filtros base (siempre)
+$base = [
+  "e.Test_Type IS NOT NULL",
+  "e.Test_Type <> ''",
+  $norm_e . " <> 'envio'"
+];
 
+// Unificamos todo en un único WHERE
+$allWhere = 'WHERE ' . implode(' AND ', array_merge($base, $whereExp));
 
-// ====== Query principal (AGRUPADO POR ENSAYO) ======
+// =======================
+// Query principal
+// - DISTINCT para evitar duplicados de test por muestra si el campo tiene repetidos
+// =======================
 $sql = "
   SELECT
     e.Client,
@@ -77,26 +99,27 @@ $sql = "
         FROM test_delivery d
         WHERE d.Sample_ID     = e.Sample_ID
           AND d.Sample_Number = e.Sample_Number
-          AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
-              = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+          AND " . $norm_d . " = " . $norm_e . "
       )
     ) AS entregados
-  FROM ( $expandedSubquery ) e
-  $whereSqlExp
-  WHERE e.Test_Type IS NOT NULL 
-    AND e.Test_Type <> ''
-    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
+  FROM (
+    SELECT DISTINCT t.Client, t.Sample_ID, t.Sample_Number, t.Sample_Date, t.Test_Type
+    FROM ( $expandedSubquery ) t
+  ) e
+  $allWhere
   GROUP BY e.Client, anio, mes
   ORDER BY anio DESC, mes DESC, e.Client
 ";
 
-
 $res = $db->query($sql);
 if (!$res) {
-  die('Error en consulta principal: ' . $db->error);
+  error_log('Error en consulta principal: ' . $db->error);
+  die('Ocurrió un problema al cargar los datos. Intenta nuevamente.');
 }
 
+// =======================
 // Totales KPI
+// =======================
 $total_solic = 0;
 $total_entr  = 0;
 $rows = [];
@@ -108,7 +131,9 @@ while ($row = $res->fetch_assoc()) {
 }
 $pct_global = $total_solic > 0 ? round($total_entr / $total_solic * 100, 1) : 0.0;
 
+// =======================
 // Helpers
+// =======================
 function pctBadgeClass($pct) {
   if ($pct >= 90) return 'bg-success';
   if ($pct >= 70) return 'bg-warning text-dark';
@@ -174,7 +199,7 @@ function monthName($m) {
       </div>
     </div>
 
-    <!-- Filtros -->  
+    <!-- Filtros -->
     <div class="card mt-3">
       <div class="card-body">
         <form method="GET" class="row g-3">
@@ -245,12 +270,12 @@ if (empty($rows)) {
     $idx++;
     $modalId = 'detalles_' . $idx;
 
-    // Filtros por fila
+    // Filtros por fila (escapar)
     $clienteRow = $db->escape($r['Client']);
     $anioRow    = (int)$r['anio'];
     $mesRow     = (int)$r['mes'];
 
-    // Subquery expanded (reutilizable)
+    // Subquery expandida, limitada por Cliente/Año/Mes
     $expanded = "
       SELECT 
         r.Client,
@@ -264,60 +289,60 @@ if (empty($rows)) {
           )
         )) AS Test_Type
       FROM lab_test_requisition_form r
-      JOIN (
-        SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-        UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8
-        UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
-        UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
-      ) n
+      JOIN ( $numbers ) n
         ON n.n <= 1 
-             + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
-             - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
+          + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
+          - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
       WHERE r.Client = '{$clienteRow}'
         AND YEAR(r.Sample_Date) = {$anioRow}
         AND MONTH(r.Sample_Date) = {$mesRow}
     ";
 
-    // === SOLICITADOS (expandido a ensayos) ===
-  $sqlSolic = "
-  SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-  FROM ( $expanded ) e
-  WHERE e.Test_Type IS NOT NULL 
-    AND e.Test_Type <> ''
-    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
-  ORDER BY e.Sample_Date DESC, e.Sample_ID
-";
+    // Normalización en PHP para reutilizar la expresión
+    $norm_e_local = sql_norm('e.Test_Type');
+    $norm_d_local = sql_norm('d.Test_Type');
+
+    // === SOLICITADOS (DISTINCT) ===
+    $sqlSolic = "
+      SELECT DISTINCT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+      FROM ( $expanded ) e
+      WHERE e.Test_Type IS NOT NULL 
+        AND e.Test_Type <> ''
+        AND $norm_e_local <> 'envio'
+      ORDER BY e.Sample_Date DESC, e.Sample_ID
+    ";
 
     $detSolic = [];
     $rs = $db->query($sqlSolic);
     if ($rs) {
       while ($d = $rs->fetch_assoc()) { $detSolic[] = $d; }
     } else {
-      die('Error solicitados: ' . $db->error);
+      error_log('Error solicitados: ' . $db->error);
+      die('Ocurrió un problema al cargar los detalles (solicitados).');
     }
 
     // === PENDIENTES (solicitados SIN entrega) ===
-   $sqlPend = "
-  SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-  FROM ( $expanded ) e
-  LEFT JOIN test_delivery d
-    ON d.Sample_ID     = e.Sample_ID
-   AND d.Sample_Number = e.Sample_Number
-   AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
-       = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
-  WHERE e.Test_Type IS NOT NULL 
-    AND e.Test_Type <> ''
-    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
-    AND d.Sample_ID IS NULL
-  ORDER BY e.Sample_Date DESC, e.Sample_ID
-";
+    $sqlPend = "
+      SELECT DISTINCT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+      FROM ( $expanded ) e
+      LEFT JOIN test_delivery d
+        ON d.Sample_ID     = e.Sample_ID
+       AND d.Sample_Number = e.Sample_Number
+       AND $norm_d_local = $norm_e_local
+      WHERE e.Test_Type IS NOT NULL 
+        AND e.Test_Type <> ''
+        AND $norm_e_local <> 'envio'
+        AND d.Sample_ID IS NULL
+      ORDER BY e.Sample_Date DESC, e.Sample_ID
+    ";
 
     $detPend = [];
     $rp = $db->query($sqlPend);
     if ($rp) {
       while ($p = $rp->fetch_assoc()) { $detPend[] = $p; }
     } else {
-      die('Error pendientes: ' . $db->error);
+      error_log('Error pendientes: ' . $db->error);
+      die('Ocurrió un problema al cargar los detalles (pendientes).');
     }
 ?>
               <tr>
@@ -462,6 +487,7 @@ if (empty($rows)) {
 </main>
 
 <?php include_once('../components/footer.php'); ?>
+
 <script>
 // Si la fila tiene pendientes, al abrir el modal cambia a la pestaña "Pendientes"
 document.addEventListener('shown.bs.modal', function (e) {
