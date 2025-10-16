@@ -7,33 +7,36 @@ page_require_level(2);
 include_once('../components/header.php');
 
 // =======================
-// Filtros (GET)
+// Filtros
 // =======================
 $anio    = isset($_GET['anio'])    ? trim($_GET['anio'])    : '';
 $mes     = isset($_GET['mes'])     ? trim($_GET['mes'])     : '';
 $cliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : '';
 
-// =======================
-// Combos
-// =======================
 $years   = find_by_sql("SELECT DISTINCT YEAR(Sample_Date) AS y FROM lab_test_requisition_form ORDER BY y DESC");
 $clients = find_by_sql("SELECT DISTINCT Client FROM lab_test_requisition_form ORDER BY Client");
 
 // =======================
-// Util: expresión SQL de normalización de Test_Type
-// LOWER + TRIM + elimina espacios + reemplaza í -> i
+// Funciones auxiliares
 // =======================
 function sql_norm($col) {
-  // Devuelve una cadena SQL segura para usar en queries
-  // Ej.: sql_norm('e.Test_Type') => "LOWER(REPLACE(REPLACE(TRIM(e.Test_Type),' ',''),'í','i'))"
   return "LOWER(REPLACE(REPLACE(TRIM($col),' ',''),'í','i'))";
 }
 $norm_e = sql_norm('e.Test_Type');
 $norm_d = sql_norm('d.Test_Type');
 
+function pctBadgeClass($pct) {
+  if ($pct >= 90) return 'bg-success';
+  if ($pct >= 70) return 'bg-warning text-dark';
+  return 'bg-danger';
+}
+function monthName($m) {
+  $names = [1=>'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return isset($names[(int)$m]) ? $names[(int)$m] : $m;
+}
+
 // =======================
-// Subconsulta de expansión por comas (hasta 30 tokens)
-// Nota: NO filtramos 'envio' aquí; lo hacemos en la principal y modales para no duplicar condiciones.
+// Subconsulta expandida (hasta 30 tokens)
 // =======================
 $numbers = "SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL
             SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL
@@ -48,7 +51,6 @@ $expandedSubquery = "
     r.Sample_ID,
     r.Sample_Number,
     r.Sample_Date,
-    -- token n-ésimo sin espacios ni comillas
     TRIM(BOTH '\"' FROM TRIM(
       SUBSTRING_INDEX(
         SUBSTRING_INDEX(
@@ -66,26 +68,23 @@ $expandedSubquery = "
 ";
 
 // =======================
-// WHERE dinámico (como ANDs; sin palabra WHERE aún)
+// WHERE unificado
 // =======================
 $whereExp = [];
 if ($anio   !== '') $whereExp[] = "YEAR(e.Sample_Date) = '". $db->escape($anio) ."'";
 if ($mes    !== '') $whereExp[] = "MONTH(e.Sample_Date) = '". (int)$mes ."'";
 if ($cliente!== '') $whereExp[] = "e.Client = '". $db->escape($cliente) ."'";
 
-// Filtros base (siempre)
 $base = [
   "e.Test_Type IS NOT NULL",
   "e.Test_Type <> ''",
   $norm_e . " <> 'envio'"
 ];
 
-// Unificamos todo en un único WHERE
 $allWhere = 'WHERE ' . implode(' AND ', array_merge($base, $whereExp));
 
 // =======================
 // Query principal
-// - DISTINCT para evitar duplicados de test por muestra si el campo tiene repetidos
 // =======================
 $sql = "
   SELECT
@@ -114,11 +113,11 @@ $sql = "
 $res = $db->query($sql);
 if (!$res) {
   error_log('Error en consulta principal: ' . $db->error);
-  die('Ocurrió un problema al cargar los datos. Intenta nuevamente.');
+  die('Error al cargar datos.');
 }
 
 // =======================
-// Totales KPI
+// KPIs
 // =======================
 $total_solic = 0;
 $total_entr  = 0;
@@ -130,19 +129,6 @@ while ($row = $res->fetch_assoc()) {
   $total_entr  += (int)$row['entregados'];
 }
 $pct_global = $total_solic > 0 ? round($total_entr / $total_solic * 100, 1) : 0.0;
-
-// =======================
-// Helpers
-// =======================
-function pctBadgeClass($pct) {
-  if ($pct >= 90) return 'bg-success';
-  if ($pct >= 70) return 'bg-warning text-dark';
-  return 'bg-danger';
-}
-function monthName($m) {
-  $names = [1=>'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  return isset($names[(int)$m]) ? $names[(int)$m] : $m;
-}
 ?>
 
 <main id="main" class="main">
@@ -156,43 +142,26 @@ function monthName($m) {
       <div class="col-md-4">
         <div class="card shadow-sm border-0">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-muted small">Ensayos solicitados</div>
-                <div class="fs-3 fw-bold"><?= number_format($total_solic) ?></div>
-              </div>
-              <div class="display-6">📥</div>
-            </div>
+            <div class="text-muted small">Ensayos solicitados</div>
+            <div class="fs-3 fw-bold"><?= number_format($total_solic) ?></div>
           </div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card shadow-sm border-0">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-muted small">Ensayos entregados</div>
-                <div class="fs-3 fw-bold"><?= number_format($total_entr) ?></div>
-              </div>
-              <div class="display-6">📤</div>
-            </div>
+            <div class="text-muted small">Ensayos entregados</div>
+            <div class="fs-3 fw-bold"><?= number_format($total_entr) ?></div>
           </div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card shadow-sm border-0">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="w-100">
-                <div class="d-flex justify-content-between">
-                  <div class="text-muted small">Porcentaje de Entrega</div>
-                  <div class="fw-semibold"><?= $pct_global ?>%</div>
-                </div>
-                <div class="progress mt-2" style="height:10px;">
-                  <div class="progress-bar <?= pctBadgeClass($pct_global) ?>" role="progressbar" style="width: <?= (float)$pct_global ?>%;" aria-valuenow="<?= (float)$pct_global ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </div>
-              <div class="ms-3 display-6">📈</div>
+            <div class="text-muted small">Porcentaje de entrega</div>
+            <div class="fs-3 fw-bold"><?= $pct_global ?>%</div>
+            <div class="progress mt-2" style="height:10px;">
+              <div class="progress-bar <?= pctBadgeClass($pct_global) ?>" style="width: <?= $pct_global ?>%;"></div>
             </div>
           </div>
         </div>
@@ -207,8 +176,8 @@ function monthName($m) {
             <label class="form-label">Año</label>
             <select name="anio" class="form-select">
               <option value="">Todos</option>
-              <?php foreach ($years as $y): $val = (int)$y['y']; ?>
-                <option value="<?= $val ?>" <?= ($anio == $val ? 'selected' : '') ?>><?= $val ?></option>
+              <?php foreach ($years as $y): $val=(int)$y['y']; ?>
+              <option value="<?= $val ?>" <?= ($anio==$val?'selected':'') ?>><?= $val ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -216,8 +185,10 @@ function monthName($m) {
             <label class="form-label">Mes</label>
             <select name="mes" class="form-select">
               <option value="">Todos</option>
-              <?php for ($m=1; $m<=12; $m++): ?>
-                <option value="<?= $m ?>" <?= ($mes == (string)$m ? 'selected' : '') ?>><?= str_pad($m,2,'0',STR_PAD_LEFT) . ' - ' . monthName($m) ?></option>
+              <?php for($m=1;$m<=12;$m++): ?>
+              <option value="<?= $m ?>" <?= ($mes==$m?'selected':'') ?>>
+                <?= str_pad($m,2,'0',STR_PAD_LEFT).' - '.monthName($m) ?>
+              </option>
               <?php endfor; ?>
             </select>
           </div>
@@ -225,10 +196,10 @@ function monthName($m) {
             <label class="form-label">Cliente</label>
             <select name="cliente" class="form-select">
               <option value="">Todos</option>
-              <?php foreach ($clients as $c): $cl = $c['Client'] ?? ''; ?>
-                <option value="<?= htmlspecialchars($cl) ?>" <?= ($cliente === $cl ? 'selected' : '') ?>>
-                  <?= htmlspecialchars($cl ?: '(Sin cliente)') ?>
-                </option>
+              <?php foreach ($clients as $c): $cl=$c['Client']??''; ?>
+              <option value="<?= htmlspecialchars($cl) ?>" <?= ($cliente===$cl?'selected':'') ?>>
+                <?= htmlspecialchars($cl?:'(Sin cliente)') ?>
+              </option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -253,233 +224,31 @@ function monthName($m) {
                 <th class="text-end">Solicitados</th>
                 <th class="text-end">Entregados</th>
                 <th class="text-end">Pendientes</th>
-                <th style="width:220px;">% Entrega</th>
-                <th class="text-center" style="width:140px;">Detalle</th>
+                <th class="text-center">% Entrega</th>
               </tr>
             </thead>
             <tbody>
 <?php
 if (empty($rows)) {
-  echo "<tr><td colspan='8' class='text-center text-muted py-4'>Sin datos para los filtros seleccionados.</td></tr>";
+  echo "<tr><td colspan='7' class='text-center text-muted py-4'>Sin datos.</td></tr>";
 } else {
-  $idx = 0;
   foreach ($rows as $r) {
     $pct   = $r['solicitados'] > 0 ? round($r['entregados'] / $r['solicitados'] * 100, 1) : 0;
     $badge = pctBadgeClass($pct);
     $pend  = max(0, (int)$r['pendientes']);
-    $idx++;
-    $modalId = 'detalles_' . $idx;
-
-    // Filtros por fila (escapar)
-    $clienteRow = $db->escape($r['Client']);
-    $anioRow    = (int)$r['anio'];
-    $mesRow     = (int)$r['mes'];
-
-    // Subquery expandida, limitada por Cliente/Año/Mes
-    $expanded = "
-      SELECT 
-        r.Client,
-        r.Sample_ID,
-        r.Sample_Number,
-        r.Sample_Date,
-        TRIM(BOTH '\"' FROM TRIM(
-          SUBSTRING_INDEX(
-            SUBSTRING_INDEX(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', n.n),
-            ',', -1
-          )
-        )) AS Test_Type
-      FROM lab_test_requisition_form r
-      JOIN ( $numbers ) n
-        ON n.n <= 1 
-          + LENGTH(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','))
-          - LENGTH(REPLACE(REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', ''))
-      WHERE r.Client = '{$clienteRow}'
-        AND YEAR(r.Sample_Date) = {$anioRow}
-        AND MONTH(r.Sample_Date) = {$mesRow}
-    ";
-
-    // Normalización en PHP para reutilizar la expresión
-    $norm_e_local = sql_norm('e.Test_Type');
-    $norm_d_local = sql_norm('d.Test_Type');
-
-    // === SOLICITADOS (DISTINCT) ===
-    $sqlSolic = "
-      SELECT DISTINCT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-      FROM ( $expanded ) e
-      WHERE e.Test_Type IS NOT NULL 
-        AND e.Test_Type <> ''
-        AND $norm_e_local <> 'envio'
-      ORDER BY e.Sample_Date DESC, e.Sample_ID
-    ";
-
-    $detSolic = [];
-    $rs = $db->query($sqlSolic);
-    if ($rs) {
-      while ($d = $rs->fetch_assoc()) { $detSolic[] = $d; }
-    } else {
-      error_log('Error solicitados: ' . $db->error);
-      die('Ocurrió un problema al cargar los detalles (solicitados).');
-    }
-
-    // === PENDIENTES (solicitados SIN entrega) ===
-    $sqlPend = "
-      SELECT DISTINCT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-      FROM ( $expanded ) e
-      LEFT JOIN test_delivery d
-        ON d.Sample_ID     = e.Sample_ID
-       AND d.Sample_Number = e.Sample_Number
-       AND $norm_d_local = $norm_e_local
-      WHERE e.Test_Type IS NOT NULL 
-        AND e.Test_Type <> ''
-        AND $norm_e_local <> 'envio'
-        AND d.Sample_ID IS NULL
-      ORDER BY e.Sample_Date DESC, e.Sample_ID
-    ";
-
-    $detPend = [];
-    $rp = $db->query($sqlPend);
-    if ($rp) {
-      while ($p = $rp->fetch_assoc()) { $detPend[] = $p; }
-    } else {
-      error_log('Error pendientes: ' . $db->error);
-      die('Ocurrió un problema al cargar los detalles (pendientes).');
-    }
 ?>
-              <tr>
-                <td><span class="fw-semibold"><?= htmlspecialchars($r['Client'] ?: '(Sin cliente)') ?></span></td>
-                <td><?= (int)$r['anio'] ?></td>
-                <td><?= str_pad($r['mes'], 2, '0', STR_PAD_LEFT) . ' - ' . monthName($r['mes']) ?></td>
-                <td class="text-end"><?= number_format($r['solicitados']) ?></td>
-                <td class="text-end"><?= number_format($r['entregados']) ?></td>
-                <td class="text-end"><?= number_format($pend) ?></td>
-                <td>
-                  <div class="d-flex align-items-center gap-2">
-                    <div class="progress flex-grow-1" style="height: 10px;">
-                      <div class="progress-bar <?= $badge ?>" role="progressbar" style="width: <?= (float)$pct ?>%;" aria-valuenow="<?= (float)$pct ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <span class="badge <?= $badge ?>"><?= $pct ?>%</span>
-                  </div>
-                </td>
-                <td class="text-center">
-                  <button type="button"
-                          class="btn btn-sm btn-outline-primary btn-ver-detalle"
-                          data-bs-toggle="modal"
-                          data-bs-target="#<?= $modalId ?>">
-                    Ver <?php if ($pend > 0): ?><span class="badge bg-danger ms-1"><?= (int)$pend ?></span><?php endif; ?>
-                  </button>
-                </td>
-              </tr>
-
-              <!-- Modal por fila -->
-              <div class="modal fade" id="<?= $modalId ?>" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title">
-                        <?= htmlspecialchars($r['Client'] ?: '(Sin cliente)') ?> — <?= (int)$r['anio'] ?>/<?= str_pad($r['mes'], 2, '0', STR_PAD_LEFT) ?>
-                      </h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                      <ul class="nav nav-tabs" id="tab-<?= $modalId ?>" role="tablist">
-                        <li class="nav-item" role="presentation">
-                          <button class="nav-link active" id="solic-<?= $modalId ?>-tab" data-bs-toggle="tab" data-bs-target="#solic-<?= $modalId ?>" type="button" role="tab" aria-controls="solic-<?= $modalId ?>" aria-selected="true">
-                            Solicitados (<?= count($detSolic) ?>)
-                          </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                          <button class="nav-link" id="pend-<?= $modalId ?>-tab" data-bs-toggle="tab" data-bs-target="#pend-<?= $modalId ?>" type="button" role="tab" aria-controls="pend-<?= $modalId ?>" aria-selected="false">
-                            Pendientes por entregar (<?= count($detPend) ?>)
-                          </button>
-                        </li>
-                      </ul>
-                      <div class="tab-content pt-3">
-                        <!-- Tab Solicitados -->
-                        <div class="tab-pane fade show active" id="solic-<?= $modalId ?>" role="tabpanel" aria-labelledby="solic-<?= $modalId ?>-tab">
-                          <?php if (empty($detSolic)) { ?>
-                            <div class="text-muted">No hay solicitados para esta combinación.</div>
-                          <?php } else { ?>
-                            <div class="table-responsive">
-                              <table class="table table-sm table-striped align-middle">
-                                <thead>
-                                  <tr>
-                                    <th>Fecha</th>
-                                    <th>Sample ID</th>
-                                    <th>Sample Number</th>
-                                    <th>Test Type</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <?php foreach ($detSolic as $d) { ?>
-                                    <tr>
-                                      <td><?= htmlspecialchars($d['fecha']) ?></td>
-                                      <td><?= htmlspecialchars($d['Sample_ID']) ?></td>
-                                      <td><?= htmlspecialchars($d['Sample_Number']) ?></td>
-                                      <td><?= htmlspecialchars($d['Test_Type']) ?></td>
-                                    </tr>
-                                  <?php } ?>
-                                </tbody>
-                              </table>
-                            </div>
-                          <?php } ?>
-                        </div>
-                        <!-- Tab Pendientes -->
-                        <div class="tab-pane fade" id="pend-<?= $modalId ?>" role="tabpanel" aria-labelledby="pend-<?= $modalId ?>-tab">
-                          <?php if (empty($detPend)) { ?>
-                            <div class="text-success">No hay pendientes por entregar. ✅</div>
-                          <?php } else { ?>
-                            <div class="table-responsive">
-                              <table class="table table-sm table-striped align-middle">
-                                <thead>
-                                  <tr>
-                                    <th>Fecha</th>
-                                    <th>Sample ID</th>
-                                    <th>Sample Number</th>
-                                    <th>Test Type</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <?php foreach ($detPend as $p) { ?>
-                                    <tr>
-                                      <td><?= htmlspecialchars($p['fecha']) ?></td>
-                                      <td><?= htmlspecialchars($p['Sample_ID']) ?></td>
-                                      <td><?= htmlspecialchars($p['Sample_Number']) ?></td>
-                                      <td><?= htmlspecialchars($p['Test_Type']) ?></td>
-                                    </tr>
-                                  <?php } ?>
-                                </tbody>
-                              </table>
-                            </div>
-                          <?php } ?>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- /Modal -->
-<?php
-  } // end foreach
-} // end if/else
-?>
+<tr>
+  <td><?= htmlspecialchars($r['Client']) ?></td>
+  <td><?= $r['anio'] ?></td>
+  <td><?= str_pad($r['mes'],2,'0',STR_PAD_LEFT).' - '.monthName($r['mes']) ?></td>
+  <td class="text-end"><?= number_format($r['solicitados']) ?></td>
+  <td class="text-end"><?= number_format($r['entregados']) ?></td>
+  <td class="text-end"><?= number_format($pend) ?></td>
+  <td class="text-center"><span class="badge <?= $badge ?>"><?= $pct ?>%</span></td>
+</tr>
+<?php } } ?>
             </tbody>
           </table>
-        </div>
-
-        <!-- Resumen inferior -->
-        <div class="border-top pt-3 d-flex justify-content-end">
-          <div class="text-end">
-            <div class="small text-muted">Totales (según filtros)</div>
-            <div class="fw-semibold">
-              Solicitados: <?= number_format($total_solic) ?> | 
-              Entregados: <?= number_format($total_entr) ?> | 
-              Pendientes: <?= number_format(max(0, $total_solic - $total_entr)) ?> | 
-              %: <?= $pct_global ?>%
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -487,16 +256,3 @@ if (empty($rows)) {
 </main>
 
 <?php include_once('../components/footer.php'); ?>
-
-<script>
-// Si la fila tiene pendientes, al abrir el modal cambia a la pestaña "Pendientes"
-document.addEventListener('shown.bs.modal', function (e) {
-  const trigger = document.querySelector('[data-bs-target="#' + e.target.id + '"].btn-ver-detalle');
-  if (!trigger) return;
-  const badge = trigger.querySelector('.badge.bg-danger');
-  if (badge && parseInt(badge.textContent, 10) > 0) {
-    const pendTabBtn = e.target.querySelector('[id^="pend-"][id$="-tab"]');
-    if (pendTabBtn) pendTabBtn.click();
-  }
-}, true);
-</script>
