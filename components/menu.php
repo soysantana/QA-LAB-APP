@@ -1,302 +1,223 @@
 <?php
-$class_home = !empty($class_home) ? $class_home : "collapsed";
-$class_form = !empty($class_form) ? $class_form : "collapsed";
-$form_show = !empty($form_show) ? $form_show : " ";
-$profile_show = !empty($profile_show) ? $profile_show : "collapsed";
-$requisition_form = !empty($requisition_form) ? $requisition_form : "collapsed";
-$Sumarios = !empty($Sumarios) ? $Sumarios : "collapsed";
-$Pending_List = !empty($Pending_List) ? $Pending_List : "collapsed";
-$wepln = !empty($wepln) ? $wepln : "collapsed";
-$ropln = !empty($ropln) ? $ropln : "collapsed";
-$GrainSize = !empty($GrainSize) ? $GrainSize : " ";
-$Moisture = !empty($Moisture) ? $Moisture : " ";
-$SG = !empty($SG) ? $SG : " ";
-$Density = !empty($Density) ? $Density : " ";
-$tracking_show = !empty($tracking_show) ? $tracking_show : " ";
-$class_tracking = !empty($class_tracking) ? $class_tracking : "collapsed";
-$preparation = !empty($preparation) ? $preparation : " ";
-$realization = !empty($realization) ? $realization : " ";
-$delivery = !empty($delivery) ? $delivery : " ";
-$reviews = !empty($reviews) ? $reviews : " ";
-$repeat = !empty($repeat) ? $repeat : " ";
-$review = !empty($review) ? $review : "collapsed";
-$user_group = !empty($user_group) ? $user_group : "collapsed";
-$dCliente = !empty($dCliente) ? $dCliente : "collapsed";
-$rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
-$review_essay = !empty($review_essay) ? $review_essay : "collapsed";
-$control_concreto = !empty($control_concreto) ? $control_concreto : "collapsed";
-$bandejas = !empty($bandejas) ? $bandejas : "collapsed";
+/**
+ * Sidebar refactor — moderno, DRY y con activo server‑side (Bootstrap 5)
+ *
+ * - Define la estructura del menú en un solo array ($MENU)
+ * - Calcula la clase "active" en el servidor por patrón de URL
+ * - Abre/cierra grupos (collapse) automáticamente si un hijo está activo
+ * - Soporta íconos Bootstrap (bi ...)
+ * - Permite visibilidad por rol mediante 'roles' (opcional)
+ * - Sin dependencias JS para activo (el script final es opcional)
+ */
 
+require_once dirname(__DIR__) . '/config/load.php';
+page_require_level(2); // ajusta según convenga
 
-?>
-<!-- ======= Sidebar ======= -->
-<aside id="sidebar" class="sidebar">
+// =============================
+// Helpers
+// =============================
+function current_path(): string {
+  // Ruta como '/pages/home.php'
+  $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+  return rtrim($uri, '/');
+}
 
-  <ul class="sidebar-nav" id="sidebar-nav">
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $class_home; ?> " href="/pages/home.php">
-        <i class="bi bi-grid"></i>
-        <span>Panel Control</span>
-      </a>
-    </li><!-- End Dashboard Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $class_tracking; ?>" data-bs-target="#Tracking-nav" data-bs-toggle="collapse" href="#">
-        <i class="bi bi-eye"></i><span>Seguimiento de muestras</span><i class="bi bi-chevron-down ms-auto"></i>
-      </a>
-      <ul id="Tracking-nav" class="nav-content collapse <?php echo $tracking_show; ?>" data-bs-parent="#sidebar-nav">
-        <li>
-          <a href="/pages/test-preparation.php" class="<?php echo $preparation; ?>">
-            <i class="bi bi-circle"></i><span>Ensayos en preparacion</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/test-realization.php" class="<?php echo $realization; ?>">
-            <i class="bi bi-circle"></i><span>Ensayos en realizacion</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/test-delivery.php" class="<?php echo $delivery; ?>">
-            <i class="bi bi-circle"></i><span>Ensayos en entrega</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/test-repeat.php" class="<?php echo $repeat; ?>">
-            <i class="bi bi-circle"></i><span>Ensayos en repeticion</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/test-review.php" class="<?php echo $reviews; ?>">
-            <i class="bi bi-circle"></i><span>Ensayos en revision</span>
-          </a>
-        </li>
-      </ul>
-    </li><!-- End Tracking Nav -->
-    <li class="nav-item">
-      <a class="nav-link <?php echo $requisition_form; ?>" href="/components/menu_inventarios.php">
-        <i class="bi bi-box"></i>
-        <span>Inventarios</span>
-      </a>
-<li class="nav-item">
-  <a class="nav-link <?php echo $bandejas; ?>" href="/pages/bandejas_descartar.php">
-    <i class="bi bi-trash3"></i>
-    <span>Muestras a Botar</span>
-  </a>
-</li><!-- End Bandejas a Botar -->
-     <li class="nav-item">
-  <a class="nav-link <?php echo $hojatrabajos; ?>" href="/components/menu_hojastrabajos.php">
-    <i class="bi bi-clipboard-check"></i>
-    <span>Hojas de Trabajos</span>
-  </a>
-</li>
-
-    <li class="nav-heading">paginas</li>
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
-        <i class="bi bi-file-earmark"></i>
-        <span>Formulario de requisicion</span>
-      </a>
-    </li><!-- End Register Page Nav -->
-
-   <li class="nav-item">
-  <a class="nav-link <?php echo $control_concreto; ?>" href="/pages/control_ensayo_concreto.php">
-    <i class="bi bi-clipboard-data"></i>
-    <span>Control Ensayo de Concreto</span>
-  </a>
-</li><!-- End Control Ensayo de Concreto -->
-
-
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
-        <i class="bi bi-question-circle"></i>
-        <span>Lista de Pendientes</span>
-      </a>
-    </li><!-- End Register Page Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
-        <i class="bi bi-calendar3"></i>
-        <span>Planificación Semanal</span>
-      </a>
-    </li><!-- End Register Page Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $ropln; ?>" href="/pages/job-rotation.php">
-        <i class="bi bi-calendar2"></i>
-        <span>Rotacion Laboral</span>
-      </a>
-    </li><!-- End Register Page Nav -->
-
-    <li class="nav-heading">Documentacion</li>
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $class_form; ?>" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
-        <i class="bi bi-journal-text"></i><span>Registro de ensayos</span><i class="bi bi-chevron-down ms-auto"></i>
-      </a>
-      <ul id="forms-nav" class="nav-content collapse <?php echo $form_show; ?> " data-bs-parent="#sidebar-nav">
-        <li>
-          <a href="/pages/moisture-content-menu.php" class="<?php echo $Moisture; ?>">
-            <i class="bi bi-circle"></i><span>Moisture Content</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/atterberg-limit.php">
-            <i class="bi bi-circle"></i><span>Atterberg Limit</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/reactivity-menu.php">
-            <i class="bi bi-circle"></i><span>Reactividad</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/grain-size-menu.php" class="<?php echo $GrainSize; ?>">
-            <i class="bi bi-circle"></i><span>Grain Size</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/specific-gravity-menu.php" class="<?php echo $SG; ?>">
-            <i class="bi bi-circle"></i><span>Specific Gravity</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/standard-proctor.php">
-            <i class="bi bi-circle"></i><span>Standard Proctor</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/LAA-menu.php">
-            <i class="bi bi-circle"></i><span>Los Angeles Abrasion</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/compressive-menu.php">
-            <i class="bi bi-circle"></i><span>Compresion</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/dispercion-menu.php">
-            <i class="bi bi-circle"></i><span>Dispersion</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/leeb-hardness.php">
-            <i class="bi bi-circle"></i><span>Leeb Hardness</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/point-Load.php">
-            <i class="bi bi-circle"></i><span>Point Load</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/brazilian.php">
-            <i class="bi bi-circle"></i><span>Brazilian</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/soundness.php">
-            <i class="bi bi-circle"></i><span>Soundness</span>
-          </a>
-        </li>
-        <li>
-          <a href="/pages/densidades-menu.php" class="<?php echo $Density; ?>">
-            <i class="bi bi-circle"></i><span>Density</span>
-          </a>
-        </li>
-      </ul>
-    </li><!-- End Forms Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $review_essay; ?>" href="/pages/essay.php">
-        <i class="bi bi-database"></i>
-        <span>Ensayos Registrados</span>
-      </a>
-    </li><!-- End Review Essay Page Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $Sumarios; ?>" href="/pages/sumary.php">
-        <i class="bi bi-clipboard-data"></i>
-        <span>Sumarios</span>
-      </a>
-    </li><!-- End Register Page Nav -->
-
-    <li class="nav-heading">Supervision</li>
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $review; ?>" href="/pages/essay-review.php">
-        <i class="bi bi-card-checklist"></i>
-        <span>Revisión de ensayo</span>
-      </a>
-    </li><!-- End Review Page Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $rendimiento; ?>" href="/pages/rendimiento.php">
-        <i class="bi bi-android"></i>
-        <span>Desempeño</span>
-      </a>
-    </li><!-- End Review Page Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $dCliente; ?>" href="/pages/detalle-cliente.php">
-        <i class="bi bi-info-circle"></i>
-        <span>Detalles de clientes</span>
-      </a>
-    </li><!-- End Review Page Nav -->
-
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="../components/menu_reporte_diario.php">
-        <i class="bi bi-calendar-event"></i>
-        <span>Reporte Diario</span>
-      </a>
-    </li><!-- End Review Page Nav -->
-
-
-    <li class="nav-item">
-      <a class="nav-link <?php echo $user_group; ?>" href="../pages/users-group.php">
-        <i class="bi bi-people"></i>
-        <span>Usuarios / Grupos</span>
-      </a>
-    </li><!-- End Review Page Nav -->
-
-    <li class="nav-heading">Configuracion</li>
-
-    <!-- User Profile -->
-    <li class="nav-item">
-      <a class="nav-link <?php echo $profile_show; ?>" href="/pages/users-profile.php">
-        <i class="bi bi-person"></i>
-        <span>Perfil</span>
-      </a>
-    </li>
-    <!-- End User Profile -->
-
-    <!-- New Account -->
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="/pages/users-register.php">
-        <i class="bi bi-card-list"></i>
-        <span>Nueva cuenta</span>
-      </a>
-    </li>
-    <!-- End New Account -->
-
-  </ul>
-
-</aside><!-- End Sidebar-->
-
-<script>
-  // Obtén la URL actual para determinar la página actual
-  const currentPage = window.location.href;
-
-  // Obtén los enlaces de la barra lateral
-  const sidebarLinks = document.querySelectorAll('.sidebar-nav .nav-item a');
-
-  // Itera a través de los enlaces y resalta el enlace correspondiente
-  sidebarLinks.forEach(link => {
-    if (currentPage.includes(link.getAttribute('href'))) {
-      link.classList.add('active'); // Puedes aplicar estilos CSS a la clase 'active'
+function path_matches(string $path, array $patterns): bool {
+  $path = current_path();
+  foreach ($patterns as $p) {
+    // Patrones pueden ser rutas exactas o expresiones regulares delimitadas por '#'
+    if ($p === $path) return true;
+    if (strlen($p) > 2 && $p[0] === '#' && substr($p, -1) === '#') {
+      if (preg_match($p, $path)) return true;
+    } else {
+      // Contiene substring
+      if (strpos($path, $p) !== false) return true;
     }
+  }
+  return false;
+}
+
+function user_has_role(array $roles = null): bool {
+  if ($roles === null || $roles === []) return true; // visible para todos
+  // Ajusta esta lógica a tu sistema de roles/grupos
+  $user = current_user();
+  $ugrp = $user['user_level'] ?? null; // ejemplo
+  return in_array($ugrp, $roles, true);
+}
+
+function render_nav_link(array $item, bool $isActive): string {
+  $href  = $item['href'];
+  $icon  = $item['icon'] ?? 'bi-circle';
+  $label = $item['label'];
+  $extra = $item['extra_class'] ?? '';
+  $cls   = 'nav-link' . ($isActive ? ' active' : '') . ($extra ? ' ' . $extra : '');
+  return <<<HTML
+  <li class="nav-item">
+    <a class="$cls" href="$href">
+      <i class="bi $icon"></i>
+      <span>$label</span>
+    </a>
+  </li>
+HTML;
+}
+
+function render_nav_group(array $group, bool $open): string {
+  $gid   = $group['id'];
+  $icon  = $group['icon'] ?? 'bi-folder';
+  $label = $group['label'];
+  $itemsHtml = $group['items_html'];
+  $linkCls = 'nav-link' . ($open ? '' : ' collapsed');
+  $ulCls   = 'nav-content collapse' . ($open ? ' show' : '');
+  return <<<HTML
+  <li class="nav-item">
+    <a class="$linkCls" data-bs-target="#$gid" data-bs-toggle="collapse" href="#">
+      <i class="bi $icon"></i><span>$label</span><i class="bi bi-chevron-down ms-auto"></i>
+    </a>
+    <ul id="$gid" class="$ulCls" data-bs-parent="#sidebar-nav">
+      $itemsHtml
+    </ul>
+  </li>
+HTML;
+}
+
+function render_group_item(array $item, bool $isActive): string {
+  $href  = $item['href'];
+  $label = $item['label'];
+  $icon  = $item['icon'] ?? 'bi-circle';
+  $cls   = $isActive ? 'active' : '';
+  return <<<HTML
+  <li>
+    <a href="$href" class="$cls">
+      <i class="bi $icon"></i><span>$label</span>
+    </a>
+  </li>
+HTML;
+}
+
+// =============================
+// Definición del menú (config única)
+// patterns: se usan para marcar activo por coincidencia de URL
+// roles: restringe visibilidad (opcional)
+// =============================
+$MENU = [
+  // Dashboard
+  ['type' => 'item', 'href' => '/pages/home.php', 'label' => 'Panel Control', 'icon' => 'bi-grid', 'patterns' => ['/pages/home.php']],
+
+  // Seguimiento de muestras (grupo)
+  ['type' => 'group', 'id' => 'Tracking-nav', 'label' => 'Seguimiento de muestras', 'icon' => 'bi-eye', 'items' => [
+    ['href' => '/pages/test-preparation.php',   'label' => 'Ensayos en preparación',  'icon' => 'bi-circle', 'patterns' => ['/pages/test-preparation.php']],
+    ['href' => '/pages/test-realization.php',   'label' => 'Ensayos en realización',  'icon' => 'bi-circle', 'patterns' => ['/pages/test-realization.php']],
+    ['href' => '/pages/test-delivery.php',      'label' => 'Ensayos en entrega',      'icon' => 'bi-circle', 'patterns' => ['/pages/test-delivery.php']],
+    ['href' => '/pages/test-repeat.php',        'label' => 'Ensayos en repetición',   'icon' => 'bi-circle', 'patterns' => ['/pages/test-repeat.php']],
+    ['href' => '/pages/test-review.php',        'label' => 'Ensayos en revisión',     'icon' => 'bi-circle', 'patterns' => ['/pages/test-review.php']],
+  ]],
+
+  // Inventarios, Bandejas, Hojas
+  ['type' => 'item', 'href' => '/components/menu_inventarios.php',  'label' => 'Inventarios',          'icon' => 'bi-box',            'patterns' => ['/components/menu_inventarios.php']],
+  ['type' => 'item', 'href' => '/pages/bandejas_descartar.php',     'label' => 'Muestras a Botar',     'icon' => 'bi-trash3',         'patterns' => ['/pages/bandejas_descartar.php']],
+  ['type' => 'item', 'href' => '/components/menu_hojastrabajos.php','label' => 'Hojas de Trabajos',    'icon' => 'bi-clipboard-check','patterns' => ['/components/menu_hojastrabajos.php']],
+
+  ['type' => 'heading', 'label' => 'Páginas'],
+
+  // Páginas
+  ['type' => 'item', 'href' => '/pages/requisition-form.php', 'label' => 'Formulario de requisición', 'icon' => 'bi-file-earmark', 'patterns' => ['/pages/requisition-form.php']],
+  ['type' => 'item', 'href' => '/pages/control_ensayo_concreto.php', 'label' => 'Control Ensayo de Concreto', 'icon' => 'bi-clipboard-data', 'patterns' => ['/pages/control_ensayo_concreto.php']],
+  ['type' => 'item', 'href' => '/pages/pendings-list.php', 'label' => 'Lista de Pendientes', 'icon' => 'bi-question-circle', 'patterns' => ['/pages/pendings-list.php']],
+  ['type' => 'item', 'href' => '/pages/weekly-planning.php','label' => 'Planificación Semanal', 'icon' => 'bi-calendar3', 'patterns' => ['/pages/weekly-planning.php']],
+  ['type' => 'item', 'href' => '/pages/job-rotation.php',   'label' => 'Rotación Laboral',    'icon' => 'bi-calendar2', 'patterns' => ['/pages/job-rotation.php']],
+
+  ['type' => 'heading', 'label' => 'Documentación'],
+
+  // Registro de ensayos (grupo)
+  ['type' => 'group', 'id' => 'forms-nav', 'label' => 'Registro de ensayos', 'icon' => 'bi-journal-text', 'items' => [
+    ['href' => '/pages/moisture-content-menu.php', 'label' => 'Moisture Content', 'patterns' => ['/pages/moisture-content-menu.php']],
+    ['href' => '/pages/atterberg-limit.php',       'label' => 'Atterberg Limit',  'patterns' => ['/pages/atterberg-limit.php']],
+    ['href' => '/pages/reactivity-menu.php',       'label' => 'Reactividad',      'patterns' => ['/pages/reactivity-menu.php']],
+    ['href' => '/pages/grain-size-menu.php',       'label' => 'Grain Size',       'patterns' => ['/pages/grain-size-menu.php']],
+    ['href' => '/pages/specific-gravity-menu.php', 'label' => 'Specific Gravity', 'patterns' => ['/pages/specific-gravity-menu.php']],
+    ['href' => '/pages/standard-proctor.php',      'label' => 'Standard Proctor', 'patterns' => ['/pages/standard-proctor.php']],
+    ['href' => '/pages/LAA-menu.php',              'label' => 'Los Angeles Abrasion', 'patterns' => ['/pages/LAA-menu.php']],
+    ['href' => '/pages/compressive-menu.php',      'label' => 'Compresión',       'patterns' => ['/pages/compressive-menu.php']],
+    ['href' => '/pages/dispercion-menu.php',       'label' => 'Dispersión',       'patterns' => ['/pages/dispercion-menu.php']],
+    ['href' => '/pages/leeb-hardness.php',         'label' => 'Leeb Hardness',    'patterns' => ['/pages/leeb-hardness.php']],
+    ['href' => '/pages/point-Load.php',            'label' => 'Point Load',       'patterns' => ['/pages/point-Load.php']],
+    ['href' => '/pages/brazilian.php',             'label' => 'Brazilian',        'patterns' => ['/pages/brazilian.php']],
+    ['href' => '/pages/soundness.php',             'label' => 'Soundness',        'patterns' => ['/pages/soundness.php']],
+    ['href' => '/pages/densidades-menu.php',       'label' => 'Density',          'patterns' => ['/pages/densidades-menu.php']],
+  ]],
+
+  ['type' => 'item', 'href' => '/pages/essay.php',   'label' => 'Ensayos Registrados', 'icon' => 'bi-database',       'patterns' => ['/pages/essay.php']],
+  ['type' => 'item', 'href' => '/pages/sumary.php',  'label' => 'Sumarios',            'icon' => 'bi-clipboard-data', 'patterns' => ['/pages/sumary.php']],
+
+  ['type' => 'heading', 'label' => 'Supervisión'],
+
+  ['type' => 'item', 'href' => '/pages/essay-review.php', 'label' => 'Revisión de ensayo', 'icon' => 'bi-card-checklist', 'patterns' => ['/pages/essay-review.php']],
+  ['type' => 'item', 'href' => '/pages/rendimiento.php',  'label' => 'Desempeño',         'icon' => 'bi-robot',          'patterns' => ['/pages/rendimiento.php']],
+  ['type' => 'item', 'href' => '/pages/detalle-cliente.php','label' => 'Detalles de clientes','icon' => 'bi-info-circle', 'patterns' => ['/pages/detalle-cliente.php']],
+  ['type' => 'item', 'href' => '/components/menu_reporte_diario.php','label' => 'Reporte Diario','icon' => 'bi-calendar-event', 'patterns' => ['/components/menu_reporte_diario.php']],
+
+    ['type' => 'heading', 'label' => 'Configuración'],
+
+  ['type' => 'item', 'href' => '/pages/users-profile.php', 'label' => 'Perfil',       'icon' => 'bi-person',    'patterns' => ['/pages/users-profile.php']],
+  ['type' => 'item', 'href' => '/pages/users-register.php','label' => 'Nueva cuenta', 'icon' => 'bi-card-list', 'patterns' => ['/pages/users-register.php']],
+  ['type' => 'item', 'href' => '/pages/users-group.php',  'label' => 'Usuarios / Grupos', 'icon' => 'bi-people', 'patterns' => ['/pages/users-group.php']],
+];
+
+// =============================
+// Render
+// =============================
+ob_start();
+?>
+<aside id="sidebar" class="sidebar">
+  <ul class="sidebar-nav" id="sidebar-nav">
+    <?php
+      $path = current_path();
+      foreach ($MENU as $node) {
+        if (isset($node['roles']) && !user_has_role($node['roles'])) continue;
+
+        if (($node['type'] ?? 'item') === 'heading') {
+          echo '<li class="nav-heading">' . htmlspecialchars($node['label']) . '</li>';
+          continue;
+        }
+
+        if ($node['type'] === 'item') {
+          $isActive = path_matches($path, $node['patterns'] ?? []);
+          echo render_nav_link($node, $isActive);
+          continue;
+        }
+
+        if ($node['type'] === 'group') {
+          // Procesar hijos
+          $itemsHtml = '';
+          $groupActive = false;
+          foreach ($node['items'] as $child) {
+            if (isset($child['roles']) && !user_has_role($child['roles'])) continue;
+            $isActive = path_matches($path, $child['patterns'] ?? []);
+            $groupActive = $groupActive || $isActive;
+            $itemsHtml .= render_group_item($child, $isActive);
+          }
+          $node['items_html'] = $itemsHtml !== '' ? $itemsHtml : '<li><span class="text-muted small px-3">(Sin items)</span></li>';
+          echo render_nav_group($node, $groupActive);
+          continue;
+        }
+      }
+    ?>
+  </ul>
+</aside>
+<?php
+$html = ob_get_clean();
+
+echo $html;
+?>
+
+<!-- Script opcional: resalta activo por coincidencia estricta del href (fallback) -->
+<script>
+(function(){
+  const here = location.pathname.replace(/\/$/, '');
+  document.querySelectorAll('#sidebar-nav a.nav-link').forEach(a => {
+    const href = a.getAttribute('href');
+    if (!href) return;
+    if (here === href.replace(/\/$/, '')) a.classList.add('active');
   });
+})();
 </script>
