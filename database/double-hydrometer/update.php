@@ -125,6 +125,8 @@ if (isset($_POST['Update'])) {
         $combinedEffectiveLength50g = buildCSV('EffectiveLength50g', 9, $db);
         $combinedDMm50g = buildCSV('DMm50g', 9, $db);
 
+        $combinedNm2umDispersed = buildCSV('Nm2umDispersed', 4, $db);
+
         $query = "UPDATE double_hydrometer SET ";
         $query .= "Project_Name = '{$ProjectName}',";
         $query .= "Client = '{$Client}', ";
@@ -211,7 +213,8 @@ if (isset($_POST['Update'])) {
         $query .= "OffsetReading50g = '{$combinedOffsetReading50g}', ";
         $query .= "MassPercentFiner50g = '{$combinedMassPercentFiner50g}', ";
         $query .= "EffectiveLength50g = '{$combinedEffectiveLength50g}', ";
-        $query .= "DMm50g = '{$combinedDMm50g}'";
+        $query .= "DMm50g = '{$combinedDMm50g}',";
+        $query .= "Classification = '{$combinedNm2umDispersed}'";
         $query .= "WHERE id = '{$Search}'";
 
         $result = $db->query($query);

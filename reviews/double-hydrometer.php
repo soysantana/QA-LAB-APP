@@ -609,6 +609,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <!-- end Calculation Hydrometer Table 50g -->
 
+                <!-- Classification & Percent Dispersion -->
+                <div class="col-lg-4">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Percent Dispersion</h5>
+                            <!-- Data Correction Table -->
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <?php
+                                    $Classification = explode(',', str_replace('null', '', $Search["Classification"]));
+                                    ?>
+                                    <tr>
+                                        <th scope="row">Nm, 2µm not dispersed</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Nm2umDispersed1" id="Nm2umDispersed1" value="<?= $Classification[0]; ?>" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Nm, 2µm dispersed</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Nm2umDispersed2" id="Nm2umDispersed2" value="<?= $Classification[1]; ?>" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">% Dispersion</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Nm2umDispersed3" id="Nm2umDispersed3" value="<?= $Classification[2]; ?>" readonly tabindex="-1"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Classification</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Nm2umDispersed4" id="Nm2umDispersed4" value="<?= $Classification[3]; ?>" readonly tabindex="-1"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- end Data Correction Table -->
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- Classification & Percent Dispersion -->
+
                 <!-- Actions -->
                 <div class="col-lg-3">
 
@@ -625,7 +663,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" data-exportar="DHY-Naranjo">Naranjo</a></li>
-                                        <li><a class="dropdown-item" data-exportar="DHY-Build">Contruccion</a></li>
                                     </ul>
                                 </div>
 

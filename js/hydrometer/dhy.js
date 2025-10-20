@@ -1,3 +1,5 @@
+import { enviarImagenAlServidor } from '../export/export-chart.js';
+
 let DryMassHyPassingGlobal = [];
 let SuspensionFactor25g = 0;
 let SuspensionFactor50g = 0;
@@ -181,8 +183,29 @@ function dateHour(prefix = "") {
   }
 }
 
+function classification() {
+  const Nm2um25g = parseFloat(document.getElementById("MassPercentFiner9").value);
+  const Nm2um50g = parseFloat(document.getElementById("MassPercentFiner50g9").value);
 
+  const dispersion = (Nm2um25g / Nm2um50g) * 100;
 
+  let classification = "";
+
+  if (isNaN(dispersion)) {
+    classification = "";
+  } else if (dispersion <= 30) {
+    classification = "No Dispersive";
+  } else if (dispersion >= 50) {
+    classification = "Dispersive";
+  } else {
+    classification = "Intermediate";
+  }
+
+  document.getElementById("Nm2umDispersed1").value = isNaN(Nm2um25g) ? '' : Nm2um25g.toFixed(0);
+  document.getElementById("Nm2umDispersed2").value = isNaN(Nm2um50g) ? '' : Nm2um50g.toFixed(0);
+  document.getElementById("Nm2umDispersed3").value = isNaN(dispersion) ? '' : dispersion.toFixed(0);
+  document.getElementById("Nm2umDispersed4").value = classification;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form.row");
@@ -192,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
       input.addEventListener("input", mcdhy);
       input.addEventListener("input", dhy25g);
       input.addEventListener("input", dhy50g);
+      input.addEventListener("input", classification);
     });
   }
 
@@ -200,4 +224,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("Date50g1").addEventListener("change", () => dateHour("50g"));
   document.getElementById("Hour50g1").addEventListener("change", () => dateHour("50g"));
+
+  document.querySelectorAll('[data-exportar]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const tipo = el.dataset.exportar;
+      enviarImagenAlServidor(tipo);
+    });
+  });
 });
