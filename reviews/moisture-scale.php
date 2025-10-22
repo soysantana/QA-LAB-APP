@@ -113,10 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-printer"></i>
                   </button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="../pdf/MC-Scale-Naranjo.php?id=<?php echo ($Search['id']); ?>">Naranjo</a></li>
-                    <li><a class="dropdown-item" href="../pdf/MC-Scale-Build.php?id=<?php echo ($Search['id']); ?>">Contruccion</a></li>
-                  </ul>
+              <ul class="dropdown-menu">
+  <li><button class="dropdown-item" type="button" onclick="guardarPDF('MC-Scale-Naranjo','<?= $Search['id'] ?>')">Naranj0</button></li>
+  <li><button class="dropdown-item" type="button" onclick="guardarPDF('MC-Scale-Build','<?= $Search['id'] ?>')">Construcción</button></li>
+</ul>
+
                 </div>
                 <button type="submit" class="btn btn-danger" name="delete_mc_scale"><i class="bi bi-trash"></i></button>
               </div>
@@ -139,5 +140,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </section>
 
 </main><!-- End #main -->
+<script>
+async function guardarPDF(template, id) {
+  try {
+    const res = await fetch(`../pdf/${template}.php?id=${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}) // si no envías imágenes, deja {}
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'No se pudo guardar el PDF.');
+    const msg = document.getElementById('mensaje-container');
+    if (msg) msg.innerHTML = `<div class="alert alert-success">PDF guardado en el servidor.<br><small>${data.filename}</small></div>`;
+    else alert('PDF guardado: ' + data.filename);
+  } catch (err) {
+    const msg = document.getElementById('mensaje-container');
+    if (msg) msg.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+    else alert('Error: ' + err.message);
+  }
+}
+</script>
 
 <?php include_once('../components/footer.php');  ?>

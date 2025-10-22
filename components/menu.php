@@ -155,6 +155,7 @@ $MENU = [
   ['type' => 'item', 'href' => '/pages/rendimiento.php',  'label' => 'Desempeño',         'icon' => 'bi-robot',          'patterns' => ['/pages/rendimiento.php']],
   ['type' => 'item', 'href' => '/pages/detalle-cliente.php','label' => 'Detalles de clientes','icon' => 'bi-info-circle', 'patterns' => ['/pages/detalle-cliente.php']],
   ['type' => 'item', 'href' => '/components/menu_reporte_diario.php','label' => 'Reporte Diario','icon' => 'bi-calendar-event', 'patterns' => ['/components/menu_reporte_diario.php']],
+   ['type' => 'item', 'href' => '/pages/docs_list.php','label' => 'Firma de Resultados','icon' => 'bi-calendar-event', 'patterns' => ['/pages/docs_list.php']],
 
     ['type' => 'heading', 'label' => 'Configuración'],
 
