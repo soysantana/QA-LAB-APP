@@ -70,6 +70,8 @@
           'GS-IRF' => '../reviews/grain-size-full.php',
           'GS-RF' => '../reviews/grain-size-full.php',
           'GS-BF' => '../reviews/grain-size-full.php',
+          'GS-Common' => '../reviews/grain-size-full.php?id=',
+          'GS-LQ2' => '../reviews/grain-size-full.php?id=',
           'LAA_Large' => '../reviews/LAA-Large.php',
           'LAA_Small' => '../reviews/LAA-Small.php',
           'MC_Oven' => '../reviews/moisture-oven.php',

@@ -48,6 +48,7 @@ include_once('../components/header.php');
                 'specific_gravity_coarse',
                 'specific_gravity_fine',
                 'standard_proctor',
+                'sand_castle_test',
                 'unixial_compressive'
             ];
 
@@ -59,6 +60,10 @@ include_once('../components/header.php');
                 }
                 return $carry;
             }, []);
+
+            usort($allData, function ($a, $b) {
+                return strtotime($b['Registed_Date']) - strtotime($a['Registed_Date']);
+            });
             ?>
 
             <div class="col-lg-12">
@@ -183,6 +188,7 @@ function get_test_link($testType, $id)
         'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php?id=',
         'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php?id=',
         'SP' => '../reviews/standard-proctor.php?id=',
+        'SCT' => '../reviews/sand-castle-test.php?id=',
         'UCS' => '../reviews/unixial-compressive.php?id=',
         'PH' => '../reviews/pinhole-test.php?id=',
         'GS_CF' => '../reviews/grain-size-coarse-filter.php?id=',
@@ -195,6 +201,8 @@ function get_test_link($testType, $id)
         'GS-IRF' => '../reviews/grain-size-full.php?id=',
         'GS-RF' => '../reviews/grain-size-full.php?id=',
         'GS-BF' => '../reviews/grain-size-full.php?id=',
+        'GS-Common' => '../reviews/grain-size-full.php?id=',
+        'GS-LQ2' => '../reviews/grain-size-full.php?id=',
         'HY' => '../reviews/hydrometer.php?id=',
         'DHY' => '../reviews/double-hydrometer.php?id=',
         'AR-CF' => '../reviews/reactivity-coarse.php?id=',
