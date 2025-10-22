@@ -84,12 +84,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="materialSelect" class="form-label">Material</label>
                   <select id="materialSelect" class="form-select" name="materialSelect">
                     <option value="">-- Selecciona un material --</option>
-                    <option <?php if ($Search['specs_type'] == 'TRF') echo 'selected'; ?>>TRF</option>
-                    <option <?php if ($Search['specs_type'] == 'UFF') echo 'selected'; ?>>UFF</option>
-                    <option <?php if ($Search['specs_type'] == 'FRF') echo 'selected'; ?>>FRF</option>
-                    <option <?php if ($Search['specs_type'] == 'IRF') echo 'selected'; ?>>IRF</option>
-                    <option <?php if ($Search['specs_type'] == 'RF') echo 'selected'; ?>>RF</option>
-                    <option <?php if ($Search['specs_type'] == 'BF') echo 'selected'; ?>>BF</option>
+                    <option value="Common" <?php if ($Search['specs_type'] == 'Common') echo 'selected'; ?>>Common</option>
+                    <option value="TRF" <?php if ($Search['specs_type'] == 'TRF') echo 'selected'; ?>>TRF</option>
+                    <option value="UFF" <?php if ($Search['specs_type'] == 'UFF') echo 'selected'; ?>>UFF</option>
+                    <option value="FRF" <?php if ($Search['specs_type'] == 'FRF') echo 'selected'; ?>>FRF</option>
+                    <option value="IRF" <?php if ($Search['specs_type'] == 'IRF') echo 'selected'; ?>>IRF</option>
+                    <option value="RF" <?php if ($Search['specs_type'] == 'RF') echo 'selected'; ?>>RF</option>
+                    <option value="BF" <?php if ($Search['specs_type'] == 'BF') echo 'selected'; ?>>BF</option>
+                    <option value="LQ2" <?php if ($Search['specs_type'] == 'LQ2') echo 'selected'; ?>>LQ2</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -707,7 +709,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" data-exportar="GS-<?php echo $Search['Material_Type']; ?>-Build">Contruccion</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-<?php echo $Search['specs_type']; ?>-Build">Contruccion</a></li>
                   </ul>
                 </div>
                 <button type="submit" class="btn btn-danger" name="DeleteGSFull"><i class="bi bi-trash"></i></button>

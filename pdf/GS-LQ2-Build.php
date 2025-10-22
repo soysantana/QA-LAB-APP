@@ -20,7 +20,7 @@ $Search = find_by_id('grain_size_full', $_GET['id']);
 $pdf = new PDF();
 $pdf->SetMargins(0, 0, 0);
 $pdf->AddPage('P', array(470, 390));
-$pdf->setSourceFile('template/PV-F-01727 Laboratory Sieve Grain Size Distribution for Upstream Facing Fill-UFF.pdf');
+$pdf->setSourceFile('template/PV-F-02259 Laboratory Sieve Grain Size Distribution for LQ2 Rockfill_Rev 0.pdf');
 $tplIdx = $pdf->importPage(1);
 $pdf->useTemplate($tplIdx, 0, 0);
 

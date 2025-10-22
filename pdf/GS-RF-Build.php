@@ -229,4 +229,4 @@ function insertarImagenBase64($pdf, $base64Str, $x, $y, $w, $h)
 }
 insertarImagenBase64($pdf, $Chart, 190, 278, 0, 100); // ajusta X, Y, ancho, alto
 
-$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . $Search['Test_Type'] . '.pdf', 'I');
+$pdf->Output($Search['Sample_ID'] . '-' . $Search['Sample_Number'] . '-' . 'GS' . '-' . $Search['Material_Type'] . '.pdf', 'I');

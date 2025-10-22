@@ -73,12 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="materialSelect" class="form-label">Material</label>
                   <select id="materialSelect" class="form-select" name="materialSelect">
                     <option value="">-- Selecciona un material --</option>
+                    <option value="Common">Common</option>
                     <option value="TRF">TRF</option>
                     <option value="UFF">UFF</option>
                     <option value="FRF">FRF</option>
                     <option value="IRF">IRF</option>
                     <option value="RF">RF</option>
                     <option value="BF">BF</option>
+                    <option value="LQ2">LQ2</option>
                   </select>
                 </div>
                 <div class="col-md-4">
