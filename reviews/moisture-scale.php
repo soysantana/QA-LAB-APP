@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-printer"></i>
                   </button>
               <ul class="dropdown-menu">
-  <li><button class="dropdown-item" type="button" onclick="guardarPDF('MC-Scale-Naranjo','<?= $Search['id'] ?>')">Naranj0</button></li>
+  <li><button class="dropdown-item" type="button" onclick="guardarPDF('MC-Scale-Naranjo','<?= $Search['id'] ?>')">Naranjo</button></li>
   <li><button class="dropdown-item" type="button" onclick="guardarPDF('MC-Scale-Build','<?= $Search['id'] ?>')">Construcción</button></li>
 </ul>
 
