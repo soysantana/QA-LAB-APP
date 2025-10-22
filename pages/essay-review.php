@@ -106,7 +106,7 @@ function getTestLink($testType, $id)
         'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php?id=',
         'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php?id=',
         'SP' => '../reviews/standard-proctor.php?id=',
-        'SCT' => '../reviews/sand-castle-test.php?id=',
+        //'SCT' => '../reviews/sand-castle-test.php?id=',
         'UCS' => '../reviews/unixial-compressive.php?id=',
         'PH' => '../reviews/pinhole-test.php?id=',
         'GS_CF' => '../reviews/grain-size-coarse-filter.php?id=',
