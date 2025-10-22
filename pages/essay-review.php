@@ -48,7 +48,7 @@ include_once('../components/header.php');
                     'grain_size_lpf' => 'Grain Size LPF',
                     'grain_size_full' => 'Grain Size Full',
                     'point_load' => 'PLT',
-                    'sand_castle_test' => 'Sand Castle',
+                    //'sand_castle_test' => 'Sand Castle',
                     'unixial_compressive' => 'UCS',
                     'brazilian' => 'BTS',
                     'los_angeles_abrasion_small' => 'LAA Small',
