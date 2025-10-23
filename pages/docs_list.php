@@ -6,7 +6,6 @@ page_require_level(2);
 include_once('../components/header.php');
 
 function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
-/** Normaliza ruta web (file_path) */
 function normalize_web_path_inline(string $p): string {
   $p = trim($p);
   $p = str_replace('\\','/',$p);
@@ -16,28 +15,143 @@ function normalize_web_path_inline(string $p): string {
   return $p;
 }
 
-// ===== Búsqueda =====
+/**
+ * Filtro de semana actual:
+ * Usamos YEARWEEK(fecha, 1) (modo ISO, semana inicia lunes) para:
+ * - created_at EN esta semana
+ *   O
+ * - signed_at EN esta semana
+ */
 $q = trim($_GET['q'] ?? '');
-if ($q !== '') {
-  $q_esc = $db->escape($q);
-  $q_esc = str_replace(['%','_'], ['\\%','\\_'], $q_esc);
-  $like  = "%{$q_esc}%";
-  $sql = "
-    SELECT * FROM doc_files
-     WHERE COALESCE(sample_id,'')     LIKE '{$like}' ESCAPE '\\'
-        OR COALESCE(sample_number,'') LIKE '{$like}' ESCAPE '\\'
-        OR COALESCE(test_type,'')     LIKE '{$like}' ESCAPE '\\'
-        OR COALESCE(template,'')      LIKE '{$like}' ESCAPE '\\'
-        OR COALESCE(file_name,'')     LIKE '{$like}' ESCAPE '\\'
-        OR COALESCE(file_path,'')     LIKE '{$like}' ESCAPE '\\'
-        OR COALESCE(status,'')        LIKE '{$like}' ESCAPE '\\'
-     ORDER BY created_at DESC
-     LIMIT 300";
-} else {
-  $sql = "SELECT * FROM doc_files ORDER BY created_at DESC LIMIT 300";
+$qEsc = $db->escape($q);
+$qEsc = str_replace(['%','_'], ['\\%','\\_'], $qEsc);
+$like  = "%{$qEsc}%";
+
+$weekExpr = "YEARWEEK(CURDATE(), 1)";
+$inWeek   = "(YEARWEEK(created_at, 1) = {$weekExpr} OR YEARWEEK(signed_at, 1) = {$weekExpr})";
+
+$searchExpr = ($q !== '')
+  ? " ( COALESCE(sample_id,'')     LIKE '{$like}' ESCAPE '\\'
+     OR COALESCE(sample_number,'') LIKE '{$like}' ESCAPE '\\'
+     OR COALESCE(test_type,'')     LIKE '{$like}' ESCAPE '\\' ) "
+  : " 1=1 ";
+
+$sql = "
+  SELECT * FROM doc_files
+   WHERE {$inWeek}
+     AND {$searchExpr}
+   ORDER BY created_at DESC
+   LIMIT 300";
+$rows = find_by_sql($sql) ?: [];
+$results_count = count($rows);
+
+// --- render filas (reutilizable para AJAX) ---
+function render_rows(array $rows) {
+  ob_start();
+  if (empty($rows)) { ?>
+    <tr><td colspan="7" class="text-center text-muted py-4">No hay documentos de esta semana.</td></tr>
+  <?php } else {
+    foreach ($rows as $r):
+      $badge = ($r['status'] === 'signed') ? 'success' : 'warning';
+      $statusText = ($r['status'] === 'signed') ? 'Firmado' : 'En espera';
+
+      $file_path = $r['file_path'] ?? '';
+      $file_name = $r['file_name'] ?? ($file_path ? basename(str_replace('\\','/',$file_path)) : 'documento.pdf');
+
+      $fp_sane = normalize_web_path_inline($file_path);
+      $viewUrlById   = '/pages/serve_pdf.php?' . http_build_query(['id' => (int)$r['id']]);
+      $viewUrlByPath = '/pages/serve_pdf.php?' . http_build_query(['path' => $fp_sane]);
+      $viewUrl = !empty($fp_sane) ? $viewUrlByPath : $viewUrlById;
+
+      // created_at → YYYY-MM-DD
+      $createdFmt = '';
+      if (!empty($r['created_at'])) {
+        $t2 = strtotime($r['created_at']);
+        $createdFmt = $t2 ? date('Y-m-d', $t2) : $r['created_at'];
+      }
+
+      // Signed By (oculta “Sistema”) y Signed At → YYYY-MM-DD
+      $signedByRaw = $r['signed_by'] ?? '';
+      $showSignedBy = ($signedByRaw !== '' && strcasecmp($signedByRaw, 'Sistema') !== 0);
+      $signedAtRaw = $r['signed_at'] ?? '';
+      $signedAtFmt = '';
+      if ($signedAtRaw) {
+        $ts = strtotime($signedAtRaw);
+        $signedAtFmt = $ts ? date('Y-m-d', $ts) : $signedAtRaw;
+      }
+      ?>
+      <tr>
+        <td class="text-nowrap"><?= e($createdFmt) ?></td>
+        <td class="text-nowrap"><?= e(($r['sample_id'] ?? '').' / '.($r['sample_number'] ?? '')) ?></td>
+        <td class="text-nowrap"><?= e($r['test_type'] ?? '') ?></td>
+        <td class="text-nowrap"><?= e($r['template'] ?? '') ?></td>
+        <td class="text-nowrap">v<?= (int)($r['version'] ?? 1) ?></td>
+        <td>
+          <span class="badge bg-<?= $badge ?>"><?= e($statusText) ?></span>
+          <?php if ($showSignedBy || $signedAtFmt): ?>
+            <div class="small text-muted">
+              <?php if ($showSignedBy): ?>
+                <i class="bi bi-check2-circle"></i> <?= e($signedByRaw) ?>
+              <?php endif; ?>
+              <?php if ($signedAtFmt): ?>
+                <span class="text-nowrap"><?= $showSignedBy ? ' — ' : '' ?><?= e($signedAtFmt) ?></span>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
+        </td>
+        <td>
+          <div class="d-flex flex-wrap gap-2">
+            <?php if (!empty($file_path)): ?>
+              <a class="btn btn-outline-primary btn-sm btn-colocar"
+                 data-bs-toggle="modal"
+                 data-bs-target="#pdfPlaceModal"
+                 data-doc-id="<?= (int)$r['id'] ?>"
+                 data-view-url="<?= e($viewUrl) ?>"
+                 data-file-name="<?= e($file_name) ?>">
+                Firmar Resultado
+              </a>
+              <a class="btn btn-outline-secondary btn-sm"
+                 href="<?= e($viewUrlById) ?>"
+                 target="_blank" rel="noopener">
+                Ver Archivo PDF
+              </a>
+            <?php else: ?>
+              <span class="text-muted">Sin archivo</span>
+            <?php endif; ?>
+
+            <?php if (($r['status'] ?? '') !== 'signed'): ?>
+              <form action="/database/doc_mark_signed.php" method="post" class="m-0">
+                <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                <button class="btn btn-success btn-sm">
+                  <i class="bi bi-pen"></i> Marcar firmado
+                </button>
+              </form>
+            <?php endif; ?>
+
+            <form action="/database/doc_delete.php" method="post" class="m-0"
+                  onsubmit="return confirm('¿Eliminar este PDF? Esta acción no se puede deshacer.');">
+              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+              <button class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash"></i> Eliminar
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    <?php
+    endforeach;
+  }
+  return ob_get_clean();
 }
-$rows = find_by_sql($sql);
-$results_count = is_array($rows) ? count($rows) : 0;
+
+// AJAX: devolver solo filas
+if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
+  header('Content-Type: text/html; charset=utf-8');
+  echo render_rows($rows);
+  exit;
+}
+
+$today = date('Y-m-d');
 ?>
 <main id="main" class="main">
   <div class="pagetitle">
@@ -57,32 +171,55 @@ $results_count = is_array($rows) ? count($rows) : 0;
         <?php echo display_msg($msg); ?>
 
         <div class="card">
-          <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <div class="d-flex align-items-center gap-2">
-              <h5 class="mb-0">Últimos documentos</h5>
-              <?php if ($q !== ''): ?>
-                <span class="badge bg-secondary ms-2">Filtro: <?= e($q) ?> (<?= (int)$results_count ?>)</span>
-              <?php endif; ?>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <form class="d-flex align-items-center" method="get" action="">
-                <div class="input-group input-group-sm">
-                  <input type="search" class="form-control" name="q" value="<?= e($q) ?>" placeholder="Buscar...">
-                  <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                  <?php if ($q !== ''): ?>
-                    <a class="btn btn-outline-dark" href="?"><i class="bi bi-x-lg"></i></a>
-                  <?php endif; ?>
-                </div>
-              </form>
+          <div class="card-header py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <div class="d-flex align-items-center gap-2">
+    <h5 class="mb-0">Semana actual</h5>
+    <?php if ($q !== ''): ?>
+      <span class="badge bg-secondary ms-1">Filtro: <?= e($q) ?> (<?= (int)$results_count ?>)</span>
+    <?php endif; ?>
+  </div>
 
-              <a href="/pages/doc_upload_external.php" class="btn btn-primary btn-sm">
-                <i class="bi bi-upload"></i> Subir PDF externo
-              </a>
-              <a href="/pages/backup_resultados_firmados.php" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-archive"></i> Backups
-              </a>
-            </div>
-          </div>
+  <div class="toolbar d-flex flex-wrap align-items-center gap-2">
+    <!-- Búsqueda en vivo (pill) -->
+    <div class="input-group input-group-sm search-pill">
+      <span class="input-group-text border-0 bg-transparent ps-2"><i class="bi bi-search"></i></span>
+      <input id="qLive" type="search" class="form-control border-0"
+             value="<?= e($q) ?>" placeholder="Sample ID / Number / Test Type">
+      <button class="btn btn-light btn-sm border-0" type="button" id="btnClearLive" title="Limpiar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Descarga (dropdown + fecha) -->
+    <div class="btn-group">
+      <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-download"></i> Descargar
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" id="dlCreated"
+               href="/database/docs_download_day.php?date=<?= e($today) ?>&scope=created">
+               PDFs creados hoy</a></li>
+        <li><a class="dropdown-item" id="dlSigned"
+               href="/database/docs_download_day.php?date=<?= e($today) ?>&scope=signed">
+               PDFs firmados hoy</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li class="px-3 py-2">
+          <label class="form-label small mb-1">Elegir fecha</label>
+          <input type="date" class="form-control form-control-sm" id="dlDate" value="<?= e($today) ?>">
+          <div class="form-text">Ajusta los enlaces de arriba.</div>
+        </li>
+      </ul>
+    </div>
+
+    <a href="/pages/doc_upload_external.php" class="btn btn-primary btn-sm">
+      <i class="bi bi-upload"></i> Subir
+    </a>
+    <a href="/pages/backup_resultados_firmados.php" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-archive"></i> Backups
+    </a>
+  </div>
+</div>
+
 
           <div class="card-body">
             <div class="table-responsive">
@@ -97,87 +234,35 @@ $results_count = is_array($rows) ? count($rows) : 0;
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
+                  <style>
+  .toolbar .search-pill{
+    background: #f1f3f5;
+    border-radius: 999px;
+    padding-right: .25rem;
+  }
+  .toolbar .search-pill .form-control{
+    background: transparent;
+    box-shadow: none !important;
+  }
+  .toolbar .search-pill .input-group-text{
+    background: transparent;
+  }
+  @media (max-width: 576px){
+    .toolbar{ width:100%; }
+    .toolbar .search-pill{ flex:1 1 auto; min-width: 240px; }
+  }
+</style>
+
                 </thead>
-                <tbody>
-                <?php if (empty($rows)): ?>
-                  <tr><td colspan="7" class="text-center text-muted py-4">No hay documentos.</td></tr>
-                <?php else: foreach ($rows as $r):
-                  $badge = ($r['status'] === 'signed') ? 'success' : 'warning';
-                  $statusText = ($r['status'] === 'signed') ? 'Firmado' : 'En espera';
-                  $file_path = $r['file_path'] ?? '';
-                  $file_name = $r['file_name'] ?? ($file_path ? basename(str_replace('\\','/',$file_path)) : 'documento.pdf');
-                  $verLabel  = ($r['status'] === 'signed') ? 'Ver PDF firmado' : 'Ver PDF';
-
-                  $fp_sane = normalize_web_path_inline($file_path);
-                  $viewUrlById   = '/pages/serve_pdf.php?' . http_build_query(['id' => (int)$r['id']]);
-                  $viewUrlByPath = '/pages/serve_pdf.php?' . http_build_query(['path' => $fp_sane]);
-                  $viewUrl = !empty($fp_sane) ? $viewUrlByPath : $viewUrlById;
-                ?>
-                  <tr>
-                    <td class="text-nowrap"><?= e($r['created_at'] ?? '') ?></td>
-                    <td class="text-nowrap"><?= e(($r['sample_id'] ?? '').' / '.($r['sample_number'] ?? '')) ?></td>
-                    <td class="text-nowrap"><?= e($r['test_type'] ?? '') ?></td>
-                    <td class="text-nowrap"><?= e($r['template'] ?? '') ?></td>
-                    <td class="text-nowrap">v<?= (int)$r['version'] ?></td>
-                    <td>
-                      <span class="badge bg-<?= $badge ?>"><?= e($statusText) ?></span>
-                      <?php if (!empty($r['signed_by'])): ?>
-                        <div class="small text-muted">
-                          <i class="bi bi-check2-circle"></i> <?= e($r['signed_by']) ?>
-                          <?php if (!empty($r['signed_at'])): ?>
-                            <span class="text-nowrap">— <?= e($r['signed_at']) ?></span>
-                          <?php endif; ?>
-                        </div>
-                      <?php endif; ?>
-                    </td>
-                    <td>
-                      <div class="d-flex flex-wrap gap-2">
-                        <?php if (!empty($file_path)): ?>
-                          <a class="btn btn-outline-primary btn-sm btn-colocar"
-                             data-bs-toggle="modal"
-                             data-bs-target="#pdfPlaceModal"
-                             data-doc-id="<?= (int)$r['id'] ?>"
-                             data-view-url="<?= e($viewUrl) ?>"
-                             data-file-name="<?= e($file_name) ?>">
-                            Firmar Resultado
-                          </a>
-                          <a class="btn btn-outline-secondary btn-sm"
-                             href="<?= e($viewUrlById) ?>"
-                             target="_blank" rel="noopener">
-                            Ver Archivo PDF
-                          </a>
-                        <?php else: ?>
-                          <span class="text-muted">Sin archivo</span>
-                        <?php endif; ?>
-
-                        <?php if (($r['status'] ?? '') !== 'signed'): ?>
-                          <form action="/database/doc_mark_signed.php" method="post" class="m-0">
-                            <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                            <button class="btn btn-success btn-sm">
-                              <i class="bi bi-pen"></i> Marcar firmado
-                            </button>
-                          </form>
-                        <?php endif; ?>
-
-                        <form action="/database/doc_delete.php" method="post" class="m-0"
-                              onsubmit="return confirm('¿Eliminar este PDF? Esta acción no se puede deshacer.');">
-                          <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                          <button class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-trash"></i> Eliminar
-                          </button>
-                        </form>
-                      </div>
-                      
-                    </td>
-                  </tr>
-                <?php endforeach; endif; ?>
+                <tbody id="docsTbody">
+                  <?= render_rows($rows) ?>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- Modal: Colocar textos en PDF -->
+        <!-- Modal: Colocar textos en PDF (igual que antes) -->
         <div class="modal fade" id="pdfPlaceModal" tabindex="-1" aria-labelledby="pdfPlaceLabel" aria-hidden="true">
           <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
@@ -245,10 +330,32 @@ $results_count = is_array($rows) ? count($rows) : 0;
         </style>
 
         <script type="module">
+          // ===== Búsqueda en vivo (debounce + AJAX) =====
+          const qInput = document.getElementById('qLive');
+          const tbody  = document.getElementById('docsTbody');
+          const btnClear  = document.getElementById('btnClearLive');
+
+          const debounce = (fn, ms=300) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
+
+          async function fetchRows(query){
+            const url = new URL(window.location.href);
+            url.searchParams.set('ajax','1');
+            url.searchParams.set('q', query || '');
+            const resp = await fetch(url.toString(), { credentials: 'same-origin' });
+            if (!resp.ok) return;
+            const html = await resp.text();
+            tbody.innerHTML = html;
+            bindPlaceButtons();
+          }
+          const doSearch = debounce(()=>fetchRows(qInput.value.trim()), 280);
+
+          qInput?.addEventListener('input', doSearch);
+          btnClear?.addEventListener('click', ()=>{ qInput.value=''; fetchRows(''); });
+
+          // ====== PDF viewer/sign (tu lógica existente) ======
           import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.min.mjs";
           pdfjsLib.GlobalWorkerOptions.workerSrc =
             "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs";
-
           import { PDFDocument, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
           const $ = (id)=>document.getElementById(id);
@@ -377,25 +484,31 @@ $results_count = is_array($rows) ? count($rows) : 0;
           document.getElementById('btnInsertDownload')?.addEventListener('click', ()=>insert('download'));
           document.getElementById('btnInsertUpload')?.addEventListener('click',   ()=>insert('upload'));
 
-          document.querySelectorAll('.btn-colocar').forEach(btn=>{
-            btn.addEventListener('click', async ()=>{
-              currentUrl  = btn.getAttribute('data-view-url') || '';
-              currentName = btn.getAttribute('data-file-name') || 'document.pdf';
-              currentId   = parseInt(btn.getAttribute('data-doc-id'),10) || 0;
+          function bindPlaceButtons(){
+            document.querySelectorAll('.btn-colocar').forEach(btn=>{
+              btn.addEventListener('click', async ()=>{
+                currentUrl  = btn.getAttribute('data-view-url') || '';
+                currentName = btn.getAttribute('data-file-name') || 'document.pdf';
+                currentId   = parseInt(btn.getAttribute('data-doc-id'),10) || 0;
 
-              $('docId2')   && ( $('docId2').value   = String(currentId) );
-              $('viewUrl2') && ( $('viewUrl2').value = currentUrl );
-              $('fileName2')&& ( $('fileName2').value= currentName );
+                document.getElementById('docId2').value    = String(currentId);
+                document.getElementById('viewUrl2').value  = currentUrl;
+                document.getElementById('fileName2').value = currentName;
 
-              titleEl && (titleEl.textContent = currentName);
-              openNew && (openNew.href = currentUrl || '#');
-              marks=[]; container.innerHTML=''; msg.textContent='';
+                const titleEl = document.getElementById('pdfPlaceTitle');
+                const openNew = document.getElementById('openNewTab2');
+                if (titleEl) titleEl.textContent = currentName;
+                if (openNew) openNew.href = currentUrl || '#';
 
-              if(!currentUrl){ msg.textContent='URL inválida o vacía.'; return; }
-              msg.textContent = 'Cargando PDF…';
-              await renderPDF(currentUrl);
+                marks=[]; container.innerHTML=''; msg.textContent='';
+
+                if(!currentUrl){ msg.textContent='URL inválida o vacía.'; return; }
+                msg.textContent = 'Cargando PDF…';
+                await renderPDF(currentUrl);
+              });
             });
-          });
+          }
+          bindPlaceButtons();
 
           modalEl?.addEventListener('hidden.bs.modal', ()=>{
             marks=[]; container.innerHTML=''; msg.textContent='';
@@ -407,4 +520,44 @@ $results_count = is_array($rows) ? count($rows) : 0;
     </div>
   </section>
 </main>
+
+<script>
+  // ===== Búsqueda en vivo (debounce + AJAX a ?ajax=1&q=...) =====
+  (function(){
+    const qInput = document.getElementById('qLive');
+    const tbody  = document.getElementById('docsTbody');
+    const btnClear = document.getElementById('btnClearLive');
+
+    const debounce = (fn, ms=280) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
+
+    async function fetchRows(query){
+      const url = new URL(window.location.href);
+      url.searchParams.set('ajax','1');
+      url.searchParams.set('q', query || '');
+      const resp = await fetch(url.toString(), { credentials: 'same-origin' });
+      if (!resp.ok) return;
+      const html = await resp.text();
+      tbody.innerHTML = html;
+      // vuelve a enlazar los botones del modal PDF si los usas
+      if (window.bindPlaceButtons) window.bindPlaceButtons();
+    }
+    const doSearch = debounce(()=>fetchRows(qInput.value.trim()), 280);
+
+    qInput?.addEventListener('input', doSearch);
+    btnClear?.addEventListener('click', ()=>{ qInput.value=''; fetchRows(''); });
+
+    // ===== Actualiza enlaces de descarga según fecha elegida =====
+    const dlDate = document.getElementById('dlDate');
+    const dlCreated = document.getElementById('dlCreated');
+    const dlSigned = document.getElementById('dlSigned');
+
+    function setDateLinks(d){
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      dlCreated.href = `/database/docs_download_day.php?date=${d}&scope=created`;
+      dlSigned.href  = `/database/docs_download_day.php?date=${d}&scope=signed`;
+    }
+    dlDate?.addEventListener('change', ()=> setDateLinks(dlDate.value));
+  })();
+</script>
+
 <?php include_once('../components/footer.php'); ?>
