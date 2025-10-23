@@ -4,73 +4,162 @@ page_require_level(2);
 include_once('../components/header.php');
 ?>
 <main id="main" class="main">
-
   <div class="pagetitle">
-    <h1>Resultados externos</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="../pages/home.php">Home</a></li>
-        <li class="breadcrumb-item">Documentos</li>
-        <li class="breadcrumb-item active">Subir PDF externo</li>
-      </ol>
-    </nav>
-  </div><!-- End Page Title -->
+    <h1>Subir PDF externo (múltiples)</h1>
+  </div>
 
   <section class="section">
-    <div class="row">
-      <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <form action="../database/doc_upload_external_save.php" method="post" enctype="multipart/form-data" class="mt-3" id="uploadForm">
 
-        <?php echo display_msg($msg); ?>
-
-        <div class="card">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="mb-0">Cargar resultado (PDF)</h5>
-            <span class="text-muted small">El archivo se guardará en el servidor</span>
+          <div class="mb-3">
+            <label class="form-label">Archivos PDF</label>
+            <input type="file" class="form-control" name="pdfs[]" id="pdfs" accept="application/pdf" multiple required>
+            <div class="form-text">
+              Convención recomendada: <code>sampleid_samplenumber_testtype[_vN].pdf</code>.
+              También soportados: <code>SID-####-TT</code>, <code>SID-####-TT-TT2</code>, etc.
+            </div>
           </div>
-          <div class="card-body">
 
-            <form id="formUpload" action="../database/doc_upload_external_save.php" method="post" enctype="multipart/form-data" class="row g-3">
-
-              <!-- Metadatos -->
-              <div class="col-md-4">
-                <label class="form-label">Sample ID</label>
-                <input name="sample_id" class="form-control" placeholder="Ej: PVDJ-001">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Sample Number</label>
-                <input name="sample_number" class="form-control" placeholder="Ej: 01">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Test Type</label>
-                <input name="test_type" class="form-control" placeholder="MC, AL, GS...">
-              </div>
-
-              <!-- Archivo -->
-              <div class="col-12">
-                <label class="form-label">Archivo PDF</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bi bi-file-earmark-pdf"></i></span>
-                  <input type="file" name="pdf" accept="application/pdf" required class="form-control">
-                </div>
-                <div class="form-text">Solo PDF. Tamaño recomendado &lt; 5&nbsp;MB.</div>
-              </div>
-
-              <!-- Acciones -->
-              <div class="col-12 d-flex gap-2">
-                <a href="/pages/docs_list.php" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
-                <button class="btn btn-primary">
-                  <i class="bi bi-upload"></i> Subir PDF
-                </button>
-              </div>
-
-            </form>
-
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th style="width:35%">Archivo</th>
+                  <th style="width:35%">Sample ID</th>
+                  <th style="width:15%">Sample Number</th>
+                  <th style="width:10%">Test Type</th>
+                  <th style="width:5%"></th>
+                </tr>
+              </thead>
+              <tbody id="fileRows"></tbody>
+            </table>
           </div>
-        </div>
 
+          <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Subir todo</button>
+            <a class="btn btn-secondary" href="../pages/docs_list.php">Cancelar</a>
+          </div>
+        </form>
       </div>
-
+    </div>
   </section>
+</main>
 
-</main><!-- End #main -->
-<?php include_once('../components/footer.php'); ?>
+<script>
+// ====== Parser de nombres (soporta tus casos) ======
+function parseName(rawName) {
+  let name = rawName.replace(/\.pdf$/i,'').trim();
+  name = name.replace(/(?:[_\-\s])v\d+$/i, '').trim(); // quita _vN/-vN/ vN final
+
+  // 1) SID_SNUM_TTYPE
+  if (name.includes('_')) {
+    const parts = name.split('_').filter(Boolean);
+    if (parts.length >= 3) {
+      const ttype = parts.pop();
+      const snum  = parts.pop();
+      const sid   = parts.join('_');
+      return { sid, snum, ttype };
+    }
+  }
+
+  // 2) Espacios: SID SNUM TTYPE
+  if (name.includes(' ')) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 3) {
+      const ttype = parts.pop();
+      const snum  = parts.pop();
+      const sid   = parts.join(' ');
+      return { sid, snum, ttype };
+    }
+  }
+
+  // 3) Guiones con ...-G#-TT
+  if (name.includes('-')) {
+    const firstToken = name.split(/\s+/)[0];
+    const parts = firstToken.split('-').filter(Boolean);
+    if (parts.length >= 3) {
+      const maybeT = parts[parts.length - 1];
+      const maybeN = parts[parts.length - 2];
+      const reNumAlpha = /^[A-Za-z]\d+$/;     // G3, L10, M2...
+      const reType     = /^[A-Za-z]{1,10}$/;  // AL, CBR, SG...
+      if (reNumAlpha.test(maybeN) && reType.test(maybeT)) {
+        const sid = parts.slice(0, -2).join('-');
+        return { sid, snum: maybeN, ttype: maybeT };
+      }
+
+      // 4) ...-<solo_dígitos>-<TT o TT-TT2[-TT3...]>
+      const lastAlphaGroup = [];
+      for (let i = parts.length - 1; i >= 0; i--) {
+        if (/^[A-Za-z]+$/.test(parts[i])) lastAlphaGroup.unshift(parts[i]);
+        else break;
+      }
+      if (lastAlphaGroup.length >= 1) {
+        const numIdx = parts.length - 1 - lastAlphaGroup.length;
+        const maybeNumOnlyDigits = parts[numIdx];
+        if (maybeNumOnlyDigits && /^\d+$/.test(maybeNumOnlyDigits)) {
+          const sid = parts.slice(0, numIdx).join('-');
+          const sn  = maybeNumOnlyDigits; // conserva ceros a la izquierda
+          const tt  = lastAlphaGroup.join('-'); // ej. GS-CF
+          return { sid, snum: sn, ttype: tt };
+        }
+      }
+
+      // 5) Último bloque solo dígitos → SNUM, resto SID (TT vacío)
+      const last = parts[parts.length - 1];
+      if (/^\d+$/.test(last)) {
+        const sid = parts.slice(0, -1).join('-');
+        return { sid, snum: last, ttype: '' };
+      }
+    }
+  }
+
+  // 6) Nada matchea → todo como SID
+  return { sid: name, snum: '', ttype: '' };
+}
+
+function addRow(file, index) {
+  const { sid, snum, ttype } = parseName(file.name);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <div class="small text-truncate" title="${file.name}">${file.name}</div>
+      <input type="hidden" name="__filename[]" value="${file.name}">
+    </td>
+    <td>
+      <input type="text" class="form-control form-control-sm" name="sample_id[]" value="${sid}">
+    </td>
+    <td>
+      <input type="text" class="form-control form-control-sm" name="sample_number[]" value="${snum}">
+    </td>
+    <td>
+      <input type="text" class="form-control form-control-sm" name="test_type[]" value="${ttype}">
+    </td>
+    <td class="text-end">
+      <button type="button" class="btn btn-outline-danger btn-sm" data-row-remove>&times;</button>
+    </td>
+  `;
+  tr.querySelector('[data-row-remove]').addEventListener('click', () => tr.remove());
+  document.getElementById('fileRows').appendChild(tr);
+}
+
+const fileInput = document.getElementById('pdfs');
+fileInput.addEventListener('change', () => {
+  const tbody = document.getElementById('fileRows');
+  tbody.innerHTML = '';
+  const files = Array.from(fileInput.files || []);
+  files.forEach(addRow);
+});
+
+// Validación final: asegura que haya misma cantidad de filas que archivos
+document.getElementById('uploadForm').addEventListener('submit', (e) => {
+  const filesCount = (fileInput.files || []).length;
+  const rowsCount  = document.querySelectorAll('#fileRows tr').length;
+  if (filesCount === 0 || rowsCount === 0) {
+    e.preventDefault();
+    alert('Selecciona al menos un PDF.');
+    return;
+  }
+});
+</script>
