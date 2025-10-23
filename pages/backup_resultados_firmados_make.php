@@ -227,3 +227,4 @@ $_SESSION['flash'] = ['type'=>'success', 'msg'=>"Backup generado correctamente p
 
 header("Location: /pages/backup_resultados_firmados.php?period={$y}-{$m2}");
 exit;
+  
