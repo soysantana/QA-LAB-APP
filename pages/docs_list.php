@@ -371,173 +371,191 @@ $today = date('Y-m-d');
           .pdf-page-wrap { box-shadow: 0 0 12px rgba(0,0,0,.08); background:#fff; }
           .pin { box-shadow: 0 1px 3px rgba(0,0,0,.2); }
         </style>
+<!-- Módulo PDF + firma -->
+<script type="module">
+  import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs";
 
-        <!-- Módulo PDF + firma -->
-        <script type="module">
-          import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.min.mjs";
-          pdfjsLib.GlobalWorkerOptions.workerSrc =
-            "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs";
-          import { PDFDocument, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+  /* 👇 IMPORTA rgb y degrees para color/rotación */
+  import { PDFDocument, StandardFonts, rgb, degrees } from "https://esm.sh/pdf-lib@1.17.1";
 
-          const $ = (id)=>document.getElementById(id);
-          const container=$('pdfContainer'), msg=$('placeMsg');
-          const openNew=$('openNewTab2'), titleEl=$('pdfPlaceTitle');
-          const modalEl=document.getElementById('pdfPlaceModal');
+  const $ = (id)=>document.getElementById(id);
+  const container=$('pdfContainer'), msg=$('placeMsg');
+  const openNew=$('openNewTab2'), titleEl=$('pdfPlaceTitle');
+  const modalEl=document.getElementById('pdfPlaceModal');
 
-          let currentUrl='', currentName='', currentId=0;
-          let marks=[]; let rendering=false;
+  let currentUrl='', currentName='', currentId=0;
+  let marks=[]; let rendering=false;
 
-          const labelFor = (k)=>({reviewedBy:'Reviewed By',reviewedDate:'Reviewed Date',approvedBy:'Approved By',approvedDate:'Approved Date'})[k]||k;
-          const toMMDDYYYY = (iso)=>{ if(!iso) return ''; const [y,m,d]=iso.split('-'); return (y&&m&&d)?`${m}/${d}/${y}`:iso; };
-          const cssToPdfPoint = (xCss,yCss,viewportWidthCss,pw,ph)=>{ const r=pw/viewportWidthCss; return {xPdf:xCss*r, yPdf:ph-(yCss*r)}; };
+  const labelFor = (k)=>({reviewedBy:'Reviewed By',reviewedDate:'Reviewed Date',approvedBy:'Approved By',approvedDate:'Approved Date'})[k]||k;
+  const toYYYYMMDD = (iso)=>{ if(!iso) return ''; const [y,m,d]=iso.split('-'); return (y&&m&&d)?`${y}-${m}-${d}`:iso; };
+  const cssToPdfPoint = (xCss,yCss,viewportWidthCss,pw,ph)=>{ const r=pw/viewportWidthCss; return {xPdf:xCss*r, yPdf:ph-(yCss*r)}; };
 
-          async function renderPDF(url){
-            if (rendering) return;
-            rendering = true;
-            try{
-              container.innerHTML=''; msg.textContent='Cargando PDF…';
-              const pdf=await pdfjsLib.getDocument({ url, withCredentials: true }).promise;
-              for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
-                const page=await pdf.getPage(pageNum), scale=1.1, viewport=page.getViewport({scale});
-                const wrap=document.createElement('div');
-                wrap.className='pdf-page-wrap position-relative mb-3';
-                wrap.style.width=viewport.width+'px'; wrap.style.margin='0 auto';
+  async function renderPDF(url){
+    if (rendering) return;
+    rendering = true;
+    try{
+      container.innerHTML=''; msg.textContent='Cargando PDF…';
+      const pdf=await pdfjsLib.getDocument({ url, withCredentials: true }).promise;
+      for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
+        const page=await pdf.getPage(pageNum), scale=1.1, viewport=page.getViewport({scale});
+        const wrap=document.createElement('div');
+        wrap.className='pdf-page-wrap position-relative mb-3';
+        wrap.style.width=viewport.width+'px'; wrap.style.margin='0 auto';
 
-                const canvas=document.createElement('canvas');
-                canvas.width=viewport.width; canvas.height=viewport.height;
-                canvas.style.width=viewport.width+'px'; canvas.style.height=viewport.height+'px';
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width; canvas.height=viewport.height;
+        canvas.style.width=viewport.width+'px'; canvas.style.height=viewport.height+'px';
 
-                const overlay=document.createElement('div');
-                Object.assign(overlay.style,{position:'absolute',left:'0',top:'0',width:viewport.width+'px',height:viewport.height+'px',cursor:'crosshair'});
+        const overlay=document.createElement('div');
+        Object.assign(overlay.style,{position:'absolute',left:'0',top:'0',width:viewport.width+'px',height:viewport.height+'px',cursor:'crosshair'});
 
-                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
 
-                overlay.addEventListener('click',(e)=>{
-                  const rect=overlay.getBoundingClientRect();
-                  const x=e.clientX-rect.left, y=e.clientY-rect.top;
-                  const kind=$('fieldKind').value;
+        overlay.addEventListener('click',(e)=>{
+          const rect=overlay.getBoundingClientRect();
+          const x=e.clientX-rect.left, y=e.clientY-rect.top;
+          const kind=$('fieldKind').value;
 
-                  const pin=document.createElement('div');
-                  pin.className='pin'; pin.textContent=labelFor(kind);
-                  Object.assign(pin.style,{position:'absolute',left:(x-4)+'px',top:(y-12)+'px',background:'#0d6efd',color:'#fff',
-                                           fontSize:'10px',padding:'2px 4px',borderRadius:'3px',userSelect:'none',pointerEvents:'none'});
-                  overlay.appendChild(pin);
+          const pin=document.createElement('div');
+          pin.className='pin'; pin.textContent=labelFor(kind);
+          Object.assign(pin.style,{position:'absolute',left:(x-4)+'px',top:(y-12)+'px',background:'#0d6efd',color:'#fff',
+                                   fontSize:'10px',padding:'2px 4px',borderRadius:'3px',userSelect:'none',pointerEvents:'none'});
+          overlay.appendChild(pin);
 
-                  marks.push({ pageIndex:pageNum-1, xCss:x, yCss:y, viewportWidthCss:viewport.width, kind });
-                  msg.textContent = `Marcado ${labelFor(kind)} en página ${pageNum}. Total: ${marks.length}`;
-                });
+          marks.push({ pageIndex:pageNum-1, xCss:x, yCss:y, viewportWidthCss:viewport.width, kind });
+          msg.textContent = `Marcado ${labelFor(kind)} en página ${pageNum}. Total: ${marks.length}`;
+        });
 
-                wrap.appendChild(canvas); wrap.appendChild(overlay); container.appendChild(wrap);
-              }
-              msg.textContent='Listo. Haz clic para colocar los textos.';
-            } catch (e) {
-              console.error(e);
-              msg.textContent = 'Error al renderizar: ' + e.message;
-            } finally { rendering = false; }
-          }
+        wrap.appendChild(canvas); wrap.appendChild(overlay); container.appendChild(wrap);
+      }
+      msg.textContent='Listo. Haz clic para colocar los textos.';
+    } catch (e) {
+      console.error(e);
+      msg.textContent = 'Error al renderizar: ' + e.message;
+    } finally { rendering = false; }
+  }
 
-          document.getElementById('btnClearMarks')?.addEventListener('click', ()=>{
-            marks=[]; container.querySelectorAll('.pin').forEach(n=>n.remove());
-            msg.textContent='Marcas limpiadas.';
+  document.getElementById('btnClearMarks')?.addEventListener('click', ()=>{
+    marks=[]; container.querySelectorAll('.pin').forEach(n=>n.remove());
+    msg.textContent='Marcas limpiadas.';
+  });
+
+  async function insert(mode){
+    try{
+      if(!currentUrl){ msg.textContent='URL vacía.'; return; }
+      if(!marks.length){ msg.textContent='Coloca al menos una marca.'; return; }
+
+      const data={
+        reviewedBy:  ($('rvBy')?.value||'').trim(),
+        reviewedDate:toYYYYMMDD($('rvDate')?.value||''),
+        approvedBy:  ($('apBy')?.value||'').trim(),
+        approvedDate:toYYYYMMDD($('apDate')?.value||''),
+      };
+
+      msg.textContent='Editando PDF…';
+      const res = await fetch(currentUrl, { credentials: 'same-origin' });
+      if(!res.ok) throw new Error('No se pudo cargar ('+res.status+')');
+      const base = await res.arrayBuffer();
+
+      const pdfDoc = await PDFDocument.load(base);
+
+      /* 👇 Formato de texto de la firma */
+      // Fuente estándar (elige una). Ej.: Times negrita “tipo sello”
+      // const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      // const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      // const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      const font  = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+      const size  = 12;                 // tamaño
+      const color = rgb(0, 0, 0.8);     // azul oscuro
+      const angle = degrees(0);         // rotación opcional
+
+      const byPage=new Map();
+      for(const m of marks){ if(!byPage.has(m.pageIndex)) byPage.set(m.pageIndex,[]); byPage.get(m.pageIndex).push(m); }
+      for (const [idx,arr] of byPage.entries()){
+        const page=pdfDoc.getPage(idx); const {width:pw,height:ph}=page.getSize();
+        for (const m of arr) {
+          const val = data[m.kind] || '';
+          if (!val) continue;
+          const {xPdf,yPdf}=cssToPdfPoint(m.xCss,m.yCss,m.viewportWidthCss,pw,ph);
+          /* 👇 Aplica tamaño, color y rotación */
+          page.drawText(val, {
+            x: xPdf + 2,
+            y: yPdf - 6,
+            size,
+            font,
+            color,
+            rotate: angle
           });
+        }
+      }
+      const out = await pdfDoc.save();
 
-          async function insert(mode){
-            try{
-              if(!currentUrl){ msg.textContent='URL vacía.'; return; }
-              if(!marks.length){ msg.textContent='Coloca al menos una marca.'; return; }
+      if(mode==='download'){
+        const blob=new Blob([out],{type:'application/pdf'});
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=(($('fileName2')?.value||'document').replace(/\.pdf$/i,''))+'_text_'+Date.now()+'.pdf';
+        a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+        msg.textContent='Descargado ✅';
+        return;
+      }
 
-              const data={
-                reviewedBy:  ($('rvBy')?.value||'').trim(),
-                reviewedDate:toMMDDYYYY($('rvDate')?.value||''),
-                approvedBy:  ($('apBy')?.value||'').trim(),
-                approvedDate:toMMDDYYYY($('apDate')?.value||''),
-              };
+      msg.textContent='Subiendo…';
+      const fd=new FormData();
+      const baseName=(($('fileName2')?.value||'document').replace(/\.pdf$/i,''))+'_text_'+Date.now()+'.pdf';
+      fd.append('file', new Blob([out],{type:'application/pdf'}), baseName);
+      const id=$('docId2')?.value; if(id) fd.append('doc_id', String(id));
 
-              msg.textContent='Editando PDF…';
-              const res = await fetch(currentUrl, { credentials: 'same-origin' });
-              if(!res.ok) throw new Error('No se pudo cargar ('+res.status+')');
-              const base = await res.arrayBuffer();
+      const resp=await fetch('/database/upload_pdf_editado.php', { method:'POST', body:fd, credentials: 'same-origin' });
+      const txt=await resp.text();
+      if(!resp.ok) throw new Error(txt||'Error al subir');
+      msg.textContent='Listo ✅ '+txt+'. Cierra el modal y usa "Ver PDF" para abrir el actualizado.';
+    } catch (e) {
+      console.error(e);
+      msg.textContent = 'Error: ' + e.message;
+    }
+  }
 
-              const pdfDoc = await PDFDocument.load(base);
-              const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-              const size = 10;
+  document.getElementById('btnInsertDownload')?.addEventListener('click', ()=>insert('download'));
+  document.getElementById('btnInsertUpload')?.addEventListener('click',   ()=>insert('upload'));
 
-              const byPage=new Map();
-              for(const m of marks){ if(!byPage.has(m.pageIndex)) byPage.set(m.pageIndex,[]); byPage.get(m.pageIndex).push(m); }
-              for (const [idx,arr] of byPage.entries()){
-                const page=pdfDoc.getPage(idx); const {width:pw,height:ph}=page.getSize();
-                for (const m of arr) {
-                  const val = data[m.kind] || '';
-                  if (!val) continue;
-                  const {xPdf,yPdf}=cssToPdfPoint(m.xCss,m.yCss,m.viewportWidthCss,pw,ph);
-                  page.drawText(val,{x:xPdf+2,y:yPdf-6,size,font});
-                }
-              }
-              const out = await pdfDoc.save();
+  function bindPlaceButtons(){
+    document.querySelectorAll('.btn-colocar').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        currentUrl  = btn.getAttribute('data-view-url') || '';
+        currentName = btn.getAttribute('data-file-name') || 'document.pdf';
+        currentId   = parseInt(btn.getAttribute('data-doc-id'),10) || 0;
 
-              if(mode==='download'){
-                const blob=new Blob([out],{type:'application/pdf'});
-                const a=document.createElement('a');
-                a.href=URL.createObjectURL(blob);
-                a.download=(($('fileName2')?.value||'document').replace(/\.pdf$/i,''))+'_text_'+Date.now()+'.pdf';
-                a.click();
-                setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-                msg.textContent='Descargado ✅';
-                return;
-              }
+        document.getElementById('docId2').value    = String(currentId);
+        document.getElementById('viewUrl2').value  = currentUrl;
+        document.getElementById('fileName2').value = currentName;
 
-              msg.textContent='Subiendo…';
-              const fd=new FormData();
-              const baseName=(($('fileName2')?.value||'document').replace(/\.pdf$/i,''))+'_text_'+Date.now()+'.pdf';
-              fd.append('file', new Blob([out],{type:'application/pdf'}), baseName);
-              const id=$('docId2')?.value; if(id) fd.append('doc_id', String(id));
+        const titleEl = document.getElementById('pdfPlaceTitle');
+        const openNew = document.getElementById('openNewTab2');
+        if (titleEl) titleEl.textContent = currentName;
+        if (openNew) openNew.href = currentUrl || '#';
 
-              const resp=await fetch('/database/upload_pdf_editado.php', { method:'POST', body:fd, credentials: 'same-origin' });
-              const txt=await resp.text();
-              if(!resp.ok) throw new Error(txt||'Error al subir');
-              msg.textContent='Listo ✅ '+txt+'. Cierra el modal y usa "Ver PDF" para abrir el actualizado.';
-            } catch (e) {
-              console.error(e);
-              msg.textContent = 'Error: ' + e.message;
-            }
-          }
+        marks=[]; container.innerHTML=''; msg.textContent='';
 
-          document.getElementById('btnInsertDownload')?.addEventListener('click', ()=>insert('download'));
-          document.getElementById('btnInsertUpload')?.addEventListener('click',   ()=>insert('upload'));
+        if(!currentUrl){ msg.textContent='URL inválida o vacía.'; return; }
+        msg.textContent = 'Cargando PDF…';
+        await renderPDF(currentUrl);
+      });
+    });
+  }
+  // Exponer para que el script de búsqueda en vivo pueda re-enlazar
+  window.bindPlaceButtons = bindPlaceButtons;
+  bindPlaceButtons();
 
-          function bindPlaceButtons(){
-            document.querySelectorAll('.btn-colocar').forEach(btn=>{
-              btn.addEventListener('click', async ()=>{
-                currentUrl  = btn.getAttribute('data-view-url') || '';
-                currentName = btn.getAttribute('data-file-name') || 'document.pdf';
-                currentId   = parseInt(btn.getAttribute('data-doc-id'),10) || 0;
+  modalEl?.addEventListener('hidden.bs.modal', ()=>{
+    marks=[]; container.innerHTML=''; msg.textContent='';
+    ['rvBy','rvDate','apBy','apDate'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
+  });
+</script>
 
-                document.getElementById('docId2').value    = String(currentId);
-                document.getElementById('viewUrl2').value  = currentUrl;
-                document.getElementById('fileName2').value = currentName;
-
-                const titleEl = document.getElementById('pdfPlaceTitle');
-                const openNew = document.getElementById('openNewTab2');
-                if (titleEl) titleEl.textContent = currentName;
-                if (openNew) openNew.href = currentUrl || '#';
-
-                marks=[]; container.innerHTML=''; msg.textContent='';
-
-                if(!currentUrl){ msg.textContent='URL inválida o vacía.'; return; }
-                msg.textContent = 'Cargando PDF…';
-                await renderPDF(currentUrl);
-              });
-            });
-          }
-          // Exponer para que el script de búsqueda en vivo pueda re-enlazar
-          window.bindPlaceButtons = bindPlaceButtons;
-          bindPlaceButtons();
-
-          modalEl?.addEventListener('hidden.bs.modal', ()=>{
-            marks=[]; container.innerHTML=''; msg.textContent='';
-            ['rvBy','rvDate','apBy','apDate'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
-          });
-        </script>
       </div> <!-- /.col -->
     </div> <!-- /.row -->
   </section>
