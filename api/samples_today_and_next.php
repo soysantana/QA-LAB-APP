@@ -3,9 +3,8 @@ declare(strict_types=1);
 require_once('../config/load.php');
 date_default_timezone_set('America/Santo_Domingo');
 
-/* ============== Ajustes ============== */
+// Configura según tu DB:
 $REGISTERED_IS_DATETIME = false; // true si Registed_Date es DATETIME
-/* ==================================== */
 
 function json_ok(array $data){
   header('Content-Type: application/json; charset=utf-8');
@@ -19,180 +18,150 @@ function json_error(int $code, string $msg, array $extra=[]){
   exit;
 }
 
-/* --- Auth --- */
 page_require_level(2);
 if (!function_exists('current_user') || !current_user()) {
   json_error(401,'No autenticado');
 }
 
-/* --- Hardening salida --- */
 ini_set('display_errors','0');
 header('Cache-Control: no-store');
 
-/* --- Helpers DB --- */
-function scalar_query(string $sql){
+// ---------- Helpers ----------
+function scalar_row(string $sql): ?array {
   $rows = find_by_sql($sql);
   if (!is_array($rows) || !isset($rows[0])) return null;
-  $first = $rows[0];
-  $val = reset($first);
-  return $val===null ? null : $val;
+  return $rows[0];
 }
-function exists_col(string $col, string $value): bool {
-  $col_safe = preg_replace('/[^A-Za-z0-9_]/','',$col);
-  $val = $GLOBALS['db']->escape($value);
-  $sql = "SELECT COUNT(*) c FROM lab_test_requisition_form WHERE TRIM({$col_safe}) = '{$val}'";
-  $rows = find_by_sql($sql);
-  return isset($rows[0]['c']) && (int)$rows[0]['c']>0;
+function scalar_val(string $sql){
+  $row = scalar_row($sql);
+  if (!$row) return null;
+  $v = reset($row);
+  return $v===null ? null : $v;
 }
-function pair_exists(string $id, string $num): bool {
-  $id  = $GLOBALS['db']->escape($id);
-  $num = $GLOBALS['db']->escape($num);
-  $sql = "SELECT COUNT(*) c
-          FROM lab_test_requisition_form
-          WHERE TRIM(Sample_ID)='{$id}' AND TRIM(Sample_Number)='{$num}'";
-  $rows = find_by_sql($sql);
-  return isset($rows[0]['c']) && (int)$rows[0]['c']>0;
+function mysql_regex_quote(string $s): string {
+  return preg_replace('/([\\\\.^$|()?*+\\[\\]{}-])/', '\\\\$1', $s);
 }
-function build_sample_name(string $id, string $num): string { return $id.' | '.$num; }
-
-/* --- Máximos por prefijo --- */
-function max_suffix_in_id(string $id_prefix): int {
-  $p = $GLOBALS['db']->escape($id_prefix);
-  $sql = "
-    SELECT MAX(CAST(SUBSTRING_INDEX(TRIM(Sample_ID), '-', -1) AS UNSIGNED)) AS max_n
-    FROM lab_test_requisition_form
-    WHERE TRIM(Sample_ID) LIKE '{$p}-%'
-  ";
-  $val = scalar_query($sql);
-  return $val!==null ? (int)$val : 0;
-}
-/* number_mode:
-   - 'number_only' => Sample_Number guarda SOLO el número; se filtra por filas cuyo Sample_ID empiece por id_prefix
-   - 'with_prefix' => Sample_Number tiene también prefijo; se filtra por number_prefix
-*/
-function max_suffix_in_number(string $id_prefix, string $number_mode, ?string $number_prefix): int {
-  if ($number_mode === 'with_prefix') {
-    $np = $GLOBALS['db']->escape($number_prefix ?? $id_prefix);
-    $sql = "
-      SELECT MAX(CAST(SUBSTRING_INDEX(TRIM(Sample_Number), '-', -1) AS UNSIGNED)) AS max_n
-      FROM lab_test_requisition_form
-      WHERE TRIM(Sample_Number) LIKE '{$np}-%'
-    ";
-  } else { // number_only
-    $ip = $GLOBALS['db']->escape($id_prefix);
-    $sql = "
-      SELECT MAX(CAST(TRIM(Sample_Number) AS UNSIGNED)) AS max_n
-      FROM lab_test_requisition_form
-      WHERE TRIM(Sample_ID) LIKE '{$ip}-%'
-        AND TRIM(Sample_Number) REGEXP '^[0-9]{1,12}$'
-    ";
-  }
-  $val = scalar_query($sql);
-  return $val!==null ? (int)$val : 0;
+function resolve_year_prefix(string $base, bool $autoYear, string $yy): string {
+  if (!$autoYear) return $base;
+  // Si ya termina con "-dd" (2 dígitos), no anexes
+  if (preg_match('/-\d{2}$/', $base)) return $base;
+  return $base . '-' . $yy; // ej. SD3-258 -> SD3-258-25
 }
 
-/* --------- Ruteo por action --------- */
 $action = isset($_GET['action']) ? trim((string)$_GET['action']) : 'next';
+$yy = (new DateTimeImmutable('now'))->format('y');
 
-if ($action === 'today') {
-  if ($REGISTERED_IS_DATETIME) {
-    $sqlToday = "
-      SELECT id, Sample_ID, Sample_Number, Test_Type, Material_Type, Registed_Date
-      FROM lab_test_requisition_form
-      WHERE Registed_Date >= CURDATE() AND Registed_Date < CURDATE() + INTERVAL 1 DAY
-      ORDER BY Registed_Date DESC, id DESC
-    ";
-  } else {
-    $sqlToday = "
-      SELECT id, Sample_ID, Sample_Number, Test_Type, Material_Type, Registed_Date
-      FROM lab_test_requisition_form
-      WHERE Registed_Date = CURDATE()
-      ORDER BY id DESC
-    ";
+// ---------- Acción: siguiente por prefijo ----------
+if ($action === 'next') {
+  $base_prefix = isset($_GET['prefix']) ? trim((string)$_GET['prefix']) : '';
+  $base_prefix = preg_replace('/[^A-Za-z0-9\-_]/','',$base_prefix);
+  if ($base_prefix==='') json_error(400,'Falta ?prefix=');
+
+  $auto_year = isset($_GET['auto_year']) ? (int)$_GET['auto_year']===1 : true; // por defecto SÍ agrega -yy
+  $pad_len   = isset($_GET['pad']) ? max(1,(int)$_GET['pad']) : 4;
+
+  $resolved  = resolve_year_prefix($base_prefix, $auto_year, $yy);
+
+  global $db;
+  $p_like = $db->escape($resolved);
+  $rx = '^'.mysql_regex_quote($resolved).'-[0-9]+$';
+  $rx_sql = $db->escape($rx);
+
+  // Busca la última coincidencia EXACTA en Sample_ID
+  $sql_last_id = "
+    SELECT TRIM(Sample_ID) AS val,
+           CAST(SUBSTRING_INDEX(TRIM(Sample_ID), '-', -1) AS UNSIGNED) AS n
+    FROM lab_test_requisition_form
+    WHERE TRIM(Sample_ID) LIKE '{$p_like}-%'
+      AND TRIM(Sample_ID) REGEXP '{$rx_sql}'
+    ORDER BY n DESC
+    LIMIT 1
+  ";
+  // ... y en Sample_Number (por si alguna vez se guardó así)
+  $sql_last_num = "
+    SELECT TRIM(Sample_Number) AS val,
+           CAST(SUBSTRING_INDEX(TRIM(Sample_Number), '-', -1) AS UNSIGNED) AS n
+    FROM lab_test_requisition_form
+    WHERE TRIM(Sample_Number) LIKE '{$p_like}-%'
+      AND TRIM(Sample_Number) REGEXP '{$rx_sql}'
+    ORDER BY n DESC
+    LIMIT 1
+  ";
+
+  $row_id  = scalar_row($sql_last_id);
+  $row_num = scalar_row($sql_last_num);
+
+  $best_val = null; $best_n = 0; $from_col = null;
+  if ($row_id && isset($row_id['n']) && (int)$row_id['n'] > $best_n) {
+    $best_n = (int)$row_id['n']; $best_val = (string)$row_id['val']; $from_col = 'Sample_ID';
   }
-  $rows = find_by_sql($sqlToday);
-  $todayCount = is_array($rows) ? count($rows) : 0;
-  json_ok(['today_count'=>$todayCount, 'today'=>$rows]);
-}
+  if ($row_num && isset($row_num['n']) && (int)$row_num['n'] > $best_n) {
+    $best_n = (int)$row_num['n']; $best_val = (string)$row_num['val']; $from_col = 'Sample_Number';
+  }
 
-/* --------- action=next (principal) --------- */
-$id_prefix_raw    = isset($_GET['id_prefix']) ? trim((string)$_GET['id_prefix']) : '';
-$id_prefix_raw    = preg_replace('/[^A-Za-z0-9\-_]/','',$id_prefix_raw);
-if ($id_prefix_raw==='') json_error(400,'Falta ?id_prefix=');
+  $next_n   = ($best_n > 0) ? ($best_n + 1) : 1;
+  $next_pad = str_pad((string)$next_n, $pad_len, '0', STR_PAD_LEFT);
+  $use_this = $resolved . '-' . $next_pad;
 
-$number_mode      = isset($_GET['number_mode']) ? trim((string)$_GET['number_mode']) : 'number_only';
-if ($number_mode!=='number_only' && $number_mode!=='with_prefix') $number_mode='number_only';
-
-$number_prefix_raw= isset($_GET['number_prefix']) ? trim((string)$_GET['number_prefix']) : '';
-$number_prefix_raw= preg_replace('/[^A-Za-z0-9\-_]/','',$number_prefix_raw);
-if ($number_mode==='with_prefix' && $number_prefix_raw==='') {
-  // Si no mandas number_prefix, asumimos el mismo que id_prefix
-  $number_prefix_raw = $id_prefix_raw;
-}
-
-$pad_len          = isset($_GET['pad']) ? max(1,(int)$_GET['pad']) : 4;
-
-$id_prefix        = $id_prefix_raw;
-$number_prefix    = ($number_mode==='with_prefix') ? $number_prefix_raw : null;
-
-/* --- Cálculo de máximos considerando ambos --- */
-$max_id  = max_suffix_in_id($id_prefix);
-$max_num = max_suffix_in_number($id_prefix, $number_mode, $number_prefix);
-
-/* siguientes “independientes” */
-$next_id_num  = $max_id  + 1;
-$next_num_num = $max_num + 1;
-
-/* recomendado = máximo común para alinear ambos */
-$recommended  = max($next_id_num, $next_num_num);
-$pad          = str_pad((string)$recommended, $pad_len, '0', STR_PAD_LEFT);
-
-/* construir candidatos */
-$cand_id  = $id_prefix . '-' . $pad;
-$cand_num = ($number_mode==='with_prefix')
-  ? (($number_prefix ?? $id_prefix) . '-' . $pad)
-  : $pad;
-
-/* evitar colisiones (ID / Number / parejita) */
-while ( exists_col('Sample_ID', $cand_id)
-     || exists_col('Sample_Number', $cand_num)
-     || pair_exists($cand_id, $cand_num) ) {
-  $recommended++;
-  $pad     = str_pad((string)$recommended, $pad_len, '0', STR_PAD_LEFT);
-  $cand_id = $id_prefix . '-' . $pad;
-  $cand_num= ($number_mode==='with_prefix')
-              ? (($number_prefix ?? $id_prefix) . '-' . $pad)
-              : $pad;
-}
-
-/* respuesta */
-json_ok([
-  'params' => [
-    'id_prefix'     => $id_prefix,
-    'number_mode'   => $number_mode,           // number_only | with_prefix
-    'number_prefix' => $number_prefix,         // si aplica
-    'pad_len'       => $pad_len
-  ],
-  'status' => [
-    'sample_id' => [
-      'max_found'   => $max_id,
-      'next_number' => $next_id_num,
-      'next_id'     => $id_prefix . '-' . str_pad((string)$next_id_num, $pad_len, '0', STR_PAD_LEFT),
+  json_ok([
+    'params' => [
+      'base_prefix' => $base_prefix,
+      'auto_year'   => $auto_year ? 1 : 0,
+      'resolved'    => $resolved,
+      'yy'          => $yy,
+      'pad_len'     => $pad_len
     ],
-    'sample_number' => [
-      'scope'       => ($number_mode==='with_prefix' ? "LIKE {$number_prefix}-%" : "ID LIKE {$id_prefix}-% (numérico)"),
-      'max_found'   => $max_num,
-      'next_number' => $next_num_num,
-      'next_value'  => ($number_mode==='with_prefix')
-                        ? (($number_prefix ?? $id_prefix) . '-' . str_pad((string)$next_num_num, $pad_len, '0', STR_PAD_LEFT))
-                        : str_pad((string)$next_num_num, $pad_len, '0', STR_PAD_LEFT),
+    'last_found' => [
+      'from_column' => $from_col,
+      'value'       => $best_val,
+      'suffix_n'    => $best_n,
     ],
-  ],
-  'recommended' => [
-    'recommended_next' => $recommended,
-    'next_padded'      => $pad,
-    'use_for_id'       => $cand_id,
-    'use_for_number'   => $cand_num,
-    'sample_name'      => build_sample_name($cand_id, $cand_num),
-  ],
-]);
+    'suggestion' => [
+      'next_n'      => $next_n,
+      'next_padded' => $next_pad,
+      'use_this'    => $use_this,
+    ],
+  ]);
+}
+
+// ---------- Acción: listado de hoy (con filtro opcional por prefijo resuelto) ----------
+if ($action === 'today') {
+  $base_prefix = isset($_GET['prefix']) ? trim((string)$_GET['prefix']) : '';
+  $base_prefix = preg_replace('/[^A-Za-z0-9\-_]/','',$base_prefix);
+  $auto_year = isset($_GET['auto_year']) ? (int)$_GET['auto_year']===1 : false; // por defecto NO fuerza año aquí
+  $resolved  = $base_prefix ? resolve_year_prefix($base_prefix, $auto_year, $yy) : '';
+
+  $dateFilter = $REGISTERED_IS_DATETIME
+    ? "Registed_Date >= CURDATE() AND Registed_Date < CURDATE() + INTERVAL 1 DAY"
+    : "Registed_Date = CURDATE()";
+
+  if ($resolved !== '') {
+    global $db;
+    $p_like = $db->escape($resolved);
+    $where = "$dateFilter AND (TRIM(Sample_ID) LIKE '{$p_like}-%' OR TRIM(Sample_Number) LIKE '{$p_like}-%')";
+  } else {
+    $where = $dateFilter;
+  }
+
+  $sql = "
+    SELECT id, Sample_ID, Sample_Number, Test_Type, Material_Type, Registed_Date
+    FROM lab_test_requisition_form
+    WHERE $where
+    ORDER BY id DESC
+  ";
+
+  $rows = find_by_sql($sql);
+  json_ok([
+    'params' => [
+      'base_prefix' => $base_prefix,
+      'auto_year'   => $auto_year ? 1 : 0,
+      'resolved'    => $resolved,
+      'yy'          => $yy
+    ],
+    'today_count' => is_array($rows) ? count($rows) : 0,
+    'today'       => $rows
+  ]);
+}
+
+// Si llega aquí, acción no válida
+json_error(400, 'Acción no válida. Usa action=next o action=today');
