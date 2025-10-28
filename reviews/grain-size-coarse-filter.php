@@ -443,5 +443,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
+
 <script type="module" src="../js/grain-size/gs-cf.js"></script>
+<script>
+document.querySelectorAll('[data-exportar]').forEach(btn => {
+  btn.addEventListener('click', async e => {
+    const tipo = e.target.dataset.exportar;
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+
+    if (!id) {
+      alert("No se encontró el parámetro ID en la URL.");
+      return;
+    }
+
+    // Obtén el gráfico si existe
+    const chart = echarts.getInstanceByDom(document.getElementById('GrainSizeChart'));
+    const chartBase64 = chart ? chart.getDataURL({
+      pixelRatio: 1,
+      backgroundColor: '#fff'
+    }) : null;
+
+    try {
+      const res = await fetch(`../pdf/GS-CF-Acopio.php?id=${id}&mode=json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ GrainSizeChart: chartBase64 })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || `Error ${res.status}`);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'PDF generado correctamente',
+        html: `
+          <b>Archivo:</b> ${data.filename}<br>
+          <b>Versión:</b> v${data.version}<br>
+          <b>Estado:</b> ${data.result}
+        `,
+        confirmButtonText: 'Aceptar'
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al generar el PDF',
+        text: err.message
+      });
+    }
+  });
+});
+</script>
+
 <?php include_once('../components/footer.php');  ?>
