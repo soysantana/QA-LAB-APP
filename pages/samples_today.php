@@ -1,12 +1,28 @@
 <?php
+declare(strict_types=1);
 require_once('../config/load.php');
 page_require_level(2);
 include_once('../components/header.php');
 
+date_default_timezone_set('America/Santo_Domingo');
+
+// =============== Ajustes rápidos ===============
 /**
- * Prefijos base SIN año (la API añadirá el año actual)
+ * Si tu columna Registed_Date es DATETIME, pon true; si es DATE, false
  */
-$prefijos_base = [
+$REGISTERED_IS_DATETIME = false;
+
+/**
+ * Endpoint (ruta) del API que calcula el consecutivo.
+ * Cambia esto si tu archivo tiene otro nombre o ruta.
+ * Ejemplos:
+ *   '/api/consecutivo.php'
+ *   '/pages/consecutivo.php'
+ */
+const CONSECUTIVE_API = '/api/samples_today_and_next.php';
+
+// Prefijos sugeridos (personaliza libremente)
+$prefijos= [
   'PVDJ-AGG',
   'PVDJ-AGG-INV',
   'PVDJ-AGG-DIO',
@@ -17,6 +33,29 @@ $prefijos_base = [
   'SD2-258',
   'SD1-258',
 ];
+// ==============================================
+
+function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+
+// ------- Cargar “muestras de hoy” -------
+if ($REGISTERED_IS_DATETIME) {
+  $sqlToday = "
+    SELECT id, Sample_ID, Sample_Number, Test_Type, Material_Type, Registed_Date
+    FROM lab_test_requisition_form
+    WHERE Registed_Date >= CURDATE()
+      AND Registed_Date <  CURDATE() + INTERVAL 1 DAY
+    ORDER BY Registed_Date DESC, id DESC
+  ";
+} else {
+  $sqlToday = "
+    SELECT id, Sample_ID, Sample_Number, Test_Type, Material_Type, Registed_Date
+    FROM lab_test_requisition_form
+    WHERE Registed_Date = CURDATE()
+    ORDER BY id DESC
+  ";
+}
+$rows = find_by_sql($sqlToday);
+$todayCount = is_array($rows) ? count($rows) : 0;
 ?>
 <main id="main" class="main">
   <div class="pagetitle">
@@ -24,7 +63,6 @@ $prefijos_base = [
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/pages/home.php">Home</a></li>
-        <li class="breadcrumb-item">Reportes</li>
         <li class="breadcrumb-item active">Muestras del Día</li>
       </ol>
     </nav>
@@ -33,90 +71,161 @@ $prefijos_base = [
   <section class="section">
     <div class="row g-3">
 
-      <!-- Card: Resumen -->
-      <div class="col-12 col-lg-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <h5 class="card-title">📅 Resumen</h5>
-            <div class="d-flex align-items-baseline gap-2">
-              <div class="fs-2 fw-bold" id="todayCount">--</div>
-              <div class="text-muted">muestras registradas hoy</div>
+      <!-- Panel: Generar consecutivo -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-hash fs-5"></i>
+              <strong>Consecutivo de Sample ID / Sample Number</strong>
             </div>
-            <div class="small text-muted" id="todayDate"></div>
+            <span class="text-muted small">API: <?= e(CONSECUTIVE_API) ?></span>
           </div>
-        </div>
-      </div>
-
-      <!-- Card: Siguiente Sample_ID -->
-      <div class="col-12 col-lg-8">
-        <div class="card h-100">
           <div class="card-body">
-            <h5 class="card-title">🔢 Siguiente número de muestra</h5>
-
-            <form class="row gy-2 gx-2 align-items-end" id="prefixForm" onsubmit="return false;">
-              <div class="col-md-5">
-                <label class="form-label">Prefijo (sin año)</label>
-                <select class="form-select" id="prefixSelect">
-                  <?php foreach ($prefijos_base as $p): ?>
-                    <option value="<?php echo htmlspecialchars($p,ENT_QUOTES,'UTF-8');?>"><?php echo htmlspecialchars($p,ENT_QUOTES,'UTF-8');?></option>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Prefijo (elige uno)</label>
+                <select id="prefixSelect" class="form-select">
+                  <option value="">-- Selecciona --</option>
+                  <?php foreach($prefijos as $p): ?>
+                    <option value="<?= e($p) ?>"><?= e($p) ?></option>
                   <?php endforeach; ?>
                 </select>
               </div>
-
               <div class="col-md-5">
-                <label class="form-label">O escribe uno (con o sin año)</label>
-                <input type="text" class="form-control" id="prefixCustom" placeholder="Ej: PVDJ-AGG-DIO (o PVDJ-AGG-DIO25)">
+                <label class="form-label">O escribe tu prefijo</label>
+                <input id="prefixInput" type="text" class="form-control" placeholder="Ej: PVDJ-AGG25">
               </div>
-
-              <div class="col-md-2">
-                <button type="button" class="btn btn-primary w-100" id="btnConsultar">
-                  <i class="bi bi-search"></i> Consultar
+              <div class="col-md-3 d-grid">
+                <button id="btnCheck" class="btn btn-primary">
+                  <i class="bi bi-magic"></i> Obtener Siguiente
                 </button>
               </div>
-            </form>
+            </div>
 
             <hr>
 
-            <div class="d-flex flex-wrap align-items-center gap-3">
-              <div class="text-muted">Siguiente Sample_ID:</div>
-              <div class="badge bg-success text-wrap fs-6" id="nextId">--</div>
+            <div id="resultArea" class="row g-3 d-none">
+              <div class="col-lg-6">
+                <div class="card h-100 border-success">
+                  <div class="card-header bg-success text-white">
+                    <i class="bi bi-lightning-charge"></i> Sugerencia unificada
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label">Sample ID (usar)</label>
+                        <input id="useForID" class="form-control" readonly>
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label">Sample Number (usar)</label>
+                        <input id="useForNumber" class="form-control" readonly>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Sample Name (ID + Number)</label>
+                        <input id="sampleName" class="form-control" readonly>
+                      </div>
+                      <div class="col-12">
+                        <div class="alert alert-success py-2 mb-0">
+                          Consecutivo recomendado: <strong id="recNext"></strong>
+                          <span class="text-muted"> (padded: <span id="recPad"></span>)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-footer small text-muted">
+                    Sin colisión en ID, Number ni en la combinación.
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-6">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <i class="bi bi-journal-check"></i> Estado actual por columna
+                  </div>
+                  <div class="card-body">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <div class="border rounded p-2 h-100">
+                          <div class="fw-bold mb-1">Sample_ID</div>
+                          <div class="small text-muted">Último encontrado:</div>
+                          <div class="display-6" id="maxId">–</div>
+                          <div class="small text-muted">Siguiente (independiente):</div>
+                          <div class="fw-bold" id="nextIdVal">–</div>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="border rounded p-2 h-100">
+                          <div class="fw-bold mb-1">Sample_Number</div>
+                          <div class="small text-muted">Último encontrado:</div>
+                          <div class="display-6" id="maxNum">–</div>
+                          <div class="small text-muted">Siguiente (independiente):</div>
+                          <div class="fw-bold" id="nextNumVal">–</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-footer small text-muted">
+                    Prefijo resuelto/año: <span id="resolvedPrefix">–</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="small text-muted mt-1" id="nextMeta"></div>
-            <div class="small text-muted mt-1" id="prevYearNote"></div>
+
+            <div id="emptyHint" class="alert alert-info mt-3 d-none">
+              Escribe o selecciona un prefijo y pulsa <b>Obtener Siguiente</b>.
+            </div>
+
+            <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
           </div>
         </div>
       </div>
 
-      <!-- Tabla de muestras -->
+      <!-- Panel: Lista de hoy -->
       <div class="col-12">
         <div class="card">
-          <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between">
-              <h5 class="card-title mb-0">Muestras registradas hoy</h5>
-              <button class="btn btn-outline-secondary btn-sm" id="btnRefrescar">
-                <i class="bi bi-arrow-clockwise"></i> Refrescar
-              </button>
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-calendar-day"></i>
+              <strong>Registradas hoy (<?= (int)$todayCount ?>)</strong>
             </div>
-
-            <div class="table-responsive">
-              <table class="table table-striped align-middle" id="tblToday">
-                <thead>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="table table-sm table-striped align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Sample Name</th>
+                  <th>Sample ID</th>
+                  <th>Sample Number</th>
+                  <th>Test Type</th>
+                  <th>Material</th>
+                  <th>Registered</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($rows)): ?>
+                  <tr><td colspan="7" class="text-center text-muted">Sin registros hoy.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($rows as $i => $r): 
+                    $id  = $r['Sample_ID'] ?? '';
+                    $num = $r['Sample_Number'] ?? '';
+                    $sampleName = $id . ' | ' . $num; // mismo formato de “nombre de muestra” que usa el API
+                  ?>
                   <tr>
-                    <th>ID</th>
-                    <th>Sample_ID</th>
-                    <th>Sample_Number</th>
-                    <th>Test_Type</th>
-                    <th>Material_Type</th>
-                    <th>Registed_Date</th>
+                    <td><?= (int)($i+1) ?></td>
+                    <td><?= e($sampleName) ?></td>
+                    <td><?= e($id) ?></td>
+                    <td><?= e($num) ?></td>
+                    <td><?= e($r['Test_Type'] ?? '') ?></td>
+                    <td><?= e($r['Material_Type'] ?? '') ?></td>
+                    <td><?= e($r['Registed_Date'] ?? '') ?></td>
                   </tr>
-                </thead>
-                <tbody><!-- se llena por JS --></tbody>
-              </table>
-            </div>
-
-            <div class="small text-muted">
-              Nota: Si tu columna <code>Registed_Date</code> es DATETIME, ajusta el flag en la API.
-            </div>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -127,80 +236,103 @@ $prefijos_base = [
 
 <script>
 (function(){
-  const fmt = new Intl.DateTimeFormat('es-DO', { dateStyle:'full' });
-  document.getElementById('todayDate').textContent = 'Hoy es ' + fmt.format(new Date());
+  const $ = (sel)=>document.querySelector(sel);
+  const prefixSelect = $('#prefixSelect');
+  const prefixInput  = $('#prefixInput');
+  const btnCheck     = $('#btnCheck');
 
-  const prefixSelect = document.getElementById('prefixSelect');
-  const prefixCustom = document.getElementById('prefixCustom');
-  const btnConsultar = document.getElementById('btnConsultar');
-  const btnRefrescar = document.getElementById('btnRefrescar');
-  const nextIdEl     = document.getElementById('nextId');
-  const nextMetaEl   = document.getElementById('nextMeta');
-  const prevYearEl   = document.getElementById('prevYearNote');
-  const todayCountEl = document.getElementById('todayCount');
-  const tbody        = document.querySelector('#tblToday tbody');
+  const boxResult = $('#resultArea');
+  const boxEmpty  = $('#emptyHint');
+  const boxError  = $('#errorBox');
 
-  function currentPrefix(){
-    const custom = prefixCustom.value.trim();
-    return custom !== '' ? custom : prefixSelect.value; // sin año por defecto
-  }
+  const useForID     = $('#useForID');
+  const useForNumber = $('#useForNumber');
+  const sampleName   = $('#sampleName');
+  const recNext      = $('#recNext');
+  const recPad       = $('#recPad');
+  const maxId        = $('#maxId');
+  const nextIdVal    = $('#nextIdVal');
+  const maxNum       = $('#maxNum');
+  const nextNumVal   = $('#nextNumVal');
+  const resolvedPref = $('#resolvedPrefix');
 
-  async function loadData(){
-    const prefix = encodeURIComponent(currentPrefix());
-    const url = `/api/samples_today_and_next.php?prefix=${prefix}`;
-    const res = await fetch(url, { headers:{'Cache-Control':'no-cache'} });
-    const data = await res.json();
+  // Estado inicial
+  boxEmpty.classList.remove('d-none');
+  boxResult.classList.add('d-none');
+  boxError.classList.add('d-none');
 
-    if(!data.ok){
-      alert(data.error || 'Error al cargar datos');
+  // Si selecciona un prefijo, lo copia al input
+  prefixSelect.addEventListener('change', () => {
+    prefixInput.value = prefixSelect.value || '';
+  });
+
+  btnCheck.addEventListener('click', async () => {
+    const input = (prefixInput.value || prefixSelect.value || '').trim();
+    if (!input) {
+      showError('Debes seleccionar o escribir un prefijo.');
       return;
     }
+    await fetchNext(input);
+  });
 
-    // Contador
-    todayCountEl.textContent = data.today_count ?? 0;
+  async function fetchNext(prefix) {
+    try {
+      toggleLoading(true);
+      boxError.classList.add('d-none');
+      const url = `<?= e(CONSECUTIVE_API) ?>?prefix=${encodeURIComponent(prefix)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+      const data = await res.json();
 
-    // Siguiente ID
-    if (data.next && data.next.next_id){
-      nextIdEl.textContent = data.next.next_id;
-      nextMetaEl.textContent = `Prefijo resuelto: ${data.next.resolved_prefix} | Máximo encontrado: ${data.next.max_found ?? 0} | Año: ${data.next.year}`;
-    } else {
-      nextIdEl.textContent = '--';
-      nextMetaEl.textContent = 'Sin datos para el prefijo elegido';
+      if (!res.ok || !data.ok) {
+        const msg = (data && data.error) ? data.error : `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      // Pinta resultados
+      const next = data.next || null;
+      if (!next) {
+        showError('Respuesta inesperada del servidor (sin bloque "next").');
+        return;
+      }
+
+      // Sugerencia unificada
+      useForID.value     = next.recommended?.use_for_id     ?? '';
+      useForNumber.value = next.recommended?.use_for_number ?? '';
+      sampleName.value   = next.recommended?.sample_name    ?? '';
+      recNext.textContent= next.recommended?.recommended_next ?? '—';
+      recPad.textContent = next.recommended?.next_padded      ?? '—';
+
+      // Estado por columnas
+      maxId.textContent     = typeof next.sample_id?.max_found === 'number' ? next.sample_id.max_found : '—';
+      nextIdVal.textContent = next.sample_id?.next_id ?? '—';
+
+      maxNum.textContent    = typeof next.sample_number?.max_found === 'number' ? next.sample_number.max_found : '—';
+      nextNumVal.textContent= next.sample_number?.next_value ?? '—';
+
+      // Prefijo resuelto
+      resolvedPref.textContent = next.resolved_prefix ?? '—';
+
+      boxEmpty.classList.add('d-none');
+      boxResult.classList.remove('d-none');
+    } catch (err) {
+      showError(err.message || 'Error desconocido.');
+    } finally {
+      toggleLoading(false);
     }
-
-    // Nota de transición de año (si aplica)
-    prevYearEl.textContent = '';
-    if (data.next && data.next.prev_year_context){
-      const p = data.next.prev_year_context;
-      prevYearEl.textContent = `Info año previo (${p.prev_year}): prefijo ${p.prev_prefix}, máximo ${p.prev_max_found}. ${p.note}`;
-    }
-
-    // Tabla
-    tbody.innerHTML = '';
-    (data.today || []).forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${row.id ?? ''}</td>
-        <td>${row.Sample_ID ?? ''}</td>
-        <td>${row.Sample_Number ?? ''}</td>
-        <td>${row.Test_Type ?? ''}</td>
-        <td>${row.Material_Type ?? ''}</td>
-        <td>${row.Registed_Date ?? ''}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    // Si usas DataTables, inicialízalo una sola vez aquí (opcional).
-    // if ($.fn.DataTable && !$.fn.dataTable.isDataTable('#tblToday')) {
-    //   $('#tblToday').DataTable({ pageLength:25, order:[[0,'desc']] });
-    // }
   }
 
-  btnConsultar.addEventListener('click', loadData);
-  btnRefrescar.addEventListener('click', loadData);
+  function showError(msg){
+    boxError.textContent = msg;
+    boxError.classList.remove('d-none');
+    boxResult.classList.add('d-none');
+  }
 
-  // Carga inicial
-  loadData();
+  function toggleLoading(isLoading){
+    btnCheck.disabled = isLoading;
+    btnCheck.innerHTML = isLoading
+      ? '<span class="spinner-border spinner-border-sm"></span> Consultando...'
+      : '<i class="bi bi-magic"></i> Obtener Siguiente';
+  }
 })();
 </script>
 
