@@ -237,6 +237,8 @@ $todayCount = is_array($rows) ? count($rows) : 0;
 <script>
 (function(){
   const $ = (sel)=>document.querySelector(sel);
+
+  // --- Elementos UI ---
   const prefixSelect = $('#prefixSelect');
   const prefixInput  = $('#prefixInput');
   const btnCheck     = $('#btnCheck');
@@ -261,79 +263,106 @@ $todayCount = is_array($rows) ? count($rows) : 0;
   boxResult.classList.add('d-none');
   boxError.classList.add('d-none');
 
-  // Si selecciona un prefijo, lo copia al input
-  prefixSelect.addEventListener('change', () => {
+  prefixSelect?.addEventListener('change', () => {
     prefixInput.value = prefixSelect.value || '';
   });
 
-  btnCheck.addEventListener('click', async () => {
+  btnCheck?.addEventListener('click', async () => {
     const input = (prefixInput.value || prefixSelect.value || '').trim();
-    if (!input) {
-      showError('Debes seleccionar o escribir un prefijo.');
-      return;
-    }
+    if (!input) return showError('Debes seleccionar o escribir un prefijo (id_prefix).');
     await fetchNext(input);
   });
 
-  async function fetchNext(prefix) {
+  function toggleLoading(isLoading){
+    if (!btnCheck) return;
+    btnCheck.disabled = isLoading;
+    btnCheck.innerHTML = isLoading
+      ? '<span class="spinner-border spinner-border-sm"></span> Consultando...'
+      : '<i class="bi bi-magic"></i> Obtener Siguiente';
+  }
+
+  function showError(msg, html){
+    console.error('[consecutivo] ' + msg, html || '');
+    if (html) {
+      boxError.innerHTML = `<div class="mb-2">${msg}</div>
+        <details class="mt-2"><summary>Ver detalle</summary>
+        <div class="mt-2 border p-2" style="max-height:260px; overflow:auto; white-space:pre-wrap;">${html}</div>
+        </details>`;
+    } else {
+      boxError.textContent = msg;
+    }
+    boxError.classList.remove('d-none');
+    boxResult.classList.add('d-none');
+  }
+
+  async function fetchNext(idPrefix) {
     try {
       toggleLoading(true);
       boxError.classList.add('d-none');
-      const url = `<?= e(CONSECUTIVE_API) ?>?prefix=${encodeURIComponent(prefix)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
-      const data = await res.json();
+
+      // IMPORTANTE: usamos id_prefix (no "prefix"), y basamos el consecutivo SOLO en Sample_Number
+      const url = `<?= e(CONSECUTIVE_API) ?>?id_prefix=${encodeURIComponent(idPrefix)}&number_mode=number_only&pad=4`;
+      console.log('[consecutivo] GET', url);
+
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      });
+
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      const text = await res.text();
+      console.log('[consecutivo] status', res.status, 'ct', ct);
+      if (!ct.includes('application/json')) {
+        const snippet = text.substring(0, 1500).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return showError('El endpoint devolvió HTML en vez de JSON (login o warning de PHP). Revisa CONSECUTIVE_API y sesión.', snippet);
+      }
+
+      let data;
+      try { data = JSON.parse(text); }
+      catch (e) {
+        const snippet = text.substring(0, 1500).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return showError('JSON inválido recibido del endpoint.', snippet);
+      }
 
       if (!res.ok || !data.ok) {
-        const msg = (data && data.error) ? data.error : `HTTP ${res.status}`;
-        throw new Error(msg);
+        return showError(data?.error || `HTTP ${res.status}`);
       }
 
-      // Pinta resultados
-      const next = data.next || null;
-      if (!next) {
-        showError('Respuesta inesperada del servidor (sin bloque "next").');
-        return;
+      // Esperamos: data.recommended y data.status
+      const next   = data.recommended;
+      const status = data.status;
+      if (!next || !status) {
+        return showError('Respuesta inesperada: faltan bloques "recommended" o "status".');
       }
 
-      // Sugerencia unificada
-      useForID.value     = next.recommended?.use_for_id     ?? '';
-      useForNumber.value = next.recommended?.use_for_number ?? '';
-      sampleName.value   = next.recommended?.sample_name    ?? '';
-      recNext.textContent= next.recommended?.recommended_next ?? '—';
-      recPad.textContent = next.recommended?.next_padded      ?? '—';
+      // Pinta recomendación
+      useForID.value         = next.use_for_id     ?? '';
+      useForNumber.value     = next.use_for_number ?? '';
+      sampleName.value       = next.sample_name    ?? '';
+      recNext.textContent    = (next.recommended_next ?? '—').toString();
+      recPad.textContent     = next.next_padded    ?? '—';
 
-      // Estado por columnas
-      maxId.textContent     = typeof next.sample_id?.max_found === 'number' ? next.sample_id.max_found : '—';
-      nextIdVal.textContent = next.sample_id?.next_id ?? '—';
+      // Informativo
+      maxId.textContent      = (typeof status.sample_id?.max_found === 'number') ? status.sample_id.max_found : '—';
+      nextIdVal.textContent  = status.sample_id?.next_id ?? '—';
+      maxNum.textContent     = (typeof status.sample_number?.max_found === 'number') ? status.sample_number.max_found : '—';
+      nextNumVal.textContent = status.sample_number?.next_value ?? '—';
 
-      maxNum.textContent    = typeof next.sample_number?.max_found === 'number' ? next.sample_number.max_found : '—';
-      nextNumVal.textContent= next.sample_number?.next_value ?? '—';
-
-      // Prefijo resuelto
-      resolvedPref.textContent = next.resolved_prefix ?? '—';
+      resolvedPref.textContent = data.params?.id_prefix ?? idPrefix;
 
       boxEmpty.classList.add('d-none');
       boxResult.classList.remove('d-none');
+      console.log('[consecutivo] OK', data);
+
     } catch (err) {
       showError(err.message || 'Error desconocido.');
     } finally {
       toggleLoading(false);
     }
   }
-
-  function showError(msg){
-    boxError.textContent = msg;
-    boxError.classList.remove('d-none');
-    boxResult.classList.add('d-none');
-  }
-
-  function toggleLoading(isLoading){
-    btnCheck.disabled = isLoading;
-    btnCheck.innerHTML = isLoading
-      ? '<span class="spinner-border spinner-border-sm"></span> Consultando...'
-      : '<i class="bi bi-magic"></i> Obtener Siguiente';
-  }
 })();
 </script>
+
+
 
 <?php include_once('../components/footer.php'); ?>
