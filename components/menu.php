@@ -121,6 +121,7 @@ $MENU = [
 
   // Páginas
   ['type' => 'item', 'href' => '/pages/requisition-form.php', 'label' => 'Formulario de requisición', 'icon' => 'bi-file-earmark', 'patterns' => ['/pages/requisition-form.php']],
+  ['type' => 'item', 'href' => '/pages/samples_today.php', 'label' => 'Detalles de Muestras', 'icon' => 'bi-clipboard-data', 'patterns' => ['/pages/samples_today.php']],
   ['type' => 'item', 'href' => '/pages/control_ensayo_concreto.php', 'label' => 'Control Ensayo de Concreto', 'icon' => 'bi-clipboard-data', 'patterns' => ['/pages/control_ensayo_concreto.php']],
   ['type' => 'item', 'href' => '/pages/pendings-list.php', 'label' => 'Lista de Pendientes', 'icon' => 'bi-question-circle', 'patterns' => ['/pages/pendings-list.php']],
   ['type' => 'item', 'href' => '/pages/weekly-planning.php','label' => 'Planificación Semanal', 'icon' => 'bi-calendar3', 'patterns' => ['/pages/weekly-planning.php']],
