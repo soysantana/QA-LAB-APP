@@ -444,7 +444,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main><!-- End #main -->
 
 
-<script type="module" src="../js/grain-size/gs-cf.js"></script>
+
 <script>
 document.querySelectorAll('[data-exportar]').forEach(btn => {
   btn.addEventListener('click', async e => {
@@ -465,12 +465,11 @@ document.querySelectorAll('[data-exportar]').forEach(btn => {
     }) : null;
 
     try {
-      const res = await fetch(`../pdf/GS-CF-Acopio.php?id=${id}&mode=json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ GrainSizeChart: chartBase64 })
-      });
-
+     const res = await fetch(`/pdf/GS-CF-Acopio.php?id=${id}&mode=json`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ GrainSizeChart: chartBase64 || null })
+});
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || `Error ${res.status}`);
 
@@ -495,5 +494,6 @@ document.querySelectorAll('[data-exportar]').forEach(btn => {
   });
 });
 </script>
+<script type="module" src="../js/grain-size/gs-cf.js"></script>
 
 <?php include_once('../components/footer.php');  ?>
