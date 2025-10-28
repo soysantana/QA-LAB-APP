@@ -7,25 +7,25 @@ date_default_timezone_set('America/Santo_Domingo');
 
 function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-// Endpoint API
-const NEXT_API = '../api/samples_today_and_next.php';
+// RUTA DEL ENDPOINT (misma carpeta):
+$NEXT_API = '../api/samples_today_and_next.php';
 
-// Prefijos base (SIN año). La UI puede añadir -yy automáticamente.
-$prefijos_base = [
-  'SD3-258',
-  'LLD-258',
-  'S15',
-  '265',
+// Prefijos base (SIN año pegado; la UI aplica la regla en el endpoint)
+$prefijos = [
   'PVDJ-AGG',
   'PVDJ-AGG-INV',
   'PVDJ-AGG-DIO',
-  'PVDJ-AGG-CF',
-  'PVDJ-AGG-FF',
+  'LBOR',
+  'PVDJ-MISC',
+  'LLD-258',
+  'SD3-258',
+  'SD2-258',
+  'SD1-258',
 ];
 ?>
 <main id="main" class="main">
   <div class="pagetitle">
-    <h1>Consecutivo por Prefijo (con año) + Lista de Hoy</h1>
+    <h1>Consecutivo por Prefijo + Lista de Hoy</h1>
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/pages/home.php">Home</a></li>
@@ -43,27 +43,24 @@ $prefijos_base = [
           <div class="card-header d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-hash"></i>
-              <strong>Buscar último y sugerir siguiente</strong>
+              <strong>Obtener Siguiente (considerando reglas de año)</strong>
             </div>
-            <span class="text-muted small">API: <?= e(NEXT_API) ?></span>
+            <span class="text-muted small">API: <?= e($NEXT_API) ?></span>
           </div>
           <div class="card-body">
             <div class="row g-3 align-items-end">
-              <div class="col-md-4">
-                <label class="form-label">Prefijo base (sin año)</label>
-                <select id="baseSelect" class="form-select">
+              <div class="col-md-6">
+                <label class="form-label">Prefijo base</label>
+                <select id="prefSelect" class="form-select">
                   <option value="">-- Selecciona --</option>
-                  <?php foreach ($prefijos_base as $p): ?>
+                  <?php foreach($prefijos as $p): ?>
                     <option value="<?= e($p) ?>"><?= e($p) ?></option>
                   <?php endforeach; ?>
                 </select>
-                <input id="baseInput" type="text" class="form-control mt-2" placeholder="O escribe: ej. SD3-258">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Agregar año (-yy)</label>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="autoYear" checked>
-                  <label class="form-check-label" for="autoYear">Activado</label>
+                <input id="prefInput" type="text" class="form-control mt-2" placeholder="O escribe: ej. PVDJ-AGG o LLD-258">
+                <div class="form-text">
+                  Para <b>LLD-258 / SD3-258 / SD2-258 / SD1-258</b> NO se agrega año.<br>
+                  Para <b>PVDJ-AGG / PVDJ-AGG-INV / PVDJ-AGG-DIO / LBOR / PVDJ-MISC</b> se agrega <b>el año pegado</b> (ej. <code>PVDJ-AGG25</code>).
                 </div>
               </div>
               <div class="col-md-2">
@@ -101,7 +98,7 @@ $prefijos_base = [
         </div>
       </div>
 
-      <!-- Bloque: Lista de hoy + busqueda -->
+      <!-- Bloque: Listado de hoy con buscador simple -->
       <div class="col-12">
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between">
@@ -113,23 +110,22 @@ $prefijos_base = [
           <div class="card-body">
             <div class="row g-3 align-items-end">
               <div class="col-md-6">
-                <label class="form-label">Buscar (cliente, ID, número, material…)</label>
-                <input id="quickSearch" class="form-control" placeholder="Escribe para filtrar la tabla en vivo">
+                <label class="form-label">Búsqueda rápida</label>
+                <input id="quickSearch" class="form-control" placeholder="Escribe para filtrar (ID, número, test, material...)">
               </div>
               <div class="col-md-4">
-                <label class="form-label">Filtrar por prefijo base (opcional)</label>
+                <label class="form-label">Filtrar por prefijo base</label>
                 <div class="input-group">
-                  <select id="todayBaseSelect" class="form-select">
+                  <select id="todaySelect" class="form-select">
                     <option value="">-- Todos --</option>
-                    <?php foreach ($prefijos_base as $p): ?>
+                    <?php foreach($prefijos as $p): ?>
                       <option value="<?= e($p) ?>"><?= e($p) ?></option>
                     <?php endforeach; ?>
                   </select>
-                  <button id="btnTodayFilter" class="btn btn-outline-primary"><i class="bi bi-funnel"></i></button>
+                  <button id="btnTodayFilt" class="btn btn-outline-primary"><i class="bi bi-funnel"></i></button>
                 </div>
-                <div class="form-check mt-2">
-                  <input class="form-check-input" type="checkbox" id="todayAutoYear">
-                  <label class="form-check-label" for="todayAutoYear">Agregar año (-yy) al filtro</label>
+                <div class="form-text">
+                  Se aplican las mismas reglas de año que arriba.
                 </div>
               </div>
               <div class="col-md-2 d-grid">
@@ -168,39 +164,36 @@ $prefijos_base = [
 
 <script>
 (function(){
+  const NEXT_API = <?= json_encode($NEXT_API) ?>;
   const $ = s=>document.querySelector(s);
 
-  // --- NEXT ---
-  const baseSel  = $('#baseSelect');
-  const baseInp  = $('#baseInput');
-  const autoYear = $('#autoYear');
-  const padLen   = $('#padLen');
-  const btnNext  = $('#btnNext');
-  const errNext  = $('#errNext');
-  const boxNext  = $('#boxNext');
-
+  // --------- Siguiente ----------
+  const sel = $('#prefSelect'), inp = $('#prefInput'), pad = $('#padLen'), btn = $('#btnNext');
+  const errNext = $('#errNext'), boxNext = $('#boxNext');
   const lastCol = $('#lastCol'), lastVal = $('#lastVal'), lastN = $('#lastN');
   const resolvedPrefix = $('#resolvedPrefix'), nextN = $('#nextN'), nextPad = $('#nextPad'), useThis = $('#useThis');
 
-  baseSel?.addEventListener('change', ()=>{ baseInp.value = baseSel.value || ''; });
+  sel?.addEventListener('change', ()=>{ inp.value = sel.value || ''; });
 
-  btnNext?.addEventListener('click', async ()=>{
-    const base = (baseInp.value || baseSel.value || '').trim();
-    if (!base) return showErr(errNext, 'Debes indicar un prefijo base (sin año).');
-    await getNext(base, autoYear.checked, Math.max(1, parseInt(padLen.value||'4',10)));
+  btn?.addEventListener('click', async ()=>{
+    const base = (inp.value || sel.value || '').trim();
+    if (!base) return showErr(errNext, 'Debes indicar un prefijo.');
+    const p = Math.max(1, parseInt(pad.value||'4',10));
+    await doNext(base, p);
   });
 
-  async function getNext(basePrefix, addYear, pad){
+  async function doNext(basePrefix, pad){
     try{
       errNext.classList.add('d-none');
-      const url = `<?= e(NEXT_API) ?>?action=next&prefix=${encodeURIComponent(basePrefix)}&auto_year=${addYear?1:0}&pad=${pad}`;
+      const url = `${NEXT_API}?action=next&prefix=${encodeURIComponent(basePrefix)}&pad=${pad}`;
       const res = await fetch(url, { headers:{Accept:'application/json'}, credentials:'same-origin' });
-      const ct  = (res.headers.get('content-type')||'').toLowerCase();
+      const ct = (res.headers.get('content-type')||'').toLowerCase();
       const txt = await res.text();
-      if (!ct.includes('application/json')) return showErr(errNext,'El endpoint devolvió HTML (login/notice).', txt);
+      if (!ct.includes('application/json')) return showErr(errNext,'El endpoint devolvió HTML (ruta/sesión incorrecta).', txt);
+
       let data; try{ data=JSON.parse(txt);}catch{ return showErr(errNext,'JSON inválido.', txt); }
       if (!res.ok || !data.ok) return showErr(errNext, data?.error || `HTTP ${res.status}`);
-      // pintar
+
       lastCol.textContent = data.last_found?.from_column ?? '—';
       lastVal.textContent = data.last_found?.value ?? '—';
       lastN.textContent   = (typeof data.last_found?.suffix_n==='number') ? data.last_found.suffix_n : '—';
@@ -216,34 +209,33 @@ $prefijos_base = [
     }
   }
 
-  // --- TODAY ---
-  const qsearch = $('#quickSearch');
-  const todaySel= $('#todayBaseSelect');
-  const todayAY = $('#todayAutoYear');
-  const btnFilt = $('#btnTodayFilter');
+  // --------- Hoy + buscador ----------
+  const q = $('#quickSearch');
+  const todaySel = $('#todaySelect');
+  const btnFilt = $('#btnTodayFilt');
   const btnRld  = $('#btnTodayReload');
   const errToday= $('#errToday');
   const tbody   = $('#todayBody');
 
-  btnRld?.addEventListener('click', ()=> loadToday(null, false));
+  btnRld?.addEventListener('click', ()=> loadToday(null));
   btnFilt?.addEventListener('click', ()=>{
     const base = (todaySel.value || '').trim() || null;
-    loadToday(base, todayAY.checked);
+    loadToday(base);
   });
+  q?.addEventListener('input', ()=> filterTable(q.value.trim().toLowerCase()));
 
-  qsearch?.addEventListener('input', ()=> filterTable(qsearch.value.trim().toLowerCase()));
-
-  async function loadToday(basePrefix=null, addYear=false){
+  async function loadToday(basePrefix=null){
     try{
       errToday.classList.add('d-none');
       tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>';
-      let url = `<?= e(NEXT_API) ?>?action=today`;
-      if (basePrefix) url += `&prefix=${encodeURIComponent(basePrefix)}&auto_year=${addYear?1:0}`;
+      let url = `${NEXT_API}?action=today`;
+      if (basePrefix) url += `&prefix=${encodeURIComponent(basePrefix)}`;
 
       const res = await fetch(url, { headers:{Accept:'application/json'}, credentials:'same-origin' });
-      const ct  = (res.headers.get('content-type')||'').toLowerCase();
+      const ct = (res.headers.get('content-type')||'').toLowerCase();
       const txt = await res.text();
-      if (!ct.includes('application/json')) return showErr(errToday,'El endpoint devolvió HTML (login/notice).', txt);
+      if (!ct.includes('application/json')) return showErr(errToday,'El endpoint devolvió HTML (ruta/sesión incorrecta).', txt);
+
       let data; try{ data=JSON.parse(txt);}catch{ return showErr(errToday,'JSON inválido.', txt); }
       if (!res.ok || !data.ok) return showErr(errToday, data?.error || `HTTP ${res.status}`);
 
@@ -252,24 +244,24 @@ $prefijos_base = [
         tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin registros hoy.</td></tr>';
         return;
       }
-      tbody.innerHTML = rows.map((r, i)=>{
+      tbody.innerHTML = rows.map((r,i)=>{
         const id  = (r.Sample_ID ?? '').toString();
-        const num = (r.Sample_Number ?? '').toString();
-        const name= `${id} | ${num}`;
+        const sn  = (r.Sample_Number ?? '').toString();
+        const name= `${id} | ${sn}`;
         const tt  = (r.Test_Type ?? '').toString();
         const mt  = (r.Material_Type ?? '').toString();
         const rd  = (r.Registed_Date ?? '').toString();
         return `<tr>
           <td>${i+1}</td>
-          <td>${escapeHtml(name)}</td>
-          <td>${escapeHtml(id)}</td>
-          <td>${escapeHtml(num)}</td>
-          <td>${escapeHtml(tt)}</td>
-          <td>${escapeHtml(mt)}</td>
-          <td>${escapeHtml(rd)}</td>
+          <td>${esc(name)}</td>
+          <td>${esc(id)}</td>
+          <td>${esc(sn)}</td>
+          <td>${esc(tt)}</td>
+          <td>${esc(mt)}</td>
+          <td>${esc(rd)}</td>
         </tr>`;
       }).join('');
-      filterTable(qsearch.value.trim().toLowerCase());
+      filterTable(q.value.trim().toLowerCase());
     }catch(e){
       showErr(errToday, e.message || 'Error desconocido.');
     }
@@ -278,32 +270,21 @@ $prefijos_base = [
   function filterTable(q){
     const rows = Array.from(tbody.querySelectorAll('tr'));
     if (!rows.length) return;
-    let shown = 0;
     rows.forEach(tr=>{
       const txt = tr.innerText.toLowerCase();
-      const vis = !q || txt.includes(q);
-      tr.style.display = vis ? '' : 'none';
-      if (vis) shown++;
+      tr.style.display = (!q || txt.includes(q)) ? '' : 'none';
     });
-    if (shown===0) {
-      tbody.insertAdjacentHTML('beforeend', '<tr data-empty="1"><td colspan="7" class="text-center text-muted">Sin coincidencias</td></tr>');
-    } else {
-      tbody.querySelectorAll('tr[data-empty="1"]').forEach(n=>n.remove());
-    }
   }
-
   function showErr(box, msg, detail){
     box.classList.remove('d-none');
     box.innerHTML = detail
-      ? `${msg}<hr><div class="small border p-2" style="max-height:260px;overflow:auto;white-space:pre-wrap;">${escapeHtml(detail)}</div>`
+      ? `${msg}<hr><div class="small border p-2" style="max-height:260px;overflow:auto;white-space:pre-wrap;">${esc(detail)}</div>`
       : msg;
   }
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
-  }
+  function esc(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-  // Cargas iniciales
-  loadToday(null, false);
+  // Carga inicial
+  loadToday(null);
 })();
 </script>
 
