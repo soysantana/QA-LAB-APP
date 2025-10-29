@@ -51,6 +51,7 @@ include_once('../components/header.php');
                     'test_delivery',
                     'test_realization',
                     'test_repeat',
+                    'doc_files',
                     'test_review',
                     'test_reviewed'
                   ];
