@@ -230,7 +230,7 @@ global $db; // proviene de load.php
 
 $sample_id     = (string)($Search['Sample_ID']     ?? '');
 $sample_number = (string)($Search['Sample_Number'] ?? '');
-$test_type     = (string)($Search['Test_Type']     ?? 'Atterberg');
+$test_type     = (string)($Search['Test_Type']     ?? 'AL');
 $templateName  = 'AL-Rev2';
 
 // calcular próxima versión

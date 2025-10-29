@@ -193,7 +193,7 @@ if (!$pdfBytes || strlen($pdfBytes) < 1000) json_error(500, 'No se pudo generar 
 // ====== Versionado + guardado + doc_files ======
 $sample_id     = (string)($Search['Sample_ID']     ?? '');
 $sample_number = (string)($Search['Sample_Number'] ?? '');
-$test_type     = (string)($Search['Test_Type']     ?? 'Atterberg');
+$test_type     = (string)($Search['Test_Type']     ?? 'AL');
 $templateName  = 'AL';
 
 // versión siguiente
