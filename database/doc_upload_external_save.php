@@ -77,7 +77,7 @@ try {
       $nextVer = (int)($max[0]['v'] ?? 0) + 1;
 
       $safe = sprintf(
-        '%s_%s_%s_v%d.pdf',
+        '%s-%s-%s-v%d.pdf',
         preg_replace('/[^A-Za-z0-9\-_.]/','-', $sid_raw ?: 'NA'),
         preg_replace('/[^A-Za-z0-9\-_.]/','-', $snum_raw ?: 'NA'),
         preg_replace('/[^A-Za-z0-9\-_.]/','-', $tt_raw ?: 'NA'),

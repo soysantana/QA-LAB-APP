@@ -194,7 +194,7 @@ if (!$pdfBytes || strlen($pdfBytes) < 1000) json_error(500, 'No se pudo generar 
 $sample_id     = (string)($Search['Sample_ID']     ?? '');
 $sample_number = (string)($Search['Sample_Number'] ?? '');
 $test_type     = (string)($Search['Test_Type']     ?? 'Atterberg');
-$templateName  = 'Atterberg-Limits';
+$templateName  = 'AL';
 
 // versión siguiente
 $max = find_by_sql(sprintf(
@@ -209,7 +209,7 @@ $nextVer = (int)($max[0]['v'] ?? 0) + 1;
 $dir = $root . '/uploads/results/' . date('Y/m');
 ensure_dir($dir);
 
-$filename = sprintf('%s_%s_%s_v%d.pdf', s($sample_id), s($sample_number), s($templateName), $nextVer);
+$filename = sprintf('%s-%s-%s-v%d.pdf', s($sample_id), s($sample_number), s($templateName), $nextVer);
 $abs = $dir . '/' . $filename;
 if (file_put_contents($abs, $pdfBytes) === false) {
   json_error(500, 'No se pudo escribir el archivo en disco');
