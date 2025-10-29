@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once('../config/load.php');
-page_require_level(2);
+page_require_level(3);
 include_once('../components/header.php');
 date_default_timezone_set('America/Santo_Domingo');
 
