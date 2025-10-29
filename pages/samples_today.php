@@ -7,7 +7,7 @@ date_default_timezone_set('America/Santo_Domingo');
 
 function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-// RUTA DEL ENDPOINT (misma carpeta):
+// RUTA DEL ENDPOINT (misma carpeta del API)
 $NEXT_API = '../api/samples_today_and_next.php';
 
 // Prefijos base (SIN año pegado; la UI aplica la regla en el endpoint)
@@ -25,7 +25,7 @@ $prefijos = [
 ?>
 <main id="main" class="main">
   <div class="pagetitle">
-    <h1>Consecutivo por Prefijo + Lista de Hoy</h1>
+    <h1>Consecutivo por Prefijo + Listas (Hoy / Semana)</h1>
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/pages/home.php">Home</a></li>
@@ -42,7 +42,7 @@ $prefijos = [
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-hash"></i>
+              <i class="bi bi-123"></i>
               <strong>Obtener Siguiente (considerando reglas de año)</strong>
             </div>
             <span class="text-muted small">API: <?= e($NEXT_API) ?></span>
@@ -98,7 +98,7 @@ $prefijos = [
         </div>
       </div>
 
-      <!-- Bloque: Listado de hoy con buscador simple -->
+      <!-- Bloque: Registradas HOY -->
       <div class="col-12">
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between">
@@ -158,6 +158,66 @@ $prefijos = [
         </div>
       </div>
 
+      <!-- Bloque: Registradas ESTA SEMANA -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-calendar-week"></i>
+              <strong>Registradas esta semana (últimos 7 días)</strong>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label">Búsqueda rápida</label>
+                <input id="weekSearch" class="form-control" placeholder="Escribe para filtrar (ID, número, test, material...)">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Filtrar por prefijo base</label>
+                <div class="input-group">
+                  <select id="weekSelect" class="form-select">
+                    <option value="">-- Todos --</option>
+                    <?php foreach($prefijos as $p): ?>
+                      <option value="<?= e($p) ?>"><?= e($p) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <button id="btnWeekFilt" class="btn btn-outline-primary"><i class="bi bi-funnel"></i></button>
+                </div>
+                <div class="form-text">
+                  Aplica las mismas reglas de año.
+                </div>
+              </div>
+              <div class="col-md-2 d-grid">
+                <button id="btnWeekReload" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Actualizar</button>
+              </div>
+            </div>
+
+            <div id="errWeek" class="alert alert-danger mt-3 d-none"></div>
+
+            <div class="table-responsive mt-3">
+              <table class="table table-sm table-striped align-middle" id="weekTable">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Sample Name</th>
+                    <th>Sample ID</th>
+                    <th>Sample Number</th>
+                    <th>Test Type</th>
+                    <th>Material</th>
+                    <th>Registered</th>
+                  </tr>
+                </thead>
+                <tbody id="weekBody">
+                  <tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 </main>
@@ -194,14 +254,19 @@ $prefijos = [
       let data; try{ data=JSON.parse(txt);}catch{ return showErr(errNext,'JSON inválido.', txt); }
       if (!res.ok || !data.ok) return showErr(errNext, data?.error || `HTTP ${res.status}`);
 
-      lastCol.textContent = data.last_found?.from_column ?? '—';
-      lastVal.textContent = data.last_found?.value ?? '—';
-      lastN.textContent   = (typeof data.last_found?.suffix_n==='number') ? data.last_found.suffix_n : '—';
+      // soporta ambas claves del API (compatibilidad)
+      const lf = data.last_found || {};
+      lastCol.textContent = lf.from_column ?? lf.column ?? '—';
+      lastVal.textContent = lf.value ?? '—';
+      lastN.textContent   = (typeof lf.suffix_n==='number') ? lf.suffix_n : (typeof lf.suffix==='number' ? lf.suffix : '—');
 
-      resolvedPrefix.textContent = data.params?.resolved ?? '—';
-      nextN.textContent   = data.suggestion?.next_n ?? '—';
-      nextPad.textContent = data.suggestion?.next_padded ?? '—';
-      useThis.textContent = data.suggestion?.use_this ?? '—';
+      const resolved = data.params?.resolved ?? data.params?.prefix_resolved ?? '—';
+      resolvedPrefix.textContent = resolved;
+
+      const sug = data.suggestion || data.next || {};
+      nextN.textContent   = sug.next_n ?? sug.next_suffix ?? '—';
+      nextPad.textContent = sug.next_padded ?? '—';
+      useThis.textContent = sug.use_this ?? sug.use_code ?? '—';
 
       boxNext.classList.remove('d-none');
     }catch(e){
@@ -209,7 +274,7 @@ $prefijos = [
     }
   }
 
-  // --------- Hoy + buscador ----------
+  // --------- HOY + buscador ----------
   const q = $('#quickSearch');
   const todaySel = $('#todaySelect');
   const btnFilt = $('#btnTodayFilt');
@@ -222,7 +287,7 @@ $prefijos = [
     const base = (todaySel.value || '').trim() || null;
     loadToday(base);
   });
-  q?.addEventListener('input', ()=> filterTable(q.value.trim().toLowerCase()));
+  q?.addEventListener('input', ()=> filterTable(tbody, q.value.trim().toLowerCase()));
 
   async function loadToday(basePrefix=null){
     try{
@@ -261,13 +326,72 @@ $prefijos = [
           <td>${esc(rd)}</td>
         </tr>`;
       }).join('');
-      filterTable(q.value.trim().toLowerCase());
+      filterTable(tbody, q.value.trim().toLowerCase());
     }catch(e){
       showErr(errToday, e.message || 'Error desconocido.');
     }
   }
 
-  function filterTable(q){
+  // --------- SEMANA + buscador ----------
+  const wq = $('#weekSearch');
+  const weekSel = $('#weekSelect');
+  const btnWeekFilt = $('#btnWeekFilt');
+  const btnWeekRld  = $('#btnWeekReload');
+  const errWeek= $('#errWeek');
+  const wbody  = $('#weekBody');
+
+  btnWeekRld?.addEventListener('click', ()=> loadWeek(null));
+  btnWeekFilt?.addEventListener('click', ()=>{
+    const base = (weekSel.value || '').trim() || null;
+    loadWeek(base);
+  });
+  wq?.addEventListener('input', ()=> filterTable(wbody, wq.value.trim().toLowerCase()));
+
+  async function loadWeek(basePrefix=null){
+    try{
+      errWeek.classList.add('d-none');
+      wbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>';
+      let url = `${NEXT_API}?action=week`;
+      if (basePrefix) url += `&prefix=${encodeURIComponent(basePrefix)}`;
+
+      const res = await fetch(url, { headers:{Accept:'application/json'}, credentials:'same-origin' });
+      const ct = (res.headers.get('content-type')||'').toLowerCase();
+      const txt = await res.text();
+      if (!ct.includes('application/json')) return showErr(errWeek,'El endpoint devolvió HTML (ruta/sesión incorrecta).', txt);
+
+      let data; try{ data=JSON.parse(txt);}catch{ return showErr(errWeek,'JSON inválido.', txt); }
+      if (!res.ok || !data.ok) return showErr(errWeek, data?.error || `HTTP ${res.status}`);
+
+      const rows = Array.isArray(data.week) ? data.week : [];
+      if (!rows.length) {
+        wbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin registros en los últimos 7 días.</td></tr>';
+        return;
+      }
+      wbody.innerHTML = rows.map((r,i)=>{
+        const id  = (r.Sample_ID ?? '').toString();
+        const sn  = (r.Sample_Number ?? '').toString();
+        const name= `${id} | ${sn}`;
+        const tt  = (r.Test_Type ?? '').toString();
+        const mt  = (r.Material_Type ?? '').toString();
+        const rd  = (r.Registed_Date ?? '').toString();
+        return `<tr>
+          <td>${i+1}</td>
+          <td>${esc(name)}</td>
+          <td>${esc(id)}</td>
+          <td>${esc(sn)}</td>
+          <td>${esc(tt)}</td>
+          <td>${esc(mt)}</td>
+          <td>${esc(rd)}</td>
+        </tr>`;
+      }).join('');
+      filterTable(wbody, wq.value.trim().toLowerCase());
+    }catch(e){
+      showErr(errWeek, e.message || 'Error desconocido.');
+    }
+  }
+
+  // ---------- utils ----------
+  function filterTable(tbody, q){
     const rows = Array.from(tbody.querySelectorAll('tr'));
     if (!rows.length) return;
     rows.forEach(tr=>{
@@ -285,6 +409,7 @@ $prefijos = [
 
   // Carga inicial
   loadToday(null);
+  loadWeek(null);
 })();
 </script>
 
