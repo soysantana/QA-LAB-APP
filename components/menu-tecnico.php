@@ -26,6 +26,7 @@ $rendimiento = !empty($rendimiento) ? $rendimiento : "collapsed";
 $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
 $hojatrabajos = !empty($hojatrabajos) ? $hojatrabajos : "collapsed";
+$detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
 
 ?>
   <!-- ======= Sidebar ======= -->
@@ -93,6 +94,11 @@ $hojatrabajos = !empty($hojatrabajos) ? $hojatrabajos : "collapsed";
           <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
+      <li class="nav-item">
+  <a class="nav-link <?php echo $detallesmuestras; ?>" href="/pages/samples_today.php">
+    <i class="bi bi-clipboard-data"></i>
+    <span>Detalle de Muestras</span>
+  </a>
  <li class="nav-item">
   <a class="nav-link <?php echo $control_concreto; ?>" href="/pages/control_ensayo_concreto.php">
     <i class="bi bi-clipboard-data"></i>
