@@ -139,7 +139,8 @@ function ensayos_pendientes($start, $end) {
     'test_delivery',
     'test_review',
     'test_reviewed',
-    'test_repeat'
+    'test_repeat',
+    'doc_files'
   ];
 
   $indexados = [];
