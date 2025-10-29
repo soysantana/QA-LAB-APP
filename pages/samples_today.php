@@ -59,8 +59,7 @@ $prefijos = [
                 </select>
                 <input id="prefInput" type="text" class="form-control mt-2" placeholder="O escribe: ej. PVDJ-AGG o LLD-258">
                 <div class="form-text">
-                  Para <b>LLD-258 / SD3-258 / SD2-258 / SD1-258</b> NO se agrega año.<br>
-                  Para <b>PVDJ-AGG / PVDJ-AGG-INV / PVDJ-AGG-DIO / LBOR / PVDJ-MISC</b> se agrega <b>el año pegado</b> (ej. <code>PVDJ-AGG25</code>).
+                
                 </div>
               </div>
               <div class="col-md-2">
@@ -77,10 +76,9 @@ $prefijos = [
             <div id="boxNext" class="row g-3 mt-3 d-none">
               <div class="col-lg-6">
                 <div class="border rounded p-3 h-100">
-                  <div class="fw-bold mb-2">Última encontrada</div>
-                  <div class="mb-1"><b>Columna:</b> <span id="lastCol">–</span></div>
-                  <div class="mb-1"><b>Valor:</b> <span id="lastVal">–</span></div>
-                  <div class="mb-1"><b>Sufijo #:</b> <span id="lastN">–</span></div>
+                  <div class="fw-bold mb-2">Última encontrada</div>                  
+                  <div class="mb-1"><b>Numero de Muestra:</b> <span id="lastVal">–</span></div>
+                  <
                 </div>
               </div>
               <div class="col-lg-6">
