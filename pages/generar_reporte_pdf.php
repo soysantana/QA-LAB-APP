@@ -324,7 +324,7 @@ if (in_array($dia, [0, 1, 2, 3])) {
 // =============================
 if (in_array($dia, [3, 4, 5, 6])) {
   $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
-  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor Mercedes", 0, 'L');
+  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor", 0, 'L');
   $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
 }
 
