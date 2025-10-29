@@ -3,9 +3,12 @@ declare(strict_types=1);
 require_once('../config/load.php');
 date_default_timezone_set('America/Santo_Domingo');
 
-// CAMBIA a true si Registed_Date es DATETIME:
+/**
+ * CONFIG: Cambia a true si Registed_Date es DATETIME (no DATE)
+ */
 $REGISTERED_IS_DATETIME = false;
 
+/* ---------- Helpers JSON ---------- */
 function json_ok(array $data){
   header('Content-Type: application/json; charset=utf-8');
   echo json_encode(['ok'=>true] + $data, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
@@ -18,24 +21,30 @@ function json_error(int $code, string $msg, array $extra = []){
   exit;
 }
 
-// Seguridad (si aplica en tu app)
+/* ---------- Seguridad (si tu app usa login/roles) ---------- */
 if (function_exists('page_require_level')) page_require_level(2);
 if (function_exists('current_user') && !current_user()) json_error(401, 'No autenticado');
 
 ini_set('display_errors','0');
 header('Cache-Control: no-store');
 
-// ---------- Reglas de prefijo ----------
+/* ---------- Reglas de prefijo ----------
+
+  NO_YEAR:   no se agrega año.
+  WITH_YEAR_PEGADO: se agrega el año "pegado" (yy), ej: PVDJ-AGG + 25 => PVDJ-AGG25
+--------------------------------------------------------------- */
 $NO_YEAR          = ['LLD-258','SD3-258','SD2-258','SD1-258'];
 $WITH_YEAR_PEGADO = ['PVDJ-AGG','PVDJ-AGG-INV','PVDJ-AGG-DIO','LBOR','PVDJ-MISC'];
 
+/* ---------- Utilidades SQL / Prefijos ---------- */
 function mysql_regex_quote(string $s): string {
   return preg_replace('/([\\\\.^$|()?*+\\[\\]{}-])/', '\\\\$1', $s);
 }
 function resolve_prefix_by_rules(string $base, array $NO_YEAR, array $WITH_YEAR_PEGADO, string $yy): string {
-  if (preg_match('/-\d{2}$/', $base)) return $base;                 // ya trae -yy
-  if (in_array($base, $NO_YEAR, true)) return $base;                // sin año
-  if (in_array($base, $WITH_YEAR_PEGADO, true)) return $base.$yy;   // año pegado
+  // Si ya termina en -yy, respetar (ej: SD3-258-25)
+  if (preg_match('/-\d{2}$/', $base)) return $base;
+  if (in_array($base, $NO_YEAR, true)) return $base;
+  if (in_array($base, $WITH_YEAR_PEGADO, true)) return $base.$yy;
   return $base;
 }
 function first_row(string $sql): ?array {
@@ -43,25 +52,37 @@ function first_row(string $sql): ?array {
   return (is_array($rows) && isset($rows[0])) ? $rows[0] : null;
 }
 
+/**
+ * Núcleo: obtiene "último" y "siguiente" para un prefijo YA RESUELTO (con/ sin año).
+ * Soporta:
+ *   A) Hífen en la misma columna:   {resolved}-{####}   en Sample_ID o Sample_Number
+ *   B) Modo separado:               Sample_ID = {resolved}  y Sample_Number = {####} (numérico)
+ * Respeta el padding detectado (p.ej. 0480 -> 0481).
+ */
 function get_last_and_next_for_resolved(string $resolved, int $pad_len): array {
   global $db;
 
+  // --- Formato con guion en la MISMA columna: {resolved}-{####}
   $like = $db->escape($resolved);
   $rx   = '^' . mysql_regex_quote($resolved) . '-[0-9]+$';
   $rx_e = $db->escape($rx);
 
-  $sql_last_id = "
+  $sql_last_id_hyphen = "
     SELECT TRIM(Sample_ID) AS val,
-           CAST(SUBSTRING_INDEX(TRIM(Sample_ID), '-', -1) AS UNSIGNED) AS n
+           CAST(SUBSTRING_INDEX(TRIM(Sample_ID), '-', -1) AS UNSIGNED) AS n,
+           CHAR_LENGTH(SUBSTRING_INDEX(TRIM(Sample_ID), '-', -1)) AS nlen,
+           'Sample_ID' AS src
     FROM lab_test_requisition_form
     WHERE TRIM(Sample_ID) LIKE '{$like}-%'
       AND TRIM(Sample_ID) REGEXP '{$rx_e}'
     ORDER BY n DESC
     LIMIT 1
   ";
-  $sql_last_num = "
+  $sql_last_num_hyphen = "
     SELECT TRIM(Sample_Number) AS val,
-           CAST(SUBSTRING_INDEX(TRIM(Sample_Number), '-', -1) AS UNSIGNED) AS n
+           CAST(SUBSTRING_INDEX(TRIM(Sample_Number), '-', -1) AS UNSIGNED) AS n,
+           CHAR_LENGTH(SUBSTRING_INDEX(TRIM(Sample_Number), '-', -1)) AS nlen,
+           'Sample_Number' AS src
     FROM lab_test_requisition_form
     WHERE TRIM(Sample_Number) LIKE '{$like}-%'
       AND TRIM(Sample_Number) REGEXP '{$rx_e}'
@@ -69,29 +90,74 @@ function get_last_and_next_for_resolved(string $resolved, int $pad_len): array {
     LIMIT 1
   ";
 
-  $row_id  = first_row($sql_last_id);
-  $row_num = first_row($sql_last_num);
+  $row_id_h  = first_row($sql_last_id_hyphen);
+  $row_num_h = first_row($sql_last_num_hyphen);
 
-  $best_val = null; $best_n = 0; $from_col = null;
-  if ($row_id && (int)$row_id['n'] > $best_n) { $best_n=(int)$row_id['n']; $best_val=(string)$row_id['val']; $from_col='Sample_ID'; }
-  if ($row_num && (int)$row_num['n'] > $best_n){ $best_n=(int)$row_num['n']; $best_val=(string)$row_num['val']; $from_col='Sample_Number'; }
+  // --- Formato SEPARADO: Sample_ID = {resolved}  y  Sample_Number = {####}
+  $esc_resolved = $db->escape($resolved);
+  $sql_split = "
+    SELECT TRIM(Sample_ID) AS id,
+           TRIM(Sample_Number) AS num,
+           CAST(TRIM(Sample_Number) AS UNSIGNED) AS n,
+           CHAR_LENGTH(TRIM(Sample_Number)) AS nlen,
+           'SPLIT' AS src
+    FROM lab_test_requisition_form
+    WHERE TRIM(Sample_ID) = '{$esc_resolved}'
+      AND TRIM(Sample_Number) REGEXP '^[0-9]+$'
+    ORDER BY n DESC
+    LIMIT 1
+  ";
+  $row_split = first_row($sql_split);
 
+  // Escoge el mejor (máximo n) entre los tres modos
+  $candidatos = [];
+  if ($row_id_h)   $candidatos[] = ['val'=>$row_id_h['val'],  'n'=>(int)$row_id_h['n'],  'nlen'=>(int)$row_id_h['nlen'],  'src'=>$row_id_h['src']];
+  if ($row_num_h)  $candidatos[] = ['val'=>$row_num_h['val'], 'n'=>(int)$row_num_h['n'], 'nlen'=>(int)$row_num_h['nlen'], 'src'=>$row_num_h['src']];
+  if ($row_split)  $candidatos[] = ['val'=>$row_split['num'], 'n'=>(int)$row_split['n'], 'nlen'=>(int)$row_split['nlen'],'src'=>$row_split['src']];
+
+  $best = null;
+  foreach ($candidatos as $c) {
+    if (!$best || $c['n'] > $best['n']) $best = $c;
+  }
+
+  $from_col = null;
+  $best_val = null;
+  $best_n   = 0;
+  $pad_detected = $pad_len;
+
+  if ($best) {
+    $best_val = (string)$best['val'];
+    $best_n   = (int)$best['n'];
+    $pad_detected = max($pad_len, (int)$best['nlen']);
+    // Mapear origen
+    if ($best['src'] === 'SPLIT') {
+      // modo separado: el último n provino de Sample_Number con Sample_ID = resolved
+      $from_col = 'Sample_Number (split with Sample_ID=' . $resolved . ')';
+    } else {
+      $from_col = $best['src']; // 'Sample_ID' o 'Sample_Number'
+    }
+  }
+
+  // siguiente
   $next_n   = ($best_n > 0) ? $best_n + 1 : 1;
-  $next_pad = str_pad((string)$next_n, $pad_len, '0', STR_PAD_LEFT);
+  $next_pad = str_pad((string)$next_n, $pad_detected, '0', STR_PAD_LEFT);
+
+  // Para consistencia en UI, el "usar" se entrega en formato con guion
   $use_this = $resolved . '-' . $next_pad;
 
   return [
     'last_found' => [
-      'column'      => $from_col,     // "Sample_ID" | "Sample_Number" | null
+      'column'      => $from_col,     // "Sample_ID" | "Sample_Number" | "Sample_Number (split ...)" | null
       'from_column' => $from_col,     // alias compatibilidad
-      'value'       => $best_val,     // ej. "SD3-258-0003"
-      'suffix'      => $best_n,       // ej. 3
-      'suffix_n'    => $best_n        // alias
+      'value'       => $best_val,     // ej. "PVDJ-AGG25-0480" o "0480"
+      'suffix'      => $best_n,       // ej. 480
+      'suffix_n'    => $best_n,       // alias
+      'pad_len'     => $pad_detected  // padding detectado
     ],
     'next' => [
-      'next_suffix' => $next_n,       // ej. 4
-      'next_padded' => $next_pad,     // ej. "0004"
-      'use_code'    => $use_this      // ej. "SD3-258-0004"
+      'next_suffix' => $next_n,       // ej. 481
+      'next_padded' => $next_pad,     // ej. "0481"
+      'use_code'    => $use_this      // ej. "PVDJ-AGG25-0481"
     ],
     'suggestion' => [                 // bloque adicional para UIs existentes
       'next_n'      => $next_n,
@@ -101,10 +167,14 @@ function get_last_and_next_for_resolved(string $resolved, int $pad_len): array {
   ];
 }
 
+/* ---------- Router de acciones ---------- */
 $action = isset($_GET['action']) ? trim((string)$_GET['action']) : 'next';
 $yy = (new DateTimeImmutable('now'))->format('y');
 
-// === A) Siguiente por un prefijo ===
+/* === A) Siguiente por un prefijo ===
+   GET params:
+     - prefix (string requerido)
+     - pad (int opcional, default 4) */
 if ($action === 'next') {
   $base = isset($_GET['prefix']) ? trim((string)$_GET['prefix']) : '';
   $base = preg_replace('/[^A-Za-z0-9\-_]/', '', $base);
@@ -126,7 +196,9 @@ if ($action === 'next') {
   ] + $out);
 }
 
-// === B) Hoy ===
+/* === B) Registradas HOY ===
+   GET params:
+     - prefix (string opcional: base, se resuelve con reglas) */
 if ($action === 'today') {
   $base = isset($_GET['prefix']) ? trim((string)$_GET['prefix']) : '';
   $base = preg_replace('/[^A-Za-z0-9\-_]/', '', $base);
@@ -141,7 +213,7 @@ if ($action === 'today') {
   if ($resolved !== '') {
     global $db;
     $like = $db->escape($resolved);
-    $where = "$dateFilter AND (TRIM(Sample_ID) LIKE '{$like}-%' OR TRIM(Sample_Number) LIKE '{$like}-%')";
+    $where = "$dateFilter AND (TRIM(Sample_ID) LIKE '{$like}-%' OR TRIM(Sample_Number) LIKE '{$like}-%' OR TRIM(Sample_ID) = '{$like}')";
   } else {
     $where = $dateFilter;
   }
@@ -166,7 +238,9 @@ if ($action === 'today') {
   ]);
 }
 
-// === C) Semana (últimos 7 días) ===
+/* === C) Registradas SEMANA (últimos 7 días) ===
+   GET params:
+     - prefix (string opcional: base, se resuelve con reglas) */
 if ($action === 'week') {
   $base = isset($_GET['prefix']) ? trim((string)$_GET['prefix']) : '';
   $base = preg_replace('/[^A-Za-z0-9\-_]/', '', $base);
@@ -183,7 +257,7 @@ if ($action === 'week') {
   if ($resolved !== '') {
     global $db;
     $like = $db->escape($resolved);
-    $where = "$dateFilter AND (TRIM(Sample_ID) LIKE '{$like}-%' OR TRIM(Sample_Number) LIKE '{$like}-%')";
+    $where = "$dateFilter AND (TRIM(Sample_ID) LIKE '{$like}-%' OR TRIM(Sample_Number) LIKE '{$like}-%' OR TRIM(Sample_ID) = '{$like}')";
   } else {
     $where = $dateFilter;
   }
@@ -208,8 +282,11 @@ if ($action === 'week') {
   ]);
 }
 
-// === D) NUEVO: Último y Siguiente por CONJUNTO de prefijos ===
-// Soporta GET (prefix[]=) y POST JSON { prefix:[], pad?:N }
+/* === D) NUEVO: Último y Siguiente por CONJUNTO de prefijos ===
+   Soporta:
+     - GET:  ?action=latest_by_prefixes&prefix[]=PVDJ-AGG&prefix[]=LLD-258&pad=4
+     - POST: JSON {"prefix":["PVDJ-AGG","LLD-258"], "pad":4}
+*/
 if ($action === 'latest_by_prefixes') {
   $pad_len_global = 4;
 
@@ -274,4 +351,5 @@ if ($action === 'latest_by_prefixes') {
   ]);
 }
 
+/* --- Si ninguna acción coincidió --- */
 json_error(400, 'Acción no válida. Usa action=next, action=today, action=week o action=latest_by_prefixes');
