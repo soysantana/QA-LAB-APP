@@ -44,13 +44,7 @@ const WITH_YEAR_PEGADO = ['PVDJ-AGG','PVDJ-AGG-INV','PVDJ-AGG-DIO','LBOR','PVDJ-
 /* =========================
    AUTH
  ========================= */
-function require_level_or_401(int $lvl = 2): void {
-  if (!function_exists('current_user')) json_error(500, 'Auth no disponible.');
-  $u = current_user();
-  if (!$u) json_error(401, 'No autenticado.');
-  if ((int)($u['user_level'] ?? 0) < $lvl) json_error(401, 'No autorizado.');
-}
-require_level_or_401(2);
+
 
 /* =========================
    UTILS
