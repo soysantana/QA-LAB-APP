@@ -8,7 +8,7 @@ date_default_timezone_set('America/Santo_Domingo');
 function e($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
 // RUTA DEL ENDPOINT (misma carpeta del API)
-$NEXT_API = '../api/samples_today_and_next.php';
+$NEXT_API = '/api/samples_today_and_next.php';
 
 // Prefijos base (SIN año pegado; la UI aplica la regla en el endpoint)
 $prefijos = [
@@ -58,9 +58,7 @@ $prefijos = [
                   <?php endforeach; ?>
                 </select>
                 <input id="prefInput" type="text" class="form-control mt-2" placeholder="O escribe: ej. PVDJ-AGG o LLD-258">
-                <div class="form-text">
-                
-                </div>
+                <div class="form-text"></div>
               </div>
               <div class="col-md-2">
                 <label class="form-label">Padding</label>
@@ -76,9 +74,10 @@ $prefijos = [
             <div id="boxNext" class="row g-3 mt-3 d-none">
               <div class="col-lg-6">
                 <div class="border rounded p-3 h-100">
-                  <div class="fw-bold mb-2">Última encontrada</div>                  
-                  <div class="mb-1"><b>Numero de Muestra:</b> <span id="lastVal">–</span></div>
-                  <
+                  <div class="fw-bold mb-2">Última encontrada</div>
+                  <div class="mb-1"><b>Columna origen:</b> <span id="lastCol">–</span></div>
+                  <div class="mb-1"><b>Número de Muestra / Valor:</b> <span id="lastVal">–</span></div>
+                  <div class="mb-1"><b>Sufijo #:</b> <span id="lastN">–</span></div>
                 </div>
               </div>
               <div class="col-lg-6">
@@ -122,9 +121,7 @@ $prefijos = [
                   </select>
                   <button id="btnTodayFilt" class="btn btn-outline-primary"><i class="bi bi-funnel"></i></button>
                 </div>
-                <div class="form-text">
-                  Se aplican las mismas reglas de año que arriba.
-                </div>
+                <div class="form-text">Se aplican las mismas reglas de año que arriba.</div>
               </div>
               <div class="col-md-2 d-grid">
                 <button id="btnTodayReload" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Actualizar</button>
@@ -182,9 +179,7 @@ $prefijos = [
                   </select>
                   <button id="btnWeekFilt" class="btn btn-outline-primary"><i class="bi bi-funnel"></i></button>
                 </div>
-                <div class="form-text">
-                  Aplica las mismas reglas de año.
-                </div>
+                <div class="form-text">Aplica las mismas reglas de año.</div>
               </div>
               <div class="col-md-2 d-grid">
                 <button id="btnWeekReload" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Actualizar</button>
@@ -223,7 +218,9 @@ $prefijos = [
 <script>
 (function(){
   const NEXT_API = <?= json_encode($NEXT_API) ?>;
+
   const $ = s=>document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
   // --------- Siguiente ----------
   const sel = $('#prefSelect'), inp = $('#prefInput'), pad = $('#padLen'), btn = $('#btnNext');
@@ -231,19 +228,19 @@ $prefijos = [
   const lastCol = $('#lastCol'), lastVal = $('#lastVal'), lastN = $('#lastN');
   const resolvedPrefix = $('#resolvedPrefix'), nextN = $('#nextN'), nextPad = $('#nextPad'), useThis = $('#useThis');
 
-  sel?.addEventListener('change', ()=>{ inp.value = sel.value || ''; });
+  sel?.addEventListener('change', ()=>{ if (inp) inp.value = sel.value || ''; });
 
   btn?.addEventListener('click', async ()=>{
-    const base = (inp.value || sel.value || '').trim();
+    const base = (inp?.value || sel?.value || '').trim();
     if (!base) return showErr(errNext, 'Debes indicar un prefijo.');
-    const p = Math.max(1, parseInt(pad.value||'4',10));
+    const p = Math.max(1, parseInt(pad?.value||'4',10));
     await doNext(base, p);
   });
 
-  async function doNext(basePrefix, pad){
+  async function doNext(basePrefix, padLen){
     try{
       errNext.classList.add('d-none');
-      const url = `${NEXT_API}?action=next&prefix=${encodeURIComponent(basePrefix)}&pad=${pad}`;
+      const url = `${NEXT_API}?action=next&prefix=${encodeURIComponent(basePrefix)}&pad=${padLen}`;
       const res = await fetch(url, { headers:{Accept:'application/json'}, credentials:'same-origin' });
       const ct = (res.headers.get('content-type')||'').toLowerCase();
       const txt = await res.text();
@@ -252,23 +249,22 @@ $prefijos = [
       let data; try{ data=JSON.parse(txt);}catch{ return showErr(errNext,'JSON inválido.', txt); }
       if (!res.ok || !data.ok) return showErr(errNext, data?.error || `HTTP ${res.status}`);
 
-      // soporta ambas claves del API (compatibilidad)
-      const lf = data.last_found || {};
-      lastCol.textContent = lf.from_column ?? lf.column ?? '—';
-      lastVal.textContent = lf.value ?? '—';
-      lastN.textContent   = (typeof lf.suffix_n==='number') ? lf.suffix_n : (typeof lf.suffix==='number' ? lf.suffix : '—');
+      // API: { resolved, result:{ last_found:{...}, next:{...}, suggestion:{...} } }
+      const lf = data.result?.last_found || {};
+      const sug = data.result?.suggestion || data.result?.next || {};
 
-      const resolved = data.params?.resolved ?? data.params?.prefix_resolved ?? '—';
-      resolvedPrefix.textContent = resolved;
+      if (lastCol) lastCol.textContent = lf.from_column ?? lf.column ?? '—';
+      if (lastVal) lastVal.textContent = lf.value ?? '—';
+      if (lastN)   lastN.textContent   = (typeof lf.suffix_n==='number') ? lf.suffix_n : (typeof lf.suffix==='number' ? lf.suffix : '—');
 
-      const sug = data.suggestion || data.next || {};
-      nextN.textContent   = sug.next_n ?? sug.next_suffix ?? '—';
-      nextPad.textContent = sug.next_padded ?? '—';
-      useThis.textContent = sug.use_this ?? sug.use_code ?? '—';
+      if (resolvedPrefix) resolvedPrefix.textContent = data.resolved ?? '—';
+      if (nextN)   nextN.textContent   = (sug.next_n ?? sug.next_suffix ?? '—');
+      if (nextPad) nextPad.textContent = (sug.next_padded ?? '—');
+      if (useThis) useThis.textContent = (sug.use_this ?? sug.use_code ?? '—');
 
-      boxNext.classList.remove('d-none');
+      boxNext?.classList.remove('d-none');
     }catch(e){
-      showErr(errNext, e.message || 'Error desconocido.');
+      showErr(errNext, e?.message || 'Error desconocido.');
     }
   }
 
@@ -282,7 +278,7 @@ $prefijos = [
 
   btnRld?.addEventListener('click', ()=> loadToday(null));
   btnFilt?.addEventListener('click', ()=>{
-    const base = (todaySel.value || '').trim() || null;
+    const base = (todaySel?.value || '').trim() || null;
     loadToday(base);
   });
   q?.addEventListener('input', ()=> filterTable(tbody, q.value.trim().toLowerCase()));
@@ -290,7 +286,7 @@ $prefijos = [
   async function loadToday(basePrefix=null){
     try{
       errToday.classList.add('d-none');
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>';
       let url = `${NEXT_API}?action=today`;
       if (basePrefix) url += `&prefix=${encodeURIComponent(basePrefix)}`;
 
@@ -302,18 +298,18 @@ $prefijos = [
       let data; try{ data=JSON.parse(txt);}catch{ return showErr(errToday,'JSON inválido.', txt); }
       if (!res.ok || !data.ok) return showErr(errToday, data?.error || `HTTP ${res.status}`);
 
-      const rows = Array.isArray(data.today) ? data.today : [];
+      const rows = Array.isArray(data.items) ? data.items : []; // <— API devuelve 'items'
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin registros hoy.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin registros hoy.</td></tr>';
         return;
       }
-      tbody.innerHTML = rows.map((r,i)=>{
+      if (tbody) tbody.innerHTML = rows.map((r,i)=>{
         const id  = (r.Sample_ID ?? '').toString();
         const sn  = (r.Sample_Number ?? '').toString();
-        const name= `${id} | ${sn}`;
+        const name= `${id} | ${sn}`.trim();
         const tt  = (r.Test_Type ?? '').toString();
         const mt  = (r.Material_Type ?? '').toString();
-        const rd  = (r.Registed_Date ?? '').toString();
+        const rd  = (r.registered_at ?? r.Registed_Date ?? '').toString(); // alias correcto
         return `<tr>
           <td>${i+1}</td>
           <td>${esc(name)}</td>
@@ -324,9 +320,9 @@ $prefijos = [
           <td>${esc(rd)}</td>
         </tr>`;
       }).join('');
-      filterTable(tbody, q.value.trim().toLowerCase());
+      filterTable(tbody, q?.value.trim().toLowerCase() || '');
     }catch(e){
-      showErr(errToday, e.message || 'Error desconocido.');
+      showErr(errToday, e?.message || 'Error desconocido.');
     }
   }
 
@@ -340,7 +336,7 @@ $prefijos = [
 
   btnWeekRld?.addEventListener('click', ()=> loadWeek(null));
   btnWeekFilt?.addEventListener('click', ()=>{
-    const base = (weekSel.value || '').trim() || null;
+    const base = (weekSel?.value || '').trim() || null;
     loadWeek(base);
   });
   wq?.addEventListener('input', ()=> filterTable(wbody, wq.value.trim().toLowerCase()));
@@ -348,7 +344,7 @@ $prefijos = [
   async function loadWeek(basePrefix=null){
     try{
       errWeek.classList.add('d-none');
-      wbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>';
+      if (wbody) wbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>';
       let url = `${NEXT_API}?action=week`;
       if (basePrefix) url += `&prefix=${encodeURIComponent(basePrefix)}`;
 
@@ -360,18 +356,18 @@ $prefijos = [
       let data; try{ data=JSON.parse(txt);}catch{ return showErr(errWeek,'JSON inválido.', txt); }
       if (!res.ok || !data.ok) return showErr(errWeek, data?.error || `HTTP ${res.status}`);
 
-      const rows = Array.isArray(data.week) ? data.week : [];
+      const rows = Array.isArray(data.items) ? data.items : []; // <— API devuelve 'items'
       if (!rows.length) {
-        wbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin registros en los últimos 7 días.</td></tr>';
+        if (wbody) wbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin registros en los últimos 7 días.</td></tr>';
         return;
       }
-      wbody.innerHTML = rows.map((r,i)=>{
+      if (wbody) wbody.innerHTML = rows.map((r,i)=>{
         const id  = (r.Sample_ID ?? '').toString();
         const sn  = (r.Sample_Number ?? '').toString();
-        const name= `${id} | ${sn}`;
+        const name= `${id} | ${sn}`.trim();
         const tt  = (r.Test_Type ?? '').toString();
         const mt  = (r.Material_Type ?? '').toString();
-        const rd  = (r.Registed_Date ?? '').toString();
+        const rd  = (r.registered_at ?? r.Registed_Date ?? '').toString();
         return `<tr>
           <td>${i+1}</td>
           <td>${esc(name)}</td>
@@ -382,14 +378,15 @@ $prefijos = [
           <td>${esc(rd)}</td>
         </tr>`;
       }).join('');
-      filterTable(wbody, wq.value.trim().toLowerCase());
+      filterTable(wbody, wq?.value.trim().toLowerCase() || '');
     }catch(e){
-      showErr(errWeek, e.message || 'Error desconocido.');
+      showErr(errWeek, e?.message || 'Error desconocido.');
     }
   }
 
   // ---------- utils ----------
   function filterTable(tbody, q){
+    if (!tbody) return;
     const rows = Array.from(tbody.querySelectorAll('tr'));
     if (!rows.length) return;
     rows.forEach(tr=>{
@@ -398,12 +395,12 @@ $prefijos = [
     });
   }
   function showErr(box, msg, detail){
+    if (!box) return;
     box.classList.remove('d-none');
     box.innerHTML = detail
-      ? `${msg}<hr><div class="small border p-2" style="max-height:260px;overflow:auto;white-space:pre-wrap;">${esc(detail)}</div>`
-      : msg;
+      ? `${esc(msg)}<hr><div class="small border p-2" style="max-height:260px;overflow:auto;white-space:pre-wrap;">${esc(detail)}</div>`
+      : esc(msg);
   }
-  function esc(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   // Carga inicial
   loadToday(null);

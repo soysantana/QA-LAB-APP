@@ -2,7 +2,7 @@
 // /pages/bandejas_descartar.php (versión robusta con fallback de columnas)
 $page_title = 'Bandejas a Botar';
 require_once('../config/load.php');
-page_require_level(2);
+page_require_level(3);
 
 // ─────────────────────────────────────────────────────────────
 // Helpers

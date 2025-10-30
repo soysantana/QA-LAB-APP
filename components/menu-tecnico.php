@@ -27,7 +27,6 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
 $hojatrabajos = !empty($hojatrabajos) ? $hojatrabajos : "collapsed";
 $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
-
 ?>
   <!-- ======= Sidebar ======= -->
   <aside id="sidebar" class="sidebar">
@@ -35,7 +34,7 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $class_home; ?> " href="/pages/home.php">
+        <a class="nav-link <?php echo $class_home; ?> " href="../pages/home.php">
           <i class="bi bi-grid"></i>
           <span>Panel Control</span>
         </a>
@@ -47,40 +46,40 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
         </a>
         <ul id="Tracking-nav" class="nav-content collapse <?php echo $tracking_show; ?>" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="/pages/test-preparation.php" class="<?php echo $preparation; ?>">
+            <a href="../pages/test-preparation.php" class="<?php echo $preparation; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en preparacion</span>
             </a>
           </li>
           <li>
-            <a href="/pages/test-realization.php" class="<?php echo $realization; ?>">
+            <a href="../pages/test-realization.php" class="<?php echo $realization; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en realizacion</span>
             </a>
           </li>
           <li>
-            <a href="/pages/test-delivery.php" class="<?php echo $delivery; ?>">
+            <a href="../pages/test-delivery.php" class="<?php echo $delivery; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en entrega</span>
             </a>
           </li>
           <li>
-            <a href="/pages/test-repeat.php" class="<?php echo $repeat; ?>">
+            <a href="../pages/test-repeat.php" class="<?php echo $repeat; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en repeticion</span>
             </a>
           </li>
           <li>
-            <a href="/pages/test-review.php" class="<?php echo $reviews; ?>">
+            <a href="../pages/test-review.php" class="<?php echo $reviews; ?>">
               <i class="bi bi-circle"></i><span>Ensayos en revision</span>
             </a>
           </li>
         </ul>
       </li><!-- End Tracking Nav -->
       <li class="nav-item">
-  <a class="nav-link <?php echo $bandejas; ?>" href="/pages/bandejas_descartar.php">
+  <a class="nav-link <?php echo $bandejas; ?>" href="../pages/bandejas_descartar.php">
     <i class="bi bi-trash3"></i>
     <span>Bandejas a Botar</span>
   </a>
 </li><!-- End Bandejas a Botar -->
      <li class="nav-item">
-  <a class="nav-link <?php echo $hojatrabajos; ?>" href="/components/menu_hojastrabajos.php">
+  <a class="nav-link <?php echo $hojatrabajos; ?>" href="../components/menu_hojastrabajos.php">
     <i class="bi bi-clipboard-check"></i>
     <span>Hojas de Trabajos</span>
   </a>
@@ -89,18 +88,19 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
       <li class="nav-heading">paginas</li>
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $requisition_form; ?>" href="/pages/requisition-form.php">
+        <a class="nav-link <?php echo $requisition_form; ?>" href="../pages/requisition-form.php">
           <i class="bi bi-file-earmark"></i>
           <span>Formulario de requisicion</span>
         </a>
       </li><!-- End Register Page Nav -->
-      <li class="nav-item">
-  <a class="nav-link <?php echo $detallesmuestras; ?>" href="/pages/samples_today.php">
-    <i class="bi bi-clipboard-data"></i>
-    <span>Detalle de Muestras</span>
-  </a>
+       <li class="nav-item">
+        <a class="nav-link <?php echo $detallesmuestras; ?>" href="../pages/samples_today.php">
+          <i class="bi bi-file-earmark"></i>
+          <span>Detalle de Muestras</span>
+        </a>
+      </li><!-- End Register Page Nav -->
  <li class="nav-item">
-  <a class="nav-link <?php echo $control_concreto; ?>" href="/pages/control_ensayo_concreto.php">
+  <a class="nav-link <?php echo $control_concreto; ?>" href="../pages/control_ensayo_concreto.php">
     <i class="bi bi-clipboard-data"></i>
     <span>Control Ensayo de Concreto</span>
   </a>
@@ -108,21 +108,21 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
 
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $Pending_List; ?>" href="/pages/pendings-list.php">
+        <a class="nav-link <?php echo $Pending_List; ?>" href="../pages/pendings-list.php">
           <i class="bi bi-question-circle"></i>
           <span>Lista de Pendientes</span>
         </a>
       </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $wepln; ?>" href="/pages/weekly-planning.php">
+        <a class="nav-link <?php echo $wepln; ?>" href="../pages/weekly-planning.php">
           <i class="bi bi-calendar3"></i>
           <span>Planificación Semanal</span>
         </a>
       </li><!-- End Register Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link <?php echo $ropln; ?>" href="/pages/job-rotation.php">
+        <a class="nav-link <?php echo $ropln; ?>" href="../pages/job-rotation.php">
           <i class="bi bi-calendar2"></i>
           <span>Rotacion Laboral</span>
         </a>
@@ -132,7 +132,7 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
 
       <!-- User Profile -->
       <li class="nav-item">
-        <a class="nav-link <?php echo $profile_show; ?>" href="/pages/users-profile.php">
+        <a class="nav-link <?php echo $profile_show; ?>" href="../pages/users-profile.php">
           <i class="bi bi-person"></i>
           <span>Perfil</span>
         </a>
