@@ -20,62 +20,80 @@ function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
 }
+// Helper: detecta "envío/envio/envíos/envios" como token
+if (!function_exists('es_envio_tt')) {
+  function es_envio_tt(string $s): bool {
+    $t = mb_strtolower((string)$s, 'UTF-8');
+    // Palabra "envio/envío" (sing/plural), tolera separadores comunes alrededor
+    return (bool)preg_match('/(^|[,\s\/\-\|;])env[ií]os?($|[,\s\/\-\|;])/u', $t);
+  }
+}
+
 function resumen_entregas_por_cliente($end) {
-  $stats = [];
+  $stats  = [];
   $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
 
+  // Solicitudes del último mes
   $solicitudes = find_by_sql("
     SELECT Client, Sample_ID, Sample_Number, Test_Type
     FROM lab_test_requisition_form
     WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
   ");
 
-  $entregas = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery");
+  // Entregas dentro del mismo rango (recomendado) 
+  // Si prefieres todas las entregas históricas, quita el WHERE.
+  $entregas = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
+    FROM test_delivery
+    WHERE Register_Date BETWEEN '{$inicio}' AND '{$end}'
+  ");
 
+  // Mapa de entregados por (ID|NUM|TEST_TYPE) excluyendo "envío"
   $entregado_map = [];
   foreach ($entregas as $e) {
-    $key = strtoupper(trim($e['Sample_ID'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
-    $entregado_map[$key] = true;
+    $sid = strtoupper(trim($e['Sample_ID'] ?? ''));
+    $sno = strtoupper(trim($e['Sample_Number'] ?? ''));
+    $tts = (string)($e['Test_Type'] ?? '');
+
+    foreach (preg_split('/[;,]+/', $tts) as $tt) {
+      $tt = trim($tt);
+      if ($tt === '' || es_envio_tt($tt)) continue; // excluir "envío/envio"
+      $key = $sid . '|' . $sno . '|' . strtoupper($tt);
+      $entregado_map[$key] = true;
+    }
   }
 
+  // Recorre solicitudes y cuenta por cliente excluyendo "envío"
   foreach ($solicitudes as $s) {
-    $cliente = strtoupper(trim($s['Client'])) ?: 'PENDING INFO';
-    $sample_id = strtoupper(trim($s['Sample_ID']));
-    $sample_num = strtoupper(trim($s['Sample_Number']));
-    $test_types = explode(',', $s['Test_Type']); // o json_decode si es un array JSON
-
-foreach ($test_types as $tt) {
-  $test_type = strtoupper(trim($tt));
-  $key = "{$sample_id}|{$sample_num}|{$test_type}";
-
-  if (!isset($stats[$cliente])) {
-    $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
-  }
-
-  $stats[$cliente]['solicitados']++;
-
-  if (isset($entregado_map[$key])) {
-    $stats[$cliente]['entregados']++;
-  }
-}
-
+    $cliente   = strtoupper(trim($s['Client'] ?? '')) ?: 'PENDING INFO';
+    $sample_id = strtoupper(trim($s['Sample_ID'] ?? ''));
+    $sample_no = strtoupper(trim($s['Sample_Number'] ?? ''));
+    $tts       = (string)($s['Test_Type'] ?? '');
 
     if (!isset($stats[$cliente])) {
       $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
     }
 
-    $stats[$cliente]['solicitados']++;
+    foreach (preg_split('/[;,]+/', $tts) as $tt) {
+      $tt = trim($tt);
+      if ($tt === '' || es_envio_tt($tt)) continue; // excluir "envío/envio"
 
-    if (isset($entregado_map[$key])) {
-      $stats[$cliente]['entregados']++;
+      $stats[$cliente]['solicitados']++;
+
+      $key = $sample_id . '|' . $sample_no . '|' . strtoupper($tt);
+      if (isset($entregado_map[$key])) {
+        $stats[$cliente]['entregados']++;
+      }
     }
   }
 
-  foreach ($stats as $cliente => $val) {
-    $s = $val['solicitados'];
-    $e = $val['entregados'];
-    $stats[$cliente]['porcentaje'] = $s > 0 ? round(($e / $s) * 100, 2) : 0;
+  // % por cliente
+  foreach ($stats as $cliente => &$val) {
+    $s = (int)$val['solicitados'];
+    $e = (int)$val['entregados'];
+    $val['porcentaje'] = $s > 0 ? round(($e / $s) * 100, 2) : 0;
   }
+  unset($val);
 
   return $stats;
 }
