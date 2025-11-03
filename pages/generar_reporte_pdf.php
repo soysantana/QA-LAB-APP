@@ -87,29 +87,58 @@ foreach ($test_types as $tt) {
 function count_by_sample($table, $sample, $field = 'Sample_ID') {
   return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
 }
-
 function muestras_nuevas($start, $end) {
-    // Accede a la variable global de conexión si es necesario
-    global $db;
+  // 1) Filtro en SQL: evita traer filas cuyo Test_Type sea solo "envío/envio"
+  //    (o donde no haya otro token distinto). Aun así haremos limpieza fina en PHP.
+  $sql = "
+    SELECT 
+      Sample_ID,
+      Sample_Number,
+      Structure,
+      Client,
+      Test_Type,
+      Registed_Date
+    FROM 
+      lab_test_requisition_form
+    WHERE 
+      Registed_Date BETWEEN '{$start}' AND '{$end}'
+      AND NOT (LOWER(CONVERT(Test_Type USING utf8)) LIKE '%envio%')
+    ORDER BY 
+      Registed_Date ASC
+  ";
+  $rows = find_by_sql($sql);
 
-    $sql = "
-        SELECT 
-            Sample_ID,
-            Sample_Number,
-            Structure,
-            Client,
-            Test_Type,
-            Registed_Date
-        FROM 
-            lab_test_requisition_form
-        WHERE 
-            Registed_Date BETWEEN '{$start}' AND '{$end}'
-        ORDER BY 
-            Registed_Date ASC
-    ";
+  // 2) Filtro en PHP: elimina el/los tokens 'envío/envio' si vienen mezclados
+  $out = [];
+  foreach ($rows as $r) {
+    $raw = (string)($r['Test_Type'] ?? '');
+    // separadores coma o punto y coma
+    $tokens = preg_split('/[;,]+/', $raw);
+    $clean  = [];
 
-    return find_by_sql($sql);
+    foreach ($tokens as $tt) {
+      $tt = trim($tt);
+      if ($tt === '') continue;
+
+      // match 'envio' o 'envío' (sing/plural), insensible a mayúsculas
+      $tlow = mb_strtolower($tt, 'UTF-8');
+      if (preg_match('/\benv[ií]os?\b/u', $tlow)) {
+        continue; // excluir "envío/envio"
+      }
+      $clean[] = $tt;
+    }
+
+    // Si luego de limpiar no queda nada, no incluir la fila
+    if (empty($clean)) continue;
+
+    // Re-escribe Test_Type sin los "envío"
+    $r['Test_Type'] = implode(', ', $clean);
+    $out[] = $r;
+  }
+
+  return $out;
 }
+
 
 
 // Función auxiliar para detectar columnas existentes
