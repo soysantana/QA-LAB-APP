@@ -108,117 +108,8 @@ function resumen_entregas_por_cliente($start, $end) {
 
   return $stats;
 }
-<?php
-ob_start();
-require_once('../config/load.php');
-require_once('../libs/fpdf/fpdf.php');
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-$user = current_user();
-$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
-
-$fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
-$fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
-$fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
-
-// Ventana de 4:00 pm a 4:00 pm (día -1 15:59:59 → día 15:59:59)
-$start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 15:59:59"));
-$end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
-
-function get_count($table, $field, $start, $end) {
-  $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
-  return (int)$r[0]['total'];
-}
-
-// --- Helpers para detectar "envío/envio/envíos/envios" ---
-if (!function_exists('es_envio_tt')) {
-  function es_envio_tt(string $s): bool {
-    $t = mb_strtolower((string)$s, 'UTF-8');
-    // token como palabra, tolera separadores comunes
-    return (bool)preg_match('/(^|[,\s\/\-\|;])env[ií]os?($|[,\s\/\-\|;])/u', $t);
-  }
-}
-if (!function_exists('es_envio')) {
-  function es_envio(string $s): bool {
-    $t = $s;
-    if (function_exists('iconv')) {
-      $tmp = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
-      if ($tmp !== false) $t = $tmp;
-    }
-    $t = mb_strtolower($t, 'UTF-8');
-    return (bool)preg_match('/\benvios?\b/u', $t);
-  }
-}
-
-/**
- * Resumen de entregas por cliente (usa rango [$start,$end] como llamas la función)
- * EXCLUYENDO test types que sean "envío/envio".
- */
-function resumen_entregas_por_cliente($start, $end) {
-  $stats  = [];
-
-  // Solicitudes del rango (no filtramos aquí por SQL por si Test_Type viene como lista)
-  $solicitudes = find_by_sql("
-    SELECT Client, Sample_ID, Sample_Number, Test_Type
-    FROM lab_test_requisition_form
-    WHERE Sample_Date BETWEEN '{$start}' AND '{$end}'
-  ");
-
-  // Entregas (construimos mapa por cada token de Test_Type, excluyendo 'envío')
-  $entregas = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type
-    FROM test_delivery
-    WHERE Register_Date BETWEEN '{$start}' AND '{$end}'
-  ");
-
-  $entregado_map = [];
-  foreach ($entregas as $e) {
-    $sid = strtoupper(trim($e['Sample_ID'] ?? ''));
-    $sno = strtoupper(trim($e['Sample_Number'] ?? ''));
-    $tts = (string)($e['Test_Type'] ?? '');
-    foreach (explode(',', $tts) as $tt) {
-      $tt = trim($tt);
-      if ($tt === '' || es_envio_tt($tt)) continue; // EXCLUYE ENVÍO
-      $key = $sid.'|'.$sno.'|'.strtoupper($tt);
-      $entregado_map[$key] = true;
-    }
-  }
-
-  foreach ($solicitudes as $s) {
-    $cliente   = strtoupper(trim($s['Client'] ?? '')) ?: 'PENDING INFO';
-    $sample_id = strtoupper(trim($s['Sample_ID'] ?? ''));
-    $sample_no = strtoupper(trim($s['Sample_Number'] ?? ''));
-    $tts       = (string)($s['Test_Type'] ?? '');
-
-    if (!isset($stats[$cliente])) {
-      $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
-    }
-
-    foreach (explode(',', $tts) as $tt) {
-      $tt = trim($tt);
-      if ($tt === '' || es_envio_tt($tt)) continue; // EXCLUYE ENVÍO
-
-      $stats[$cliente]['solicitados']++;
-
-      $key = $sample_id.'|'.$sample_no.'|'.strtoupper($tt);
-      if (isset($entregado_map[$key])) {
-        $stats[$cliente]['entregados']++;
-      }
-    }
-  }
-
-  // % por cliente
-  foreach ($stats as $cliente => $val) {
-    $s = $val['solicitados'];
-    $e = $val['entregados'];
-    $stats[$cliente]['porcentaje'] = $s > 0 ? round(($e / $s) * 100, 2) : 0;
-  }
-
-  return $stats;
-}
-function count_by_sample($table, $sample, $field = 'Sample_ID') {
+    function count_by_sample($table, $sample, $field = 'Sample_ID') {
   return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
 }
 
@@ -342,6 +233,147 @@ function resumen_tipo($start, $end) {
     SELECT Test_Type, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
     UNION ALL
     SELECT Test_Type, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type");
+}
+function render_ensayos_reporte($pdf, $start, $end) {
+  // Obtener datos desde la tabla `ensayos_reporte`
+  $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
+
+  // Título de la sección
+  $pdf->section_title("8. Summary of Dam Constructions Test");
+
+  // Encabezados de la tabla
+  $pdf->SetFont('Arial', 'B', 9);
+  $pdf->Cell(40, 8, 'Sample', 1);
+  $pdf->Cell(25, 8, 'Structure', 1);
+  $pdf->Cell(20, 8, 'Mat. Type', 1);
+  $pdf->Cell(30, 8, 'Test Type', 1);
+  $pdf->Cell(20, 8, 'Condition', 1);
+  $pdf->Cell(55, 8, 'Comments', 1);
+  $pdf->Ln();
+
+  // Contenido de la tabla
+  $pdf->SetFont('Arial', '', 9);
+  foreach ($ensayos_reporte as $row) {
+    $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
+    $structure = $row['Structure'];
+    $mat_type = $row['Material_Type'];
+    $test_type = $row['Test_Type'];
+    $condition = $row['Test_Condition'];
+    $comments = substr($row['Comments'], 0, 45); // Limita comentarios largos
+
+    $pdf->Cell(40, 8, $sample, 1);
+    $pdf->Cell(25, 8, $structure, 1);
+    $pdf->Cell(20, 8, $mat_type, 1);
+    $pdf->Cell(30, 8, $test_type, 1);
+    $pdf->Cell(20, 8, $condition, 1);
+    $pdf->Cell(55, 8, $comments, 1);
+    $pdf->Ln();
+  }
+}
+
+function observaciones_ensayos_reporte($start, $end) {
+  return find_by_sql("
+    SELECT 
+      Sample_ID, 
+      Sample_Number, 
+      Structure, 
+      Material_Type, 
+      Noconformidad 
+    FROM ensayos_reporte 
+    WHERE 
+      Noconformidad IS NOT NULL 
+      AND TRIM(Noconformidad) != '' 
+      AND Report_Date BETWEEN '{$start}' AND '{$end}'
+  ");
+}
+
+class PDF extends FPDF {
+  public $day_of_week;
+  public $week_number;
+  public $fecha_en;
+
+  function __construct($fecha_en) {
+    parent::__construct();
+    $this->day_of_week = date('w');
+    $this->week_number = date('W');
+    $this->fecha_en = $fecha_en;
+  }
+  function Header() {
+    $user = current_user();
+    $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+    if ($this->PageNo() > 1) return;
+    if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
+      $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 50);
+    }
+    $this->SetFont('Arial', 'B', 14);
+    $this->SetXY(150, 10); // Posiciona el cursor en la parte superior derecha
+    $this->Cell(50, 10, utf8_decode('Daily Laboratory Report'), 0, 1, 'R');
+
+    $this->SetFont('Arial', '', 10);
+    $this->SetXY(150, 18); // Un poco más abajo para la fecha
+    $this->Cell(50, 8, "Date: {$this->fecha_en}", 0, 1, 'R');
+
+    $this->Ln(10); // Espacio antes del contenido principal
+
+    $this->SetFont('Arial', 'B', 11);
+    $this->section_title("1. Personnel Assigned");
+    $this->SetFont('Arial', '', 10);
+
+    $semana = $this->week_number;
+    $dia = $this->day_of_week;
+
+    // =============================
+    // GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
+    // =============================
+    if (in_array($dia, [0, 1, 2, 3])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
+    }
+
+    // =============================
+    // GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
+    // =============================
+    if (in_array($dia, [3, 4, 5, 6])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
+    }
+
+    // =============================
+    // YAMILEXI + WENDIN — Rotación semanal
+    // =============================
+    if (
+      ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
+      ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
+    ) {
+      $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');   
+      $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
+    }
+
+    $this->Ln(5);
+  }
+  function section_title($title) {
+    $this->SetFont('Arial', 'B', 12);
+    $this->SetFillColor(200, 220, 255);
+    $this->Cell(0, 8, $title, 0, 1, 'L', true);
+    $this->Ln(2);
+  }
+  function section_table($headers, $rows, $widths) {
+    $this->SetFont('Arial', 'B', 10);
+    foreach ($headers as $i => $h) {
+      $this->Cell($widths[$i], 7, $h, 1, 0, 'C');
+    }
+    $this->Ln();
+    $this->SetFont('Arial', '', 10);
+    foreach ($rows as $row) {
+      foreach ($row as $i => $col) {
+        $this->Cell($widths[$i], 6, $col, 1, 0, 'C');
+      }
+      $this->Ln();
+    }
+    $this->Ln(3);
+  }
 }
 $pdf = new PDF($fecha_en);
 $pdf->AddPage();
