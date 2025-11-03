@@ -198,6 +198,14 @@ function ensayos_pendientes($start, $end) {
   return $pendientes;
 }
 
+function es_envio(string $s): bool {
+  // Normaliza a ASCII sin tildes y baja a minúsculas
+  $t = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+  if ($t === false) $t = $s;
+  $t = mb_strtolower($t, 'UTF-8');
+  // Coincide "envio" o "envios" como palabra o token en cadena
+  return (bool)preg_match('/\benvios?\b/u', $t);
+}
 
 
 
