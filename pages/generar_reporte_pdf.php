@@ -389,31 +389,37 @@ foreach ($clientes as $cli => $d) {
   $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
 }
 
+$pdf->section_title("3. Client Summary of Completed Tests");
+
+$clientes = resumen_entregas_por_cliente($start, $end);
+$rows = [];
+foreach ($clientes as $cli => $d) {
+  // Si tu función ya filtra en SQL, no necesitas esto.
+  // Si NO, y tienes el tipo por cliente, aplica tu lógica aquí.
+  // (Si no tienes Test_Type por cliente, deja solo el filtro en SQL.)
+
+  $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
+  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
+}
 $pdf->section_table(["Client", "Requested", "Completed", "%"], $rows, [50, 35, 35, 25]);
 $pdf->Ln(4);
 
 $pdf->section_title("4. Newly Registered Samples");
 $muestras = muestras_nuevas($start, $end);
+
+// IMPORTANTE: no reinicies $rows antes del foreach
 $rows = [];
 foreach ($muestras as $m) {
- $rows = [];
-foreach ($muestras as $m) {
-  $rows[] = [$m['Sample_ID'] . ' -' . $m['Sample_Number'], $m['Structure'], $m['Client'], $m['Test_Type']];
-}
-
-
-}
-$pdf->section_table(["Sample ID", "Structure", "Client", "Test Type"], $rows, [45, 35, 35, 75]);
-$pdf->SetFont('Arial', '', 8);
-$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
-$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
-$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
-$pdf->Ln(4);
-$pdf->section_title("5. Summary of Tests by Technician ");
-$tec = resumen_tecnico($start, $end);
-$t_rows = [];
-foreach ($tec as $r) {
-  $t_rows[] = [$r['Technician'], $r['etapa'], $r['total']];
+  // Excluir registros donde el Test_Type contenga "envío/envio"
+  if (isset($m['Test_Type']) && es_envio($m['Test_Type'])) {
+    continue;
+  }
+  $rows[] = [
+    $m['Sample_ID'] . ' - ' . $m['Sample_Number'],
+    $m['Structure'],
+    $m['Client'],
+    $m['Test_Type']
+  ];
 }
 $pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
 $pdf->SetFont('Arial', '', 8);
