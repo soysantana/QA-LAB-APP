@@ -20,62 +20,83 @@ function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
 }
+// --- Helper: detecta "envío/envio/envíos/envios" como token ---
+if (!function_exists('es_envio_tt')) {
+  function es_envio_tt(string $s): bool {
+    // Baja a minúsculas (unicode)
+    $t = mb_strtolower($s, 'UTF-8');
+    // Coincide 'envio' o 'envío', singular o plural, como palabra (rodea por separadores)
+    // Acepta espacios, comas, guiones, slashes, etc. alrededor del token.
+    return (bool)preg_match('/(^|[,\s\/\-\|;])env[ií]os?($|[,\s\/\-\|;])/u', $t);
+  }
+}
+
+/**
+ * Resumen de entregas por cliente (último mes hasta $end)
+ * EXCLUYENDO test types que sean "envío/envio".
+ */
 function resumen_entregas_por_cliente($end) {
-  $stats = [];
+  $stats  = [];
   $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
 
+  // Solicitudes (no filtramos aquí por SQL porque Test_Type puede venir como lista; filtramos por token más abajo)
   $solicitudes = find_by_sql("
     SELECT Client, Sample_ID, Sample_Number, Test_Type
     FROM lab_test_requisition_form
     WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
   ");
 
-  $entregas = find_by_sql("SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery");
+  // Entregas (armamos mapa pero excluyendo 'envío' para que no sumen entregados)
+  $entregas = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
+    FROM test_delivery
+  ");
 
   $entregado_map = [];
   foreach ($entregas as $e) {
-    $key = strtoupper(trim($e['Sample_ID'])) . '|' . strtoupper(trim($e['Sample_Number'])) . '|' . strtoupper(trim($e['Test_Type']));
-    $entregado_map[$key] = true;
+    $sid = strtoupper(trim($e['Sample_ID'] ?? ''));
+    $sno = strtoupper(trim($e['Sample_Number'] ?? ''));
+    $tts = (string)($e['Test_Type'] ?? '');
+
+    // Puede venir lista separada por comas
+    foreach (explode(',', $tts) as $tt) {
+      $tt = trim($tt);
+      if ($tt === '' || es_envio_tt($tt)) continue; // EXCLUYE ENVÍO
+
+      $key = $sid.'|'.$sno.'|'.strtoupper($tt);
+      $entregado_map[$key] = true;
+    }
   }
 
   foreach ($solicitudes as $s) {
-    $cliente = strtoupper(trim($s['Client'])) ?: 'PENDING INFO';
-    $sample_id = strtoupper(trim($s['Sample_ID']));
-    $sample_num = strtoupper(trim($s['Sample_Number']));
-    $test_types = explode(',', $s['Test_Type']); // o json_decode si es un array JSON
+    $cliente   = strtoupper(trim($s['Client'] ?? '')) ?: 'PENDING INFO';
+    $sample_id = strtoupper(trim($s['Sample_ID'] ?? ''));
+    $sample_no = strtoupper(trim($s['Sample_Number'] ?? ''));
+    $tts       = (string)($s['Test_Type'] ?? '');
 
-foreach ($test_types as $tt) {
-  $test_type = strtoupper(trim($tt));
-  $key = "{$sample_id}|{$sample_num}|{$test_type}";
+    // Puede venir lista; filtra cada token
+    foreach (explode(',', $tts) as $tt) {
+      $tt = trim($tt);
+      if ($tt === '' || es_envio_tt($tt)) continue; // EXCLUYE ENVÍO
 
-  if (!isset($stats[$cliente])) {
-    $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
-  }
+      if (!isset($stats[$cliente])) {
+        $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
+      }
 
-  $stats[$cliente]['solicitados']++;
+      $stats[$cliente]['solicitados']++;
 
-  if (isset($entregado_map[$key])) {
-    $stats[$cliente]['entregados']++;
-  }
-}
-
-
-    if (!isset($stats[$cliente])) {
-      $stats[$cliente] = ['solicitados' => 0, 'entregados' => 0, 'porcentaje' => 0];
-    }
-
-    $stats[$cliente]['solicitados']++;
-
-    if (isset($entregado_map[$key])) {
-      $stats[$cliente]['entregados']++;
+      $key = $sample_id.'|'.$sample_no.'|'.strtoupper($tt);
+      if (isset($entregado_map[$key])) {
+        $stats[$cliente]['entregados']++;
+      }
     }
   }
 
-  foreach ($stats as $cliente => $val) {
-    $s = $val['solicitados'];
-    $e = $val['entregados'];
-    $stats[$cliente]['porcentaje'] = $s > 0 ? round(($e / $s) * 100, 2) : 0;
+  // Calcula % por cliente
+  foreach ($stats as $cli => &$d) {
+    $d['porcentaje'] = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
   }
+  unset($d);
 
   return $stats;
 }
