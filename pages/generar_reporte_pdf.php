@@ -16,10 +16,12 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 15:59:59"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
+<?php
 function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
 }
+
 // --- Helper: detecta "envío/envio/envíos/envios" como token ---
 if (!function_exists('es_envio_tt')) {
   function es_envio_tt(string $s): bool {
@@ -101,15 +103,17 @@ function resumen_entregas_por_cliente($end) {
   return $stats;
 }
 
-
-
-
-
-function count_by_sample($table, $sample, $field = 'Sample_ID') {
-  return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
+// ---------- Bounds diarios para "registradas HOY" ----------
+function day_bounds(string $dateYmd): array {
+  // $dateYmd puede venir 'YYYY-MM-DD' o 'YYYY-MM-DD HH:MM:SS'
+  $d = new DateTime($dateYmd);
+  $start = $d->format('Y-m-d 00:00:00');
+  $d->modify('+1 day');
+  $next  = $d->format('Y-m-d 00:00:00'); // exclusivo
+  return [$start, $next];
 }
-
-function muestras_nuevas($start, $end) {
+// “Muestras nuevas” usando límites de día (>= startDay y < nextDay)
+function muestras_nuevas($startDay, $nextDay) {
     // Accede a la variable global de conexión si es necesario
     global $db;
 
@@ -124,14 +128,14 @@ function muestras_nuevas($start, $end) {
         FROM 
             lab_test_requisition_form
         WHERE 
-            Registed_Date BETWEEN '{$start}' AND '{$end}'
+            Registed_Date >= '{$startDay}'
+            AND Registed_Date <  '{$nextDay}'
         ORDER BY 
             Registed_Date ASC
     ";
 
     return find_by_sql($sql);
 }
-
 
 // Función auxiliar para detectar columnas existentes
 function get_columns_for_table($tabla) {
@@ -144,7 +148,7 @@ function get_columns_for_table($tabla) {
   return $cols;
 }
 
-// Función principal
+// Función principal: ensayos pendientes en rango
 function ensayos_pendientes($start, $end) {
   // Obtener requisiciones dentro del rango
   $requisitions = find_by_sql("
@@ -198,7 +202,7 @@ function ensayos_pendientes($start, $end) {
     foreach ($tipos as $tipo_raw) {
       $tipo = strtoupper(trim($tipo_raw));
 
-      // Excluir los que contienen "ENVIO"
+      // Excluir los que contienen "ENVIO" (cualquier forma)
       if ($tipo === '' || strpos($tipo, 'ENVIO') !== false) {
         continue;
       }
@@ -228,8 +232,6 @@ function es_envio(string $s): bool {
   return (bool)preg_match('/\benvios?\b/u', $t);
 }
 
-
-
 function resumen_tecnico($start, $end) {
   return find_by_sql("SELECT Technician, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
     UNION ALL
@@ -245,8 +247,6 @@ function resumen_tipo($start, $end) {
     UNION ALL
     SELECT Test_Type, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type");
 }
-
-
 function render_ensayos_reporte($pdf, $start, $end) {
   // Obtener datos desde la tabla `ensayos_reporte`
   $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
@@ -300,7 +300,6 @@ function observaciones_ensayos_reporte($start, $end) {
   ");
 }
 
-
 class PDF extends FPDF {
   public $day_of_week;
   public $week_number;
@@ -314,12 +313,12 @@ class PDF extends FPDF {
   }
   function Header() {
     $user = current_user();
-$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+    $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
     if ($this->PageNo() > 1) return;
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
       $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 50);
     }
-     $this->SetFont('Arial', 'B', 14);
+    $this->SetFont('Arial', 'B', 14);
     $this->SetXY(150, 10); // Posiciona el cursor en la parte superior derecha
     $this->Cell(50, 10, utf8_decode('Daily Laboratory Report'), 0, 1, 'R');
 
@@ -333,43 +332,37 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
     $this->section_title("1. Personnel Assigned");
     $this->SetFont('Arial', '', 10);
 
-$semana = $this->week_number;
-$dia = $this->day_of_week;
+    $semana = $this->week_number;
+    $dia = $this->day_of_week;
 
-$semana = $this->week_number;
-$dia = $this->day_of_week;
+    // =============================
+    // GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
+    // =============================
+    if (in_array($dia, [0, 1, 2, 3])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
+    }
 
-// =============================
-// GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
-// =============================
-if (in_array($dia, [0, 1, 2, 3])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
-  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
-}
+    // =============================
+    // GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
+    // =============================
+    if (in_array($dia, [3, 4, 5, 6])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
+    }
 
-// =============================
-// GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
-// =============================
-if (in_array($dia, [3, 4, 5, 6])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
-  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
-}
-
-// =============================
-// YAMILEXI + WENDIN — Rotación semanal
-// =============================
-if (
-  ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
-  ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
-) {
-  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');   
-  $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
-}
-
-
-
+    // =============================
+    // YAMILEXI + WENDIN — Rotación semanal
+    // =============================
+    if (
+      ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
+      ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
+    ) {
+      $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');   
+      $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús Mendoza"), 0, 'L');
+    }
 
     $this->Ln(5);
   }
@@ -395,7 +388,9 @@ if (
     $this->Ln(3);
   }
 }
-
+// =====================
+// COMIENZO DEL REPORTE
+// =====================
 $pdf = new PDF($fecha_en);
 
 $pdf->AddPage();
@@ -408,35 +403,30 @@ $pdf->section_table(["Activities", "Quantity"], [
   ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
 ], [90, 40]);
 
+// ==========================
+// 3. Client Summary of Completed Tests
+// ==========================
 $pdf->section_title("3. Client Summary of Completed Tests");
 
-
-$clientes = resumen_entregas_por_cliente($start, $end);
+$clientes = resumen_entregas_por_cliente($end);
 $rows = [];
 foreach ($clientes as $cli => $d) {
   $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
-  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
-}
-
-$pdf->section_title("3. Client Summary of Completed Tests");
-
-$clientes = resumen_entregas_por_cliente($start, $end);
-$rows = [];
-foreach ($clientes as $cli => $d) {
-  // Si tu función ya filtra en SQL, no necesitas esto.
-  // Si NO, y tienes el tipo por cliente, aplica tu lógica aquí.
-  // (Si no tienes Test_Type por cliente, deja solo el filtro en SQL.)
-
-  $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
-  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
+  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "{$pct}%"];
 }
 $pdf->section_table(["Client", "Requested", "Completed", "%"], $rows, [50, 35, 35, 25]);
 $pdf->Ln(4);
 
+// ==========================
+// 4. Newly Registered Samples (HOY con límites de día)
+// ==========================
 $pdf->section_title("4. Newly Registered Samples");
-$muestras = muestras_nuevas($start, $end);
 
-// IMPORTANTE: no reinicies $rows antes del foreach
+// Calcula bounds del día a partir de $end (fecha pivote del reporte)
+list($startDay, $nextDay) = day_bounds($end);
+
+$muestras = muestras_nuevas($startDay, $nextDay);
+
 $rows = [];
 foreach ($muestras as $m) {
   // Excluir registros donde el Test_Type contenga "envío/envio"
@@ -450,87 +440,11 @@ foreach ($muestras as $m) {
     $m['Test_Type']
   ];
 }
-$pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
-$pdf->SetFont('Arial', '', 8);
-$pdf->Cell(0, 4, 'Tech. Legend: WM= Wilson Martinez, JV= Jonathan Vargas, RV= Roni Vargas, RL =Rafy Leocadio,', 0, 1);
-$pdf->Cell(0, 4, 'RR= Rafael Reyes, MC= Melvin Castillo, DF= Darielvy Felix, JA= Jordany Almonte , ', 0, 1);
-$pdf->Ln(5);
+$pdf->section_table(["Sample", "Structure", "Client", "Test Type"], $rows, [65, 35, 40, 50]);
 
+// (Opcional) Secciones posteriores — dejan intactas tus funciones existentes:
+// render_ensayos_reporte($pdf, $start, $end);
+// $obs = observaciones_ensayos_reporte($start, $end);
+// ... (tu lógica para imprimir observaciones si la usas)
 
-$pdf->section_title("6. Distribution of Tests by Type");
-$tipos = resumen_tipo($start, $end);
-$type_rows = [];
-foreach ($tipos as $r) {
-  $type_rows[] = [$r['Test_Type'], $r['etapa'], $r['total']];
-}
-$pdf->section_table(["Test Type", "Process", "Quantity"], $type_rows, [70, 50, 30]);
-
-
-
-$pdf->SetFont('Arial', '', 8);
-$pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
-$pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
-$pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
-$pdf->Ln(4);
-
-$pdf->section_title("7. Pending Tests");
-
-// Definir fecha de inicio exclusivo para ensayos pendientes (1 mes atrás desde $end)
-$start_pendientes = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
-
-// Obtener los ensayos pendientes en ese rango
-$pendientes = ensayos_pendientes($start_pendientes, $end);
-
-$rows = [];
-foreach ($pendientes as $p) {
-  if (!empty($p['Test_Type'])) { // Excluir los que tengan Test_Type vacío o null
-    $rows[] = [
-      $p['Sample_ID'],
-      $p['Sample_Number'],
-      $p['Test_Type'],
-      $p['Sample_Date']
-    ];
-  }
-}
-
-$pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 60, 40]);
-
-
-
-
-render_ensayos_reporte($pdf, $start, $end);
-$pdf->Ln(5);
-
-$pdf->section_title("9. Summary of Observations/Non-Conformities");
-
-$observaciones = observaciones_ensayos_reporte($start, $end);
-
-// Encabezado
-$pdf->SetFont('Arial', 'B', 9);
-$pdf->Cell(45, 8, 'Sample', 1);
-
-$pdf->Cell(145, 8, 'Observations', 1);
-$pdf->Ln();
-
-// Cuerpo
-$pdf->SetFont('Arial', '', 9);
-foreach ($observaciones as $obs) {
-  $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'] .'-' . $obs['Material_Type'];
-  $pdf->Cell(45, 8, $sample, 1); 
- 
-  $pdf->Cell(145, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
-  $pdf->Ln();
-}
-
-$pdf->Ln(5);
-
-$pdf->section_title("10. Responsible");
-$pdf->SetFont('Arial', '', 10);
-$pdf->Cell(60, 8, "Report prepared by", 1);
-$pdf->Cell(120, 8, utf8_decode($nombre_responsable), 1, 1);
-
-
-
-
-ob_end_clean();
-$pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
+?>
