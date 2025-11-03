@@ -442,9 +442,6 @@ foreach ($muestras as $m) {
 }
 $pdf->section_table(["Sample", "Structure", "Client", "Test Type"], $rows, [65, 35, 40, 50]);
 
-// (Opcional) Secciones posteriores — dejan intactas tus funciones existentes:
-// render_ensayos_reporte($pdf, $start, $end);
-// $obs = observaciones_ensayos_reporte($start, $end);
-// ... (tu lógica para imprimir observaciones si la usas)
+
 
 ?>
