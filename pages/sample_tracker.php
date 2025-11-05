@@ -29,113 +29,137 @@ $M = $meta[0] ?? [];
 
 // Items de checklist
 // Items de checklist (usando tus tablas reales y MySQL 8 con JSON_TABLE)
-$rows = find_by_sql("
-  WITH req AS (
-    SELECT r.Sample_ID, r.Sample_Number, r.Registed_Date, r.Test_Type
-    FROM lab_test_requisition_form r
-    WHERE r.Sample_ID    = '{$sidE}' COLLATE utf8mb4_0900_ai_ci
-      AND r.Sample_Number= '{$numE}' COLLATE utf8mb4_0900_ai_ci
-    ORDER BY r.Registed_Date DESC
-    LIMIT 1
-  ),
-  tt AS (
-    -- Expandir la lista coma-separada en filas (MySQL 8+)
-    SELECT DISTINCT UPPER(TRIM(j.tt)) AS Test_Type
-    FROM req,
-    JSON_TABLE(
-      CONCAT('[\"', REPLACE(COALESCE(req.Test_Type,''), ',', '\",\"'), '\"]'),
-      '$[*]' COLUMNS (tt VARCHAR(50) PATH '$')
-    ) AS j
-  )
-  SELECT
-    t.Test_Type,
-
-    -- Estado por prioridad: Repeat > Review(sin reviewed) > Delivery > Realization > Preparation > Pending
-    CASE
-      WHEN EXISTS (
-        SELECT 1 FROM test_repeat x
-        WHERE x.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-          AND x.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-          AND UPPER(TRIM(x.Test_Type))=t.Test_Type
-      ) THEN 'Repeat'
-      WHEN EXISTS (
-        SELECT 1
-        FROM test_review rv
-        LEFT JOIN test_reviewed rved
-          ON rved.Sample_ID=rv.Sample_ID
-         AND rved.Sample_Number=rv.Sample_Number
-         AND UPPER(TRIM(rved.Test_Type))=UPPER(TRIM(rv.Test_Type))
-        WHERE rv.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-          AND rv.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-          AND UPPER(TRIM(rv.Test_Type))=t.Test_Type
-          AND rved.id IS NULL
-      ) THEN 'Review'
-      WHEN EXISTS (
-        SELECT 1 FROM test_delivery d
-        WHERE d.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-          AND d.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-          AND UPPER(TRIM(d.Test_Type))=t.Test_Type
-      ) THEN 'Delivery'
-      WHEN EXISTS (
-        SELECT 1 FROM test_realization z
-        WHERE z.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-          AND z.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-          AND UPPER(TRIM(z.Test_Type))=t.Test_Type
-      ) THEN 'Realization'
-      WHEN EXISTS (
-        SELECT 1 FROM test_preparation p
-        WHERE p.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-          AND p.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-          AND UPPER(TRIM(p.Test_Type))=t.Test_Type
-      ) THEN 'Preparation'
-      ELSE 'Pending'
-    END AS Status,
-
-    -- Fechas (mapeadas a tus columnas reales)
-    (SELECT MIN(p.Start_Date)
-       FROM test_preparation p
-       WHERE p.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-         AND p.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-         AND UPPER(TRIM(p.Test_Type))=t.Test_Type) AS Preparation_Date,
-
-    (SELECT MIN(z.Start_Date)
-       FROM test_realization z
-       WHERE z.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-         AND z.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-         AND UPPER(TRIM(z.Test_Type))=t.Test_Type) AS Realization_Date,
-
-    (SELECT MIN(d.Register_Date)  -- usa Start_Date si prefieres
-       FROM test_delivery d
-       WHERE d.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-         AND d.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-         AND UPPER(TRIM(d.Test_Type))=t.Test_Type) AS Delivery_Date,
-
-    (SELECT MIN(rv.Start_Date)
-       FROM test_review rv
-       LEFT JOIN test_reviewed rved
-         ON rved.Sample_ID=rv.Sample_ID
-        AND rved.Sample_Number=rv.Sample_Number
-        AND UPPER(TRIM(rved.Test_Type))=UPPER(TRIM(rv.Test_Type))
-       WHERE rv.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-         AND rv.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-         AND UPPER(TRIM(rv.Test_Type))=t.Test_Type
-         AND rved.id IS NULL) AS Review_Date,
-
-    (SELECT MIN(rp.Start_Date)
-       FROM test_repeat rp
-       WHERE rp.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-         AND rp.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
-         AND UPPER(TRIM(rp.Test_Type))=t.Test_Type) AS Repeat_Date,
-
-    -- Fecha de solicitud (requisición)
-    (SELECT MIN(r.Registed_Date)
-       FROM lab_test_requisition_form r
-       WHERE r.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
-         AND r.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci) AS Requested_At
-
-  FROM tt AS t
-  ORDER BY t.Test_Type
+// Items de checklist (sin JSON_TABLE; build dinámico desde PHP)
+$reqRow = find_by_sql("
+  SELECT r.Test_Type
+  FROM lab_test_requisition_form r
+  WHERE r.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+    AND r.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+  ORDER BY r.Registed_Date DESC
+  LIMIT 1
 ");
+
+$rows = [];
+if (!$reqRow) {
+  // No hay requisición para este SID/NUM
+  $rows = [];
+} else {
+  // 1) Expandir Test_Type en PHP
+  $ttStr = (string)($reqRow[0]['Test_Type'] ?? '');
+  $ttList = array_values(array_unique(array_filter(array_map(function($s){
+    return strtoupper(trim($s));
+  }, explode(',', $ttStr)))));
+
+  if (empty($ttList)) {
+    $rows = [];
+  } else {
+    // 2) Armar tabla virtual de ensayos: SELECT 'SP' AS Test_Type UNION ALL SELECT 'MC'...
+    // (más portable que VALUES por compatibilidad)
+    $ttSqlParts = [];
+    foreach ($ttList as $i => $tt) {
+      $ttSqlParts[] = "SELECT '{$db->escape($tt)}' AS Test_Type";
+    }
+    $ttSql = implode("\nUNION ALL\n", $ttSqlParts);
+
+    // 3) Ejecutar la query única con tu lógica de estado y fechas
+    $rows = find_by_sql("
+      WITH tt AS (
+        {$ttSql}
+      )
+      SELECT
+        t.Test_Type,
+
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM test_repeat x
+            WHERE x.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+              AND x.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+              AND UPPER(TRIM(x.Test_Type))=t.Test_Type
+          ) THEN 'Repeat'
+          WHEN EXISTS (
+            SELECT 1
+            FROM test_review rv
+            LEFT JOIN test_reviewed rved
+              ON rved.Sample_ID=rv.Sample_ID
+             AND rved.Sample_Number=rv.Sample_Number
+             AND UPPER(TRIM(rved.Test_Type))=UPPER(TRIM(rv.Test_Type))
+            WHERE rv.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+              AND rv.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+              AND UPPER(TRIM(rv.Test_Type))=t.Test_Type
+              AND rved.id IS NULL
+          ) THEN 'Review'
+          WHEN EXISTS (
+            SELECT 1 FROM test_delivery d
+            WHERE d.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+              AND d.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+              AND UPPER(TRIM(d.Test_Type))=t.Test_Type
+          ) THEN 'Delivery'
+          WHEN EXISTS (
+            SELECT 1 FROM test_realization z
+            WHERE z.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+              AND z.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+              AND UPPER(TRIM(z.Test_Type))=t.Test_Type
+          ) THEN 'Realization'
+          WHEN EXISTS (
+            SELECT 1 FROM test_preparation p
+            WHERE p.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+              AND p.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+              AND UPPER(TRIM(p.Test_Type))=t.Test_Type
+          ) THEN 'Preparation'
+          ELSE 'Pending'
+        END AS Status,
+
+        (SELECT MIN(p.Start_Date)
+           FROM test_preparation p
+           WHERE p.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+             AND p.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+             AND UPPER(TRIM(p.Test_Type))=t.Test_Type) AS Preparation_Date,
+
+        (SELECT MIN(z.Start_Date)
+           FROM test_realization z
+           WHERE z.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+             AND z.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+             AND UPPER(TRIM(z.Test_Type))=t.Test_Type) AS Realization_Date,
+
+        (SELECT MIN(d.Register_Date)
+           FROM test_delivery d
+           WHERE d.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+             AND d.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+             AND UPPER(TRIM(d.Test_Type))=t.Test_Type) AS Delivery_Date,
+
+        (SELECT MIN(rv.Start_Date)
+           FROM test_review rv
+           LEFT JOIN test_reviewed rved
+             ON rved.Sample_ID=rv.Sample_ID
+            AND rved.Sample_Number=rv.Sample_Number
+            AND UPPER(TRIM(rved.Test_Type))=UPPER(TRIM(rv.Test_Type))
+           WHERE rv.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+             AND rv.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+             AND UPPER(TRIM(rv.Test_Type))=t.Test_Type
+             AND rved.id IS NULL) AS Review_Date,
+
+        (SELECT MIN(rp.Start_Date)
+           FROM test_repeat rp
+           WHERE rp.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+             AND rp.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci
+             AND UPPER(TRIM(rp.Test_Type))=t.Test_Type) AS Repeat_Date,
+
+        -- Estos campos no existen en tus tablas; los dejamos como NULL para que el front no falle.
+        NULL AS Has_Report,
+        NULL AS Is_Signed,
+        NULL AS File_Path,
+
+        -- Por si usas en UI:
+        (SELECT MIN(r.Registed_Date)
+           FROM lab_test_requisition_form r
+           WHERE r.Sample_ID='{$sidE}' COLLATE utf8mb4_0900_ai_ci
+             AND r.Sample_Number='{$numE}' COLLATE utf8mb4_0900_ai_ci) AS Requested_At
+
+      FROM tt AS t
+      ORDER BY t.Test_Type
+    ");
+  }
+}
 
 
 // Cálculo de listo/missing

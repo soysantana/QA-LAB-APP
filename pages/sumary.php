@@ -1,7 +1,7 @@
 <?php
 $page_title = 'Gestor de Sumarios';
 $Sumarios = 'show';
-require_once('../config/load.php');
+require_once('../../config/load.php');
 
 // Recuperar datos de diferentes tablas
 $tables = [
@@ -98,7 +98,7 @@ $unique_data = remove_duplicates($data, 'Material_Type');
                     <td><?php echo $row['Client']; ?></td>
                     <td><?php echo $row['Material_Type']; ?></td>
                     <td>
-                      <a class="btn btn-primary" href="sumary/sumary-excel-client.php?Material_Type=<?php echo urlencode($row['Material_Type']); ?>&Client=<?php echo urlencode($row['Client']); ?>" target="_blank">
+                      <a class="btn btn-primary" href="../sumary/sumary-excel-client.php?Material_Type=<?php echo urlencode($row['Material_Type']); ?>&Client=<?php echo urlencode($row['Client']); ?>" target="_blank">
                         <i class="bi bi-eye"></i>
                       </a>
                     </td>
