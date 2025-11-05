@@ -1,7 +1,7 @@
 <?php
 $page_title = 'Gestor de Sumarios';
 $Sumarios = 'show';
-require_once('../../config/load.php');
+require_once('../config/load.php');
 
 // Recuperar datos de diferentes tablas
 $tables = [
