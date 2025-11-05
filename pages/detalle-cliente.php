@@ -70,7 +70,34 @@ $sql = "
     e.Client,
     YEAR(e.Sample_Date)  AS anio,
     MONTH(e.Sample_Date) AS mes,
+
     COUNT(*) AS solicitados,
+
+    -- Aparece en PREPARATION
+    SUM(
+      EXISTS (
+        SELECT 1
+        FROM test_preparation p
+        WHERE p.Sample_ID     = e.Sample_ID
+          AND p.Sample_Number = e.Sample_Number
+          AND LOWER(REPLACE(TRIM(p.Test_Type),' ','')) 
+              = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+      )
+    ) AS en_preparacion,
+
+    -- Aparece en REALIZATION
+    SUM(
+      EXISTS (
+        SELECT 1
+        FROM test_realization r
+        WHERE r.Sample_ID     = e.Sample_ID
+          AND r.Sample_Number = e.Sample_Number
+          AND LOWER(REPLACE(TRIM(r.Test_Type),' ','')) 
+              = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+      )
+    ) AS en_realizacion,
+
+    -- Aparece en DELIVERY
     SUM(
       EXISTS (
         SELECT 1
@@ -80,15 +107,28 @@ $sql = "
           AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
               = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
       )
-    ) AS entregados
+    ) AS entregados,
+
+    -- Aparece en cualquiera de las tres (para pendiente “neto”)
+    SUM(
+      (EXISTS (SELECT 1 FROM test_delivery    d WHERE d.Sample_ID=e.Sample_ID AND d.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+      OR
+      (EXISTS (SELECT 1 FROM test_realization r WHERE r.Sample_ID=e.Sample_ID AND r.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(r.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+      OR
+      (EXISTS (SELECT 1 FROM test_preparation p WHERE p.Sample_ID=e.Sample_ID AND p.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(p.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+    ) AS atendidos
+
   FROM ( $expandedSubquery ) e
   $whereSqlExp
   WHERE e.Test_Type IS NOT NULL 
     AND e.Test_Type <> ''
-    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
+    -- excluir ENVÍO/ENVIO (ya estaba en la subquery, lo reforzamos aquí)
+    AND LOWER(REPLACE(e.Test_Type,'í','i')) <> 'envio'
+
   GROUP BY e.Client, anio, mes
   ORDER BY anio DESC, mes DESC, e.Client
 ";
+
 
 
 $res = $db->query($sql);
