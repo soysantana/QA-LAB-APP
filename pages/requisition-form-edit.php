@@ -11,7 +11,7 @@ if (empty($packageId)) {
   redirect('requisition-form-view.php');
 }
 
-$twoMonthsAgo = date('Y-m-d', strtotime('-5 months'));
+$twoMonthsAgo = date('Y-m-d', strtotime('-24 months'));
 
 $SearchRows = find_by_sql("
     SELECT * 
