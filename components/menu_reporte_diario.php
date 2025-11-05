@@ -31,7 +31,7 @@ require_once('../config/load.php');
               <a href="../pages/reporteDiario.php" class="list-group-item list-group-item-action">Digitar Reporte Diario</a>
 
               <a href="../pages/reporte_diario_lab.php" class="list-group-item list-group-item-action">Lista de Reportes</a>
-              <a href="../pages/reporte_diario_lab2.php" class="list-group-item list-group-item-action">Otros Reportes</a>
+              <a href="../pages/sample_tracker.php" class="list-group-item list-group-item-action">Otros Reportes</a>
             </div>
 
           </div>
