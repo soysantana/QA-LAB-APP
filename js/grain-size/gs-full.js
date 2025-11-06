@@ -1,5 +1,5 @@
-import { calcularParametrosGranulometricos } from './gs-summary.js';
-import { clasificarSueloExtra } from './gs-classification.js';
+import { calcularParametrosGranulometricos } from '../gs-summary.js';
+import { clasificarSueloExtra } from '../gs-classification.js';
 import { UpdateGraph } from '../../libs/graph/Grain-Size-Full.js';
 import { enviarImagenAlServidor } from '../export/export-chart.js';
 
