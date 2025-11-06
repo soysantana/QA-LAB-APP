@@ -732,6 +732,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main><!-- End #main -->
 
-<script src="../js/grain-size/specs.js"></script>
-<script type="module" src="../js/grain-size/gs-full.js"></script>
+<script src="../js/grain-size/specs.js?v1"></script>
+<script type="module" src="../js/grain-size/gs-full.js?v1"></script>
 <?php include_once('../components/footer.php');  ?>
