@@ -140,4 +140,4 @@ function clasificarSueloExtra(WtRetExtendidaArray) {
     return extraInfo;
 }
 
-export { clasificarSuelo, clasificarSueloExtra };
+export { clasificarSuelo, clasificarSueloExtra };  

@@ -242,7 +242,7 @@ function moisture() {
         [PassArray[9], 75.00, PassArray[8], 100.00],
         [PassArray[8], 100.00, PassArray[7], 150.00],
         [PassArray[7], 150.00, PassArray[6], 200.00],
-        [PassArray[6], 200.00, PassArray[5], 250.00],
+        [PassArray[6], 200.00, PassArray[5], 250.00],  
         [PassArray[5], 250.00, PassArray[4], 300.00],
         [PassArray[4], 300.00, PassArray[3], 325.00],
         [PassArray[3], 325.00, PassArray[2], 500.00],
