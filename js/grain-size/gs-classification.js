@@ -131,7 +131,7 @@ function clasificarSueloExtra(WtRetExtendidaArray) {
     const extraInfo =
         (WtRetExtendidaArray[0] !== 0 && WtRetExtendidaArray[4] !== 0 && WtRetExtendidaArray[9] !== 0)
             ? "with Boulders and Cobbles"
-            : (WtRetExtendidaArray[0] !== 0 && WtRetExtendidaArray[4] !== 0)
+            : (WtRetExtendidaArray[4] !== 0)
                 ? "Boulders"
                 : (WtRetExtendidaArray[4] !== 0 && WtRetExtendidaArray[9] !== 0)
                     ? "with Cobbles"
