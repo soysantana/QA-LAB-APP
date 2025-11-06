@@ -40,8 +40,7 @@ $expandedSubquery = "
       TRIM(BOTH '\"' FROM TRIM(
         SUBSTRING_INDEX(
           SUBSTRING_INDEX(
-            REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','),
-            ',', n.n
+            REPLACE(REPLACE(COALESCE(r.Test_Type,''), ' ', ''), ',,', ','), ',', n.n
           ),
           ',', -1
         )
@@ -109,14 +108,25 @@ $sql = "
       )
     ) AS entregados,
 
-    -- Aparece en cualquiera de las tres (para pendiente “neto”)
+    -- Aparece en cualquiera de las tres (para “atendidos”)
     SUM(
       (EXISTS (SELECT 1 FROM test_delivery    d WHERE d.Sample_ID=e.Sample_ID AND d.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
       OR
       (EXISTS (SELECT 1 FROM test_realization r WHERE r.Sample_ID=e.Sample_ID AND r.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(r.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
       OR
       (EXISTS (SELECT 1 FROM test_preparation p WHERE p.Sample_ID=e.Sample_ID AND p.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(p.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
-    ) AS atendidos
+    ) AS atendidos,
+
+    -- *** NUEVO: Pendientes por entregar = (Prep OR Real) AND (NOT Delivery)
+    SUM(
+      (
+        (EXISTS (SELECT 1 FROM test_preparation p WHERE p.Sample_ID=e.Sample_ID AND p.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(p.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+        OR
+        (EXISTS (SELECT 1 FROM test_realization r WHERE r.Sample_ID=e.Sample_ID AND r.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(r.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+      )
+      AND
+      NOT EXISTS (SELECT 1 FROM test_delivery d WHERE d.Sample_ID=e.Sample_ID AND d.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ','')))
+    ) AS pendientes_entrega
 
   FROM ( $expandedSubquery ) e
   $whereSqlExp
@@ -129,8 +139,6 @@ $sql = "
   ORDER BY anio DESC, mes DESC, e.Client
 ";
 
-
-
 $res = $db->query($sql);
 if (!$res) {
   die('Error en consulta principal: ' . $db->error);
@@ -141,7 +149,8 @@ $total_solic = 0;
 $total_entr  = 0;
 $rows = [];
 while ($row = $res->fetch_assoc()) {
-  $row['pendientes'] = (int)$row['solicitados'] - (int)$row['entregados'];
+  // Usar el conteo "pendientes_entrega" calculado en SQL
+  $row['pendientes'] = (int)$row['pendientes_entrega'];
   $rows[] = $row;
   $total_solic += (int)$row['solicitados'];
   $total_entr  += (int)$row['entregados'];
@@ -281,7 +290,7 @@ if (empty($rows)) {
   foreach ($rows as $r) {
     $pct   = $r['solicitados'] > 0 ? round($r['entregados'] / $r['solicitados'] * 100, 1) : 0;
     $badge = pctBadgeClass($pct);
-    $pend  = max(0, (int)$r['pendientes']);
+    $pend  = max(0, (int)$r['pendientes']); // ya es el conteo ‘neto’ por SQL
     $idx++;
     $modalId = 'detalles_' . $idx;
 
@@ -319,14 +328,14 @@ if (empty($rows)) {
     ";
 
     // === SOLICITADOS (expandido a ensayos) ===
-  $sqlSolic = "
-  SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-  FROM ( $expanded ) e
-  WHERE e.Test_Type IS NOT NULL 
-    AND e.Test_Type <> ''
-    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
-  ORDER BY e.Sample_Date DESC, e.Sample_ID
-";
+    $sqlSolic = "
+      SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+      FROM ( $expanded ) e
+      WHERE e.Test_Type IS NOT NULL 
+        AND e.Test_Type <> ''
+        AND LOWER(TRIM(e.Test_Type)) <> 'envio'
+      ORDER BY e.Sample_Date DESC, e.Sample_ID
+    ";
 
     $detSolic = [];
     $rs = $db->query($sqlSolic);
@@ -336,21 +345,38 @@ if (empty($rows)) {
       die('Error solicitados: ' . $db->error);
     }
 
-    // === PENDIENTES (solicitados SIN entrega) ===
-   $sqlPend = "
-  SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
-  FROM ( $expanded ) e
-  LEFT JOIN test_delivery d
-    ON d.Sample_ID     = e.Sample_ID
-   AND d.Sample_Number = e.Sample_Number
-   AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
-       = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
-  WHERE e.Test_Type IS NOT NULL 
-    AND e.Test_Type <> ''
-    AND LOWER(TRIM(e.Test_Type)) <> 'envio'
-    AND d.Sample_ID IS NULL
-  ORDER BY e.Sample_Date DESC, e.Sample_ID
-";
+    // === PENDIENTES por entregar (Prep OR Real) AND NOT Delivery) ===
+    $sqlPend = "
+      SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
+      FROM ( $expanded ) e
+      LEFT JOIN test_delivery d
+        ON d.Sample_ID     = e.Sample_ID
+       AND d.Sample_Number = e.Sample_Number
+       AND LOWER(REPLACE(TRIM(d.Test_Type),' ','')) 
+           = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+      WHERE e.Test_Type IS NOT NULL 
+        AND e.Test_Type <> ''
+        AND LOWER(TRIM(e.Test_Type)) <> 'envio'
+        AND d.Sample_ID IS NULL
+        AND (
+              EXISTS (
+                SELECT 1 FROM test_preparation p
+                WHERE p.Sample_ID = e.Sample_ID
+                  AND p.Sample_Number = e.Sample_Number
+                  AND LOWER(REPLACE(TRIM(p.Test_Type),' ','')) 
+                      = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+              )
+              OR
+              EXISTS (
+                SELECT 1 FROM test_realization r
+                WHERE r.Sample_ID = e.Sample_ID
+                  AND r.Sample_Number = e.Sample_Number
+                  AND LOWER(REPLACE(TRIM(r.Test_Type),' ','')) 
+                      = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+              )
+            )
+      ORDER BY e.Sample_Date DESC, e.Sample_ID
+    ";
 
     $detPend = [];
     $rp = $db->query($sqlPend);
@@ -491,7 +517,7 @@ if (empty($rows)) {
             <div class="fw-semibold">
               Solicitados: <?= number_format($total_solic) ?> | 
               Entregados: <?= number_format($total_entr) ?> | 
-              Pendientes: <?= number_format(max(0, $total_solic - $total_entr)) ?> | 
+              Pendientes: <?= number_format(array_sum(array_map(function($r){ return (int)$r['pendientes']; }, $rows))) ?> | 
               %: <?= $pct_global ?>%
             </div>
           </div>
