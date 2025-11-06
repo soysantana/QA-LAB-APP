@@ -186,7 +186,7 @@ $y = 183;
 for ($i = 0; $i < count($starArray); $i++) {
     $pdf->SetXY(280, $y);
     $pdf->Cell(28, 5, $starArray[$i], 0, 1, 'C');
-    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+    $y += ($i == 1 || $i == 3 || $i == 4) ? 5 : 5.5;
 }
 $pdf->SetXY(280, 220);
 $pdf->Cell(28, 5, $Search['TotalStarWeightRetFine'], 0, 1, 'C');
@@ -203,7 +203,7 @@ $y = 183;
 for ($i = 0; $i < count($Array); $i++) {
     $pdf->SetXY(337, $y);
     $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
-    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+    $y += ($i == 1 || $i == 3 || $i == 4) ? 5 : 5.5;
 }
 $pdf->SetXY(337, 220);
 $pdf->Cell(22, 5, $Search['TotalFinalWeightRetFine'], 0, 1, 'C');
@@ -220,7 +220,7 @@ $y = 183;
 for ($i = 0; $i < count($Array); $i++) {
     $pdf->SetXY(359, $y);
     $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
-    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+    $y += ($i == 1 || $i == 3 || $i == 4) ? 5 : 5.5;
 }
 
 $Values = $Search['WeightedLossFine'];
@@ -235,7 +235,7 @@ $y = 183;
 for ($i = 0; $i < count($Array); $i++) {
     $pdf->SetXY(381, $y);
     $pdf->Cell(22, 5, $Array[$i], 0, 1, 'C');
-    $y += ($i == 2 || $i == 3 || $i == 4) ? 6 : 4.5;
+    $y += ($i == 1 || $i == 3 || $i == 4) ? 5 : 5.5;
 }
 
 $Values = $Search['StarWeightRetCoarse'];
