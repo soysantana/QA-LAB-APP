@@ -129,14 +129,14 @@ function clasificarSuelo(gravel, sand, fines, Cu, Cc) {
 
 function clasificarSueloExtra(WtRetExtendidaArray) {
     const extraInfo =
-        (WtRetExtendidaArray[0] !== 0 && WtRetExtendidaArray[4] !== 0 && WtRetExtendidaArray[9] !== 0)
+        (WtRetExtendidaArray[0] !== 0 && WtRetExtendidaArray[5] !== 0 && WtRetExtendidaArray[9] !== 0)
             ? "with Boulders and Cobbles"
-            : (WtRetExtendidaArray[4] !== 0)
+            : (WtRetExtendidaArray[0] !== 0)
                 ? "Boulders"
-                : (WtRetExtendidaArray[4] !== 0 && WtRetExtendidaArray[9] !== 0)
+                : (WtRetExtendidaArray[5] !== 0 && WtRetExtendidaArray[9] !== 0)
                     ? "with Cobbles"
                     : "";
-
+console.log(WtRetExtendidaArray);
     return extraInfo;
 }
 
