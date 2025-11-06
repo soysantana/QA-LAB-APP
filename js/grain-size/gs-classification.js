@@ -128,19 +128,16 @@ function clasificarSuelo(gravel, sand, fines, Cu, Cc) {
 }
 
 function clasificarSueloExtra(WtRetExtendidaArray) {
-  const num = (v) => Math.max(0, Number(v) || 0);
+    const extraInfo =
+        (WtRetExtendidaArray[0] !== 0 && WtRetExtendidaArray[4] !== 0 && WtRetExtendidaArray[9] !== 0)
+            ? "with Boulders and Cobbles"
+            : (WtRetExtendidaArray[0] !== 0 && WtRetExtendidaArray[4] !== 0)
+                ? "Boulders"
+                : (WtRetExtendidaArray[4] !== 0 || WtRetExtendidaArray[9] !== 0)
+                    ? "with Cobbles"
+                    : "";
 
-  const w40 = num(WtRetExtendidaArray?.[0]); // 40"  → Boulder (≥12")
-  const w12 = num(WtRetExtendidaArray?.[5]); // 12"  → Boulder (≥12")
-  const w3  = num(WtRetExtendidaArray?.[9]); // 3"   → Cobbles (3"–<12")
-
-  const hasBoulders = (w40 > 0) || (w12 > 0); // ≥12"
-  const hasCobbles  = (w3  > 0);              // 3"–<12"
-
-  if (hasBoulders && hasCobbles) return "with Boulders and Cobbles";
-  if (hasBoulders)               return "with Boulders";
-  if (hasCobbles)                return "with Cobbles";
-  return "";
+    return extraInfo;
 }
 
 export { clasificarSuelo, clasificarSueloExtra };
