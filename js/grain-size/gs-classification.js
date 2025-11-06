@@ -127,26 +127,15 @@ function clasificarSuelo(gravel, sand, fines, Cu, Cc) {
     return { code, description };
 }
 
-function clasificarSueloExtraByIndices(WtRetExtendidaArray, minPercent = 0) {
-  const num = v => Math.max(0, Number(v) || 0);
+function clasificarSueloExtra(WtRetExtendidaArray) {
+  const num = (v) => Math.max(0, Number(v) || 0);
 
   const w40 = num(WtRetExtendidaArray?.[0]); // 40"  → Boulder (≥12")
   const w12 = num(WtRetExtendidaArray?.[5]); // 12"  → Boulder (≥12")
   const w3  = num(WtRetExtendidaArray?.[9]); // 3"   → Cobbles (3"–<12")
 
-  const total = (Array.isArray(WtRetExtendidaArray) ? WtRetExtendidaArray : [])
-                  .reduce((s, x) => s + num(x), 0);
-
-  if (total <= 0) return "";
-
-  const wBoulders = w40 + w12; // todo ≥12"
-  const wCobbles  = w3;        // 3"–<12"
-
-  const pB = (wBoulders / total) * 100;
-  const pC = (wCobbles  / total) * 100;
-
-  const hasBoulders = minPercent > 0 ? pB >= minPercent : wBoulders > 0;
-  const hasCobbles  = minPercent > 0 ? pC >= minPercent : wCobbles  > 0;
+  const hasBoulders = (w40 > 0) || (w12 > 0); // ≥12"
+  const hasCobbles  = (w3  > 0);              // 3"–<12"
 
   if (hasBoulders && hasCobbles) return "with Boulders and Cobbles";
   if (hasBoulders)               return "with Boulders";
@@ -154,5 +143,4 @@ function clasificarSueloExtraByIndices(WtRetExtendidaArray, minPercent = 0) {
   return "";
 }
 
-
-export { clasificarSuelo, clasificarSueloExtraByIndices };
+export { clasificarSuelo, clasificarSueloExtra };
