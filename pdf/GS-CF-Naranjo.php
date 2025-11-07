@@ -383,10 +383,10 @@ $pdf->Cell(152, 4, $resultado, 0, 1, 'C');
 
 // Comments and Observations
 $pdf->SetXY(54, 425);
-$pdf->MultiCell(360, 4, $Search['Comments'], 0, 'L');
+$pdf->MultiCell(360, 4, utf8_decode($Search['Comments']), 0, 'L');
 
 $pdf->SetXY(54, 470);
-$pdf->MultiCell(360, 4, $Search['FieldComment'], 0, 'L');
+$pdf->MultiCell(360, 4, utf8_decode($Search['FieldComment']), 0, 'L');
 
 // Function to insert base64 image into PDF
 function insertarImagenBase64($pdf, $base64Str, $x, $y, $w, $h)

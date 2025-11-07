@@ -336,7 +336,7 @@ $pdf->Cell(152, 6, $Search['ClassificationUSCS2'], 0, 1, 'C');
 
 // Comments and observations
 $pdf->SetXY(52, 478);
-$pdf->MultiCell(145, 4, $Search['Comments'], 0, 'L');
+$pdf->MultiCell(145, 4, utf8_decode($Search['Comments']), 0, 'L');
 
 // Function to insert base64 image into PDF
 function insertarImagenBase64($pdf, $base64Str, $x, $y, $w, $h)
