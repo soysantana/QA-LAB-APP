@@ -1,3 +1,4 @@
+import { calcularParametrosGranulometricos } from '../grain-size/gs-summary.js';
 import { enviarImagenAlServidor } from '../export/export-chart.js';
 import { fetchData } from '../db-search/dbSearch.js';
 
@@ -121,104 +122,7 @@ function GS() {
         [PassArray[0], 75, 0, 0]
     ];
 
-    const valoresBuscados = [10, 15, 30, 60, 85];
-    const indiceColumnaBusqueda = 0;
-
-    const minPass = Math.min(...datos.map(fila => fila[0]));
-    const maxPass = Math.max(...datos.map(fila => fila[2]));
-    const valoresValidos = valoresBuscados.filter(v => v >= minPass && v <= maxPass);
-
-    // Buscar dos puntos para interpolar un Dx
-    const buscarPar = (valor) => {
-        for (let i = 0; i < datos.length; i++) {
-            const [y1, x1, y2, x2] = datos[i];
-            if (
-                y1 <= valor && valor <= y2 &&
-                x1 != null && x2 != null &&
-                y1 != null && y2 != null
-            ) {
-                return { x1, x2, y1, y2 };
-            }
-        }
-        return null;
-    };
-
-    // Interpolación logarítmica
-    const calcularDx = ({ x1, x2, y1, y2 }, valor) => {
-        const lnX1 = Math.log(x1);
-        const lnX2 = Math.log(x2);
-        const c = (y2 - y1) / (lnX2 - lnX1);
-        const b = (y1 + y2) / 2 - c * (lnX1 + lnX2) / 2;
-        return Math.exp((valor - b) / c);
-    };
-
-    // Buscar pasante directamente por tamiz (columna 1)
-    const buscarPasantePorTamiz = (tamizObjetivo) => {
-        for (const fila of datos) {
-            const pasante = fila[0];
-            const tamiz = fila[1];
-            if (tamiz === tamizObjetivo) return pasante != null ? pasante : 100;
-        }
-        return 100; // Si no se encuentra, asumir 100%
-    };
-
-
-    const DxMap = {};
-    valoresBuscados.forEach(valor => {
-        const par = buscarPar(valor);
-        const input = document.getElementById("D" + valor);
-        if (valoresValidos.includes(valor) && par) {
-            const resultado = calcularDx(par, valor);
-            DxMap["D" + valor] = resultado;
-            if (input) input.value = resultado.toFixed(3);
-        } else {
-            DxMap["D" + valor] = null;
-            if (input) input.value = "-";
-        }
-    });
-
-    const D10 = DxMap.D10;
-    const D30 = DxMap.D30;
-    const D60 = DxMap.D60;
-
-    let Cu = "", Cc = "";
-
-    if (
-        !isNaN(D10) && D10 > 0 &&
-        !isNaN(D30) && D30 > 0 &&
-        !isNaN(D60) && D60 > 0
-    ) {
-        Cu = D60 / D30;
-        Cc = (D30 ** 2) / (D60 * D10);
-    }
-
-    const ccInput = document.getElementById("Cc");
-    const cuInput = document.getElementById("Cu");
-
-    ccInput.value = typeof Cc === "number" && isFinite(Cc) ? Cc.toFixed(2) : "-";
-    cuInput.value = typeof Cu === "number" && isFinite(Cu) ? Cu.toFixed(2) : "-";
-
-
-    // Calcular gravel, sand, fines
-    const sieve3In = buscarPasantePorTamiz(75);
-    const sieveNo4 = buscarPasantePorTamiz(4.75);
-    const sieveNo200 = buscarPasantePorTamiz(0.075);
-
-    const CoarserGravel = 100 - sieve3In;
-    const gravel = sieve3In - sieveNo4;
-    const sand = sieveNo4 - sieveNo200;
-    const fines = sieveNo200;
-
-    document.getElementById("CoarserGravel").value = !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
-    document.getElementById("Gravel").value = !isNaN(gravel) ? gravel.toFixed(2) : "";
-    document.getElementById("Sand").value = !isNaN(sand) ? sand.toFixed(2) : "";
-    document.getElementById("Fines").value = !isNaN(fines) ? fines.toFixed(2) : "";
-
-    return {
-        D10, D15: DxMap.D15, D30, D60, D85: DxMap.D85,
-        Cu, Cc,
-        gravel, sand, fines
-    };
+    calcularParametrosGranulometricos(datos);
 }
 
 function hydrometer() {
@@ -335,79 +239,7 @@ function hydrometer() {
     }
 }
 
-function clasificarSuelo() {
-    const getValue = (id) => {
-        const value = parseFloat(document.getElementById(id).value);
-        return isNaN(value) ? null : value;
-    };
 
-    const setValue = (id, value) => {
-        document.getElementById(id).value = value !== null ? value : "";
-    };
-
-    const gravel = getValue("Gravel");
-    const sand = getValue("Sand");
-    const fines = getValue("Fines");
-    const Cu = getValue("Cu");
-    const Cc = getValue("Cc");
-    const LL = getValue("LiquidLimit");
-    const PI = getValue("PlasticityIndex");
-
-    const tipo = sand >= gravel ? "arena" : "grava";
-    const mayoritario = tipo === "arena" ? "sand" : "gravel";
-    const minoritario = tipo === "arena" ? "gravel" : "sand";
-
-    let resultado = "";
-
-    if (fines >= 50) {
-        if (LL < 50) {
-            if (PI > 7 && PI >= 0.73 * (LL - 20)) resultado = "CL - Lean clay";
-            else if (PI >= 4 && PI <= 7 && PI >= 0.73 * (LL - 20)) resultado = "CL-ML - Silty clay";
-            else resultado = "ML - Silt";
-        } else {
-            resultado = PI >= 0.73 * (LL - 20) ? "CH - Fat clay" : "MH - Elastic silt";
-        }
-    } else {
-        const limpio = fines < 5;
-        const conFinos = fines >= 12;
-
-        if (limpio) {
-            if (tipo === "arena") {
-                resultado = (Cu !== null && Cc !== null && Cu >= 6 && Cc >= 1 && Cc <= 3)
-                    ? "SW - Well graded sand"
-                    : "SP - Poorly graded sand";
-            } else {
-                resultado = (Cu !== null && Cc !== null && Cu >= 4 && Cc >= 1 && Cc <= 3)
-                    ? "GW - Well graded gravel"
-                    : "GP - Poorly graded gravel";
-            }
-        } else if (conFinos) {
-            let simbolo;
-            if (LL >= 50) {
-                simbolo = PI >= 0.73 * (LL - 20)
-                    ? (tipo === "arena" ? "SC" : "GC")
-                    : (tipo === "arena" ? "SM" : "GM");
-            } else {
-                simbolo = PI >= 7
-                    ? (tipo === "arena" ? "SC" : "GC")
-                    : (tipo === "arena" ? "SM" : "GM");
-            }
-
-            const nombre = simbolo.endsWith("C")
-                ? `Clayey ${mayoritario} with ${minoritario}`
-                : `Silty ${mayoritario} with ${minoritario}`;
-
-            resultado = `${simbolo} - ${nombre}`;
-        } else {
-            // Transicional (entre 5% y 12% de finos)
-            let simbolo1 = tipo === "arena" ? "SP" : "GP";
-            let simbolo2 = PI >= 7 ? (tipo === "arena" ? "SC" : "GC") : (tipo === "arena" ? "SM" : "GM");
-            resultado = `${simbolo1}-${simbolo2} - ${mayoritario} with some fines`;
-        }
-    }
-
-    setValue("Classification1", resultado);
-}
 
 $("input").on("blur", function (event) {
     event.preventDefault();
@@ -421,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
             input.addEventListener("input", HY);
             input.addEventListener("input", GS);
             input.addEventListener("input", hydrometer);
-            input.addEventListener("input", clasificarSuelo);
+            //input.addEventListener("input", clasificarSuelo);
 
         });
     }
