@@ -1,12 +1,12 @@
 <?php
 $user = current_user();
 
-if (isset($_POST["repeat"])) {
+if (isset($_POST["reviewed"])) {
     $Search = $_GET["id"];
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
-            "SELECT * FROM soundness WHERE id = '{$Search}' LIMIT 1"
+            "SELECT * FROM sand_castle_test WHERE id = '{$Search}' LIMIT 1"
         );
 
         if ($search_data) {
@@ -14,22 +14,24 @@ if (isset($_POST["repeat"])) {
             $SampleID = $search_data[0]["Sample_ID"];
             $SampleNumber = $search_data[0]["Sample_Number"];
             $TestType = $search_data[0]["Test_Type"];
+            $RegisBy = $search_data[0]["Register_By"];
 
             $existing_record = find_by_sql(
-                "SELECT * FROM test_repeat WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
-                AND Test_Type = '{$TestType}' AND Tracking = '{$ID}' LIMIT 1"
+                "SELECT * FROM test_reviewed WHERE Sample_ID = '{$SampleID}' AND Sample_Number = '{$SampleNumber}' 
+                AND Test_Type = '{$TestType}' AND Register_By = '{$RegisBy}' AND Tracking = '{$ID}' LIMIT 1"
             );
 
             if (!$existing_record) {
                 $id = uuid();
                 $RegistedDate = make_date();
-                $RegisterBy = $user["name"];
+                $ReviewedBy = $user["name"];
 
-                $sql = "INSERT INTO test_repeat (
+                $sql = "INSERT INTO test_reviewed (
                     id,
                     Sample_ID,
                     Sample_Number,
                     Start_Date,
+                    Reviewed_By,
                     Register_By,
                     Test_Type,
                     Tracking,
@@ -40,20 +42,21 @@ if (isset($_POST["repeat"])) {
                     '$SampleID',
                     '$SampleNumber',
                     '$RegistedDate',
-                    '$RegisterBy',
+                    '$ReviewedBy',
+                    '$RegisBy',
                     '$TestType',
                     '$ID',
-                    'Repeat'
+                    'Reviewed'
                 )";
 
                 if ($db->query($sql)) {
-                    $session->msg("s", "ensayo enviado a repeticion");
+                    $session->msg("s", "ensayo enviado a revisión");
                     redirect("/pages/essay-review.php", false);
                 } else {
                 }
             } else {
                 $session->msg("w", "Ya existe un registro");
-                redirect("/reviews/soundness.php?id=" . $Search, false);
+                redirect("../reviews/sand-castle-test.php?id=" . $Search, false);
             }
         } else {
         }
