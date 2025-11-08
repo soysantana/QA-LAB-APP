@@ -1,4 +1,5 @@
 import { enviarImagenAlServidor } from '../export/export-chart.js';
+import { fetchData } from '../db-search/dbSearch.js';
 
 let DMmGlobal = [];
 let PassingPerceTotalSampleGlobal = [];
@@ -441,3 +442,23 @@ function enviarData() {
         success: function (data) { }
     });
 }
+
+document.querySelector('[name="search"]').addEventListener('click', () => {
+    // Obtener valores de los inputs
+    const sampleName = document.getElementById('SampleName').value;
+    const sampleNumber = document.getElementById('SampleNumber').value;
+
+    // Liquid Limit and Plasticity Index
+    fetchData('atterberg_limit', { Sample_ID: sampleName, Sample_Number: sampleNumber }, { Liquid_Limit_Porce: 'LiquidLimit', Plasticity_Index_Porce: 'PlasticityIndex' });
+    // Specific Gravity
+    fetchData('specific_gravity', { Sample_ID: sampleName, Sample_Number: sampleNumber }, { Specific_Gravity_Soil_Solid: 'SG_Result' });
+
+    // Grain Size Distribution
+    fetchData('grain_size_general', { Sample_ID: sampleName, Sample_Number: sampleNumber },
+        {
+            Container: 'Container', Wet_Soil_Tare: 'WtWetSoilTare', Wet_Dry_Tare: 'WtDrySoilTare', Tare: 'Tare_GS', Wt_Washed: 'WtWashed',
+            WtRet6: 'WtRet1', WtRet7: 'WtRet2', WtRet8: 'WtRet3', WtRet9: 'WtRet4', WtRet10: 'WtRet5', WtRet11: 'WtRet6', WtRet12: 'WtRet7',
+            WtRet13: 'WtRet8', WtRet14: 'WtRet9', WtRet15: 'WtRet10', WtRet16: 'WtRet11', WtRet17: 'WtRet12', WtRet18: 'WtRet13', WtRet19: 'WtRet14',
+            WtRet20: 'WtRet15', WtRet21: 'WtRet16', WtRet22: 'WtRet17', PanWtRen: 'PanWtRen'
+        });
+});
