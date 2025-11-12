@@ -1,64 +1,39 @@
 <?php
-// home.php — Dashboard con paginación (sin filtros de rango/limite en UI)
-$page_title = "Home";
-$class_home = " ";
-require_once "../config/load.php";
-if (!$session->isUserLoggedIn(true)) { redirect("/index.php", false); }
+// /pages/home.php — Workflow + Pendientes (solo conteo, 3M) + Repetición + Proctor
+declare(strict_types=1);
+require_once('../config/load.php');
+page_require_level(2);
+include_once('../components/header.php');
 
-// ==============================
-// Helpers
-// ==============================
+/* ==============================
+   Helpers
+   ============================== */
+function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function N($v){ return strtoupper(trim((string)$v)); }
 function K($sid,$num,$tt){ return N($sid).'|'.N($num).'|'.N($tt); }
-function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 function status_badge($s){
   switch ($s) {
-    case 'Preparation': return 'primary';
-    case 'Realization': return 'secondary';
-    case 'Delivery':    return 'success';
-    case 'Review':      return 'dark';
-    case 'Repeat':      return 'warning';
+    case 'Registrado':  return 'secondary';
+    case 'Preparación': return 'primary';
+    case 'Realización': return 'info';
+    case 'Entrega':     return 'success';
+    case 'Revisado':    return 'dark';
     default:            return 'light';
   }
-}
-function status_label($s){
-  switch ($s) {
-    case 'Preparation': return 'Preparación';
-    case 'Realization': return 'Realización';
-    case 'Delivery':    return 'Entrega';
-    case 'Review':      return 'Revisión';
-    case 'Repeat':      return 'Repetición';
-    default:            return $s;
-  }
-}
-
-// Detección defensiva de columna de fecha (para secciones auxiliares)
-function pick_date_col(string $table, array $candidates = [
-  'Start_Date','Delivery_Date','Register_Date','Registed_Date',
-  'Created_At','CreatedAt','Date','Updated_At'
-]){
-  global $db;
-  foreach ($candidates as $col) {
-    $res = $db->query("SHOW COLUMNS FROM `{$table}` LIKE '{$db->escape($col)}'");
-    if ($res && $res->num_rows>0) return $col;
-  }
-  return null;
 }
 
 // ¿Existe registro en tabla X?
 function exists_in(string $table, string $sid, string $num, string $tt): bool {
   global $db;
-  if (!$table) return false;
   $sidE = $db->escape($sid);
   $numE = $db->escape($num);
   $ttE  = $db->escape($tt);
-  $sql  = "SELECT 1 FROM `{$table}` WHERE Sample_ID='{$sidE}' AND Sample_Number='{$numE}' AND Test_Type='{$ttE}' LIMIT 1";
+  $sql  = "SELECT 1 FROM `{$table}` WHERE Sample_ID='{$sidE}' AND Sample_Number='{$numE}' AND UPPER(TRIM(Test_Type))='{$ttE}' LIMIT 1";
   $res  = $db->query($sql);
   return $res && $res->num_rows>0;
 }
 
-// SP: tabla/col existen
 function table_exists(string $table): bool {
   global $db;
   $res = $db->query("SHOW TABLES LIKE '{$db->escape($table)}'");
@@ -69,7 +44,15 @@ function col_exists(string $table, string $col): bool {
   $res = $db->query("SHOW COLUMNS FROM `{$table}` LIKE '{$db->escape($col)}'");
   return $res && $res->num_rows > 0;
 }
-// SP: intenta devolver tripleta t34,t38,tNo4 de una tabla concreta
+function pick_date_col(string $table, array $candidates = [
+  'Start_Date','Delivery_Date','Register_Date','Registed_Date',
+  'Created_At','CreatedAt','Date','Updated_At'
+]){
+  foreach ($candidates as $col) {
+    if (col_exists($table, $col)) return $col;
+  }
+  return null;
+}
 function try_fetch_triplet(string $table, array $map, string $sid, string $num): ?array {
   global $db;
   if (!table_exists($table)) return null;
@@ -93,115 +76,180 @@ function try_fetch_triplet(string $table, array $map, string $sid, string $num):
   ];
 }
 
-// ==============================
-// Paginación (clásica con OFFSET) optimizada
-// ==============================
-$PAGE_SIZE = 10;
+/* ==============================
+   Ventanas de tiempo
+   ============================== */
+$FROM_90 = date('Y-m-d', strtotime('-90 days'));   // últimos 3 meses para Registrado y Pendientes
+$FROM_7  = date('Y-m-d', strtotime('-7 days'));    // repetición 7 días
+$FROM_31 = date('Y-m-d', strtotime('-31 days'));   // Proctor 31 días
+
+/* ==============================
+   KPIs simples
+   - Registrado: SOLO últimos 3 meses (test_workflow)
+   - Preparación / Realización / Entrega: conteo total actual (test_workflow)
+   - Revisado:  ⚠️ desde test_reviewed (DISTINCT por SID|NUM|TT)
+   ============================== */
+$kpiStates = ['Registrado','Preparación','Realización','Entrega','Revisado'];
+$kpis = array_fill_keys($kpiStates, 0);
+
+// Registrado (últimos 3 meses en test_workflow)
+$rowR = find_by_sql("
+  SELECT COUNT(*) c
+  FROM test_workflow
+  WHERE Status='Registrado'
+    AND Process_Started >= '{$FROM_90}'
+");
+$kpis['Registrado'] = (int)($rowR[0]['c'] ?? 0);
+
+// Preparación / Realización / Entrega: totales actuales en test_workflow
+$grp = find_by_sql("
+  SELECT Status, COUNT(*) c
+  FROM test_workflow
+  WHERE Status IN ('Preparación','Realización','Entrega')
+  GROUP BY Status
+");
+foreach ($grp as $r) {
+  $s = $r['Status'] ?? '';
+  if (isset($kpis[$s])) $kpis[$s] = (int)$r['c'];
+}
+
+// Revisado: contar DISTINCT triples en test_reviewed
+$rowRev = find_by_sql("
+  SELECT COUNT(DISTINCT CONCAT(COALESCE(Sample_ID,''),'|',COALESCE(Sample_Number,''),'|',UPPER(TRIM(COALESCE(Test_Type,''))))) AS c
+  FROM test_reviewed
+");
+$kpis['Revisado'] = (int)($rowRev[0]['c'] ?? 0);
+
+
+/* ==============================
+   Paginación — Workflow (proceso de muestreo)
+   ============================== */
+$PAGE_SIZE = 12;
 $page = max(1, (int)($_GET['page'] ?? 1));
 $offset = ($page - 1) * $PAGE_SIZE;
 
-// Conteo total con caché simple para no recalcular siempre
-function cache_get($k,$ttl=300){ $f=sys_get_temp_dir()."/$k.cache.php"; if(!is_file($f)||filemtime($f)+$ttl<time()) return null; return include $f; }
-function cache_set($k,$v){ $f=sys_get_temp_dir()."/$k.cache.php"; @file_put_contents($f,"<?php\nreturn ".var_export($v,true).";"); }
+// Conteo total en workflow (para la tabla de proceso)
+$row = find_by_sql("SELECT COUNT(*) c FROM test_workflow");
+$total = (int)($row[0]['c'] ?? 0);
+$totalPages = max(1, (int)ceil($total / $PAGE_SIZE));
 
-if (($totalReq = cache_get('cnt_lab_test_req')) === null) {
-  $row = find_by_sql("SELECT COUNT(*) AS c
-                      FROM lab_test_requisition_form
-                      WHERE Registed_Date IS NOT NULL
-                        AND Test_Type IS NOT NULL AND Test_Type <> ''");
-  $totalReq = (int)($row[0]['c'] ?? 0);
-  cache_set('cnt_lab_test_req', $totalReq);
-}
+// Traer bloque de workflow para tabla principal
+$WF = find_by_sql("
+  SELECT
+    w.id,
+    w.Sample_ID,
+    w.Sample_Number,
+    w.Test_Type,
+    w.Status,
+    w.Process_Started,
+    w.Updated_By,
+    TIMESTAMPDIFF(HOUR, w.Process_Started, NOW()) AS Dwell_Hours,
+    COALESCE(agg.techs, '') AS Techs
+  FROM test_workflow AS w
+  /* Técnicos involucrados en el estado actual del proceso:
+     - Tomamos todas las actividades (test_activity) del mismo test_id
+     - Solo las que apuntan al estado actual (To_Status = w.Status)
+     - Agrupamos y deduplicamos técnicos desde test_activity_technician
+  */
+  LEFT JOIN (
+    SELECT
+      a.test_id,
+      a.To_Status,
+      GROUP_CONCAT(DISTINCT TRIM(t.Technician) ORDER BY TRIM(t.Technician) SEPARATOR ', ') AS techs
+    FROM test_activity a
+    LEFT JOIN test_activity_technician t
+      ON t.activity_id = a.id
+    GROUP BY a.test_id, a.To_Status
+  ) AS agg
+    ON agg.test_id = w.id AND agg.To_Status = w.Status
+  ORDER BY w.Updated_At DESC
+  LIMIT {$PAGE_SIZE} OFFSET {$offset}
+");
 
-$totalPages = max(1, (int)ceil($totalReq / $PAGE_SIZE));
 
-// Traer bloque
+// SLA (solo referencia visual)
+$SLA = ['Registrado'=>24,'Preparación'=>48,'Realización'=>72,'Entrega'=>24,'Revisado'=>24];
+function sla_for_local($s){ global $SLA; return (int)($SLA[$s] ?? 48); }
+
+/* ==============================
+   Requisiciones (para Pendientes SOLO CONTEO, últimos 3 meses)
+   ============================== */
 $Requisitions = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type, Registed_Date
   FROM lab_test_requisition_form
-  WHERE Registed_Date IS NOT NULL
+  WHERE Registed_Date >= '{$FROM_90}'
     AND Test_Type IS NOT NULL AND Test_Type <> ''
   ORDER BY Registed_Date DESC
   LIMIT {$PAGE_SIZE} OFFSET {$offset}
 ");
 
-
-// ==============================
-// Construcción de “Proceso de muestreo”
-// ==============================
-// NOTA: Para cada ensayo, determinamos estado por EXISTE en orden de prioridad
-$statusCounts = ['Preparation'=>0,'Realization'=>0,'Delivery'=>0,'Review'=>0,'Repeat'=>0];
-$procesoRows  = [];
-
+// Pendientes por ensayo (solo conteo) — EXACTO a tu regla:
+// pendiente = (registrado en últimos 3 meses) Y (NO en Preparación, NO en Realización, NO en Entrega)
+// *Se IGNORA si está en Review o Repeat*
+$pendingByType = [];
+$seen = [];
 foreach ($Requisitions as $req) {
   if (empty($req['Test_Type'])) continue;
-
   $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
-  $types = array_filter(array_map('trim', explode(',', $req['Test_Type'])));
-
+  $types = array_filter(array_map('trim', explode(',', (string)$req['Test_Type'])));
   foreach ($types as $ttRaw) {
     $tt = N($ttRaw);
+    $key = K($sid,$num,$tt);
+    if (isset($seen[$key])) continue; // evitar duplicados en la página
+    $seen[$key] = true;
 
-    // Prioridad: Repeat > Review > Delivery > Realization > Preparation
-    $st = null;
-    if     (exists_in('test_repeat',      $sid,$num,$tt)) $st='Repeat';
-    elseif (exists_in('test_review',      $sid,$num,$tt)) {
-      // excluir si está en reviewed
-      if (!exists_in('test_reviewed', $sid,$num,$tt)) $st='Review';
-    }
-    elseif (exists_in('test_delivery',    $sid,$num,$tt)) $st='Delivery';
-    elseif (exists_in('test_realization', $sid,$num,$tt)) $st='Realization';
-    elseif (exists_in('test_preparation', $sid,$num,$tt)) $st='Preparation';
+    $inAnyCore = (
+      exists_in('test_preparation',$sid,$num,$tt) ||
+      exists_in('test_realization',$sid,$num,$tt) ||
+      exists_in('test_delivery',   $sid,$num,$tt)
+    );
 
-    if ($st) {
-      $statusCounts[$st]++;
-      $procesoRows[] = [
-        'sid'=>$sid,'num'=>$num,'tt'=>$tt,'st'=>$st
-      ];
+    if (!$inAnyCore) {
+      $pendingByType[$tt] = ($pendingByType[$tt] ?? 0) + 1;
     }
   }
 }
 
-// ==============================
-// Ensayos en Repetición (recientes, sin UI de filtros)
-// ==============================
-$from7 = date('Y-m-d', strtotime('-7 days'));
+/* ==============================
+   Repetición (últimos 7 días)
+   ============================== */
 $repDateCol = pick_date_col('test_repeat') ?: 'Start_Date';
 $repeatRows = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type, `{$repDateCol}` AS SD, Send_By
   FROM test_repeat
-  WHERE `{$repDateCol}` >= '{$from7}'
+  WHERE `{$repDateCol}` >= '{$FROM_7}'
   ORDER BY `{$repDateCol}` DESC
   LIMIT 200
 ");
 
-// ==============================
-// Método Proctor (SP) — robusto, sin UNION
-// ==============================
-$from31 = date('Y-m-d', strtotime('-31 days'));
+/* ==============================
+   Método Proctor (SP) — últimos 31 días (pendientes)
+   ============================== */
 $ReqSP = find_by_sql("
   SELECT Sample_ID, Sample_Number, Sample_Date, Test_Type
   FROM lab_test_requisition_form
-  WHERE Registed_Date >= '{$from31}'
+  WHERE Registed_Date >= '{$FROM_31}'
+    AND Test_Type IS NOT NULL AND Test_Type <> ''
   ORDER BY Registed_Date DESC
   LIMIT 400
 ");
 $spRows = [];
 foreach ($ReqSP as $req) {
-  if (empty($req['Test_Type'])) continue;
   $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
-
-  // ¿Incluye SP?
+  $types = array_filter(array_map('trim', explode(',', (string)$req['Test_Type'])));
   $hasSP = false;
-  foreach (array_filter(array_map('trim', explode(',', $req['Test_Type']))) as $tt) {
-    if (N($tt)==='SP'){ $hasSP=true; break; }
-  }
+  foreach ($types as $t) { if (N($t)==='SP'){ $hasSP=true; break; } }
   if (!$hasSP) continue;
 
-  // Solo pendientes (no en Preparation ni Review)
-  if (exists_in('test_preparation',$sid,$num,'SP') || exists_in('test_review',$sid,$num,'SP')) continue;
+  // SP pendiente: no debe estar en Preparación / Realización / Entrega
+  $isInCore = (
+    exists_in('test_preparation',$sid,$num,'SP') ||
+    exists_in('test_realization',$sid,$num,'SP') ||
+    exists_in('test_delivery',   $sid,$num,'SP')
+  );
+  if ($isInCore) continue;
 
-  // Probar fuentes en orden
+  // Buscar tripletas
   $triplet = null;
   $triplet = $triplet ?: try_fetch_triplet('grain_size_general',
               ['t34'=>'CumRet11','t38'=>'CumRet13','tNo4'=>'CumRet14'],$sid,$num);
@@ -215,430 +263,179 @@ foreach ($ReqSP as $req) {
               ['t34'=>'CumRet8','t38'=>'CumRet10','tNo4'=>'CumRet11'],$sid,$num);
 
   if ($triplet) {
-    $T3p4 = $triplet['t34'];
-    $T3p8 = $triplet['t38'];
-    $TNo4 = $triplet['tNo4'];
-
+    $T3p4 = $triplet['t34']; $T3p8 = $triplet['t38']; $TNo4 = $triplet['tNo4'];
     if     ($T3p4 > 0)                             $metodo = 'C';
     elseif ($T3p8 > 0 && $T3p4 == 0)               $metodo = 'B';
     elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) $metodo = 'A';
     else                                           $metodo = 'No se puede determinar el método';
-
     $corr = ($T3p4 > 5) ? 'Corrección por Sobre Tamaño (hacer SG finas y gruesas)' : '';
     $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>$metodo,'note'=>$corr];
   } else {
     $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>'No data','note'=>'Sin granulometría válida o columnas/tabla no existen'];
   }
 }
-
-// ==============================
-// Pendientes por tipo (solo del bloque de página actual)
-// ==============================
-$pendCounts = [];
-$seen = [];
-foreach ($Requisitions as $req) {
-  if (empty($req['Test_Type'])) continue;
-  $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
-  $types = array_filter(array_map('trim', explode(',', $req['Test_Type'])));
-  foreach ($types as $ttRaw) {
-    $tt = N($ttRaw);
-    $key = K($sid,$num,$tt);
-    if (isset($seen[$key])) continue;
-    $seen[$key] = true;
-
-    if (
-      !exists_in('test_preparation',$sid,$num,$tt) &&
-      !exists_in('test_realization',$sid,$num,$tt) &&
-      !exists_in('test_delivery',   $sid,$num,$tt) &&
-      !(exists_in('test_review',$sid,$num,$tt) && !exists_in('test_reviewed',$sid,$num,$tt)) &&
-      !exists_in('test_repeat',     $sid,$num,$tt)
-    ) {
-      $pendCounts[$tt] = ($pendCounts[$tt] ?? 0) + 1;
-    }
-  }
-}
 ?>
-<?php include_once('../components/header.php'); ?>
-<main id="main" class="main">
-
+<main id="main" class="main" style="padding:18px;">
   <div class="pagetitle">
-    <h1>Panel Control</h1>
+    <h1>Panel General</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-        <li class="breadcrumb-item active">Panel Control</li>
+        <li class="breadcrumb-item"><a href="/pages/home.php">Home</a></li>
+        <li class="breadcrumb-item active">Panel</li>
       </ol>
     </nav>
   </div>
 
   <?= display_msg($msg); ?>
 
-  <section class="section dashboard">
-    <div class="row">
-
-      <!-- Izquierda -->
-      <div class="col-lg-8">
-
-        <!-- Proceso de muestreo -->
-        <div class="card recent-sales overflow-auto mb-3">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <h5 class="card-title mb-0">Proceso de muestreo</h5>
-              <!-- Paginación arriba -->
-              <nav aria-label="Pag" class="d-none d-md-block">
-                <ul class="pagination pagination-sm mb-0">
-                  <li class="page-item <?= $page<=1?'disabled':'' ?>">
-                    <a class="page-link" href="?page=1">&laquo;</a>
-                  </li>
-                  <li class="page-item <?= $page<=1?'disabled':'' ?>">
-                    <a class="page-link" href="?page=<?= max(1,$page-1) ?>">&lsaquo;</a>
-                  </li>
-                  <li class="page-item disabled"><span class="page-link"><?= $page ?> / <?= $totalPages ?></span></li>
-                  <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>">
-                    <a class="page-link" href="?page=<?= min($totalPages,$page+1) ?>">&rsaquo;</a>
-                  </li>
-                  <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>">
-                    <a class="page-link" href="?page=<?= $totalPages ?>">&raquo;</a>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-
-            <div class="table-responsive mt-3">
-              <table class="table table-borderless">
-                <thead>
-                  <tr>
-                    <th>Muestra</th>
-                    <th>Número</th>
-                    <th>Tipo</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                <?php if (empty($procesoRows)): ?>
-                  <tr><td colspan="4" class="text-center text-muted">No hay datos en esta página.</td></tr>
-                <?php else: ?>
-                  <?php foreach ($procesoRows as $row): ?>
-                    <tr>
-                      <td><?= h($row['sid']) ?></td>
-                      <td><?= h($row['num']) ?></td>
-                      <td><?= h($row['tt']) ?></td>
-                      <td><span class="badge bg-<?= status_badge($row['st']) ?>"><?= h(status_label($row['st'])) ?></span></td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Paginación abajo -->
-            <div class="d-flex justify-content-end">
-              <nav aria-label="Pag">
-                <ul class="pagination pagination-sm">
-                  <li class="page-item <?= $page<=1?'disabled':'' ?>">
-                    <a class="page-link" href="?page=1">&laquo;</a>
-                  </li>
-                  <li class="page-item <?= $page<=1?'disabled':'' ?>">
-                    <a class="page-link" href="?page=<?= max(1,$page-1) ?>">&lsaquo;</a>
-                  </li>
-                  <li class="page-item disabled"><span class="page-link"><?= $page ?> / <?= $totalPages ?></span></li>
-                  <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>">
-                    <a class="page-link" href="?page=<?= min($totalPages,$page+1) ?>">&rsaquo;</a>
-                  </li>
-                  <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>">
-                    <a class="page-link" href="?page=<?= $totalPages ?>">&raquo;</a>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Ensayos en Repetición -->
-        <div class="card recent-sales overflow-auto mb-3">
-          <div class="card-body">
-            <h5 class="card-title">Ensayos en Repetición <span class="text-muted">| Últimos 7 días</span></h5>
-            <div class="table-responsive">
-              <table class="table table-borderless">
-                <thead>
-                  <tr>
-                    <th>Muestra</th>
-                    <th>Número</th>
-                    <th>Tipo</th>
-                    <th>Fecha</th>
-                    <th>Enviado por</th>
-                  </tr>
-                </thead>
-                <tbody>
-                <?php if (empty($repeatRows)): ?>
-                  <tr><td colspan="5" class="text-center text-muted">No hay ensayos en repetición recientes.</td></tr>
-                <?php else: ?>
-                  <?php foreach ($repeatRows as $r): ?>
-                    <tr>
-                      <td><?= h($r['Sample_ID']) ?></td>
-                      <td><?= h($r['Sample_Number']) ?></td>
-                      <td><?= h($r['Test_Type']) ?></td>
-                      <td><?= h(date('Y-m-d', strtotime($r['SD']))) ?></td>
-                      <td><?= h($r['Send_By']) ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Método Proctor (SP) -->
-        <div class="card recent-sales overflow-auto">
-          <div class="card-body">
-            <h5 class="card-title">Método para Proctor (SP) <span class="text-muted">| Últimos 31 días</span></h5>
-            <div class="table-responsive">
-              <table class="table table-borderless">
-                <thead>
-                  <tr>
-                    <th>Muestra</th>
-                    <th>Método</th>
-                    <th>Comentario</th>
-                  </tr>
-                </thead>
-                <tbody>
-                <?php if (empty($spRows)): ?>
-                  <tr><td colspan="3" class="text-center text-muted">Sin muestras SP pendientes o sin granulometría.</td></tr>
-                <?php else: ?>
-                  <?php foreach ($spRows as $r): ?>
-                    <tr>
-                      <td><?= h($r['sid'].'-'.$r['num'].'-SP') ?></td>
-                      <td><?= h($r['met']) ?></td>
-                      <td><?= h($r['note']) ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
+  <!-- KPIs -->
+  <section class="kpi-grid">
+    <?php foreach ($kpiStates as $st): ?>
+      <div class="kpi">
+        <div class="kpi-title"><?= h($st) ?></div>
+        <div class="kpi-val"><?= (int)$kpis[$st] ?></div>
+        <?php if ($st==='Registrado'): ?><div class="kpi-sub">últ. 3 meses</div><?php endif; ?>
       </div>
-      <!-- /Izquierda -->
-
-      <!-- Derecha -->
-<?php
-/* ===============================
-   CONTEOS GLOBALES EXCLUSIVOS (3 MESES)
-   - Solo cuenta si el triple (SID|NUM|TT) aparece en EXACTAMENTE UNA tabla
-   - Ventana: últimos 90 días (3 meses aprox)
-   - Review = test_review EXCLUYENDO los que estén en test_reviewed
-   - Delivery usa Register_Date (ajusta si tu campo es otro)
-   =============================== */
-
-/* Helpers */
-if (!function_exists('normalize_key')) {
-  function normalize_key($sid,$num,$tt){
-    return strtoupper(trim((string)$sid)).'|'.strtoupper(trim((string)$num)).'|'.strtoupper(trim((string)$tt));
-  }
-}
-
-/**
- * Carga un set de triples (SID|NUM|TT) desde una tabla en un rango desde $fromDate
- * @param string $table
- * @param string $dateCol
- * @param string $fromDate 'Y-m-d'
- */
-function table_set_in_range(string $table, string $dateCol, string $fromDate): array {
-  $rows = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type
-    FROM `{$table}`
-    WHERE `{$dateCol}` >= '{$fromDate}'
-    GROUP BY Sample_ID, Sample_Number, Test_Type
-  ");
-  $set = [];
-  foreach ($rows as $r) {
-    $k = normalize_key($r['Sample_ID'] ?? '', $r['Sample_Number'] ?? '', $r['Test_Type'] ?? '');
-    if ($k !== '||') $set[$k] = true;
-  }
-  return $set;
-}
-
-/**
- * Review sin firmar dentro del rango (excluye lo que está en test_reviewed)
- * @param string $fromDate 'Y-m-d'
- */
-function review_unreviewed_set_in_range(string $fromDate): array {
-  // Asegura calificar la columna de fecha de test_review como p.Start_Date
-  $rows = find_by_sql("
-    SELECT p.Sample_ID, p.Sample_Number, p.Test_Type
-    FROM test_review AS p
-    LEFT JOIN test_reviewed AS r
-      ON r.Sample_ID=p.Sample_ID AND r.Sample_Number=p.Sample_Number AND r.Test_Type=p.Test_Type
-    WHERE r.Sample_ID IS NULL
-      AND p.Start_Date >= '{$fromDate}'
-    GROUP BY p.Sample_ID, p.Sample_Number, p.Test_Type
-  ");
-  $set = [];
-  foreach ($rows as $r) {
-    $k = normalize_key($r['Sample_ID'] ?? '', $r['Sample_Number'] ?? '', $r['Test_Type'] ?? '');
-    if ($k !== '||') $set[$k] = true;
-  }
-  return $set;
-}
-
-/* ====== Ventana de 3 meses ====== */
-$FROM_90 = date('Y-m-d', strtotime('-90 days'));
-
-/* ====== Sets por proceso (dentro del rango) ====== */
-$Sprep = table_set_in_range('test_preparation', 'Start_Date',   $FROM_90); // Preparation
-$Sreal = table_set_in_range('test_realization', 'Start_Date',   $FROM_90); // Realization
-$Sdelv = table_set_in_range('test_delivery',    'Register_Date',$FROM_90); // Delivery (ajusta si tu col es otra)
-$Srept = table_set_in_range('test_repeat',      'Start_Date',   $FROM_90); // Repeat
-$Srev  = review_unreviewed_set_in_range($FROM_90);                           // Review sin firmar
-
-/* ====== Exclusión “estricta” entre procesos en la misma ventana ======
-   - Contar solo los triples que aparecen en UNA sola tabla
-   - Si aparece en 2 o más (cualquier combinación), se excluye de todas
-*/
-$allSets = [
-  'Preparation' => $Sprep,
-  'Realization' => $Sreal,
-  'Delivery'    => $Sdelv,
-  'Review'      => $Srev,
-  'Repeat'      => $Srept,
-];
-
-/* Conteo de apariciones (para detectar duplicados entre procesos) */
-$freq = [];  // k => cuántas tablas lo contienen
-foreach ($allSets as $set) {
-  foreach ($set as $k => $_) {
-    $freq[$k] = ($freq[$k] ?? 0) + 1;
-  }
-}
-
-/* Filtrar cada set para dejar SOLO los k con frecuencia = 1 */
-function filter_unique_only(array $set, array $freq): array {
-  $out = [];
-  foreach ($set as $k => $_) {
-    if (($freq[$k] ?? 0) === 1) $out[$k] = true;
-  }
-  return $out;
-}
-
-$CURprep = filter_unique_only($Sprep, $freq);
-$CURreal = filter_unique_only($Sreal, $freq);
-$CURdelv = filter_unique_only($Sdelv, $freq);
-$CURrev  = filter_unique_only($Srev,  $freq);
-$CURrept = filter_unique_only($Srept, $freq);
-
-/* ====== Conteos finales (exclusivos en 3M) ====== */
-$cntPreparation = count($CURprep);
-$cntRealization = count($CURreal);
-$cntDelivery    = count($CURdelv);
-$cntReview      = count($CURrev);
-$cntRepeat      = count($CURrept);
-
-/* (Opcional) Pendientes lógicos globales EN EL RANGO de 3 meses:
-   - Tomamos requisiciones de los últimos 90 días
-   - Expandimos Test_Type por comas
-   - Excluimos cualquier triple que aparezca en alguna tabla (aunque haya sido excluido por la exclusividad)
-*/
-$reqRange = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type
-  FROM lab_test_requisition_form
-  WHERE Registed_Date >= '{$FROM_90}'
-    AND Test_Type IS NOT NULL AND Test_Type <> ''
-");
-$requested = [];
-foreach ($reqRange as $rq) {
-  $sid = $rq['Sample_ID'] ?? ''; $num = $rq['Sample_Number'] ?? '';
-  $types = array_filter(array_map('trim', explode(',', $rq['Test_Type'] ?? '')));
-  foreach ($types as $t) {
-    $requested[ normalize_key($sid,$num,$t) ] = true;
-  }
-}
-
-/* “Vistos en procesos” (aunque luego fueran descartados por exclusividad, aquí cuentan como vistos) */
-$seenAny = $Sprep + $Sreal + $Sdelv + $Srev + $Srept;
-
-/* Pendientes lógicos en 3M: solicitados en rango que NO aparecen en ningún proceso del rango */
-$pendingLogical = 0;
-$pendingByType  = [];
-foreach ($requested as $k => $_) {
-  if (!isset($seenAny[$k])) {
-    $pendingLogical++;
-    $parts = explode('|', $k);
-    $tt = $parts[2] ?? '';
-    if ($tt !== '') $pendingByType[$tt] = ($pendingByType[$tt] ?? 0) + 1;
-  }
-}
-
-/* Ahora puedes renderizar:
-   - $cntPreparation, $cntRealization, $cntDelivery, $cntReview, $cntRepeat
-   - $pendingLogical (opcional)
-   - $pendingByType (opcional)
-*/
-?>
-
-
-<!-- Derecha -->
-<div class="col-lg-4">
-
-  <!-- Conteos globales (estado actual) -->
-  <div class="card mb-3">
-    <div class="card-body">
-      <h5 class="card-title">Cantidades en Procesos</h5>
-      <ul class="list-group">
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          Preparación
-          <span class="badge bg-primary rounded-pill"><?= (int)$cntPreparation ?></span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          Realización
-          <span class="badge bg-secondary rounded-pill"><?= (int)$cntRealization ?></span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          Entrega
-          <span class="badge bg-success rounded-pill"><?= (int)$cntDelivery ?></span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          Revisión 
-          <span class="badge bg-dark rounded-pill"><?= (int)$cntReview ?></span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          Repetición
-          <span class="badge bg-warning rounded-pill"><?= (int)$cntRepeat ?></span>
-        </li>
-      
-      </ul>
-    </div>
-  </div>
-
-  <!-- Pendientes globales por tipo -->
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">Ensayos Pendiente de Realizar</h5>
-      <ul class="list-group">
-        <?php if (empty($pendingByType)): ?>
-          <li class="list-group-item">✅ No hay ensayos pendientes</li>
-        <?php else: ?>
-          <?php foreach ($pendingByType as $tt => $cnt): ?>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              <code><?= htmlspecialchars($tt) ?></code>
-              <span class="badge bg-danger rounded-pill"><?= (int)$cnt ?></span>
-            </li>
-          <?php endforeach; ?>
-        <?php endif; ?>
-      </ul>
-    </div>
-  </div>
-
-</div>
-<!-- /Derecha -->
-
-
-      <!-- /Derecha -->
-
-    </div>
+    <?php endforeach; ?>
   </section>
+
+  <div class="grid-2">
+    <!-- Proceso de muestreo (paginado, de test_workflow) -->
+    <section class="card">
+      <div class="card-title d-flex justify-content-between align-items-center">
+        <span>Proceso de muestreo</span>
+        <nav aria-label="Pag" class="d-none d-md-block">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item <?= $page<=1?'disabled':'' ?>"><a class="page-link" href="?page=1">&laquo;</a></li>
+            <li class="page-item <?= $page<=1?'disabled':'' ?>"><a class="page-link" href="?page=<?= max(1,$page-1) ?>">&lsaquo;</a></li>
+            <li class="page-item disabled"><span class="page-link"><?= $page ?> / <?= $totalPages ?></span></li>
+            <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>"><a class="page-link" href="?page=<?= min($totalPages,$page+1) ?>">&rsaquo;</a></li>
+            <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>"><a class="page-link" href="?page=<?= $totalPages ?>">&raquo;</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Sample ID</th>
+              <th>#</th>
+              <th>Ensayo</th>
+              <th>Estado</th>
+              <th>Desde</th>
+              <th>Por</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (empty($WF)): ?>
+              <tr><td colspan="7" class="text-center text-muted">No hay datos.</td></tr>
+            <?php else: foreach ($WF as $r):
+              $sla = sla_for_local($r['Status']); $alert = ((int)$r['Dwell_Hours'] >= $sla); ?>
+              <tr>
+                <td><?= h($r['Sample_ID']) ?></td>
+                <td><?= h($r['Sample_Number'] ?? '') ?></td>
+                <td><span class="pill"><?= h($r['Test_Type']) ?></span></td>
+                <td><span class="badge bg-<?= status_badge($r['Status']) ?>"><?= h($r['Status']) ?></span></td>
+                <td><?= h($r['Process_Started']) ?></td>
+                
+               <td><?= h($r['Techs'] !== '' ? $r['Techs'] : ($r['Updated_By'] ?? '—')) ?></td>
+
+              </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Pendientes por ensayo (SOLO CONTEO, 3M, del bloque paginado de requisiciones) -->
+    <section class="card">
+      <div class="card-title">Conteo de Ensayos Pendientes</div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>Ensayo</th><th>Cantidad</th></tr>
+          </thead>
+          <tbody>
+            <?php if (empty($pendingByType)): ?>
+              <tr><td colspan="2" class="text-muted">✅ Sin pendientes en esta página (3M).</td></tr>
+            <?php else: foreach ($pendingByType as $tt => $cnt): ?>
+              <tr>
+                <td><code><?= h($tt) ?></code></td>
+                <td><b><?= (int)$cnt ?></b></td>
+              </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid-2">
+    <!-- Repetición (últimos 7 días) -->
+    <section class="card">
+      <div class="card-title">Muestras en repetición <span class="text-muted">| Últimos 7 días</span></div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>Sample ID</th><th>#</th><th>Test</th><th>Fecha</th><th>Enviado por</th></tr>
+          </thead>
+          <tbody>
+            <?php if (empty($repeatRows)): ?>
+              <tr><td colspan="5" class="text-center text-muted">No hay ensayos en repetición recientes.</td></tr>
+            <?php else: foreach ($repeatRows as $r): ?>
+              <tr>
+                <td><?= h($r['Sample_ID']) ?></td>
+                <td><?= h($r['Sample_Number']) ?></td>
+                <td><span class="pill"><?= h($r['Test_Type']) ?></span></td>
+                <td><?= h(date('Y-m-d', strtotime((string)$r['SD']))) ?></td>
+                <td><?= h($r['Send_By']) ?></td>
+              </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Proctor (SP) -->
+    <section class="card">
+      <div class="card-title">Método para Compactación <span class="text-muted">| Últimos 31 días</span></div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>Muestra</th><th>Método</th><th>Comentario</th></tr>
+          </thead>
+          <tbody>
+            <?php if (empty($spRows)): ?>
+              <tr><td colspan="3" class="text-center text-muted">Sin muestras SP pendientes o sin granulometría.</td></tr>
+            <?php else: foreach ($spRows as $r): ?>
+              <tr>
+                <td><?= h($r['sid'].'-'.$r['num'].'-SP') ?></td>
+                <td><?= h($r['met']) ?></td>
+                <td><?= h($r['note']) ?></td>
+              </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 </main>
+
+<style>
+  .kpi-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom:12px; }
+  .kpi { background:#fff; border:1px solid #eee; border-radius:14px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .kpi .kpi-title{ font-size:12px; color:#666; }
+  .kpi .kpi-val{ font-size:28px; font-weight:700; }
+  .kpi .kpi-sub{ font-size:11px; color:#64748b; margin-top:4px; }
+  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+  .card{ background:#fff; border:1px solid #eee; border-radius:14px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); margin-bottom:12px; }
+  .card-title{ font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .table-wrap{ overflow:auto; }
+  .tbl{ width:100%; border-collapse:collapse; }
+  .tbl th, .tbl td{ border:1px solid #eee; padding:6px 8px; font-size:13px; }
+  .tbl th{ background:#f8fafc; text-align:left; }
+  .pill{ display:inline-block; padding:2px 8px; border:1px solid #e5e7eb; border-radius:999px; font-size:11px; background:#f8fafc; }
+  @media (max-width: 1200px){ .kpi-grid{ grid-template-columns: repeat(3, 1fr);} .grid-2{grid-template-columns:1fr;} }
+</style>
+
 <?php include_once('../components/footer.php'); ?>

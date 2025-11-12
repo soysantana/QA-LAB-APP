@@ -110,14 +110,21 @@ $MENU = [
   // Dashboard
   ['type' => 'item', 'href' => '/pages/home.php', 'label' => 'Panel Control', 'icon' => 'bi-grid', 'patterns' => ['/pages/home.php']],
 
+  
+
   // Seguimiento de muestras (grupo)
-  ['type' => 'group', 'id' => 'Tracking-nav', 'label' => 'Seguimiento de muestras', 'icon' => 'bi-eye', 'items' => [
-    ['href' => '/pages/test-preparation.php',   'label' => 'Ensayos en preparación',  'icon' => 'bi-circle', 'patterns' => ['/pages/test-preparation.php']],
-    ['href' => '/pages/test-realization.php',   'label' => 'Ensayos en realización',  'icon' => 'bi-circle', 'patterns' => ['/pages/test-realization.php']],
-    ['href' => '/pages/test-delivery.php',      'label' => 'Ensayos en entrega',      'icon' => 'bi-circle', 'patterns' => ['/pages/test-delivery.php']],
-    ['href' => '/pages/test-repeat.php',        'label' => 'Ensayos en repetición',   'icon' => 'bi-circle', 'patterns' => ['/pages/test-repeat.php']],
-    ['href' => '/pages/test-review.php',        'label' => 'Ensayos en revisión',     'icon' => 'bi-circle', 'patterns' => ['/pages/test-review.php']],
-  ]],
+['type' => 'group', 'id' => 'Tracking-nav', 'label' => 'Seguimiento de muestras', 'icon' => 'bi-eye', 'items' => [
+  // === NUEVO: Tablero Kanban ===
+  ['href' => '/pages/kanban_muestras.php',
+   'label' => 'Procesos de Ensayos',
+   'icon' => 'bi-kanban', // si no tienes este ícono, usa 'bi-columns-gap'
+   'patterns' => ['/pages/kanban_muestras.php']
+  ],
+
+  ['href' => '/pages/test-repeat.php',      'label' => 'Ensayos en repetición',  'icon' => 'bi-circle', 'patterns' => ['/pages/test-repeat.php']],
+  ['href' => '/pages/test-review.php',      'label' => 'Ensayos en revisión',    'icon' => 'bi-circle', 'patterns' => ['/pages/test-review.php']],
+]],
+
 
   // Inventarios, Bandejas, Hojas
   ['type' => 'item', 'href' => '/components/menu_inventarios.php',  'label' => 'Inventarios',          'icon' => 'bi-box',            'patterns' => ['/components/menu_inventarios.php']],
