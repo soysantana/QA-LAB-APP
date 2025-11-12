@@ -23,3 +23,6 @@ app/
 
 # Ignorar el archivo 'composer.phar'
 composer.phar
+
+# Ignorar archivos sql
+*.sql
