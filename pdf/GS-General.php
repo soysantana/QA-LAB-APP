@@ -379,7 +379,7 @@ $pdf->Cell(19, 6, $Search['Cu'], 0, 1, 'C');
 
 // Comments the laboratory
 $pdf->SetXY(41, 180);
-$pdf->MultiCell(107, 4, $Search['Comments'], 0, 'L');
+$pdf->MultiCell(107, 4, utf8_decode($Search['Comments']), 0, 'L');
 
 // Classification as per ASTM-D2487
 $pdf->SetXY(285, 358);

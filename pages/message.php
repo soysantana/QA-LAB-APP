@@ -45,6 +45,7 @@ function route_for_test_type(string $rawType): ?string
     'SG' => '../reviews/specific-gravity.php',
     'SG_COARSE' => '../reviews/specific-gravity-coarse-aggregates.php',
     'SG_FINE' => '../reviews/specific-gravity-fine-aggregate.php',
+    'SCT' => '../reviews/sand-castle-test.php',
 
     'GS' => '../reviews/grain-size.php',
     'GS_FF' => '../reviews/grain-size-fine-filter.php',

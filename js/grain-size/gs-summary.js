@@ -90,12 +90,16 @@ function calcularParametrosGranulometricos(datos) {
   const fines = sieveNo200;
 
   // Clasificar el suelo
-  const clasificacion = clasificarSuelo(gravel, sand, fines, Cu, Cc);
+  const LL = parseFloat(document.getElementById("LiquidLimit")?.value) || null;
+  const IP = parseFloat(document.getElementById("PlasticityIndex")?.value) || null;
+
+  const clasificacion = clasificarSuelo(gravel, sand, fines, Cu, Cc, LL, IP);
 
   // Asignar los valores a los inputs
   document.getElementById("ClassificationUSCS1")?.setAttribute("value", clasificacion.description);
   document.getElementById("ClassificationUSCS2")?.setAttribute("value", clasificacion.code);
 
+  document.getElementById("Classification1")?.setAttribute("value", `${clasificacion.code} - ${clasificacion.description}`);
 
   document.getElementById("CoarserGravel").value = !isNaN(CoarserGravel) ? CoarserGravel.toFixed(2) : "";
   document.getElementById("Gravel").value = !isNaN(gravel) ? gravel.toFixed(2) : "";

@@ -83,6 +83,7 @@
           'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
           'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php',
           'SP' => '../reviews/standard-proctor.php',
+          'SCT' => '../reviews/sand-castle-test.php',
           'UCS' => '../reviews/unixial-compressive.php',
         ];
 

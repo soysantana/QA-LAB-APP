@@ -1,8 +1,101 @@
-function clasificarSuelo(gravel, sand, fines, Cu, Cc) {
+function clasificarSuelo(gravel, sand, fines, Cu, Cc, LL = null, IP = null) {
     let code = "";
     let description = "";
 
-    if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
+    if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) < 30 && (100 - fines) < 15) {
+        code = "CL";
+        description = "Lean Clay";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29 && sand >= gravel)) {
+        code = "CL";
+        description = "Lean Clay with sand";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29 && sand < gravel)) {
+        code = "CL";
+        description = "Lean Clay with gravel";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) >= 30 && sand >= gravel && gravel < 15) {
+        code = "CL";
+        description = "Sandy Lean Clay";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) >= 30 && sand >= gravel && gravel >= 15) {
+        code = "CL";
+        description = "Sandy Lean Clay with gravel";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) >= 30 && sand < gravel && sand < 15) {
+        code = "CL";
+        description = "Gravely Lean Clay";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP > 7) && (100 - fines) >= 30 && sand < gravel && sand >= 15) {
+        code = "CL";
+        description = "Gravely Lean Clay with sand";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) < 30 && (100 - fines) < 15) {
+        code = "CL-ML";
+        description = "Silty Clay";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand >= gravel) {
+        code = "CL-ML";
+        description = "Silty Clay with sand";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand < gravel) {
+        code = "CL-ML";
+        description = "Silty Clay with gravel";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) >= 30 && sand >= gravel) {
+        code = "CL-ML";
+        description = "Sandy Silty Clay";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) >= 30 && sand >= gravel && gravel < 15) {
+        code = "CL-ML";
+        description = "Sandy Silty Clay with gravel";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) >= 30 && sand < gravel && sand < 5) {
+        code = "CL-ML";
+        description = "Gravely Silty Clay";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) <= IP) && IP <= 7 && IP >= 4) && (100 - fines) >= 30 && sand < gravel && sand < 15) {
+        code = "CL-ML";
+        description = "Gravely Silty Clay with sand";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) < 30 && (100 - fines) < 15) {
+        code = "ML";
+        description = "Silt";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand >= gravel) {
+        code = "ML";
+        description = "Silt with sand";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand < gravel) {
+        code = "ML";
+        description = "Silt with gravel";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) >= 30 && sand >= gravel && gravel < 15) {
+        code = "ML";
+        description = "Sandy Silt";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) >= 30 && sand >= gravel && gravel >= 15) {
+        code = "ML";
+        description = "Sandy Silt with gravel";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) >= 30 && sand < gravel && sand < 15) {
+        code = "ML";
+        description = "Gravely Silt";
+    } else if (fines >= 50 && LL < 50 && ((0.73 * (LL - 20) > IP) || IP < 4) && (100 - fines) >= 30 && sand < gravel && sand >= 15) {
+        code = "ML";
+        description = "Gravely Silt with sand";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && (100 - fines) < 15) {
+        code = "CH";
+        description = "Fat Clay";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand >= gravel) {
+        code = "CH";
+        description = "Fat Clay with sand";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand < gravel) {
+        code = "CH";
+        description = "Fat Clay with gravel";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) >= 30 && sand >= gravel && gravel < 15) {
+        code = "CH";
+        description = "Sandy Fat Clay";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) >= 30 && sand >= gravel && gravel >= 15) {
+        code = "CH";
+        description = "Sandy Fat Clay with gravel";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) >= 30 && sand < gravel && sand < 15) {
+        code = "CH";
+        description = "Gravelly Fat Clay";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) >= 30 && sand < gravel && sand >= 15) {
+        code = "CH";
+        description = "Gravelly Fat Clay with sand";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) > IP) && (100 - fines) < 30 && (100 - fines) < 15) {
+        code = "MH";
+        description = "Elastic Silt";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) > IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand >= gravel) {
+        code = "MH";
+        description = "Elastic Silt with sand";
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) > IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand < gravel) {
+        code = "MH";
+        description = "Elastic Silt with gravel";
+    } else if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 1 && Cc <= 3 && sand < 15) {
         code = "GW";
         description = "Well graded gravel";
     } else if (gravel > sand && fines < 5 && Cu >= 4 && Cc >= 0.5 && Cc <= 3 && sand >= 15) {

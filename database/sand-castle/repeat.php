@@ -6,7 +6,7 @@ if (isset($_POST["repeat"])) {
 
     if (!empty($Search)) {
         $search_data = find_by_sql(
-            "SELECT * FROM soundness WHERE id = '{$Search}' LIMIT 1"
+            "SELECT * FROM sand_castle_test WHERE id = '{$Search}' LIMIT 1"
         );
 
         if ($search_data) {
@@ -53,7 +53,7 @@ if (isset($_POST["repeat"])) {
                 }
             } else {
                 $session->msg("w", "Ya existe un registro");
-                redirect("/reviews/soundness.php?id=" . $Search, false);
+                redirect("/reviews/sand-castle-test.php?id=" . $Search, false);
             }
         } else {
         }
