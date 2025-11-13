@@ -29,7 +29,11 @@ function exists_in(string $table, string $sid, string $num, string $tt): bool {
   $sidE = $db->escape($sid);
   $numE = $db->escape($num);
   $ttE  = $db->escape($tt);
-  $sql  = "SELECT 1 FROM `{$table}` WHERE Sample_ID='{$sidE}' AND Sample_Number='{$numE}' AND UPPER(TRIM(Test_Type))='{$ttE}' LIMIT 1";
+  $sql  = "SELECT 1 FROM `{$table}` 
+           WHERE Sample_ID='{$sidE}' 
+             AND Sample_Number='{$numE}' 
+             AND UPPER(TRIM(Test_Type))='{$ttE}' 
+           LIMIT 1";
   $res  = $db->query($sql);
   return $res && $res->num_rows>0;
 }
@@ -69,10 +73,10 @@ function try_fetch_triplet(string $table, array $map, string $sid, string $num):
   if (!$rows) return null;
   $r = $rows[0];
   return [
-    'src'=>$table,
-    't34'=>(float)($r['t34']??0),
-    't38'=>(float)($r['t38']??0),
-    'tNo4'=>(float)($r['tNo4']??0),
+    'src'  => $table,
+    't34'  => (float)($r['t34']??0),
+    't38'  => (float)($r['t38']??0),
+    'tNo4' => (float)($r['tNo4']??0),
   ];
 }
 
@@ -87,7 +91,7 @@ $FROM_31 = date('Y-m-d', strtotime('-31 days'));   // Proctor 31 días
    KPIs simples
    - Registrado: SOLO últimos 3 meses (test_workflow)
    - Preparación / Realización / Entrega: conteo total actual (test_workflow)
-   - Revisado:  ⚠️ desde test_reviewed (DISTINCT por SID|NUM|TT)
+   - Revisado: DISTINCT por SID|NUM|TT en test_reviewed, semana actual
    ============================== */
 $kpiStates = ['Registrado','Preparación','Realización','Entrega','Revisado'];
 $kpis = array_fill_keys($kpiStates, 0);
@@ -113,7 +117,7 @@ foreach ($grp as $r) {
   if (isset($kpis[$s])) $kpis[$s] = (int)$r['c'];
 }
 
-// Revisado: contar DISTINCT triples en test_reviewed
+// Revisado: contar DISTINCT triples en test_reviewed (semana ISO actual)
 $rowRev = find_by_sql("
   SELECT COUNT(DISTINCT CONCAT(
     COALESCE(Sample_ID,''),'|',
@@ -125,13 +129,11 @@ $rowRev = find_by_sql("
 ");
 $kpis['Revisado'] = (int)($rowRev[0]['c'] ?? 0);
 
-
-
 /* ==============================
    Paginación — Workflow (proceso de muestreo)
    ============================== */
 $PAGE_SIZE = 12;
-$page = max(1, (int)($_GET['page'] ?? 1));
+$page   = max(1, (int)($_GET['page'] ?? 1));
 $offset = ($page - 1) * $PAGE_SIZE;
 
 // Conteo total en workflow (para la tabla de proceso)
@@ -152,11 +154,7 @@ $WF = find_by_sql("
     TIMESTAMPDIFF(HOUR, w.Process_Started, NOW()) AS Dwell_Hours,
     COALESCE(agg.techs, '') AS Techs
   FROM test_workflow AS w
-  /* Técnicos involucrados en el estado actual del proceso:
-     - Tomamos todas las actividades (test_activity) del mismo test_id
-     - Solo las que apuntan al estado actual (To_Status = w.Status)
-     - Agrupamos y deduplicamos técnicos desde test_activity_technician
-  */
+  /* Técnicos involucrados en el estado actual del proceso */
   LEFT JOIN (
     SELECT
       a.test_id,
@@ -171,7 +169,6 @@ $WF = find_by_sql("
   ORDER BY w.Updated_At DESC
   LIMIT {$PAGE_SIZE} OFFSET {$offset}
 ");
-
 
 // SLA (solo referencia visual)
 $SLA = ['Registrado'=>24,'Preparación'=>48,'Realización'=>72,'Entrega'=>24,'Revisado'=>24];
@@ -191,15 +188,15 @@ $Requisitions = find_by_sql("
 
 // Pendientes por ensayo (solo conteo) — EXACTO a tu regla:
 // pendiente = (registrado en últimos 3 meses) Y (NO en Preparación, NO en Realización, NO en Entrega)
-// *Se IGNORA si está en Review o Repeat*
 $pendingByType = [];
 $seen = [];
 foreach ($Requisitions as $req) {
   if (empty($req['Test_Type'])) continue;
-  $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
+  $sid = $req['Sample_ID']; 
+  $num = $req['Sample_Number'];
   $types = array_filter(array_map('trim', explode(',', (string)$req['Test_Type'])));
   foreach ($types as $ttRaw) {
-    $tt = N($ttRaw);
+    $tt  = N($ttRaw);
     $key = K($sid,$num,$tt);
     if (isset($seen[$key])) continue; // evitar duplicados en la página
     $seen[$key] = true;
@@ -241,7 +238,8 @@ $ReqSP = find_by_sql("
 ");
 $spRows = [];
 foreach ($ReqSP as $req) {
-  $sid = $req['Sample_ID']; $num = $req['Sample_Number'];
+  $sid = $req['Sample_ID']; 
+  $num = $req['Sample_Number'];
   $types = array_filter(array_map('trim', explode(',', (string)$req['Test_Type'])));
   $hasSP = false;
   foreach ($types as $t) { if (N($t)==='SP'){ $hasSP=true; break; } }
@@ -269,7 +267,9 @@ foreach ($ReqSP as $req) {
               ['t34'=>'CumRet8','t38'=>'CumRet10','tNo4'=>'CumRet11'],$sid,$num);
 
   if ($triplet) {
-    $T3p4 = $triplet['t34']; $T3p8 = $triplet['t38']; $TNo4 = $triplet['tNo4'];
+    $T3p4 = $triplet['t34']; 
+    $T3p8 = $triplet['t38']; 
+    $TNo4 = $triplet['tNo4'];
     if     ($T3p4 > 0)                             $metodo = 'C';
     elseif ($T3p8 > 0 && $T3p4 == 0)               $metodo = 'B';
     elseif ($TNo4 > 0 && $T3p4 == 0 && $T3p8 == 0) $metodo = 'A';
@@ -277,7 +277,12 @@ foreach ($ReqSP as $req) {
     $corr = ($T3p4 > 5) ? 'Corrección por Sobre Tamaño (hacer SG finas y gruesas)' : '';
     $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>$metodo,'note'=>$corr];
   } else {
-    $spRows[] = ['sid'=>$sid,'num'=>$num,'met'=>'No data','note'=>'Sin granulometría válida o columnas/tabla no existen'];
+    $spRows[] = [
+      'sid'=>$sid,
+      'num'=>$num,
+      'met'=>'No data',
+      'note'=>'Sin granulometría válida o columnas/tabla no existen'
+    ];
   }
 }
 ?>
@@ -300,11 +305,16 @@ foreach ($ReqSP as $req) {
       <div class="kpi">
         <div class="kpi-title"><?= h($st) ?></div>
         <div class="kpi-val"><?= (int)$kpis[$st] ?></div>
-        <?php if ($st==='Registrado'): ?><div class="kpi-sub">últ. 3 meses</div><?php endif; ?>
+        <?php if ($st==='Registrado'): ?>
+          <div class="kpi-sub">últ. 3 meses</div>
+        <?php elseif ($st==='Revisado'): ?>
+          <div class="kpi-sub">semana actual</div>
+        <?php endif; ?>
       </div>
     <?php endforeach; ?>
   </section>
 
+  <!-- Grid principal: Proceso + Conteo pendientes -->
   <div class="grid-2">
     <!-- Proceso de muestreo (paginado, de test_workflow) -->
     <section class="card">
@@ -312,11 +322,21 @@ foreach ($ReqSP as $req) {
         <span>Proceso de muestreo</span>
         <nav aria-label="Pag" class="d-none d-md-block">
           <ul class="pagination pagination-sm mb-0">
-            <li class="page-item <?= $page<=1?'disabled':'' ?>"><a class="page-link" href="?page=1">&laquo;</a></li>
-            <li class="page-item <?= $page<=1?'disabled':'' ?>"><a class="page-link" href="?page=<?= max(1,$page-1) ?>">&lsaquo;</a></li>
-            <li class="page-item disabled"><span class="page-link"><?= $page ?> / <?= $totalPages ?></span></li>
-            <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>"><a class="page-link" href="?page=<?= min($totalPages,$page+1) ?>">&rsaquo;</a></li>
-            <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>"><a class="page-link" href="?page=<?= $totalPages ?>">&raquo;</a></li>
+            <li class="page-item <?= $page<=1?'disabled':'' ?>">
+              <a class="page-link" href="?page=1">&laquo;</a>
+            </li>
+            <li class="page-item <?= $page<=1?'disabled':'' ?>">
+              <a class="page-link" href="?page=<?= max(1,$page-1) ?>">&lsaquo;</a>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link"><?= $page ?> / <?= $totalPages ?></span>
+            </li>
+            <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>">
+              <a class="page-link" href="?page=<?= min($totalPages,$page+1) ?>">&rsaquo;</a>
+            </li>
+            <li class="page-item <?= $page>=$totalPages?'disabled':'' ?>">
+              <a class="page-link" href="?page=<?= $totalPages ?>">&raquo;</a>
+            </li>
           </ul>
         </nav>
       </div>
@@ -334,18 +354,21 @@ foreach ($ReqSP as $req) {
           </thead>
           <tbody>
             <?php if (empty($WF)): ?>
-              <tr><td colspan="7" class="text-center text-muted">No hay datos.</td></tr>
+              <tr><td colspan="6" class="text-center text-muted">No hay datos.</td></tr>
             <?php else: foreach ($WF as $r):
-              $sla = sla_for_local($r['Status']); $alert = ((int)$r['Dwell_Hours'] >= $sla); ?>
+              $sla   = sla_for_local($r['Status']); 
+              $alert = ((int)$r['Dwell_Hours'] >= $sla); ?>
               <tr>
                 <td><?= h($r['Sample_ID']) ?></td>
                 <td><?= h($r['Sample_Number'] ?? '') ?></td>
                 <td><span class="pill"><?= h($r['Test_Type']) ?></span></td>
-                <td><span class="badge bg-<?= status_badge($r['Status']) ?>"><?= h($r['Status']) ?></span></td>
+                <td>
+                  <span class="badge bg-<?= status_badge($r['Status']) ?>">
+                    <?= h($r['Status']) ?>
+                  </span>
+                </td>
                 <td><?= h($r['Process_Started']) ?></td>
-                
-               <td><?= h($r['Techs'] !== '' ? $r['Techs'] : ($r['Updated_By'] ?? '—')) ?></td>
-
+                <td><?= h($r['Techs'] !== '' ? $r['Techs'] : ($r['Updated_By'] ?? '—')) ?></td>
               </tr>
             <?php endforeach; endif; ?>
           </tbody>
@@ -353,41 +376,88 @@ foreach ($ReqSP as $req) {
       </div>
     </section>
 
-    <!-- Pendientes por ensayo (SOLO CONTEO, 3M, del bloque paginado de requisiciones) -->
-    <section class="card">
-      <div class="card-title">Conteo de Ensayos Pendientes</div>
-      <div class="table-wrap">
-        <table class="tbl">
-          <thead>
-            <tr><th>Ensayo</th><th>Cantidad</th></tr>
-          </thead>
-          <tbody>
-            <?php if (empty($pendingByType)): ?>
-              <tr><td colspan="2" class="text-muted">✅ Sin pendientes en esta página (3M).</td></tr>
-            <?php else: foreach ($pendingByType as $tt => $cnt): ?>
+    <!-- Pendientes por ensayo (SOLO CONTEO, 3M) -->
+    <section class="card card-metric">
+      <div class="card-metric-header">
+        <div>
+          <div class="card-metric-eyebrow"></div>
+          <h2 class="card-metric-title">Conteo por tipo de ensayo pendientes</h2>
+        </div>
+        <div class="card-metric-chip">
+          <?= count($pendingByType) ?> tipo<?= count($pendingByType) === 1 ? '' : 's' ?>
+        </div>
+      </div>
+
+      <div class="card-metric-body">
+        <p class="text-muted small mb-3">
+        
+        </p>
+
+        <div class="table-wrap-tight">
+          <table class="tbl tbl-modern">
+            <thead>
               <tr>
-                <td><code><?= h($tt) ?></code></td>
-                <td><b><?= (int)$cnt ?></b></td>
+                <th>Ensayo</th>
+                <th class="text-right">Pendientes</th>
+                
               </tr>
-            <?php endforeach; endif; ?>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <?php if (empty($pendingByType)): ?>
+                <tr>
+                  <td colspan="3" class="text-center py-3">
+                    <span class="empty-icon">✅</span>
+                    <div class="empty-title">Sin ensayos pendientes</div>
+                    <div class="empty-subtitle">No hay ensayos pendientes en esta ventana.</div>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($pendingByType as $t => $count): ?>
+                  <tr>
+                    <td>
+                      <span class="pill">
+                        <code><?= h($t) ?></code>
+                      </span>
+                    </td>
+                    <td class="text-right">
+                      <span class="badge-count"><?= (int)$count ?></span>
+                    </td>
+                   
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>
 
+  <!-- Grid secundario: Repetición y Proctor -->
   <div class="grid-2">
     <!-- Repetición (últimos 7 días) -->
     <section class="card">
-      <div class="card-title">Muestras en repetición <span class="text-muted">| Últimos 7 días</span></div>
+      <div class="card-title">
+        Muestras en repetición <span class="text-muted">| Últimos 7 días</span>
+      </div>
       <div class="table-wrap">
         <table class="tbl">
           <thead>
-            <tr><th>Sample ID</th><th>#</th><th>Test</th><th>Fecha</th><th>Enviado por</th></tr>
+            <tr>
+              <th>Sample ID</th>
+              <th>#</th>
+              <th>Test</th>
+              <th>Fecha</th>
+              <th>Enviado por</th>
+            </tr>
           </thead>
           <tbody>
             <?php if (empty($repeatRows)): ?>
-              <tr><td colspan="5" class="text-center text-muted">No hay ensayos en repetición recientes.</td></tr>
+              <tr>
+                <td colspan="5" class="text-center text-muted">
+                  No hay ensayos en repetición recientes.
+                </td>
+              </tr>
             <?php else: foreach ($repeatRows as $r): ?>
               <tr>
                 <td><?= h($r['Sample_ID']) ?></td>
@@ -404,15 +474,25 @@ foreach ($ReqSP as $req) {
 
     <!-- Proctor (SP) -->
     <section class="card">
-      <div class="card-title">Método para Compactación <span class="text-muted">| Últimos 31 días</span></div>
+      <div class="card-title">
+        Método para Compactación <span class="text-muted">| Últimos 31 días</span>
+      </div>
       <div class="table-wrap">
         <table class="tbl">
           <thead>
-            <tr><th>Muestra</th><th>Método</th><th>Comentario</th></tr>
+            <tr>
+              <th>Muestra</th>
+              <th>Método</th>
+              <th>Comentario</th>
+            </tr>
           </thead>
           <tbody>
             <?php if (empty($spRows)): ?>
-              <tr><td colspan="3" class="text-center text-muted">Sin muestras SP pendientes o sin granulometría.</td></tr>
+              <tr>
+                <td colspan="3" class="text-center text-muted">
+                  Sin muestras SP pendientes o sin granulometría.
+                </td>
+              </tr>
             <?php else: foreach ($spRows as $r): ?>
               <tr>
                 <td><?= h($r['sid'].'-'.$r['num'].'-SP') ?></td>
@@ -428,21 +508,161 @@ foreach ($ReqSP as $req) {
 </main>
 
 <style>
-  .kpi-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom:12px; }
-  .kpi { background:#fff; border:1px solid #eee; border-radius:14px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .kpi {
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:14px;
+    padding:12px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
   .kpi .kpi-title{ font-size:12px; color:#666; }
   .kpi .kpi-val{ font-size:28px; font-weight:700; }
   .kpi .kpi-sub{ font-size:11px; color:#64748b; margin-top:4px; }
-  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-  .card{ background:#fff; border:1px solid #eee; border-radius:14px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); margin-bottom:12px; }
-  .card-title{ font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+
+  .grid-2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:14px;
+    padding:12px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .card-title{
+    font-weight:600;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
   .table-wrap{ overflow:auto; }
   .tbl{ width:100%; border-collapse:collapse; }
-  .tbl th, .tbl td{ border:1px solid #eee; padding:6px 8px; font-size:13px; }
+  .tbl th, .tbl td{
+    border:1px solid #eee;
+    padding:6px 8px;
+    font-size:13px;
+  }
   .tbl th{ background:#f8fafc; text-align:left; }
-  .pill{ display:inline-block; padding:2px 8px; border:1px solid #e5e7eb; border-radius:999px; font-size:11px; background:#f8fafc; }
-  @media (max-width: 1200px){ .kpi-grid{ grid-template-columns: repeat(3, 1fr);} .grid-2{grid-template-columns:1fr;} }
-  
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    padding:0.15rem 0.5rem;
+    border-radius:999px;
+    font-size:0.78rem;
+    background:#f1f5f9;
+    color:#0f172a;
+    border:1px solid #e5e7eb;
+  }
+
+  @media (max-width: 1200px){
+    .kpi-grid{ grid-template-columns: repeat(3, 1fr);}
+    .grid-2{ grid-template-columns:1fr; }
+  }
+
+  /* Estilos de la card-metric y tabla moderna */
+  .card-metric {
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #ffffff;
+  }
+  .card-metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .card-metric-eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    margin-bottom: 0.15rem;
+  }
+  .card-metric-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+  }
+  .card-metric-chip {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    white-space: nowrap;
+  }
+  .card-metric-body { margin-top: 0.25rem; }
+
+  .table-wrap-tight {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .tbl-modern {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .tbl-modern thead th {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.4rem 0.25rem;
+  }
+  .tbl-modern tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+  }
+  .tbl-modern tbody td {
+    padding: 0.4rem 0.25rem;
+    vertical-align: middle;
+  }
+
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+
+  .badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.8rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    background: #eefdf4;
+    color: #15803d;
+    font-weight: 600;
+    font-size: 0.78rem;
+  }
+  .empty-icon {
+    font-size: 1.3rem;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  .empty-title {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.9rem;
+  }
+  .empty-subtitle {
+    font-size: 0.78rem;
+    color: #64748b;
+  }
 </style>
 
 <?php include_once('../components/footer.php'); ?>
