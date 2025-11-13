@@ -118,16 +118,34 @@ foreach ($grp as $r) {
 }
 
 // Revisado: contar DISTINCT triples en test_reviewed (semana ISO actual)
-$rowRev = find_by_sql("
-  SELECT COUNT(DISTINCT CONCAT(
-    COALESCE(Sample_ID,''),'|',
-    COALESCE(Sample_Number,''),'|',
-    UPPER(TRIM(COALESCE(Test_Type,'')))
-  )) AS c
-  FROM test_reviewed
-  WHERE YEARWEEK(Reviewed_Date, 1) = YEARWEEK(CURDATE(), 1)
-");
-$kpis['Revisado'] = (int)($rowRev[0]['c'] ?? 0);
+// Revisado: contar DISTINCT triples en test_reviewed (semana actual)
+// Buscamos una columna de fecha válida en test_reviewed
+$revDateCol = pick_date_col('test_reviewed', [
+  'Reviewed_Date',
+  'Review_Date',
+  'Registed_Date',
+  'Register_Date',
+  'Start_Date',
+  'Date',
+  'Updated_At'
+]);
+
+if ($revDateCol) {
+  $rowRev = find_by_sql("
+    SELECT COUNT(DISTINCT CONCAT(
+      COALESCE(Sample_ID,''),'|',
+      COALESCE(Sample_Number,''),'|',
+      UPPER(TRIM(COALESCE(Test_Type,'')))
+    )) AS c
+    FROM test_reviewed
+    WHERE YEARWEEK(`{$revDateCol}`, 1) = YEARWEEK(CURDATE(), 1)
+  ");
+  $kpis['Revisado'] = (int)($rowRev[0]['c'] ?? 0);
+} else {
+  // Si no encontramos columna fecha, asumimos 0 y no rompemos la vista
+  $kpis['Revisado'] = 0;
+}
+
 
 /* ==============================
    Paginación — Workflow (proceso de muestreo)
@@ -422,7 +440,10 @@ foreach ($ReqSP as $req) {
                     <td class="text-right">
                       <span class="badge-count"><?= (int)$count ?></span>
                     </td>
-                   
+                    <td class="text-right">
+                     
+                      </a>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
