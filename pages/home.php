@@ -115,10 +115,16 @@ foreach ($grp as $r) {
 
 // Revisado: contar DISTINCT triples en test_reviewed
 $rowRev = find_by_sql("
-  SELECT COUNT(DISTINCT CONCAT(COALESCE(Sample_ID,''),'|',COALESCE(Sample_Number,''),'|',UPPER(TRIM(COALESCE(Test_Type,''))))) AS c
+  SELECT COUNT(DISTINCT CONCAT(
+    COALESCE(Sample_ID,''),'|',
+    COALESCE(Sample_Number,''),'|',
+    UPPER(TRIM(COALESCE(Test_Type,'')))
+  )) AS c
   FROM test_reviewed
+  WHERE YEARWEEK(Reviewed_Date, 1) = YEARWEEK(CURDATE(), 1)
 ");
 $kpis['Revisado'] = (int)($rowRev[0]['c'] ?? 0);
+
 
 
 /* ==============================
@@ -436,6 +442,7 @@ foreach ($ReqSP as $req) {
   .tbl th{ background:#f8fafc; text-align:left; }
   .pill{ display:inline-block; padding:2px 8px; border:1px solid #e5e7eb; border-radius:999px; font-size:11px; background:#f8fafc; }
   @media (max-width: 1200px){ .kpi-grid{ grid-template-columns: repeat(3, 1fr);} .grid-2{grid-template-columns:1fr;} }
+  
 </style>
 
 <?php include_once('../components/footer.php'); ?>
