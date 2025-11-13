@@ -231,7 +231,7 @@ function render(data) {
       card.draggable = true;
       card.dataset.id = it.id;
 
-      const subList = SUBSTAGES[status] || [];
+      const subList = SUBSTAGES[status] || [];  
       const currentSub = it.Sub_Stage || '';
 
       let subChips = '';
