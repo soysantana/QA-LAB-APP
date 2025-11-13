@@ -1,21 +1,35 @@
 <?php
 declare(strict_types=1);
 require_once('../config/load.php');
-page_require_level(2);
+page_require_level(3);
 include_once('../components/header.php');
 ?>
 <main id="main" class="main">
-  <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
-    <h2 style="margin:0;">Seguimiento de Muestras</h2>
-    <input id="search" type="search" placeholder="Buscar ID / Número / Test"
-           style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid #ddd;">
-    <select id="testFilter" style="padding:8px 10px; border-radius:10px; border:1px solid #ddd;">
-      <option value="">Todos los ensayos</option>
-    </select>
-    <button id="refresh" style="padding:8px 14px; border-radius:10px; border:0; background:#111; color:#fff; cursor:pointer;">
-      Actualizar
-    </button>
-  </div>
+<div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+  <h2 style="margin:0;">Seguimiento de Muestras</h2>
+
+  <input id="search" type="search" placeholder="Buscar ID / Número / Test"
+         style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid #ddd;">
+
+  <select id="testFilter" style="padding:8px 10px; border-radius:10px; border:1px solid #ddd;">
+    <option value="">Todos los ensayos</option>
+  </select>
+
+  <button id="refresh" style="padding:8px 14px; border-radius:10px; border:0; background:#111; color:#fff; cursor:pointer;">
+    Actualizar
+  </button>
+
+  <!-- NUEVO: Exportar Excel -->
+  <button id="exportExcel"
+          style="padding:8px 14px; border-radius:10px; border:0; background:#0a7; color:#fff; cursor:pointer; display:flex; align-items:center; gap:8px;">
+    <!-- icono simple -->
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M5 20h14v-2H5v2zm7-18-5.5 5.5 1.41 1.41L11 6.83V16h2V6.83l3.09 3.08 1.41-1.41L12 2z"/>
+    </svg>
+    Exportar Excel
+  </button>
+</div>
+
 
   <div id="board" class="board-grid">
     <!-- Columnas -->
@@ -285,5 +299,41 @@ $refresh.addEventListener('click', ()=> fetchData().then(render));
 /* ==== Primera carga ==== */
 fetchData().then(render);
 </script>
+<script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+
+    const buildExcelUrl = () => {
+      const params = new URLSearchParams();
+
+      // Filtros de esta vista
+      const q = ($('search')?.value || '').trim();
+      const test = ($('testFilter')?.value || '').trim();
+
+      if (q)    params.set('q', q);
+      if (test) params.set('test', test);
+
+      // Si existen estos filtros en tu página, se agregan:
+      ['anio','mes','cliente','proyecto'].forEach(id => {
+        const el = $(id);
+        if (el && el.value && String(el.value).trim() !== '') {
+          params.set(id, el.value.trim());
+        }
+      });
+
+      // Ruta al exportador (ajústala si lo pusiste en otra carpeta)
+      const base = '../pages/sumary/export_workflow_excel.php';
+      return params.toString() ? `${base}?${params.toString()}` : base;
+    };
+
+    $('exportExcel')?.addEventListener('click', () => {
+      const url = buildExcelUrl();
+      // Abre en nueva pestaña (descarga)
+      window.open(url, '_blank');
+    });
+  })();
+</script>
+
+
 
 <?php include_once('../components/footer.php'); ?>

@@ -27,6 +27,7 @@ $review_essay = !empty($review_essay) ? $review_essay : "collapsed";
 $bandejas = !empty($bandejas) ? $bandejas : "collapsed";
 $hojatrabajos = !empty($hojatrabajos) ? $hojatrabajos : "collapsed";
 $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
+$inventarios = !empty($inventario) ? $inventario : "collapsed";
 ?>
   <!-- ======= Sidebar ======= -->
   <aside id="sidebar" class="sidebar">
@@ -46,18 +47,8 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
         </a>
         <ul id="Tracking-nav" class="nav-content collapse <?php echo $tracking_show; ?>" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="../pages/test-preparation.php" class="<?php echo $preparation; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en preparacion</span>
-            </a>
-          </li>
-          <li>
-            <a href="../pages/test-realization.php" class="<?php echo $realization; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en realizacion</span>
-            </a>
-          </li>
-          <li>
-            <a href="../pages/test-delivery.php" class="<?php echo $delivery; ?>">
-              <i class="bi bi-circle"></i><span>Ensayos en entrega</span>
+            <a href="../pages/kanban_muestras.php" class="<?php echo $preparation; ?>">
+              <i class="bi bi-circle"></i><span>Procesos de Ensayos</span>
             </a>
           </li>
           <li>
@@ -73,11 +64,17 @@ $detallesmuestras = !empty($detallesmuestras) ? $detallesmuestras : "collapsed";
         </ul>
       </li><!-- End Tracking Nav -->
       <li class="nav-item">
+  <a class="nav-link <?php echo $bandejas; ?>" href="../pages/inventario_inalterada.php">
+    <i class="bi-box"></i>
+    <span>Inventario de muestras</span>
+  </a>
+</li><!-- End Bandejas a Botar -->
+      <li class="nav-item">
   <a class="nav-link <?php echo $bandejas; ?>" href="../pages/bandejas_descartar.php">
     <i class="bi bi-trash3"></i>
     <span>Bandejas a Botar</span>
   </a>
-</li><!-- End Bandejas a Botar -->
+</li>
      <li class="nav-item">
   <a class="nav-link <?php echo $hojatrabajos; ?>" href="../components/menu_hojastrabajos.php">
     <i class="bi bi-clipboard-check"></i>
