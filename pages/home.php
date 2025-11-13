@@ -172,21 +172,24 @@ $WF = find_by_sql("
     TIMESTAMPDIFF(HOUR, w.Process_Started, NOW()) AS Dwell_Hours,
     COALESCE(agg.techs, '') AS Techs
   FROM test_workflow AS w
-  /* Técnicos involucrados en el estado actual del proceso */
   LEFT JOIN (
     SELECT
       a.test_id,
-      a.To_Status,
-      GROUP_CONCAT(DISTINCT TRIM(t.Technician) ORDER BY TRIM(t.Technician) SEPARATOR ', ') AS techs
+      GROUP_CONCAT(
+        DISTINCT TRIM(t.Technician)
+        ORDER BY TRIM(t.Technician)
+        SEPARATOR ', '
+      ) AS techs
     FROM test_activity a
     LEFT JOIN test_activity_technician t
       ON t.activity_id = a.id
-    GROUP BY a.test_id, a.To_Status
+    GROUP BY a.test_id
   ) AS agg
-    ON agg.test_id = w.id AND agg.To_Status = w.Status
+    ON agg.test_id = w.id
   ORDER BY w.Updated_At DESC
   LIMIT {$PAGE_SIZE} OFFSET {$offset}
 ");
+
 
 // SLA (solo referencia visual)
 $SLA = ['Registrado'=>24,'Preparación'=>48,'Realización'=>72,'Entrega'=>24,'Revisado'=>24];
@@ -386,7 +389,27 @@ foreach ($ReqSP as $req) {
                   </span>
                 </td>
                 <td><?= h($r['Process_Started']) ?></td>
-                <td><?= h($r['Techs'] !== '' ? $r['Techs'] : ($r['Updated_By'] ?? '—')) ?></td>
+                <td>
+  <?php
+    $names = [];
+
+    // Técnicos desde test_activity_technician (agg.techs)
+    if (!empty($r['Techs'])) {
+      $names[] = $r['Techs']; // ya viene como lista "Laura, Diana..."
+    }
+
+    // Técnico de test_workflow.Updated_By
+    if (!empty($r['Updated_By'])) {
+      // Evitar duplicarlo si ya está en la lista
+      if (empty($r['Techs']) || stripos($r['Techs'], $r['Updated_By']) === false) {
+        $names[] = $r['Updated_By'];
+      }
+    }
+
+    echo h($names ? implode(' | ', $names) : '—');
+  ?>
+</td>
+
               </tr>
             <?php endforeach; endif; ?>
           </tbody>
