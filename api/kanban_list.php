@@ -5,9 +5,7 @@ require_once('../config/load.php');
 header('Content-Type: application/json; charset=utf-8');
 
 /**
- * SLA por estado (horas).
- * Puedes ajustar por tipo de ensayo añadiendo claves por Test_Type:
- *   $SLA['SP'] = ['Preparación'=>72,'Realización'=>96];
+ * SLA por estado (en horas).
  */
 $SLA = [
   'Registrado'  => 24,
@@ -15,10 +13,6 @@ $SLA = [
   'Realización' => 72,
   'Entrega'     => 24,
   'Revisado'    => 24,
-
-  // Ejemplos específicos por ensayo (opcional)
-  // 'SP' => ['Preparación'=>72,'Realización'=>96],
-  // 'HY' => ['Preparación'=>96,'Realización'=>120],
 ];
 
 function slaHours(string $status, string $testType, array $SLA): int {
@@ -39,45 +33,67 @@ try {
   }
   if ($test !== '') {
     $testEsc = $db->escape($test);
-    $where[] = "Test_Type = '{$testEsc}'";
+    $where[] = "UPPER(TRIM(Test_Type)) = UPPER('{$testEsc}')";
   }
   $whereSql = $where ? ('WHERE '.implode(' AND ', $where)) : '';
 
-  $sql = "SELECT id, Sample_ID, Sample_Number, Test_Type, Status, Process_Started, Updated_At, Updated_By
-          FROM test_workflow
-          {$whereSql}
-          ORDER BY FIELD(Status,'Registrado','Preparación','Realización','Entrega'), Updated_At DESC";
+  $sql = "
+    SELECT
+      id,
+      Sample_ID,
+      Sample_Number,
+      UPPER(TRIM(Test_Type)) AS Test_Type,
+      TRIM(Status) AS Status,
+      sub_stage,
+      Process_Started,
+      Updated_At,
+      Updated_By
+    FROM test_workflow
+    {$whereSql}
+    ORDER BY FIELD(Status,'Registrado','Preparación','Realización','Entrega','Revisado'),
+             Updated_At DESC
+  ";
 
   $rs = $db->query($sql);
 
   $by = [
-    'Registrado'=>[], 'Preparación'=>[], 'Realización'=>[], 'Entrega'=>[], 'Revisado'=>[]
+    'Registrado'  => [],
+    'Preparación' => [],
+    'Realización' => [],
+    'Entrega'     => [],
+    'Revisado'    => [],
   ];
+
   $now = new DateTime('now');
 
   while ($r = $db->fetch_assoc($rs)) {
+    $status = $r['Status'];
+    if (!isset($by[$status])) {
+      $status = 'Registrado';
+    }
+
     $started = $r['Process_Started'] ? new DateTime($r['Process_Started']) : clone $now;
     $diffH   = max(0, (int)floor(($now->getTimestamp() - $started->getTimestamp()) / 3600));
-    $limitH  = slaHours($r['Status'], $r['Test_Type'], $SLA);
+    $limitH  = slaHours($status, $r['Test_Type'], $SLA);
     $alert   = $diffH >= $limitH;
 
-    $by[$r['Status']][] = [
+    $by[$status][] = [
       'id'            => $r['id'],
       'Sample_ID'     => $r['Sample_ID'],
       'Sample_Number' => $r['Sample_Number'],
       'Test_Type'     => $r['Test_Type'],
-      'Status'        => $r['Status'],
+      'Status'        => $status,
+      'Sub_Stage'     => $r['sub_stage'],
       'Since'         => $r['Process_Started'],
       'Updated_By'    => $r['Updated_By'],
       'Dwell_Hours'   => $diffH,
       'SLA_Hours'     => $limitH,
-      'Alert'         => $alert
+      'Alert'         => $alert,
     ];
   }
 
-  echo json_encode(['ok'=>true, 'data'=>$by], JSON_UNESCAPED_UNICODE);
+  echo json_encode(['ok' => true, 'data' => $by], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
   http_response_code(500);
-  echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]);
+  echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 }
-

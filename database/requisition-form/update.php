@@ -1,5 +1,6 @@
 <?php
 $OldPackageID = $_POST['OldPackageID'] ?? '';
+$user = current_user();
 
 if (isset($_POST['update-requisition'])) {
     if (empty($errors)) {
@@ -7,7 +8,7 @@ if (isset($_POST['update-requisition'])) {
         $Client         = $db->escape($_POST['Client']);
         $ProjectNumber  = $db->escape($_POST['ProjectNumber']);
         $PackageID      = $db->escape($_POST['PackageID']);
-        $OldPackageID      = $db->escape($_POST['OldPackageID']);
+        $OldPackageID   = $db->escape($_POST['OldPackageID']);
         $Structure      = $db->escape($_POST['Structure']);
         $CollectionDate = $db->escape($_POST['CollectionDate']);
         $Cviaje         = $db->escape($_POST['Cviaje']);
@@ -17,6 +18,7 @@ if (isset($_POST['update-requisition'])) {
 
         $totalAffected = 0;
 
+        // === 1) Actualizar datos generales del paquete ===
         if (!empty($OldPackageID)) {
             $generalUpdate = "
                 UPDATE lab_test_requisition_form SET
@@ -36,6 +38,7 @@ if (isset($_POST['update-requisition'])) {
             $totalAffected += $db->affected_rows();
         }
 
+        // === 2) Actualizar muestras individuales + Test_Type ===
         if (!empty($OldPackageID)) {
             $i = 0;
             while (isset($_POST["SampleNumber_{$i}"])) {
@@ -55,43 +58,62 @@ if (isset($_POST['update-requisition'])) {
                 $Elev             = $db->escape($_POST["Elev_{$i}"] ?? '');
                 $TestTypeArr      = $_POST["TestType_{$i}"] ?? [];
                 $TestType         = implode(',', $TestTypeArr);
+
+                // --- 2A) Actualizar la requisición ---
                 $query = "
-            UPDATE lab_test_requisition_form SET
-                Sample_ID     = '{$SampleName}',
-                Sample_Number = '{$SampleNumber}',
-                Area          = '{$Area}',
-                Source        = '{$Source}',
-                Depth_From    = '{$DepthFrom}',
-                Depth_To      = '{$DepthTo}',
-                Material_Type = '{$MType}',
-                Sample_Type   = '{$SType}',
-                North         = '{$North}',
-                East          = '{$East}',
-                Elev          = '{$Elev}',
-                Comment       = '{$Comments}',
-                Test_Type     = '{$TestType}',
-                Modified_Date = '{$ModifiedDate}',
-                Modified_By   = '{$ModifiedBy}'
-            WHERE Package_ID = '{$db->escape($OldPackageID)}'
-              AND Sample_ID = '{$OldSampleName}' 
-              AND Sample_Number = '{$OldSampleNumber}'
-        ";
+                    UPDATE lab_test_requisition_form SET
+                        Sample_ID     = '{$SampleName}',
+                        Sample_Number = '{$SampleNumber}',
+                        Area          = '{$Area}',
+                        Source        = '{$Source}',
+                        Depth_From    = '{$DepthFrom}',
+                        Depth_To      = '{$DepthTo}',
+                        Material_Type = '{$MType}',
+                        Sample_Type   = '{$SType}',
+                        North         = '{$North}',
+                        East          = '{$East}',
+                        Elev          = '{$Elev}',
+                        Comment       = '{$Comments}',
+                        Test_Type     = '{$TestType}',
+                        Modified_Date = '{$ModifiedDate}',
+                        Modified_By   = '{$ModifiedBy}'
+                    WHERE Package_ID   = '{$db->escape($OldPackageID)}'
+                      AND Sample_ID     = '{$OldSampleName}' 
+                      AND Sample_Number = '{$OldSampleNumber}'
+                ";
                 $db->query($query);
                 $totalAffected += $db->affected_rows();
+
+                // --- 2B) Sincronizar también en test_workflow ---
+                // Mantiene los estados (Preparación / Realización / Entrega),
+                // solo actualiza Sample_ID y Sample_Number a los nuevos valores.
+                $qWorkflow = "
+                    UPDATE test_workflow
+                    SET 
+                        Sample_ID     = '{$SampleName}',
+                        Sample_Number = '{$SampleNumber}',
+                        Updated_By    = '{$ModifiedBy}',
+                        Updated_At    = '{$ModifiedDate}'
+                    WHERE Sample_ID     = '{$OldSampleName}'
+                      AND Sample_Number = '{$OldSampleNumber}'
+                ";
+                $db->query($qWorkflow);
+                $totalAffected += $db->affected_rows();
+
                 $i++;
             }
         }
 
-        // Revisar si hubo cambios
+        // === 3) Mensaje según cambios ===
         if ($totalAffected > 0) {
             $session->msg('s', !empty($OldPackageID) ? 'El paquete ha sido actualizado.' : 'La muestra ha sido actualizada.');
         } else {
             $session->msg('w', 'No se realizaron cambios.');
         }
 
-        redirect('/pages/requisition-form-view.php', false);
+        redirect('../pages/requisition-form-view.php', false);
     } else {
         $session->msg("d", $errors);
-        redirect('/pages/requisition-form-view.php', false);
+        redirect('../pages/requisition-form-view.php', false);
     }
 }
