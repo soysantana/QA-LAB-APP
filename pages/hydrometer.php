@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <tbody>
                                     <tr>
                                         <th scope="row">Trial No.</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="TrialNo" id="TrialNo" value="1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="TrialNo" id="TrialNo" value="1" readonly tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">Tare Name</th>
@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                     <tr>
                                         <th scope="row">Oven Temperature (°C)</th>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OvenTemp" id="OvenTemp" value="110 º C"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OvenTemp" id="OvenTemp" value="110 º C" readonly tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">Tare Plus Wet Soil (gr)</th>
@@ -535,55 +535,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp1" id="HyCalibrationTemp1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead1" id="HyCalibrationRead1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp1" id="HyMeasureTemp1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid1" id="HyMeasureFluid1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid1" id="HyMeasureFluid1" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp2" id="HyCalibrationTemp2"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead2" id="HyCalibrationRead2"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp2" id="HyMeasureTemp2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid2" id="HyMeasureFluid2"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid2" id="HyMeasureFluid2" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp3" id="HyCalibrationTemp3"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead3" id="HyCalibrationRead3"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp3" id="HyMeasureTemp3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid3" id="HyMeasureFluid3"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid3" id="HyMeasureFluid3" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp4" id="HyCalibrationTemp4"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead4" id="HyCalibrationRead4"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp4" id="HyMeasureTemp4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid4" id="HyMeasureFluid4"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid4" id="HyMeasureFluid4" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp5" id="HyCalibrationTemp5"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead5" id="HyCalibrationRead5"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp5" id="HyMeasureTemp5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid5" id="HyMeasureFluid5"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid5" id="HyMeasureFluid5" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp6" id="HyCalibrationTemp6"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead6" id="HyCalibrationRead6"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp6" id="HyMeasureTemp6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid6" id="HyMeasureFluid6"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid6" id="HyMeasureFluid6" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp7" id="HyCalibrationTemp7"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead7" id="HyCalibrationRead7"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp7" id="HyMeasureTemp7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid7" id="HyMeasureFluid7"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid7" id="HyMeasureFluid7" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp8" id="HyCalibrationTemp8"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead8" id="HyCalibrationRead8"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp8" id="HyMeasureTemp8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid8" id="HyMeasureFluid8"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid8" id="HyMeasureFluid8" value="0"></td>
                                     </tr>
                                     <tr>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationTemp9" id="HyCalibrationTemp9"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyCalibrationRead9" id="HyCalibrationRead9"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyMeasureTemp9" id="HyMeasureTemp9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid9" id="HyMeasureFluid9"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="HyMeasureFluid9" id="HyMeasureFluid9" value="0"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -632,129 +632,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                     <tr>
                                         <th scope="row">1</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date1" id="Date1"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour1" id="Hour1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT1" id="ReadingTimeT1" value="1"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date1" id="Date1" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour1" id="Hour1" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT1" id="ReadingTimeT1" value="1" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp1" id="Temp1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading1" id="HyReading1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy1" id="ABdependingHy1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading1" id="OffsetReading1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner1" id="MassPercentFiner1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength1" id="EffectiveLength1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm1" id="DMm1"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample1" id="PassingPerceTotalSample1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy1" id="ABdependingHy1" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading1" id="OffsetReading1" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner1" id="MassPercentFiner1" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength1" id="EffectiveLength1" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm1" id="DMm1" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample1" id="PassingPerceTotalSample1" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">2</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date2" id="Date2"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour2" id="Hour2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT2" id="ReadingTimeT2" value="2"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date2" id="Date2" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour2" id="Hour2" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT2" id="ReadingTimeT2" value="2" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp2" id="Temp2"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading2" id="HyReading2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy2" id="ABdependingHy2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading2" id="OffsetReading2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner2" id="MassPercentFiner2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength2" id="EffectiveLength2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm2" id="DMm2"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample2" id="PassingPerceTotalSample2"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy2" id="ABdependingHy2" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading2" id="OffsetReading2" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner2" id="MassPercentFiner2" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength2" id="EffectiveLength2" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm2" id="DMm2" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample2" id="PassingPerceTotalSample2" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">3</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date3" id="Date3"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour3" id="Hour3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT3" id="ReadingTimeT3" value="4"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date3" id="Date3" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour3" id="Hour3" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT3" id="ReadingTimeT3" value="4" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp3" id="Temp3"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading3" id="HyReading3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy3" id="ABdependingHy3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading3" id="OffsetReading3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner3" id="MassPercentFiner3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength3" id="EffectiveLength3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm3" id="DMm3"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample3" id="PassingPerceTotalSample3"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy3" id="ABdependingHy3" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading3" id="OffsetReading3" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner3" id="MassPercentFiner3" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength3" id="EffectiveLength3" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm3" id="DMm3" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample3" id="PassingPerceTotalSample3" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">4</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date4" id="Date4"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour4" id="Hour4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT4" id="ReadingTimeT4" value="15"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date4" id="Date4" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour4" id="Hour4" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT4" id="ReadingTimeT4" value="15" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp4" id="Temp4"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading4" id="HyReading4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy4" id="ABdependingHy4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading4" id="OffsetReading4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner4" id="MassPercentFiner4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength4" id="EffectiveLength4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm4" id="DMm4"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample4" id="PassingPerceTotalSample4"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy4" id="ABdependingHy4" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading4" id="OffsetReading4" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner4" id="MassPercentFiner4" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength4" id="EffectiveLength4" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm4" id="DMm4" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample4" id="PassingPerceTotalSample4" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">5</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date5" id="Date5"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour5" id="Hour5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT5" id="ReadingTimeT5" value="30"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date5" id="Date5" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour5" id="Hour5" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT5" id="ReadingTimeT5" value="30" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp5" id="Temp5"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading5" id="HyReading5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy5" id="ABdependingHy5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading5" id="OffsetReading5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner5" id="MassPercentFiner5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength5" id="EffectiveLength5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm5" id="DMm5"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample5" id="PassingPerceTotalSample5"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy5" id="ABdependingHy5" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading5" id="OffsetReading5" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner5" id="MassPercentFiner5" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength5" id="EffectiveLength5" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm5" id="DMm5" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample5" id="PassingPerceTotalSample5" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">6</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date6" id="Date6"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour6" id="Hour6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT6" id="ReadingTimeT6" value="60"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date6" id="Date6" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour6" id="Hour6" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT6" id="ReadingTimeT6" value="60" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp6" id="Temp6"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading6" id="HyReading6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy6" id="ABdependingHy6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading6" id="OffsetReading6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner6" id="MassPercentFiner6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength6" id="EffectiveLength6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm6" id="DMm6"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample6" id="PassingPerceTotalSample6"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy6" id="ABdependingHy6" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading6" id="OffsetReading6" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner6" id="MassPercentFiner6" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength6" id="EffectiveLength6" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm6" id="DMm6" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample6" id="PassingPerceTotalSample6" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">7</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date7" id="Date7"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour7" id="Hour7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT7" id="ReadingTimeT7" value="240"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date7" id="Date7" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour7" id="Hour7" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT7" id="ReadingTimeT7" value="240" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp7" id="Temp7"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading7" id="HyReading7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy7" id="ABdependingHy7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading7" id="OffsetReading7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner7" id="MassPercentFiner7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength7" id="EffectiveLength7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm7" id="DMm7"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample7" id="PassingPerceTotalSample7"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy7" id="ABdependingHy7" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading7" id="OffsetReading7" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner7" id="MassPercentFiner7" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength7" id="EffectiveLength7" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm7" id="DMm7" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample7" id="PassingPerceTotalSample7" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">8</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date8" id="Date8"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour8" id="Hour8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT8" id="ReadingTimeT8" value="360"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date8" id="Date8" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour8" id="Hour8" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT8" id="ReadingTimeT8" value="360" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp8" id="Temp8"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading8" id="HyReading8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy8" id="ABdependingHy8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading8" id="OffsetReading8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner8" id="MassPercentFiner8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength8" id="EffectiveLength8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm8" id="DMm8"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample8" id="PassingPerceTotalSample8"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy8" id="ABdependingHy8" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading8" id="OffsetReading8" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner8" id="MassPercentFiner8" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength8" id="EffectiveLength8" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm8" id="DMm8" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample8" id="PassingPerceTotalSample8" tabindex="-1"></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">9</th>
-                                        <td><input type="date" style="border: none;" class="form-control" name="Date9" id="Date9"></td>
-                                        <td><input type="time" style="border: none;" class="form-control" name="Hour9" id="Hour9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT9" id="ReadingTimeT9" value="1440"></td>
+                                        <td><input type="date" style="border: none;" class="form-control" name="Date9" id="Date9" tabindex="-1"></td>
+                                        <td><input type="time" style="border: none;" class="form-control" name="Hour9" id="Hour9" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ReadingTimeT9" id="ReadingTimeT9" value="1440" tabindex="-1"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="Temp9" id="Temp9"></td>
                                         <td><input type="text" style="border: none;" class="form-control" name="HyReading9" id="HyReading9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy9" id="ABdependingHy9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading9" id="OffsetReading9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner9" id="MassPercentFiner9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength9" id="EffectiveLength9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="DMm9" id="DMm9"></td>
-                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample9" id="PassingPerceTotalSample9"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="ABdependingHy9" id="ABdependingHy9" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="OffsetReading9" id="OffsetReading9" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="MassPercentFiner9" id="MassPercentFiner9" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="EffectiveLength9" id="EffectiveLength9" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="DMm9" id="DMm9" tabindex="-1"></td>
+                                        <td><input type="text" style="border: none;" class="form-control" name="PassingPerceTotalSample9" id="PassingPerceTotalSample9" tabindex="-1"></td>
                                     </tr>
                                 </tbody>
                             </table>
