@@ -49,10 +49,10 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
                 <i class="bi bi-calendar-day me-2"></i>
-                <h5 class="card-title mb-0">Reporte diario del laboratorio</h5>
+                <h5 class="card-title mb-0">Digitar Reporte Diario</h5>
               </div>
               <p class="card-text small text-muted mb-0">
-                Resumen diario de muestras, ensayos realizados, entregas y observaciones.
+                Crear diario de muestras, ensayos realizados, entregas y observaciones.
               </p>
             </div>
           </div>
