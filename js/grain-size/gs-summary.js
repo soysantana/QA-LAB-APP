@@ -50,7 +50,7 @@ function calcularParametrosGranulometricos(datos) {
     if (valoresValidos.includes(valor) && par) {
       const resultado = calcularDx(par, valor);
       DxMap["D" + valor] = resultado;
-      if (input) input.value = resultado.toFixed(2);
+      if (input) input.value = resultado.toFixed(3);
     } else {
       DxMap["D" + valor] = null;
       if (input) input.value = "-";
