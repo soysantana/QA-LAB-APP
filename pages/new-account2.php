@@ -23,15 +23,15 @@
         if($db->query($query)){
           //sucess
           $session->msg('s'," Cuenta de usuario ha sido creada");
-          redirect('/pages/users-register.php', false);
+          redirect('users-register.php', false);
         } else {
           //failed
           $session->msg('d',' No se pudo crear la cuenta.');
-          redirect('/pages/users-register.php', false);
+          redirect('users-register.php', false);
         }
    } else {
      $session->msg("d", $errors);
-      redirect('/pages/users-register.php',false);
+      redirect('users-register.php',false);
    }
  }
 ?>

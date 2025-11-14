@@ -31,7 +31,7 @@
 
                   <?php echo display_msg($msg); ?>
 
-                  <form class="row g-3 needs-validation" method="post" action="../user/new-account2.php" novalidate>
+                  <form class="row g-3 needs-validation" method="post" action="new-account2.php" novalidate>
                     <div class="col-6">
                       <label for="yourName" class="form-label">Su nombre</label>
                       <input type="text" name="full-name" class="form-control" id="yourName" required>
