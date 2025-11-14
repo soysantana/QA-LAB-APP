@@ -16,9 +16,9 @@
        $job   = remove_junk($db->escape($_POST['job']));
        $password = sha1($password);
         $query = "INSERT INTO users (";
-        $query .="id,name,username,password,user_level,email,phone,job,status";
+        $query .="id,name,username,password,user_level,email,phone,job,status,alias";
         $query .=") VALUES (";
-        $query .=" '{$id}', '{$name}', '{$username}', '{$password}', '{$user_level}','{$email}','{$phone}','{$job}','1'";
+        $query .=" '{$id}', '{$name}', '{$username}', '{$password}', '{$user_level}','{$email}','{$phone}','{$job}','1',''";
         $query .=")";
         if($db->query($query)){
           //sucess
