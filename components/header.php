@@ -166,7 +166,12 @@
       <li class="nav-item dropdown pe-3">
 
         <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-          <img src="data:image/jpeg;base64,<?php echo base64_encode($user['image']); ?>" alt="Profile" class="rounded-circle">
+         <?php if (!empty($row['photo'])): ?>
+  <img src="data:image/jpeg;base64,<?= base64_encode($row['photo']); ?>" alt="Foto" class="img-fluid rounded-circle">
+<?php else: ?>
+  <img src="../assets/img/default-avatar.jpg" alt="Foto" class="img-fluid rounded-circle">
+<?php endif; ?>
+
           <span class="d-none d-md-block dropdown-toggle ps-2"><?php echo remove_junk(ucfirst($user['name'])); ?></span>
         </a><!-- End Profile Iamge Icon -->
 
