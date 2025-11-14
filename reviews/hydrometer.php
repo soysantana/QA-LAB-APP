@@ -246,6 +246,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </tbody>
                             </table>
 
+                            <!-- Hydrometer Properties -->
+                            <h5 class="card-title">Hydrometer Properties</h5>
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Hr1</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Hr1" id="Hr1" value="11.0"></td>
+                                        <th scope="row">Hr2</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Hr2" id="Hr2" value="7.08"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">r1</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="r1" id="r1" value="65.0"></td>
+                                        <th scope="row">r2</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="r2" id="r2" value="60.0"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">vhb</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="vhb" id="vhb" value="60.0"></td>
+                                        <th scope="row">Ac2</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="Ac2" id="Ac2" value="54.96" placeholder="2 * 27.48 = 54.96"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th scope="row">CM</th>
+                                        <td><input type="text" style="border: none;" class="form-control" name="CM" id="CM" value="1.0"></td>
+                                        <th scope="row"></th>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- Hydrometer Properties -->
+
                         </div>
                     </div>
 
@@ -284,6 +317,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </tbody>
                             </table>
                             <!-- end Data Correction Table -->
+
+                            <h5 class="card-title">Busca datos necesarios</h5>
+                            <button type="button" class="btn btn-primary" name="search">Buscar datos</button>
+                            <div id="mensaje-container"></div>
 
                         </div>
                     </div>
@@ -635,8 +672,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <!-- Actions Buttons -->
                             <div class="d-grid gap-2 mt-3">
                                 <button type="submit" class="btn btn-success" name="UpdateHydrometer">Update Hydrometer</button>
-                                <button type="button" class="btn btn-primary" name="search">Buscar datos</button>
-                                <div id="mensaje-container"></div>
 
                                 <div class="btn-group dropup" role="group">
                                     <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
