@@ -166,16 +166,27 @@ function hydrometer() {
     let count = 0;
     let average = null;
 
-    const Hr1 = 11.0;
-    const Hr2 = 7.08;
-    const r1 = 65.0;
-    const r2 = 60.0;
-    const vhb = 60.0;
-    const Ac2 = 2 * 27.48;
-    const CM = 1.0;
-    const MassDensWater = 0.99821;
-    const Acceleration = 980.7;
+    /* Variables constantes
+        const Hr1 = 11.0;
+        const Hr2 = 7.08;
+        const r1 = 65.0;
+        const r2 = 60.0;
+        const vhb = 60.0;
+        const Ac2 = 2 * 27.48;
+        const CM = 1.0;
+        const MassDensWater = 0.99821;
+        const Acceleration = 980.7;
+    */
 
+    const Hr1 = parseFloat(document.getElementById("Hr1").value);
+    const Hr2 = parseFloat(document.getElementById("Hr2").value);
+    const r1 = parseFloat(document.getElementById("r1").value);
+    const r2 = parseFloat(document.getElementById("r2").value);
+    const vhb = parseFloat(document.getElementById("vhb").value);
+    const Ac2 = parseFloat(document.getElementById("Ac2").value);
+    const CM = parseFloat(document.getElementById("CM").value);
+    const MassDensWater = parseFloat(document.getElementById("MassdensityofwaterCalibrated").value);
+    const Acceleration = parseFloat(document.getElementById("Acceleration").value);
 
     const SG_Result = parseFloat(document.getElementById("SG_Result").value);
     const Volumeofsuspension = parseFloat(document.getElementById("Volumeofsuspension").value);
