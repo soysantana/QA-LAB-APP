@@ -1,5 +1,6 @@
 import { fetchData } from '../db-search/dbSearch.js';
 
+/* fuera de uso por el momento
 function sandCastle(i) {
     // Tomar todos los inputs tipo Collapsed
     const inputs = document.querySelectorAll('input[id^="Collapsed_"]');
@@ -33,6 +34,7 @@ function sandCastle(i) {
     const timeSet = document.getElementById("TimeSet");
     if (timeSet) timeSet.value = formatted;
 }
+fuera de uso por el momento */
 
 function angle() {
     const FinalHeight = parseFloat(document.getElementById("FinalHeight").value);
