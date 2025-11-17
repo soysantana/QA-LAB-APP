@@ -119,7 +119,7 @@ let cache = null;
 let pendingMove = null;
 
 const SUBSTAGES = {
-  'Preparación': ['P1','P2','P3','P4'],
+  'Preparación': ['P1','P2','P3','P4','P5'],
   'Realización': ['R1','R2','R3','R4'],
   'Entrega':     ['E1']
 };
@@ -129,7 +129,8 @@ function labelSubStage(code) {
     case 'P1': return 'P1 – Cuarteo';
     case 'P2': return 'P2 – Secado';
     case 'P3': return 'P3 – Lavado';
-    case 'P4': return 'P4 – Otro';
+    case 'P4': return 'P4 – Curado';
+    case 'P5': return 'P5 – Otro';
     case 'R1': return 'R1 – Secado';
     case 'R2': return 'R2 – Tamizado';
     case 'R3': return 'R3 – Ejecucion';
