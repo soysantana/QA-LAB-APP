@@ -62,6 +62,9 @@ function route_for_test_type(string $rawType): ?string
   return null;
 }
 
+/* ===========================
+   POST: marcar ensayos firmados
+   =========================== */
 if (isset($_POST['update-signed'])) {
   $sample_id     = $db->escape($_POST['Sample_ID'] ?? '');
   $sample_number = $db->escape($_POST['Sample_Number'] ?? '');
@@ -100,12 +103,14 @@ if (isset($_POST['update-signed'])) {
     $mappedValues = $normalizedMappings[$testTypeValue] ?? [];
 
     foreach ($mappedValues as $mappedValue) {
+      $mappedEsc = $db->escape($mappedValue);
+
       $qUpdate = "
         UPDATE test_reviewed
            SET Signed = '{$signed}'
          WHERE Sample_ID = '{$sample_id}'
            AND Sample_Number = '{$sample_number}'
-           AND Test_Type = '{$db->escape($mappedValue)}'
+           AND Test_Type = '{$mappedEsc}'
       ";
       $ok = $db->query($qUpdate);
       if (!$ok) {
@@ -113,17 +118,18 @@ if (isset($_POST['update-signed'])) {
         continue;
       }
 
-      $aff = (int)$db->affected_rows();
+      $aff = (int)$db->affected_rows;
       if ($aff > 0) {
         $update_count += $aff;
         continue;
       }
+
       $qExist = "
         SELECT 1
           FROM test_reviewed
          WHERE Sample_ID = '{$sample_id}'
            AND Sample_Number = '{$sample_number}'
-           AND Test_Type = '{$db->escape($mappedValue)}'
+           AND Test_Type = '{$mappedEsc}'
          LIMIT 1
       ";
       $exists = find_by_sql($qExist);
@@ -133,7 +139,7 @@ if (isset($_POST['update-signed'])) {
           INSERT INTO test_reviewed
             (Sample_ID, Sample_Number, Test_Type, Signed, Start_Date)
           VALUES
-            ('{$sample_id}', '{$sample_number}', '{$db->escape($mappedValue)}', '{$signed}', NOW())
+            ('{$sample_id}', '{$sample_number}', '{$mappedEsc}', '{$signed}', NOW())
         ";
         $ok2 = $db->query($qInsert);
         if (!$ok2) {
@@ -141,7 +147,6 @@ if (isset($_POST['update-signed'])) {
         } else {
           $update_count += 1;
         }
-      } else {
       }
     }
   }
@@ -156,109 +161,235 @@ if (isset($_POST['update-signed'])) {
   exit();
 }
 
+// ===========================
+// GET: Notificaciones
+// ===========================
+
 include_once('../components/header.php');
+
+// Rango de días
+$days = isset($_GET['days']) ? max(1, (int)$_GET['days']) : 6;
+
+// Reviewed
+$RevNotify = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Tracking, Start_Date
+      FROM test_reviewed
+     WHERE Start_Date >= NOW() - INTERVAL {$days} DAY
+     ORDER BY Start_Date DESC
+     LIMIT 200
+  ");
+
+// Repeat
+$RepNotify = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Tracking, Start_Date
+      FROM test_repeat
+     WHERE Start_Date >= NOW() - INTERVAL {$days} DAY
+     ORDER BY Start_Date DESC
+     LIMIT 200
+  ");
 ?>
 <main id="main" class="main">
 
-  <div class="pagetitle">
-    <h1>Notification</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-        <li class="breadcrumb-item">Forms</li>
-        <li class="breadcrumb-item active">Notification</li>
-      </ol>
-    </nav>
+  <div class="pagetitle d-flex justify-content-between align-items-center">
+    <div>
+      <h1>Notification Center</h1>
+      <nav>
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="home.php">Home</a></li>
+          <li class="breadcrumb-item">Panel</li>
+          <li class="breadcrumb-item active">Notification</li>
+        </ol>
+      </nav>
+    </div>
   </div><!-- End Page Title -->
 
   <section class="section">
-    <div class="row">
+    <div class="row g-3">
 
-      <div class="col-lg-8">
+      <div class="col-12">
         <?php echo display_msg($msg); ?>
       </div>
 
-      <?php
-      // Rango de días
-      $days = isset($_GET['days']) ? max(1, (int)$_GET['days']) : 6;
-
-      // Reviewed
-      $RevNotify = find_by_sql("
-          SELECT Sample_ID, Sample_Number, Test_Type, Tracking, Start_Date
-            FROM test_reviewed
-           WHERE Start_Date >= NOW() - INTERVAL {$days} DAY
-           ORDER BY Start_Date DESC
-           LIMIT 200
-        ");
-
-      // Repeat
-      $RepNotify = find_by_sql("
-          SELECT Sample_ID, Sample_Number, Test_Type, Tracking, Start_Date
-            FROM test_repeat
-           WHERE Start_Date >= NOW() - INTERVAL {$days} DAY
-           ORDER BY Start_Date DESC
-           LIMIT 200
-        ");
-      ?>
-
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Reviewed <small class="text-muted">(últimos <?= (int)$days ?> días)</small></h5>
-            <div class="list-group">
-              <?php if (empty($RevNotify)): ?>
-                <span class="list-group-item text-muted">Sin registros en este periodo.</span>
-              <?php else: ?>
-                <?php foreach ($RevNotify as $revNotify):
-                  $id       = htmlspecialchars($revNotify['Sample_ID']);
-                  $number   = htmlspecialchars($revNotify['Sample_Number']);
-                  $testType = $revNotify['Test_Type'];
-                  $tracking = urlencode($revNotify['Tracking']);
-                  $url      = route_for_test_type($testType);
-                ?>
-                  <?php if ($url): ?>
-                    <a href="<?= $url ?>?id=<?= $tracking ?>" class="list-group-item list-group-item-action">
-                      <?= $id . '-' . $number . '-' . htmlspecialchars($testType) ?>
-                    </a>
-                  <?php else: ?>
-                    <span class="list-group-item list-group-item-action text-muted">
-                      <?= $id . '-' . $number . '-' . htmlspecialchars($testType) ?> (sin vista)
-                    </span>
-                  <?php endif; ?>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </div>
+      <!-- Filtros -->
+      <div class="col-12">
+        <div class="card card-filter-modern">
+          <div class="card-body py-3">
+            <form class="row g-3 align-items-center" method="get">
+              <div class="col-auto">
+                <span class="filter-label text-muted">Mostrar notificaciones de los últimos</span>
+              </div>
+              <div class="col-auto">
+                <select name="days" class="form-select form-select-sm filter-select">
+                  <?php
+                  $options = [1, 3, 6, 7, 10, 14, 30];
+                  if (!in_array($days, $options)) $options[] = $days;
+                  sort($options);
+                  foreach ($options as $d): ?>
+                    <option value="<?= (int)$d; ?>" <?= $d == $days ? 'selected' : ''; ?>>
+                      <?= (int)$d; ?> día<?= $d > 1 ? 's' : ''; ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="bi bi-funnel"></i> Aplicar
+                </button>
+              </div>
+              <div class="col-auto ms-auto">
+                <span class="badge bg-light text-dark border small">
+                  Total Reviewed: <?= count($RevNotify); ?> · Repeat: <?= count($RepNotify); ?>
+                </span>
+              </div>
+            </form>
           </div>
         </div>
       </div>
 
+      <!-- Columna Reviewed -->
       <div class="col-lg-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Repeat <small class="text-muted">(últimos <?= (int)$days ?> días)</small></h5>
-            <div class="list-group">
-              <?php if (empty($RepNotify)): ?>
-                <span class="list-group-item text-muted">Sin registros en este periodo.</span>
-              <?php else: ?>
-                <?php foreach ($RepNotify as $repNotify):
-                  $id       = htmlspecialchars($repNotify['Sample_ID']);
-                  $number   = htmlspecialchars($repNotify['Sample_Number']);
-                  $testType = $repNotify['Test_Type'];
-                  $tracking = urlencode($repNotify['Tracking']);
+        <div class="card card-modern">
+          <div class="card-header-modern d-flex justify-content-between align-items-center">
+            <div>
+              <div class="card-eyebrow">Quality Review</div>
+              <h5 class="card-title mb-0">Reviewed</h5>
+              <small class="text-muted">Últimos <?= (int)$days ?> día<?= $days > 1 ? 's' : ''; ?></small>
+            </div>
+            <div class="icon-circle bg-success-subtle text-success">
+              <i class="bi bi-check2-square"></i>
+            </div>
+          </div>
+          <div class="card-body pt-2">
+            <?php if (empty($RevNotify)): ?>
+              <div class="empty-state-modern text-center py-4">
+                <div class="empty-icon">✅</div>
+                <div class="empty-title">Sin ensayos revisados</div>
+                <div class="empty-subtitle">No hay registros en este periodo.</div>
+              </div>
+            <?php else: ?>
+              <div class="list-modern">
+                <?php foreach ($RevNotify as $revNotify):
+                  $id       = htmlspecialchars((string)$revNotify['Sample_ID']);
+                  $number   = htmlspecialchars((string)$revNotify['Sample_Number']);
+                  $testType = (string)$revNotify['Test_Type'];
+                  $testTypeDisplay = htmlspecialchars($testType);
+                  $tracking = urlencode((string)$revNotify['Tracking']);
                   $url      = route_for_test_type($testType);
+                  $dateStr  = $revNotify['Start_Date'] ?? null;
+                  $dateFmt  = $dateStr ? date('Y-m-d H:i', strtotime($dateStr)) : '—';
                 ?>
                   <?php if ($url): ?>
-                    <a href="<?= $url ?>?id=<?= $tracking ?>" class="list-group-item list-group-item-action">
-                      <?= $id . '-' . $number . '-' . htmlspecialchars($testType) ?>
+                    <a href="<?= $url ?>?id=<?= $tracking ?>" class="list-modern-item">
+                      <div class="list-modern-main">
+                        <div class="list-modern-title">
+                          <?= $id . ' - ' . $number; ?>
+                        </div>
+                        <div class="list-modern-meta">
+                          <span class="badge badge-test-type"><?= $testTypeDisplay; ?></span>
+                          <span class="list-modern-date">
+                            <i class="bi bi-clock"></i> <?= $dateFmt; ?>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="list-modern-chevron">
+                        <i class="bi bi-arrow-right-short"></i>
+                      </div>
                     </a>
                   <?php else: ?>
-                    <span class="list-group-item list-group-item-action text-muted">
-                      <?= $id . '-' . $number . '-' . htmlspecialchars($testType) ?> (sin vista)
-                    </span>
+                    <div class="list-modern-item list-modern-item-disabled">
+                      <div class="list-modern-main">
+                        <div class="list-modern-title">
+                          <?= $id . ' - ' . $number; ?>
+                        </div>
+                        <div class="list-modern-meta">
+                          <span class="badge badge-test-type"><?= $testTypeDisplay; ?></span>
+                          <span class="list-modern-date">
+                            <i class="bi bi-clock"></i> <?= $dateFmt; ?>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="list-modern-chevron text-muted small">
+                        sin vista
+                      </div>
+                    </div>
                   <?php endif; ?>
                 <?php endforeach; ?>
-              <?php endif; ?>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna Repeat -->
+      <div class="col-lg-6">
+        <div class="card card-modern">
+          <div class="card-header-modern d-flex justify-content-between align-items-center">
+            <div>
+              <div class="card-eyebrow">Re-testing</div>
+              <h5 class="card-title mb-0">Repeat</h5>
+              <small class="text-muted">Últimos <?= (int)$days ?> día<?= $days > 1 ? 's' : ''; ?></small>
             </div>
+            <div class="icon-circle bg-warning-subtle text-warning">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+          </div>
+          <div class="card-body pt-2">
+            <?php if (empty($RepNotify)): ?>
+              <div class="empty-state-modern text-center py-4">
+                <div class="empty-icon">🔁</div>
+                <div class="empty-title">Sin ensayos en repetición</div>
+                <div class="empty-subtitle">No hay registros en este periodo.</div>
+              </div>
+            <?php else: ?>
+              <div class="list-modern">
+                <?php foreach ($RepNotify as $repNotify):
+                  $id       = htmlspecialchars((string)$repNotify['Sample_ID']);
+                  $number   = htmlspecialchars((string)$repNotify['Sample_Number']);
+                  $testType = (string)$repNotify['Test_Type'];
+                  $testTypeDisplay = htmlspecialchars($testType);
+                  $tracking = urlencode((string)$repNotify['Tracking']);
+                  $url      = route_for_test_type($testType);
+                  $dateStr  = $repNotify['Start_Date'] ?? null;
+                  $dateFmt  = $dateStr ? date('Y-m-d H:i', strtotime($dateStr)) : '—';
+                ?>
+                  <?php if ($url): ?>
+                    <a href="<?= $url ?>?id=<?= $tracking ?>" class="list-modern-item">
+                      <div class="list-modern-main">
+                        <div class="list-modern-title">
+                          <?= $id . ' - ' . $number; ?>
+                        </div>
+                        <div class="list-modern-meta">
+                          <span class="badge badge-test-type badge-repeat"><?= $testTypeDisplay; ?></span>
+                          <span class="list-modern-date">
+                            <i class="bi bi-clock"></i> <?= $dateFmt; ?>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="list-modern-chevron">
+                        <i class="bi bi-arrow-right-short"></i>
+                      </div>
+                    </a>
+                  <?php else: ?>
+                    <div class="list-modern-item list-modern-item-disabled">
+                      <div class="list-modern-main">
+                        <div class="list-modern-title">
+                          <?= $id . ' - ' . $number; ?>
+                        </div>
+                        <div class="list-modern-meta">
+                          <span class="badge badge-test-type badge-repeat"><?= $testTypeDisplay; ?></span>
+                          <span class="list-modern-date">
+                            <i class="bi bi-clock"></i> <?= $dateFmt; ?>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="list-modern-chevron text-muted small">
+                        sin vista
+                      </div>
+                    </div>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -267,5 +398,146 @@ include_once('../components/header.php');
   </section>
 
 </main><!-- End #main -->
+
+<style>
+  .card-filter-modern {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  }
+  .filter-label {
+    font-size: 0.85rem;
+  }
+  .filter-select {
+    min-width: 130px;
+  }
+
+  .card-modern {
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.09);
+    overflow: hidden;
+  }
+
+  .card-header-modern {
+    padding: 0.85rem 1.2rem 0.5rem;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    background: radial-gradient(circle at top left, #e0f2fe 0, #ffffff 55%);
+  }
+
+  .card-eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    margin-bottom: 0.1rem;
+  }
+
+  .icon-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .empty-state-modern .empty-icon {
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
+  }
+  .empty-state-modern .empty-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #0f172a;
+  }
+  .empty-state-modern .empty-subtitle {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .list-modern {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 0.4rem 0.4rem 0.75rem;
+  }
+
+  .list-modern-item {
+    display: flex;
+    align-items: center;
+    padding: 0.45rem 0.6rem;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    margin-bottom: 0.25rem;
+    text-decoration: none;
+    background: #f9fafb;
+    transition: all 0.15s ease;
+  }
+  .list-modern-item:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    transform: translateY(-1px);
+  }
+
+  .list-modern-item-disabled {
+    cursor: default;
+    background: #f8fafc;
+  }
+  .list-modern-item-disabled:hover {
+    background: #f8fafc;
+    border-color: transparent;
+    transform: none;
+  }
+
+  .list-modern-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .list-modern-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  .list-modern-meta {
+    margin-top: 0.05rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+  }
+  .list-modern-date {
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .list-modern-chevron {
+    margin-left: 0.35rem;
+    color: #94a3b8;
+    font-size: 1.25rem;
+  }
+
+  .badge-test-type {
+    font-size: 0.7rem;
+    border-radius: 999px;
+    padding: 0.15rem 0.45rem;
+    background: #e5f3ff;
+    color: #1d4ed8;
+  }
+  .badge-repeat {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  @media (max-width: 991.98px) {
+    .list-modern {
+      max-height: 320px;
+    }
+  }
+</style>
 
 <?php include_once('../components/footer.php'); ?>
