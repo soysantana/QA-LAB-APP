@@ -314,7 +314,7 @@ if (empty($detalle)) {
   $pdf->SetFont('Arial', '', 9);
   $pdf->Cell(0, 6, utf8_decode('No hay ensayos entregados en este periodo.'), 0, 1, 'L');
 } else {
-  $headerDet = ['Fecha', 'Sample ID', 'Sample Number', 'Test Type', 'Cliente', 'Estructura', 'Técnico'];
+  $headerDet = ['Fecha', 'Sample ID', 'Sample Number', 'Test Type', 'Cliente', 'Estructura'];
   $widthsDet = [28, 25, 25, 22, 40, 30, 25];
   $alignDet  = ['L','L','L','L','L','L','L'];
 
@@ -328,7 +328,7 @@ if (empty($detalle)) {
       (string)$row['Test_Type'],
       (string)($row['Client'] ?? ''),
       (string)($row['Structure'] ?? ''),
-      (string)$row['Technician'],
+     
     ];
   }
 
