@@ -78,7 +78,7 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
 
       <!-- Ensayos entregados por semana ISO -->
       <div class="col-12 col-md-6 col-lg-4">
-        <a href="../pages/ensayos_entregados_semana.php" class="text-decoration-none">
+        <a href="../pages/ensayos_entregados.php" class="text-decoration-none">
           <div class="card h-100 shadow-sm border-0 hover-elevate">
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
