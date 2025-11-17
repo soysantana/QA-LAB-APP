@@ -189,9 +189,7 @@ function sla_for_local($s){ global $SLA; return (int)($SLA[$s] ?? 48); }
 
 /* ==============================
    PRIORIDAD DEL DÍA (Top 15)
-   - Usa test_workflow + lab_test_requisition_form
-   - Sin disponibilidad de técnico
-   - Sin prioridad de cliente
+   - SOLO Preparación y Realización
    ============================== */
 
 $priorityRows = find_by_sql("
@@ -224,11 +222,12 @@ $priorityRows = find_by_sql("
   LEFT JOIN lab_test_requisition_form r
     ON r.Sample_ID = w.Sample_ID
    AND r.Sample_Number = w.Sample_Number
-  WHERE w.Status IN ('Registrado','Preparación','Realización')
+  WHERE w.Status IN ('Preparación','Realización')   -- 👈 AQUÍ EL CAMBIO
     AND w.Process_Started >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
   ORDER BY score DESC
   LIMIT 15
 ");
+
 
 /* ==============================
    Repetición (últimos 7 días)
