@@ -115,7 +115,7 @@ include_once('../components/header.php');
                         Sample_Number,
                         Test_Type,
                         Status,
-                        IFNULL(Stage, '') AS Stage,
+                        IFNULL(sub_stage, '') AS sub_stage,
                         Updated_At
                       FROM test_workflow
                       ORDER BY Updated_At DESC
