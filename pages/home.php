@@ -1,5 +1,5 @@
 <?php
-// /pages/home.php — Workflow + Alertas SLA + Repetición + Proctor
+// /pages/home.php — Panel General
 declare(strict_types=1);
 require_once('../config/load.php');
 page_require_level(3);
@@ -83,15 +83,12 @@ function try_fetch_triplet(string $table, array $map, string $sid, string $num):
 /* ==============================
    Ventanas de tiempo
    ============================== */
-$FROM_90 = date('Y-m-d', strtotime('-90 days'));   // últimos 3 meses para Registrado
+$FROM_90 = date('Y-m-d', strtotime('-90 days'));   // últimos 3 meses
 $FROM_7  = date('Y-m-d', strtotime('-7 days'));    // repetición 7 días
 $FROM_31 = date('Y-m-d', strtotime('-31 days'));   // Proctor 31 días
 
 /* ==============================
    KPIs simples
-   - Registrado: SOLO últimos 3 meses (test_workflow)
-   - Preparación / Realización / Entrega: conteo total actual (test_workflow)
-   - Revisado: DISTINCT por SID|NUM|TT en test_reviewed, semana actual
    ============================== */
 $kpiStates = ['Registrado','Preparación','Realización','Entrega','Revisado'];
 $kpis = array_fill_keys($kpiStates, 0);
@@ -105,7 +102,7 @@ $rowR = find_by_sql("
 ");
 $kpis['Registrado'] = (int)($rowR[0]['c'] ?? 0);
 
-// Preparación / Realización / Entrega: totales actuales en test_workflow
+// Preparación / Realización / Entrega: totales actuales
 $grp = find_by_sql("
   SELECT Status, COUNT(*) c
   FROM test_workflow
@@ -117,7 +114,7 @@ foreach ($grp as $r) {
   if (isset($kpis[$s])) $kpis[$s] = (int)$r['c'];
 }
 
-// Revisado: contar DISTINCT triples en test_reviewed (semana actual)
+// Revisado: DISTINCT triples en test_reviewed (semana ISO actual)
 $revDateCol = pick_date_col('test_reviewed', [
   'Reviewed_Date',
   'Review_Date',
@@ -150,12 +147,12 @@ $PAGE_SIZE = 12;
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $offset = ($page - 1) * $PAGE_SIZE;
 
-// Conteo total en workflow (para la tabla de proceso)
+// Conteo total en workflow
 $row = find_by_sql("SELECT COUNT(*) c FROM test_workflow");
 $total = (int)($row[0]['c'] ?? 0);
 $totalPages = max(1, (int)ceil($total / $PAGE_SIZE));
 
-// Traer bloque de workflow para tabla principal
+// Bloque para la tabla principal
 $WF = find_by_sql("
   SELECT
     w.id,
@@ -186,61 +183,52 @@ $WF = find_by_sql("
   LIMIT {$PAGE_SIZE} OFFSET {$offset}
 ");
 
-// SLA (solo referencia visual)
+// SLA de referencia (ya no se muestra, solo si quisieras usarlo luego)
 $SLA = ['Registrado'=>24,'Preparación'=>48,'Realización'=>72,'Entrega'=>24,'Revisado'=>24];
 function sla_for_local($s){ global $SLA; return (int)($SLA[$s] ?? 48); }
 
 /* ==============================
-   ALERTAS SLA
+   PRIORIDAD DEL DÍA (Top 15)
+   - Usa test_workflow + lab_test_requisition_form
+   - Sin disponibilidad de técnico
+   - Sin prioridad de cliente
    ============================== */
-// Traemos todos los workflow relevantes para chequear SLA
-$WF_SLA = find_by_sql("
+
+$priorityRows = find_by_sql("
   SELECT
-    Sample_ID,
-    Sample_Number,
-    Test_Type,
-    Status,
-    Process_Started,
-    TIMESTAMPDIFF(HOUR, Process_Started, NOW()) AS Dwell_Hours
-  FROM test_workflow
-  WHERE Status IN ('Registrado','Preparación','Realización','Entrega','Revisado')
+    w.Sample_ID,
+    w.Sample_Number,
+    w.Test_Type,
+    w.Status,
+    w.Process_Started,
+    -- días en proceso (en decimales)
+    TIMESTAMPDIFF(HOUR, w.Process_Started, NOW())/24.0 AS dias,
+    COALESCE(r.Client, '') AS Client,
+    (
+      -- antigüedad
+      TIMESTAMPDIFF(HOUR, w.Process_Started, NOW())/24.0
+      -- peso por estado
+      + CASE 
+          WHEN w.Status='Realización' THEN 2
+          WHEN w.Status='Preparación' THEN 1
+          ELSE 0
+        END
+      -- peso por tipo de ensayo
+      + CASE
+          WHEN UPPER(TRIM(w.Test_Type)) IN ('SP','CBR') THEN 2
+          WHEN UPPER(TRIM(w.Test_Type)) IN ('GS','GSF','GSC') THEN 1
+          ELSE 0
+        END
+    ) AS score
+  FROM test_workflow w
+  LEFT JOIN lab_test_requisition_form r
+    ON r.Sample_ID = w.Sample_ID
+   AND r.Sample_Number = w.Sample_Number
+  WHERE w.Status IN ('Registrado','Preparación','Realización')
+    AND w.Process_Started >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+  ORDER BY score DESC
+  LIMIT 15
 ");
-
-$slaAlertsSummary = [];  // por estado
-$slaAlertsTop     = [];  // top N más críticos
-
-foreach ($WF_SLA as $r) {
-  $status = $r['Status'] ?? '';
-  $hours  = (int)($r['Dwell_Hours'] ?? 0);
-  $sla    = sla_for_local($status);
-
-  if ($hours >= $sla && $sla > 0) {
-    // Resumen por estado
-    if (!isset($slaAlertsSummary[$status])) {
-      $slaAlertsSummary[$status] = ['count' => 0, 'max_hours' => 0];
-    }
-    $slaAlertsSummary[$status]['count']++;
-    if ($hours > $slaAlertsSummary[$status]['max_hours']) {
-      $slaAlertsSummary[$status]['max_hours'] = $hours;
-    }
-
-    // Top 5 más críticos (por horas)
-    $slaAlertsTop[] = [
-      'Sample_ID'     => $r['Sample_ID'],
-      'Sample_Number' => $r['Sample_Number'],
-      'Test_Type'     => $r['Test_Type'],
-      'Status'        => $status,
-      'Hours'         => $hours,
-      'Process_Started'=> $r['Process_Started'],
-    ];
-  }
-}
-
-// Ordenar top por horas descendente y cortar a 5
-usort($slaAlertsTop, function($a,$b){
-  return $b['Hours'] <=> $a['Hours'];
-});
-$slaAlertsTop = array_slice($slaAlertsTop, 0, 5);
 
 /* ==============================
    Repetición (últimos 7 días)
@@ -343,7 +331,7 @@ foreach ($ReqSP as $req) {
     <?php endforeach; ?>
   </section>
 
-  <!-- Grid principal: Proceso + Alertas SLA -->
+  <!-- Grid principal: Proceso + Prioridad del día -->
   <div class="grid-2">
     <!-- Proceso de muestreo (paginado, de test_workflow) -->
     <section class="card">
@@ -384,9 +372,7 @@ foreach ($ReqSP as $req) {
           <tbody>
             <?php if (empty($WF)): ?>
               <tr><td colspan="6" class="text-center text-muted">No hay datos.</td></tr>
-            <?php else: foreach ($WF as $r):
-              $sla   = sla_for_local($r['Status']); 
-              $alert = ((int)$r['Dwell_Hours'] >= $sla); ?>
+            <?php else: foreach ($WF as $r): ?>
               <tr>
                 <td><?= h($r['Sample_ID']) ?></td>
                 <td><?= h($r['Sample_Number'] ?? '') ?></td>
@@ -395,9 +381,6 @@ foreach ($ReqSP as $req) {
                   <span class="badge bg-<?= status_badge($r['Status']) ?>">
                     <?= h($r['Status']) ?>
                   </span>
-                  <?php if ($alert): ?>
-                    <span class="badge bg-danger ms-1">SLA</span>
-                  <?php endif; ?>
                 </td>
                 <td><?= h($r['Process_Started']) ?></td>
                 <td>
@@ -421,83 +404,69 @@ foreach ($ReqSP as $req) {
       </div>
     </section>
 
-    <!-- Alertas SLA -->
+    <!-- Prioridad del día (Top 15 ensayos) -->
     <section class="card card-metric">
       <div class="card-metric-header">
         <div>
-          <div class="card-metric-eyebrow">Alertas</div>
-          <h2 class="card-metric-title">Ensayos fuera de retrazo por estado</h2>
+          <div class="card-metric-eyebrow">Órden sugerido</div>
+          <h2 class="card-metric-title">Prioridad del día · Top 15 ensayos</h2>
         </div>
         <div class="card-metric-chip">
-          <?= array_sum(array_column($slaAlertsSummary,'count')) ?> en alerta
+          <?= count($priorityRows) ?> activo<?= count($priorityRows) === 1 ? '' : 's' ?>
         </div>
       </div>
 
       <div class="card-metric-body">
-        <?php if (empty($slaAlertsSummary)): ?>
-          <p class="text-center text-muted mb-0">
-            ✅ No hay ensayos fuera de SLA en este momento.
-          </p>
-        <?php else: ?>
-          <div class="table-wrap-tight mb-3">
-            <table class="tbl tbl-modern">
-              <thead>
+        <p class="text-muted small mb-3">
+          Lista ordenada por antigüedad, estado del proceso y tipo de ensayo (SP/CBR/GS con mayor peso).
+        </p>
+
+        <div class="table-wrap-tight">
+          <table class="tbl tbl-modern">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Muestra</th>
+                <th>Ensayo</th>
+                <th>Estado</th>
+                <th>Días en proceso</th>
+                <th>Cliente</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($priorityRows)): ?>
                 <tr>
-                  <th>Estado</th>
-                  <th class="text-right">En retrazos</th>
-                  <th class="text-right">Máx horas en estado</th>
+                  <td colspan="6" class="text-center py-3">
+                    <span class="empty-icon">✅</span>
+                    <div class="empty-title">Sin ensayos con prioridad especial</div>
+                    <div class="empty-subtitle">No hay ensayos activos en Registrado/Preparación/Realización en los últimos 90 días.</div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($slaAlertsSummary as $st => $info): ?>
+              <?php else: ?>
+                <?php $idx = 1; foreach ($priorityRows as $row): ?>
                   <tr>
+                    <td><?= $idx++; ?></td>
+                    <td><?= h($row['Sample_ID'].'-'.$row['Sample_Number']) ?></td>
+                    <td><span class="pill"><code><?= h($row['Test_Type']) ?></code></span></td>
                     <td>
-                      <span class="pill"><?= h($st) ?></span>
+                      <span class="badge bg-<?= status_badge($row['Status']) ?>">
+                        <?= h($row['Status']) ?>
+                      </span>
                     </td>
-                    <td class="text-right">
-                      <span class="badge-count"><?= (int)$info['count'] ?></span>
+                    <td>
+                      <?php
+                        $dias = (float)$row['dias'];
+                        // Mostrar con 1 decimal
+                        echo number_format($dias, 1, '.', '').' d';
+                      ?>
                     </td>
-                    <td class="text-right">
-                      <?= (int)$info['max_hours'] ?> h
-                    </td>
+                    <td><?= h($row['Client']) ?></td>
                   </tr>
                 <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-
-          <?php if (!empty($slaAlertsTop)): ?>
-            <h6 class="mb-2" style="font-size:0.8rem; color:#64748b;">Top 5 ensayos más críticos</h6>
-            <div class="table-wrap-tight">
-              <table class="tbl tbl-modern">
-                <thead>
-                  <tr>
-                    <th>Muestra</th>
-                    <th>Estado</th>
-                    <th class="text-right">Horas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($slaAlertsTop as $r): ?>
-                    <tr>
-                      <td>
-                        <?= h($r['Sample_ID'].'-'.$r['Sample_Number'].'-'.$r['Test_Type']) ?><br>
-                        <small class="text-muted"><?= h($r['Process_Started']) ?></small>
-                      </td>
-                      <td>
-                        <span class="pill"><?= h($r['Status']) ?></span>
-                      </td>
-                      <td class="text-right">
-                        <strong><?= (int)$r['Hours'] ?></strong> h
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php endif; ?>
-
-        <?php endif; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>
