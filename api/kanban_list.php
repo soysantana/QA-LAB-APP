@@ -35,30 +35,33 @@ $SLA = [
 $where = [];
 $where[] = "Status IN ('Registrado','Preparación','Realización','Entrega')";
 
+global $db;
+
 if ($q !== '') {
-  $like = '%' . $GLOBALS['db']->escape($q) . '%';
+  $esc  = $db->escape($q);
+  $like = "%{$esc}%";
   $where[] = "(Sample_ID LIKE '{$like}'
-           OR  Sample_Number LIKE '{$like}'
-           OR  Test_Type LIKE '{$like}')";
+               OR Sample_Number LIKE '{$like}'
+               OR Test_Type LIKE '{$like}')";
 }
 
 if ($test !== '') {
-  $tt = norm_upper($test);
-  $where[] = "UPPER(TRIM(Test_Type)) = '" . $GLOBALS['db']->escape($tt) . "'";
+  $tt     = norm_upper($test);
+  $ttEsc  = $db->escape($tt);
+  $where[] = "UPPER(TRIM(Test_Type)) = '{$ttEsc}'";
 }
 
 /*
  * Regla especial:
- *  - Las muestras en ESTADO = 'Entrega'
- *    solo se muestran si Process_Started es de la última semana.
+ *  - En ESTADO = 'Entrega' solo se muestran
+ *    si Process_Started es de la última semana.
  */
-$whereEntrega = "(
-    Status <> 'Entrega'
-    OR (Status = 'Entrega'
-        AND Process_Started >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-    )
+$where[] = "(
+  Status <> 'Entrega'
+  OR (Status = 'Entrega'
+      AND Process_Started >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+  )
 )";
-$where[] = $whereEntrega;
 
 $sql = "
   SELECT
@@ -86,8 +89,14 @@ try {
   ]);
 }
 
-/* ========= Armar estructura por columnas ========= */
+if (!is_array($rows)) {
+  json_out([
+    'ok'    => false,
+    'error' => 'NO_ROWS',
+  ]);
+}
 
+/* ========= Armar estructura por columnas ========= */
 $data = [];
 foreach ($ALLOWED_STATUS as $st) {
   $data[$st] = [];
@@ -117,7 +126,7 @@ foreach ($rows as $r) {
   $data[$status][] = $item;
 }
 
-/* ========= Respuesta JSON limpia ========= */
+/* ========= Respuesta ========= */
 json_out([
   'ok'   => true,
   'data' => $data,
