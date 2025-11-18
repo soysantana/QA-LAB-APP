@@ -294,6 +294,9 @@ function resumen_tipo($start, $end) {
   ");
 }
 
+// =============================
+// 3.1 Gráfico de barras por cliente
+// =============================
 function draw_client_bar_chart($pdf, array $clientes) {
   if (empty($clientes)) return;
 
@@ -304,10 +307,11 @@ function draw_client_bar_chart($pdf, array $clientes) {
     $ent = (int)($d['entregados'] ?? 0);
     $pct = $sol > 0 ? round(($ent * 100) / $sol) : 0;
 
-    // Abreviar nombre del cliente para que quepa
+    // Abreviar nombre del cliente para que quepa (en UTF-8 todavía)
     $label = strtoupper(trim($cli));
-    if (mb_strlen($label, 'UTF-8') > 10) {
-      $label = mb_substr($label, 0, 10, 'UTF-8') . '…';
+    if (mb_strlen($label, 'UTF-8') > 14) {
+      // IMPORTANTE: usar "..." en vez de "…" (unicode)
+      $label = mb_substr($label, 0, 10, 'UTF-8') . '...';
     }
 
     $data[] = [
@@ -375,21 +379,16 @@ function draw_client_bar_chart($pdf, array $clientes) {
     $x = $x0 + $gap + $i * ($barWidth + $gap);
     $y = $y0 + $chartHeight - $barHeight;
 
-    // ================================
     // Color según porcentaje completado
-    // < 50%  -> rojo
-    // 50–79% -> amarillo
-    // >= 80% -> verde
-    // ================================
     if ($pct < 50) {
       // Rojo
-      $pdf->SetFillColor(220, 53, 69);      // crimson-ish
+      $pdf->SetFillColor(220, 53, 69);
     } elseif ($pct < 80) {
       // Amarillo
-      $pdf->SetFillColor(255, 193, 7);      // amber
+      $pdf->SetFillColor(255, 193, 7);
     } else {
       // Verde
-      $pdf->SetFillColor(40, 167, 69);      // green
+      $pdf->SetFillColor(40, 167, 69);
     }
 
     // Rectángulo de la barra
@@ -400,9 +399,10 @@ function draw_client_bar_chart($pdf, array $clientes) {
     $pdf->SetXY($x, $y - 4);
     $pdf->Cell($barWidth, 4, $pct . '%', 0, 0, 'C');
 
-    // Etiqueta del cliente debajo (convertir a ISO-8859-1 para FPDF)
+    // Etiqueta del cliente debajo
+    // (convertimos de UTF-8 a ISO-8859-1 para FPDF)
     $lbl_pdf = utf8_decode($lbl);
-    $pdf->SetXY($x, $y0 + $chartHeight + 2);
+    $pdf->SetXY($x, $y0 + $chartHeight + 3);
     $pdf->MultiCell($barWidth, 3, $lbl_pdf, 0, 'C');
 
     $i++;
@@ -411,11 +411,12 @@ function draw_client_bar_chart($pdf, array $clientes) {
   // Mover el cursor por debajo del gráfico
   $pdf->SetY($y0 + $chartHeight + $chartBottomMargin);
 
-  // Reset de colores por si acaso, para no afectar lo siguiente
+  // Reset de colores
   $pdf->SetFillColor(255, 255, 255);
   $pdf->SetDrawColor(0, 0, 0);
   $pdf->SetTextColor(0, 0, 0);
 }
+
 
 // =============================
 // 8. Ensayos reporte + 9. Observaciones
