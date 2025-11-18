@@ -69,7 +69,7 @@ $sql = "
     Status,
     Process_Started,
     Updated_By,
-    Sub_Stage,
+    sub_stage,
     TIMESTAMPDIFF(HOUR, Process_Started, NOW()) AS Dwell_Hours
   FROM test_workflow
   WHERE " . implode(' AND ', $where) . "
@@ -108,7 +108,7 @@ foreach ($rows as $r) {
     'Status'        => $status,
     'Since'         => (string)($r['Process_Started'] ?? ''),
     'Updated_By'    => (string)($r['Updated_By'] ?? ''),
-    'Sub_Stage'     => (string)($r['Sub_Stage'] ?? ''),
+    'sub_stage'     => (string)($r['sub_stage'] ?? ''),
     'Dwell_Hours'   => $dwell,
     'SLA_Hours'     => $slaH,
     'Alert'         => ($dwell >= $slaH),
