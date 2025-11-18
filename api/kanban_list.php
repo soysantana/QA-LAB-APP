@@ -1,133 +1,99 @@
 <?php
-// file: /api/kanban_list.php
+// /api/kanban_list.php
 declare(strict_types=1);
-
 require_once('../config/load.php');
-
-@ini_set('display_errors', '0');
-@ob_clean();
 header('Content-Type: application/json; charset=utf-8');
 
-/* ========= Helpers ========= */
-function json_out(array $payload): void {
-  echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-  exit;
-}
-
-function norm_upper(string $v): string {
-  return strtoupper(trim($v));
-}
-
-/* ========= Parámetros ========= */
-$q    = isset($_GET['q'])    ? trim((string)$_GET['q'])    : '';
-$test = isset($_GET['test']) ? trim((string)$_GET['test']) : '';
-
-$ALLOWED_STATUS = ['Registrado','Preparación','Realización','Entrega'];
-
+/**
+ * SLA por estado (en horas).
+ */
 $SLA = [
   'Registrado'  => 24,
   'Preparación' => 48,
   'Realización' => 72,
   'Entrega'     => 24,
+  'Revisado'    => 24,
 ];
 
-/* ========= WHERE dinámico ========= */
-$where = [];
-$where[] = "Status IN ('Registrado','Preparación','Realización','Entrega')";
-
-global $db;
-
-if ($q !== '') {
-  $esc  = $db->escape($q);
-  $like = "%{$esc}%";
-  $where[] = "(Sample_ID LIKE '{$like}'
-               OR Sample_Number LIKE '{$like}'
-               OR Test_Type LIKE '{$like}')";
+function slaHours(string $status, string $testType, array $SLA): int {
+  if (isset($SLA[$testType]) && is_array($SLA[$testType]) && isset($SLA[$testType][$status])) {
+    return (int)$SLA[$testType][$status];
+  }
+  return (int)($SLA[$status] ?? 48);
 }
-
-if ($test !== '') {
-  $tt     = norm_upper($test);
-  $ttEsc  = $db->escape($tt);
-  $where[] = "UPPER(TRIM(Test_Type)) = '{$ttEsc}'";
-}
-
-/*
- * Regla especial:
- *  - En ESTADO = 'Entrega' solo se muestran
- *    si Process_Started es de la última semana.
- */
-$where[] = "(
-  Status <> 'Entrega'
-  OR (Status = 'Entrega'
-      AND Process_Started >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-  )
-)";
-
-$sql = "
-  SELECT
-    id,
-    Sample_ID,
-    Sample_Number,
-    Test_Type,
-    Status,
-    Process_Started,
-    Updated_By,
-    sub_stage,
-    TIMESTAMPDIFF(HOUR, Process_Started, NOW()) AS Dwell_Hours
-  FROM test_workflow
-  WHERE " . implode(' AND ', $where) . "
-  ORDER BY Process_Started DESC
-  LIMIT 800
-";
 
 try {
-  $rows = find_by_sql($sql);
-} catch (Throwable $e) {
-  json_out([
-    'ok'    => false,
-    'error' => 'DB_ERROR: ' . $e->getMessage(),
-  ]);
-}
+  $q    = trim($_GET['q'] ?? '');
+  $test = trim($_GET['test'] ?? '');
 
-if (!is_array($rows)) {
-  json_out([
-    'ok'    => false,
-    'error' => 'NO_ROWS',
-  ]);
-}
+  $where = [];
+  if ($q !== '') {
+    $qEsc = $db->escape($q);
+    $where[] = "(Sample_ID LIKE '%{$qEsc}%' OR Sample_Number LIKE '%{$qEsc}%' OR Test_Type LIKE '%{$qEsc}%')";
+  }
+  if ($test !== '') {
+    $testEsc = $db->escape($test);
+    $where[] = "UPPER(TRIM(Test_Type)) = UPPER('{$testEsc}')";
+  }
+  $whereSql = $where ? ('WHERE '.implode(' AND ', $where)) : '';
 
-/* ========= Armar estructura por columnas ========= */
-$data = [];
-foreach ($ALLOWED_STATUS as $st) {
-  $data[$st] = [];
-}
+  $sql = "
+    SELECT
+      id,
+      Sample_ID,
+      Sample_Number,
+      UPPER(TRIM(Test_Type)) AS Test_Type,
+      TRIM(Status) AS Status,
+      sub_stage,
+      Process_Started,
+      Updated_At,
+      Updated_By
+    FROM test_workflow
+    {$whereSql}
+    ORDER BY FIELD(Status,'Registrado','Preparación','Realización','Entrega','Revisado'),
+             Updated_At DESC
+  ";
 
-foreach ($rows as $r) {
-  $status = (string)($r['Status'] ?? '');
-  if (!in_array($status, $ALLOWED_STATUS, true)) continue;
+  $rs = $db->query($sql);
 
-  $slaH   = (int)($SLA[$status] ?? 48);
-  $dwell  = (int)($r['Dwell_Hours'] ?? 0);
-
-  $item = [
-    'id'            => (string)($r['id'] ?? ''),
-    'Sample_ID'     => (string)($r['Sample_ID'] ?? ''),
-    'Sample_Number' => (string)($r['Sample_Number'] ?? ''),
-    'Test_Type'     => (string)($r['Test_Type'] ?? ''),
-    'Status'        => $status,
-    'Since'         => (string)($r['Process_Started'] ?? ''),
-    'Updated_By'    => (string)($r['Updated_By'] ?? ''),
-    'sub_stage'     => (string)($r['sub_stage'] ?? ''),
-    'Dwell_Hours'   => $dwell,
-    'SLA_Hours'     => $slaH,
-    'Alert'         => ($dwell >= $slaH),
+  $by = [
+    'Registrado'  => [],
+    'Preparación' => [],
+    'Realización' => [],
+    'Entrega'     => [],
+    'Revisado'    => [],
   ];
 
-  $data[$status][] = $item;
-}
+  $now = new DateTime('now');
 
-/* ========= Respuesta ========= */
-json_out([
-  'ok'   => true,
-  'data' => $data,
-]);
+  while ($r = $db->fetch_assoc($rs)) {
+    $status = $r['Status'];
+    if (!isset($by[$status])) {
+      $status = 'Registrado';
+    }
+
+    $started = $r['Process_Started'] ? new DateTime($r['Process_Started']) : clone $now;
+    $diffH   = max(0, (int)floor(($now->getTimestamp() - $started->getTimestamp()) / 3600));
+    $limitH  = slaHours($status, $r['Test_Type'], $SLA);
+    $alert   = $diffH >= $limitH;
+
+    $by[$status][] = [
+      'id'            => $r['id'],
+      'Sample_ID'     => $r['Sample_ID'],
+      'Sample_Number' => $r['Sample_Number'],
+      'Test_Type'     => $r['Test_Type'],
+      'Status'        => $status,
+      'Sub_Stage'     => $r['sub_stage'],
+      'Since'         => $r['Process_Started'],
+      'Updated_By'    => $r['Updated_By'],
+      'Dwell_Hours'   => $diffH,
+      'SLA_Hours'     => $limitH,
+      'Alert'         => $alert,
+    ];
+  }
+
+  echo json_encode(['ok' => true, 'data' => $by], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+  http_response_code(500);
+  echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+}
