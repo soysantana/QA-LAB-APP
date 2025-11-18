@@ -185,10 +185,10 @@ function clasificarSuelo(gravel, sand, fines, Cu, Cc, LL = null, IP = null) {
     } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && (100 - fines) < 15) {
         code = "CH";
         description = "Fat Clay";
-    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand >= gravel) {
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) < 29.4) && sand >= gravel) {
         code = "CH";
         description = "Fat Clay with sand";
-    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) <= 29) && sand < gravel) {
+    } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) < 30 && ((100 - fines) >= 15 && (100 - fines) < 29.4) && sand < gravel) {
         code = "CH";
         description = "Fat Clay with gravel";
     } else if (fines >= 50 && LL >= 50 && (0.73 * (LL - 20) <= IP) && (100 - fines) >= 30 && sand >= gravel && gravel < 15) {
