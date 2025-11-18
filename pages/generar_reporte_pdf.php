@@ -309,7 +309,7 @@ function draw_client_bar_chart($pdf, array $clientes) {
 
     // Abreviar nombre del cliente para que quepa (en UTF-8 todavía)
     $label = strtoupper(trim($cli));
-    if (mb_strlen($label, 'UTF-8') > 14) {
+    if (mb_strlen($label, 'UTF-8') > 16) {
       // IMPORTANTE: usar "..." en vez de "…" (unicode)
       $label = mb_substr($label, 0, 10, 'UTF-8') . '...';
     }
