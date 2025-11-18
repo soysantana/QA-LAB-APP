@@ -119,7 +119,7 @@ let cache = null;
 let pendingMove = null;
 
 const SUBSTAGES = {
-  'Preparación': ['P1','P2','P3','P4','P5'],
+  'Preparación': ['P1','P2','P3','P4'],
   'Realización': ['R1','R2','R3','R4'],
   'Entrega':     ['E1']
 };
@@ -129,8 +129,7 @@ function labelSubStage(code) {
     case 'P1': return 'P1 – Cuarteo';
     case 'P2': return 'P2 – Secado';
     case 'P3': return 'P3 – Lavado';
-    case 'P4': return 'P4 – Curado';
-    case 'P5': return 'P5 – Otro';
+    case 'P4': return 'P4 – Otro';
     case 'R1': return 'R1 – Secado';
     case 'R2': return 'R2 – Tamizado';
     case 'R3': return 'R3 – Ejecucion';
@@ -152,36 +151,18 @@ function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(
 function fetchData() {
   const q = encodeURIComponent($search.value.trim());
   const t = encodeURIComponent($testFilter.value);
-  const url = `../api/kanban_list.php?q=${q}&test=${t}`;
-
-  return fetch(url, { credentials: 'same-origin' })
+  const url = `/api/kanban_list.php?q=${q}&test=${t}`;
+  return fetch(url, { credentials:'same-origin' })
     .then(r => r.text())
     .then(txt => {
-      let original = txt;
-      let cleaned = txt.trim();
-
-      // 🔧 Intenta quedarte solo con el JSON (desde el primer "{" hasta el último "}")
-      const first = cleaned.indexOf('{');
-      const last  = cleaned.lastIndexOf('}');
-
-      if (first !== -1 && last !== -1 && last > first) {
-        cleaned = cleaned.slice(first, last + 1);
-      }
-
-      try {
-        return JSON.parse(cleaned);
-      } catch (e) {
-        console.error('BAD JSON RAW:', original);
-        console.error('BAD JSON CLEANED:', cleaned);
-        return { ok: false, error: 'BAD_JSON', raw: original };
-      }
+      try { return JSON.parse(txt); }
+      catch { console.error('BAD JSON', txt); return { ok:false, error:'BAD_JSON', raw:txt }; }
     })
-    .catch(err => ({ ok: false, error: String(err) }));
+    .catch(err => ({ ok:false, error:String(err) }));
 }
 
-
 function move(id, toStatus, technicians, note) {
-  return fetch('../api/kanban_move.php', {
+  return fetch('/api/kanban_move.php', {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
     credentials:'same-origin',
