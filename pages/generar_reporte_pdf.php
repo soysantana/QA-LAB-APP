@@ -9,17 +9,22 @@ error_reporting(E_ALL);
 $user = current_user();
 $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
 
-
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $fecha_obj = DateTime::createFromFormat('Y-m-d', $fecha);
 $fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
+
+// Rango "diario" (16:00 del día anterior a 15:59:59 del día seleccionado)
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 15:59:59"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
+// =============================
+// Helpers de consulta
+// =============================
 function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
 }
+
 // Helper: detecta "envío/envio/envíos/envios" como token
 if (!function_exists('es_envio_tt')) {
   function es_envio_tt(string $s): bool {
@@ -29,6 +34,9 @@ if (!function_exists('es_envio_tt')) {
   }
 }
 
+// =============================
+// 3. Resumen entregas por cliente
+// =============================
 function resumen_entregas_por_cliente($end) {
   $stats  = [];
   $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
@@ -40,8 +48,7 @@ function resumen_entregas_por_cliente($end) {
     WHERE Sample_Date BETWEEN '{$inicio}' AND '{$end}'
   ");
 
-  // Entregas dentro del mismo rango (recomendado) 
-  // Si prefieres todas las entregas históricas, quita el WHERE.
+  // Entregas dentro del mismo rango
   $entregas = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type
     FROM test_delivery
@@ -98,16 +105,15 @@ function resumen_entregas_por_cliente($end) {
   return $stats;
 }
 
-
-
-
-
 function count_by_sample($table, $sample, $field = 'Sample_ID') {
   return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
 }
+
+// =============================
+// 4. Muestras nuevas (excluyendo "envío")
+// =============================
 function muestras_nuevas($start, $end) {
   // 1) Filtro en SQL: evita traer filas cuyo Test_Type sea solo "envío/envio"
-  //    (o donde no haya otro token distinto). Aun así haremos limpieza fina en PHP.
   $sql = "
     SELECT 
       Sample_ID,
@@ -157,7 +163,9 @@ function muestras_nuevas($start, $end) {
   return $out;
 }
 
-
+// =============================
+// 7. Ensayos pendientes
+// =============================
 
 // Función auxiliar para detectar columnas existentes
 function get_columns_for_table($tabla) {
@@ -170,7 +178,7 @@ function get_columns_for_table($tabla) {
   return $cols;
 }
 
-// Función principal
+// Función principal de pendientes
 function ensayos_pendientes($start, $end) {
   // Obtener requisiciones dentro del rango
   $requisitions = find_by_sql("
@@ -245,26 +253,152 @@ function ensayos_pendientes($start, $end) {
   return $pendientes;
 }
 
-
-
-
+// =============================
+// 5 y 6. Resumen por técnico y por tipo
+// =============================
 function resumen_tecnico($start, $end) {
-  return find_by_sql("SELECT Technician, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
+  return find_by_sql("
+    SELECT Technician, COUNT(*) as total, 'In Preparation' as etapa 
+    FROM test_preparation 
+    WHERE Register_Date BETWEEN '{$start}' AND '{$end}' 
+    GROUP BY Technician
     UNION ALL
-    SELECT Technician, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician
+    SELECT Technician, COUNT(*) as total, 'In Realization' 
+    FROM test_realization 
+    WHERE Register_Date BETWEEN '{$start}' AND '{$end}' 
+    GROUP BY Technician
     UNION ALL
-    SELECT Technician, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Technician");
+    SELECT Technician, COUNT(*) as total, 'Completed' 
+    FROM test_delivery 
+    WHERE Register_Date BETWEEN '{$start}' AND '{$end}' 
+    GROUP BY Technician
+  ");
 }
 
 function resumen_tipo($start, $end) {
-  return find_by_sql("SELECT Test_Type, COUNT(*) as total, 'In Preparation' as etapa FROM test_preparation WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
+  return find_by_sql("
+    SELECT Test_Type, COUNT(*) as total, 'In Preparation' as etapa 
+    FROM test_preparation 
+    WHERE Register_Date BETWEEN '{$start}' AND '{$end}' 
+    GROUP BY Test_Type
     UNION ALL
-    SELECT Test_Type, COUNT(*) as total, 'In Realization' FROM test_realization WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type
+    SELECT Test_Type, COUNT(*) as total, 'In Realization' 
+    FROM test_realization 
+    WHERE Register_Date BETWEEN '{$start}' AND '{$end}' 
+    GROUP BY Test_Type
     UNION ALL
-    SELECT Test_Type, COUNT(*) as total, 'Completed' FROM test_delivery WHERE Register_Date BETWEEN '{$start}' AND '{$end}' GROUP BY Test_Type");
+    SELECT Test_Type, COUNT(*) as total, 'Completed' 
+    FROM test_delivery 
+    WHERE Register_Date BETWEEN '{$start}' AND '{$end}' 
+    GROUP BY Test_Type
+  ");
 }
 
+// =============================
+// 3.1 Gráfico de barras por cliente
+// =============================
+function draw_client_bar_chart($pdf, array $clientes) {
+  if (empty($clientes)) return;
 
+  // Construir data: cliente + porcentaje
+  $data = [];
+  foreach ($clientes as $cli => $d) {
+    $sol = (int)($d['solicitados'] ?? 0);
+    $ent = (int)($d['entregados'] ?? 0);
+    $pct = $sol > 0 ? round(($ent * 100) / $sol) : 0;
+
+    // Abreviar nombre del cliente para que quepa
+    $label = strtoupper(trim($cli));
+    if (mb_strlen($label, 'UTF-8') > 10) {
+      $label = mb_substr($label, 0, 10, 'UTF-8') . '…';
+    }
+
+    $data[] = [
+      'label' => $label,
+      'pct'   => $pct,
+    ];
+  }
+
+  // Si todos los % son 0, no dibujar
+  $maxPct = 0;
+  foreach ($data as $d) {
+    if ($d['pct'] > $maxPct) $maxPct = $d['pct'];
+  }
+  if ($maxPct <= 0) return;
+
+  // Verificar espacio en la página, si no cabe agregamos nueva página
+  $chartHeight = 45;        // alto del área de barras
+  $chartBottomMargin = 18;  // espacio para etiquetas
+  $needed = $chartHeight + $chartBottomMargin + 10;
+  if ($pdf->GetY() + $needed > 260) {
+    $pdf->AddPage();
+  }
+
+  // Posición y dimensiones básicas
+  $x0 = $pdf->GetX();
+  $y0 = $pdf->GetY() + 4; // un poquito debajo del título
+  $chartWidth  = 180;     // ancho total disponible para el gráfico
+  $numBars     = count($data);
+  $gap         = 4;       // separación entre barras
+
+  // Calcular ancho de cada barra
+  $barWidth = ($chartWidth - ($numBars + 1) * $gap) / max($numBars, 1);
+  if ($barWidth < 8) {
+    $barWidth = 8; // mínimo ancho para que sea legible
+  }
+
+  // Ejes
+  $pdf->SetDrawColor(0, 0, 0);
+  $pdf->Line($x0, $y0, $x0, $y0 + $chartHeight); // eje Y
+  $pdf->Line($x0, $y0 + $chartHeight, $x0 + $chartWidth, $y0 + $chartHeight); // eje X
+
+  // Escala de % (0, 25, 50, 75, 100 o hasta maxPct)
+  $pdf->SetFont('Arial', '', 7);
+  $steps = [0, 25, 50, 75, 100];
+  foreach ($steps as $pctRef) {
+    if ($pctRef > $maxPct) continue;
+    $yLine = $y0 + $chartHeight - ($pctRef * $chartHeight / $maxPct);
+    $pdf->SetDrawColor(220, 220, 220);
+    $pdf->Line($x0, $yLine, $x0 + $chartWidth, $yLine);
+    $pdf->SetDrawColor(0, 0, 0);
+    $pdf->SetXY($x0 - 8, $yLine - 2);
+    $pdf->Cell(8, 4, $pctRef . '%', 0, 0, 'R');
+  }
+
+  // Dibujar barras
+  $pdf->SetFont('Arial', '', 8);
+  $i = 0;
+  foreach ($data as $d) {
+    $pct  = $d['pct'];
+    $lbl  = $d['label'];
+
+    $barHeight = ($pct * $chartHeight) / $maxPct;
+    $x = $x0 + $gap + $i * ($barWidth + $gap);
+    $y = $y0 + $chartHeight - $barHeight;
+
+    // Color de la barra (azul suave)
+    $pdf->SetFillColor(100, 149, 237);
+    $pdf->Rect($x, $y, $barWidth, $barHeight, 'F');
+
+    // Etiqueta de % sobre la barra
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetXY($x, $y - 4);
+    $pdf->Cell($barWidth, 4, $pct . '%', 0, 0, 'C');
+
+    // Etiqueta del cliente debajo
+    $pdf->SetXY($x, $y0 + $chartHeight + 2);
+    $pdf->MultiCell($barWidth, 3, $lbl, 0, 'C');
+
+    $i++;
+  }
+
+  // Mover el cursor por debajo del gráfico
+  $pdf->SetY($y0 + $chartHeight + $chartBottomMargin);
+}
+
+// =============================
+// 8. Ensayos reporte + 9. Observaciones
+// =============================
 function render_ensayos_reporte($pdf, $start, $end) {
   // Obtener datos desde la tabla `ensayos_reporte`
   $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
@@ -318,7 +452,9 @@ function observaciones_ensayos_reporte($start, $end) {
   ");
 }
 
-
+// =============================
+// Clase PDF
+// =============================
 class PDF extends FPDF {
   public $day_of_week;
   public $week_number;
@@ -330,14 +466,18 @@ class PDF extends FPDF {
     $this->week_number = date('W');
     $this->fecha_en = $fecha_en;
   }
+
   function Header() {
     $user = current_user();
-$nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+    $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
+
     if ($this->PageNo() > 1) return;
+
     if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
       $this->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 50);
     }
-     $this->SetFont('Arial', 'B', 14);
+
+    $this->SetFont('Arial', 'B', 14);
     $this->SetXY(150, 10); // Posiciona el cursor en la parte superior derecha
     $this->Cell(50, 10, utf8_decode('Daily Laboratory Report'), 0, 1, 'R');
 
@@ -351,133 +491,173 @@ $nombre_responsable = $user['name']; // o 'full_name' o el campo correcto
     $this->section_title("1. Personnel Assigned");
     $this->SetFont('Arial', '', 10);
 
-$semana = $this->week_number;
-$dia = $this->day_of_week;
+    $semana = $this->week_number;
+    $dia = $this->day_of_week;
 
-$semana = $this->week_number;
-$dia = $this->day_of_week;
+    // =============================
+    // GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
+    // =============================
+    if (in_array($dia, [0, 1, 2, 3])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
+    }
 
-// =============================
-// GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
-// =============================
-if (in_array($dia, [0, 1, 2, 3])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
-  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
-}
+    // =============================
+    // GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
+    // =============================
+    if (in_array($dia, [3, 4, 5, 6])) {
+      $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
+      $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor Mercedes", 0, 'L');
+      $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
+    }
 
-// =============================
-// GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
-// =============================
-if (in_array($dia, [3, 4, 5, 6])) {
-  $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
-  $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor Mercedes", 0, 'L');
-  $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
-}
-
-// =============================
-// YAMILEXI + WENDIN — Rotación semanal
-// =============================
-if (
-  ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
-  ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
-) {
-  $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');   
-  $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús"), 0, 'L');
-}
-
-
-
+    // =============================
+    // YAMILEXI + WENDIN — Rotación semanal
+    // =============================
+    if (
+      ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
+      ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
+    ) {
+      $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');   
+      $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús"), 0, 'L');
+    }
 
     $this->Ln(5);
   }
+
   function section_title($title) {
     $this->SetFont('Arial', 'B', 12);
     $this->SetFillColor(200, 220, 255);
     $this->Cell(0, 8, $title, 0, 1, 'L', true);
     $this->Ln(2);
   }
+
   function section_table($headers, $rows, $widths) {
+    // Encabezados
     $this->SetFont('Arial', 'B', 10);
     foreach ($headers as $i => $h) {
       $this->Cell($widths[$i], 7, $h, 1, 0, 'C');
     }
     $this->Ln();
+
+    // Filas
     $this->SetFont('Arial', '', 10);
+    $fill = false;
     foreach ($rows as $row) {
+      // Zebra simple
+      if ($fill) {
+        $this->SetFillColor(245, 245, 245);
+      } else {
+        $this->SetFillColor(255, 255, 255);
+      }
       foreach ($row as $i => $col) {
-        $this->Cell($widths[$i], 6, $col, 1, 0, 'C');
+        $this->Cell($widths[$i], 6, $col, 1, 0, 'C', true);
       }
       $this->Ln();
+      $fill = !$fill;
     }
     $this->Ln(3);
   }
 }
 
+// =============================
+// Generación del PDF
+// =============================
 $pdf = new PDF($fecha_en);
-
 $pdf->AddPage();
 
+// 2. Summary of Daily Activities
 $pdf->section_title("2. Summary of  Daily Activities");
-$pdf->section_table(["Activities", "Quantity"], [
-  ["Requisitioned", get_count("lab_test_requisition_form", "Registed_Date", $start, $end)],
-  ["In Preparation", get_count("test_preparation", "Register_Date", $start, $end)],
-  ["In Realizacion", get_count("test_realization", "Register_Date", $start, $end)],
-  ["Completed", get_count("test_delivery", "Register_Date", $start, $end)]
-], [90, 40]);
+$pdf->section_table(
+  ["Activities", "Quantity"],
+  [
+    ["Requisitioned",  get_count("lab_test_requisition_form", "Registed_Date",  $start, $end)],
+    ["In Preparation", get_count("test_preparation",          "Register_Date",  $start, $end)],
+    ["In Realizacion", get_count("test_realization",          "Register_Date",  $start, $end)],
+    ["Completed",      get_count("test_delivery",             "Register_Date",  $start, $end)]
+  ],
+  [90, 40]
+);
 
+// 3. Client Summary of Completed Tests
 $pdf->section_title("3. Client Summary of Completed Tests");
 
-
-$clientes = resumen_entregas_por_cliente($start, $end);
+$clientes = resumen_entregas_por_cliente($end);
 $rows = [];
 foreach ($clientes as $cli => $d) {
   $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
   $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
 }
 
-$pdf->section_table(["Client", "Requested", "Completed", "%"], $rows, [50, 35, 35, 25]);
+$pdf->section_table(
+  ["Client", "Requested", "Completed", "%"],
+  $rows,
+  [50, 35, 35, 25]
+);
+
+// Título del gráfico de barras
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Client Completion % (Last Month)', 0, 1, 'L');
+
+// Gráfico de barras de % completado por cliente
+draw_client_bar_chart($pdf, $clientes);
+
 $pdf->Ln(4);
 
+// 4. Newly Registered Samples
 $pdf->section_title("4. Newly Registered Samples");
 $muestras = muestras_nuevas($start, $end);
 $rows = [];
 foreach ($muestras as $m) {
- $rows = [];
-foreach ($muestras as $m) {
-  $rows[] = [$m['Sample_ID'] . ' -' . $m['Sample_Number'], $m['Structure'], $m['Client'], $m['Test_Type']];
+  $rows[] = [
+    $m['Sample_ID'] . ' - ' . $m['Sample_Number'],
+    $m['Structure'],
+    $m['Client'],
+    $m['Test_Type']
+  ];
 }
+$pdf->section_table(
+  ["Sample ID", "Structure", "Client", "Test Type"],
+  $rows,
+  [45, 35, 35, 75]
+);
 
-
-}
-$pdf->section_table(["Sample ID", "Structure", "Client", "Test Type"], $rows, [45, 35, 35, 75]);
 $pdf->SetFont('Arial', '', 8);
 $pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
 $pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= Soundness, LAA= Los Angeles Abrasion, MC= Moisture Content, ', 0, 1);
 $pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
 $pdf->Ln(4);
+
+// 5. Summary of Tests by Technician
 $pdf->section_title("5. Summary of Tests by Technician ");
 $tec = resumen_tecnico($start, $end);
 $t_rows = [];
 foreach ($tec as $r) {
   $t_rows[] = [$r['Technician'], $r['etapa'], $r['total']];
 }
-$pdf->section_table(["Technician", "Process", "Quantity"], $t_rows, [60, 50, 40]);
+$pdf->section_table(
+  ["Technician", "Process", "Quantity"],
+  $t_rows,
+  [60, 50, 40]
+);
 $pdf->SetFont('Arial', '', 8);
 $pdf->Cell(0, 4, 'Tech. Legend: WM= Wilson Martinez, JV= Jonathan Vargas, RV= Roni Vargas, RL =Rafy Leocadio,', 0, 1);
 $pdf->Cell(0, 4, 'RR= Rafael Reyes, MC= Melvin Castillo, DF= Darielvy Felix, JA= Jordany Almonte , ', 0, 1);
 $pdf->Ln(5);
 
-
+// 6. Distribution of Tests by Type
 $pdf->section_title("6. Distribution of Tests by Type");
 $tipos = resumen_tipo($start, $end);
 $type_rows = [];
 foreach ($tipos as $r) {
   $type_rows[] = [$r['Test_Type'], $r['etapa'], $r['total']];
 }
-$pdf->section_table(["Test Type", "Process", "Quantity"], $type_rows, [70, 50, 30]);
-
-
+$pdf->section_table(
+  ["Test Type", "Process", "Quantity"],
+  $type_rows,
+  [70, 50, 30]
+);
 
 $pdf->SetFont('Arial', '', 8);
 $pdf->Cell(0, 5, 'Test Legend: AR= Acid Reativity, GS= Grain Size, SG= Specific Gravity, SP= Standard Proctor, MP= Modified Proctor, AL= Atterberg Limit,   ', 0, 1);
@@ -485,6 +665,7 @@ $pdf->Cell(0, 5, 'HY= Hidrometer, DHY= Double Hydromter, SCT= Sand Castle, SND= 
 $pdf->Cell(0, 5, 'PLT= Point Load, UCS= Simple Compression, BTS, Brazilian, Shape= Particle Shape,  ', 0, 1);
 $pdf->Ln(4);
 
+// 7. Pending Tests
 $pdf->section_title("7. Pending Tests");
 
 // Definir fecha de inicio exclusivo para ensayos pendientes (1 mes atrás desde $end)
@@ -504,45 +685,42 @@ foreach ($pendientes as $p) {
     ];
   }
 }
+$pdf->section_table(
+  ["Sample ID", "Sample Number", "Test Type", "Date"],
+  $rows,
+  [40, 40, 60, 40]
+);
 
-$pdf->section_table(["Sample ID", "Sample Number", "Test Type", "Date"], $rows, [40, 40, 60, 40]);
-
-
-
-
+// 8. Summary of Dam Constructions Test
 render_ensayos_reporte($pdf, $start, $end);
 $pdf->Ln(5);
 
+// 9. Summary of Observations/Non-Conformities
 $pdf->section_title("9. Summary of Observations/Non-Conformities");
-
 $observaciones = observaciones_ensayos_reporte($start, $end);
 
 // Encabezado
 $pdf->SetFont('Arial', 'B', 9);
 $pdf->Cell(45, 8, 'Sample', 1);
-
 $pdf->Cell(145, 8, 'Observations', 1);
 $pdf->Ln();
 
 // Cuerpo
 $pdf->SetFont('Arial', '', 9);
 foreach ($observaciones as $obs) {
-  $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'] .'-' . $obs['Material_Type'];
+  $sample = $obs['Sample_ID'] . '-' . $obs['Sample_Number'] . '-' . $obs['Material_Type'];
   $pdf->Cell(45, 8, $sample, 1); 
- 
-  $pdf->Cell(145, 8, substr($obs['Noconformidad'], 0, 100), 1); // puedes ajustar longitud si quieres
+  $pdf->Cell(145, 8, substr($obs['Noconformidad'], 0, 100), 1);
   $pdf->Ln();
 }
 
 $pdf->Ln(5);
 
+// 10. Responsible
 $pdf->section_title("10. Responsible");
 $pdf->SetFont('Arial', '', 10);
 $pdf->Cell(60, 8, "Report prepared by", 1);
 $pdf->Cell(120, 8, utf8_decode($nombre_responsable), 1, 1);
-
-
-
 
 ob_end_clean();
 $pdf->Output("I", "Daily_Laboratory_Report_{$fecha}.pdf");
