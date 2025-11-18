@@ -294,9 +294,6 @@ function resumen_tipo($start, $end) {
   ");
 }
 
-// =============================
-// 3.1 Gráfico de barras por cliente
-// =============================
 function draw_client_bar_chart($pdf, array $clientes) {
   if (empty($clientes)) return;
 
@@ -336,10 +333,10 @@ function draw_client_bar_chart($pdf, array $clientes) {
 
   // Posición y dimensiones básicas
   $x0 = $pdf->GetX();
-  $y0 = $pdf->GetY() + 4; // un poquito debajo del título
-  $chartWidth  = 180;     // ancho total disponible para el gráfico
+  $y0 = $pdf->GetY() + 4;   // un poquito debajo del título
+  $chartWidth  = 180;       // ancho total disponible para el gráfico
   $numBars     = count($data);
-  $gap         = 4;       // separación entre barras
+  $gap         = 4;         // separación entre barras
 
   // Calcular ancho de cada barra
   $barWidth = ($chartWidth - ($numBars + 1) * $gap) / max($numBars, 1);
@@ -349,7 +346,7 @@ function draw_client_bar_chart($pdf, array $clientes) {
 
   // Ejes
   $pdf->SetDrawColor(0, 0, 0);
-  $pdf->Line($x0, $y0, $x0, $y0 + $chartHeight); // eje Y
+  $pdf->Line($x0, $y0, $x0, $y0 + $chartHeight);                    // eje Y
   $pdf->Line($x0, $y0 + $chartHeight, $x0 + $chartWidth, $y0 + $chartHeight); // eje X
 
   // Escala de % (0, 25, 50, 75, 100 o hasta maxPct)
@@ -367,7 +364,9 @@ function draw_client_bar_chart($pdf, array $clientes) {
 
   // Dibujar barras
   $pdf->SetFont('Arial', '', 8);
+  $pdf->SetTextColor(0, 0, 0);
   $i = 0;
+
   foreach ($data as $d) {
     $pct  = $d['pct'];
     $lbl  = $d['label'];
@@ -376,8 +375,24 @@ function draw_client_bar_chart($pdf, array $clientes) {
     $x = $x0 + $gap + $i * ($barWidth + $gap);
     $y = $y0 + $chartHeight - $barHeight;
 
-    // Color de la barra (azul suave)
-    $pdf->SetFillColor(100, 149, 237);
+    // ================================
+    // Color según porcentaje completado
+    // < 50%  -> rojo
+    // 50–79% -> amarillo
+    // >= 80% -> verde
+    // ================================
+    if ($pct < 50) {
+      // Rojo
+      $pdf->SetFillColor(220, 53, 69);      // crimson-ish
+    } elseif ($pct < 80) {
+      // Amarillo
+      $pdf->SetFillColor(255, 193, 7);      // amber
+    } else {
+      // Verde
+      $pdf->SetFillColor(40, 167, 69);      // green
+    }
+
+    // Rectángulo de la barra
     $pdf->Rect($x, $y, $barWidth, $barHeight, 'F');
 
     // Etiqueta de % sobre la barra
@@ -385,15 +400,21 @@ function draw_client_bar_chart($pdf, array $clientes) {
     $pdf->SetXY($x, $y - 4);
     $pdf->Cell($barWidth, 4, $pct . '%', 0, 0, 'C');
 
-    // Etiqueta del cliente debajo
+    // Etiqueta del cliente debajo (convertir a ISO-8859-1 para FPDF)
+    $lbl_pdf = utf8_decode($lbl);
     $pdf->SetXY($x, $y0 + $chartHeight + 2);
-    $pdf->MultiCell($barWidth, 3, $lbl, 0, 'C');
+    $pdf->MultiCell($barWidth, 3, $lbl_pdf, 0, 'C');
 
     $i++;
   }
 
   // Mover el cursor por debajo del gráfico
   $pdf->SetY($y0 + $chartHeight + $chartBottomMargin);
+
+  // Reset de colores por si acaso, para no afectar lo siguiente
+  $pdf->SetFillColor(255, 255, 255);
+  $pdf->SetDrawColor(0, 0, 0);
+  $pdf->SetTextColor(0, 0, 0);
 }
 
 // =============================
