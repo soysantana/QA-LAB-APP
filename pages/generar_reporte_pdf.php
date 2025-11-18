@@ -598,12 +598,13 @@ $pdf->section_table(
 
 // Título del gráfico de barras
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(0, 6, 'Client Completion % (Last Month)', 0, 1, 'L');
+$pdf->Cell(0, 6, 'Client Completion %', 0, 1, 'L');
 
 // Gráfico de barras de % completado por cliente
 draw_client_bar_chart($pdf, $clientes);
 
 $pdf->Ln(4);
+
 
 // 4. Newly Registered Samples
 $pdf->section_title("4. Newly Registered Samples");
