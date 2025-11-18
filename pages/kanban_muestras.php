@@ -152,7 +152,7 @@ function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(
 function fetchData() {
   const q = encodeURIComponent($search.value.trim());
   const t = encodeURIComponent($testFilter.value);
-  const url = `/api/kanban_list.php?q=${q}&test=${t}`;
+  const url = `../api/kanban_list.php?q=${q}&test=${t}`;
   return fetch(url, { credentials:'same-origin' })
     .then(r => r.text())
     .then(txt => {
@@ -163,7 +163,7 @@ function fetchData() {
 }
 
 function move(id, toStatus, technicians, note) {
-  return fetch('/api/kanban_move.php', {
+  return fetch('../api/kanban_move.php', {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
     credentials:'same-origin',
