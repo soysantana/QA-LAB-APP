@@ -1,155 +1,124 @@
 <?php
-// /api/kanban_list.php
+// file: /api/kanban_list.php
 declare(strict_types=1);
 
 require_once('../config/load.php');
 
-// Desactivar salida basura y forzar JSON
 @ini_set('display_errors', '0');
 @ob_clean();
 header('Content-Type: application/json; charset=utf-8');
 
-function json_error(string $msg, int $code = 200): never {
-    http_response_code($code);
-    echo json_encode([
-        'ok'    => false,
-        'error' => $msg,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
+/* ========= Helpers ========= */
+function json_out(array $payload): void {
+  echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+  exit;
 }
 
-function json_ok(array $data): never {
-    echo json_encode([
-        'ok' => true,
-        'data' => $data,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
+function norm_upper(string $v): string {
+  return strtoupper(trim($v));
 }
 
-// ⛔ IMPORTANTE: NADA DE HEADER/FOOTER AQUÍ
-// SOLO JSON, NINGÚN HTML
-
-/* =========================
-   Seguridad básica
-   ========================= */
-global $session;
-if (!$session->isUserLoggedIn(true)) {
-    json_error('UNAUTHORIZED', 401);
-}
-
-/* =========================
-   Helpers locales
-   ========================= */
-function N(string $v): string {
-    return strtoupper(trim($v));
-}
-
-$SLA = [
-    'Registrado'  => 24,
-    'Preparación' => 48,
-    'Realización' => 72,
-    'Entrega'     => 24,
-];
-
-function sla_for_status(string $s): int {
-    global $SLA;
-    return (int)($SLA[$s] ?? 48);
-}
-
-/* =========================
-   Leer filtros (q, test)
-   ========================= */
+/* ========= Parámetros ========= */
 $q    = isset($_GET['q'])    ? trim((string)$_GET['q'])    : '';
 $test = isset($_GET['test']) ? trim((string)$_GET['test']) : '';
 
-/* =========================
-   Construir WHERE
-   ========================= */
+$ALLOWED_STATUS = ['Registrado','Preparación','Realización','Entrega'];
+
+$SLA = [
+  'Registrado'  => 24,
+  'Preparación' => 48,
+  'Realización' => 72,
+  'Entrega'     => 24,
+];
+
+/* ========= WHERE dinámico ========= */
 $where = [];
-global $db;
+$where[] = "Status IN ('Registrado','Preparación','Realización','Entrega')";
 
 if ($q !== '') {
-    $like = '%' . $db->escape($q) . '%';
-    $where[] = sprintf(
-        "(w.Sample_ID LIKE '%s' OR w.Sample_Number LIKE '%s' OR w.Test_Type LIKE '%s')",
-        $like, $like, $like
-    );
+  $like = '%' . $GLOBALS['db']->escape($q) . '%';
+  $where[] = "(Sample_ID LIKE '{$like}'
+           OR  Sample_Number LIKE '{$like}'
+           OR  Test_Type LIKE '{$like}')";
 }
 
 if ($test !== '') {
-    $tt = N($test);
-    $where[] = sprintf(
-        "UPPER(TRIM(w.Test_Type)) = '%s'",
-        $db->escape($tt)
-    );
+  $tt = norm_upper($test);
+  $where[] = "UPPER(TRIM(Test_Type)) = '" . $GLOBALS['db']->escape($tt) . "'";
 }
 
-$whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-
-/* =========================
-   Consulta principal
-   ========================= */
+/*
+ * Regla especial:
+ *  - Las muestras en ESTADO = 'Entrega'
+ *    solo se muestran si Process_Started es de la última semana.
+ */
+$whereEntrega = "(
+    Status <> 'Entrega'
+    OR (Status = 'Entrega'
+        AND Process_Started >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    )
+)";
+$where[] = $whereEntrega;
 
 $sql = "
-    SELECT
-      w.id,
-      w.Sample_ID,
-      w.Sample_Number,
-      w.Test_Type,
-      w.Status,
-      w.Process_Started,
-      w.Updated_By,
-      w.Updated_At,
-      w.Sub_Stage,
-      TIMESTAMPDIFF(HOUR, w.Process_Started, NOW()) AS Dwell_Hours
-    FROM test_workflow AS w
-    {$whereSql}
-    ORDER BY w.Updated_At DESC
-    LIMIT 500
+  SELECT
+    id,
+    Sample_ID,
+    Sample_Number,
+    Test_Type,
+    Status,
+    Process_Started,
+    Updated_By,
+    Sub_Stage,
+    TIMESTAMPDIFF(HOUR, Process_Started, NOW()) AS Dwell_Hours
+  FROM test_workflow
+  WHERE " . implode(' AND ', $where) . "
+  ORDER BY Process_Started DESC
+  LIMIT 800
 ";
 
-$rows = find_by_sql($sql);
-
-/* =========================
-   Armar estructura para el Kanban
-   ========================= */
-
-// Estructura base para cada columna
-$data = [
-    'Registrado'  => [],
-    'Preparación' => [],
-    'Realización' => [],
-    'Entrega'     => [],
-];
-
-foreach ($rows as $r) {
-    $status = $r['Status'] ?? '';
-    if (!isset($data[$status])) {
-        // Si llega un estado raro, lo ignoramos
-        continue;
-    }
-
-    $since  = $r['Process_Started'] ?? $r['Updated_At'] ?? '';
-    $dwell  = (int)($r['Dwell_Hours'] ?? 0);
-    $sla    = sla_for_status($status);
-    $alert  = $dwell >= $sla;
-
-    $data[$status][] = [
-        'id'           => (string)($r['id'] ?? ''),
-        'Sample_ID'    => (string)($r['Sample_ID'] ?? ''),
-        'Sample_Number'=> (string)($r['Sample_Number'] ?? ''),
-        'Test_Type'    => (string)($r['Test_Type'] ?? ''),
-        'Status'       => (string)$status,
-        'Since'        => (string)$since,
-        'Updated_By'   => (string)($r['Updated_By'] ?? ''),
-        'Dwell_Hours'  => $dwell,
-        'SLA_Hours'    => $sla,
-        'Alert'        => $alert,
-        'Sub_Stage'    => (string)($r['Sub_Stage'] ?? ''),
-    ];
+try {
+  $rows = find_by_sql($sql);
+} catch (Throwable $e) {
+  json_out([
+    'ok'    => false,
+    'error' => 'DB_ERROR: ' . $e->getMessage(),
+  ]);
 }
 
-/* =========================
-   Responder JSON
-   ========================= */
-json_ok($data);
+/* ========= Armar estructura por columnas ========= */
+
+$data = [];
+foreach ($ALLOWED_STATUS as $st) {
+  $data[$st] = [];
+}
+
+foreach ($rows as $r) {
+  $status = (string)($r['Status'] ?? '');
+  if (!in_array($status, $ALLOWED_STATUS, true)) continue;
+
+  $slaH   = (int)($SLA[$status] ?? 48);
+  $dwell  = (int)($r['Dwell_Hours'] ?? 0);
+
+  $item = [
+    'id'            => (string)($r['id'] ?? ''),
+    'Sample_ID'     => (string)($r['Sample_ID'] ?? ''),
+    'Sample_Number' => (string)($r['Sample_Number'] ?? ''),
+    'Test_Type'     => (string)($r['Test_Type'] ?? ''),
+    'Status'        => $status,
+    'Since'         => (string)($r['Process_Started'] ?? ''),
+    'Updated_By'    => (string)($r['Updated_By'] ?? ''),
+    'Sub_Stage'     => (string)($r['Sub_Stage'] ?? ''),
+    'Dwell_Hours'   => $dwell,
+    'SLA_Hours'     => $slaH,
+    'Alert'         => ($dwell >= $slaH),
+  ];
+
+  $data[$status][] = $item;
+}
+
+/* ========= Respuesta JSON limpia ========= */
+json_out([
+  'ok'   => true,
+  'data' => $data,
+]);
