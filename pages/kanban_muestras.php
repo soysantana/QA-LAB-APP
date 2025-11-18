@@ -152,15 +152,33 @@ function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(
 function fetchData() {
   const q = encodeURIComponent($search.value.trim());
   const t = encodeURIComponent($testFilter.value);
-  const url = `../api/kanban_list.php?q=${q}&test=${t}`;
-  return fetch(url, { credentials:'same-origin' })
+  const url = `/api/kanban_list.php?q=${q}&test=${t}`;
+
+  return fetch(url, { credentials: 'same-origin' })
     .then(r => r.text())
     .then(txt => {
-      try { return JSON.parse(txt); }
-      catch { console.error('BAD JSON', txt); return { ok:false, error:'BAD_JSON', raw:txt }; }
+      let original = txt;
+      let cleaned = txt.trim();
+
+      // 🔧 Intenta quedarte solo con el JSON (desde el primer "{" hasta el último "}")
+      const first = cleaned.indexOf('{');
+      const last  = cleaned.lastIndexOf('}');
+
+      if (first !== -1 && last !== -1 && last > first) {
+        cleaned = cleaned.slice(first, last + 1);
+      }
+
+      try {
+        return JSON.parse(cleaned);
+      } catch (e) {
+        console.error('BAD JSON RAW:', original);
+        console.error('BAD JSON CLEANED:', cleaned);
+        return { ok: false, error: 'BAD_JSON', raw: original };
+      }
     })
-    .catch(err => ({ ok:false, error:String(err) }));
+    .catch(err => ({ ok: false, error: String(err) }));
 }
+
 
 function move(id, toStatus, technicians, note) {
   return fetch('../api/kanban_move.php', {
