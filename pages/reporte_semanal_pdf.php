@@ -247,7 +247,7 @@ function chart_samples_per_day($pdf, $data_dia) {
         $x += $barWidth;
     }
 
-    $pdf->Ln(40);
+    $pdf->Ln(10);
 }
 
 // ---------- 8.2 Test Distribution ----------
@@ -290,7 +290,7 @@ function chart_tests_by_type($pdf, $data_tipo) {
         $x += $barWidth;
     }
 
-    $pdf->Ln(40);
+    $pdf->Ln(10);
 }
 
 // ---------- 8.3 Client Completion ----------
