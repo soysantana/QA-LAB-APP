@@ -344,7 +344,7 @@ function chart_client_completion($pdf, $clientes) {
         $x += $barWidth;
     }
 
-    $pdf->Ln(42);
+    $pdf->Ln(10);
 }
 
 /* =====================================================
