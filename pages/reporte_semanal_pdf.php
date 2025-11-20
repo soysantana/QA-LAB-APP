@@ -17,25 +17,24 @@ function get_count($table, $field, $start, $end) {
 }
 
 /* =====================================================
-   2. FECHAS → DEFINIR SEMANA ISO
+   2. FECHAS → DEFINIR SEMANA ISO (FIX DEFINITIVO)
 ===================================================== */
-$fecha = $_GET['fecha'] ?? date('Y-m-d');
-$fecha_obj = new DateTime($fecha);
 
-$week_iso = (int)$fecha_obj->format('W');
-$year_iso = (int)$fecha_obj->format('o');
+// --- FIX PRINCIPAL ---
+$year_iso  = isset($_GET['anio'])   ? intval($_GET['anio'])   : date("o");
+$week_iso  = isset($_GET['semana']) ? intval($_GET['semana']) : date("W");
 
-// Lunes de la semana ISO
+// GENERAR lunes de esa semana
 $start = new DateTime();
 $start->setISODate($year_iso, $week_iso, 1);
 $start_str = $start->format('Y-m-d 00:00:00');
 
-// Domingo de la semana ISO
+// GENERAR domingo de esa semana
 $end = new DateTime();
 $end->setISODate($year_iso, $week_iso, 7);
 $end_str = $end->format('Y-m-d 23:59:59');
+// ----------------------
 
-// Usuario
 $user = current_user();
 $responsable = $user['name'] ?? 'Laboratory Staff';
 
@@ -43,7 +42,7 @@ $responsable = $user['name'] ?? 'Laboratory Staff';
    3. FUNCIONES SQL DEL REPORTE SEMANAL
 ===================================================== */
 
-// 3.1 Muestras registradas por día de la semana (ISO)
+// 3.1 muestras por día
 function resumen_diario_semana($start_str, $end_str) {
     return find_by_sql("
         SELECT DATE(Registed_Date) AS dia,
@@ -55,7 +54,7 @@ function resumen_diario_semana($start_str, $end_str) {
     ");
 }
 
-// 3.2 Ensayos entregados por tipo
+// 3.2 ensayos por tipo
 function resumen_tipo_semana($start_str, $end_str) {
     return find_by_sql("
         SELECT UPPER(TRIM(Test_Type)) AS Test_Type,
@@ -67,7 +66,7 @@ function resumen_tipo_semana($start_str, $end_str) {
     ");
 }
 
-// 3.3 Cumplimiento semanal por cliente
+// 3.3 cumplimiento por cliente
 function cumplimiento_cliente_semana($start_str, $end_str) {
     return find_by_sql("
         SELECT 
@@ -111,6 +110,7 @@ class PDF_Weekly extends FPDF {
         $this->SetXY(120, 12);
         $this->Cell(80, 8, 'WEEKLY LABORATORY REPORT', 0, 1, 'R');
 
+        // rango semanal
         $week_start = new DateTime();
         $week_start->setISODate($this->year_iso, $this->week_iso, 1);
 
@@ -154,7 +154,7 @@ $pdf = new PDF_Weekly($week_iso, $year_iso);
 $pdf->AddPage();
 
 /* =====================================================
-   5. SECCIÓN 1 — WEEKLY SUMMARY
+   5. WEEKLY SUMMARY
 ===================================================== */
 $pdf->section_title("1. Weekly Summary of Activities");
 
@@ -163,46 +163,44 @@ $prep           = get_count("test_preparation", "Register_Date", $start_str, $en
 $realiz         = get_count("test_realization", "Register_Date", $start_str, $end_str);
 $entregas       = get_count("test_delivery", "Register_Date", $start_str, $end_str);
 
-$pdf->table_header(["Activity", "Total"], [80, 30]);
-$pdf->table_row(["Requisitioned",  $requisiciones], [80, 30]);
-$pdf->table_row(["In Preparation", $prep], [80, 30]);
-$pdf->table_row(["In Realization", $realiz], [80, 30]);
-$pdf->table_row(["Completed",      $entregas], [80, 30]);
+$pdf->table_header(["Activity","Total"], [80,30]);
+$pdf->table_row(["Requisitioned",  $requisiciones], [80,30]);
+$pdf->table_row(["In Preparation", $prep], [80,30]);
+$pdf->table_row(["In Realization", $realiz],[80,30]);
+$pdf->table_row(["Completed",      $entregas],[80,30]);
 
 $pdf->Ln(10);
 
 /* =====================================================
-   6. SECCIÓN 2 — DAILY BREAKDOWN
+   6. DAILY BREAKDOWN
 ===================================================== */
 $pdf->section_title("2. Daily Breakdown (ISO Week)");
 
 $data_dia = resumen_diario_semana($start_str, $end_str);
 
-$pdf->table_header(["Date", "Samples Registered"], [60, 50]);
+$pdf->table_header(["Date","Samples Registered"], [60,50]);
 
-foreach ($data_dia as $row) {
-    $pdf->table_row([
-        date("D d-M", strtotime($row['dia'])),
-        $row['total']
-    ], [60, 50]);
+foreach ($data_dia as $row){
+    $pdf->table_row([date("D d-M",strtotime($row['dia'])), $row['total']], [60,50]);
 }
 
 $pdf->Ln(10);
 
 /* =====================================================
-   7. SECCIÓN 3 — TEST DISTRIBUTION BY TYPE
+   7. TEST DISTRIBUTION BY TYPE
 ===================================================== */
 $pdf->section_title("3. Test Distribution by Type");
 
 $data_tipo = resumen_tipo_semana($start_str, $end_str);
 
-$pdf->table_header(["Test Type", "Completed"], [80, 30]);
+$pdf->table_header(["Test Type","Completed"], [80,30]);
 
-foreach ($data_tipo as $row) {
-    $pdf->table_row([$row['Test_Type'], $row['total']], [80, 30]);
+foreach ($data_tipo as $row){
+    $pdf->table_row([$row['Test_Type'],$row['total']], [80,30]);
 }
 
 $pdf->Ln(10);
+
 /* =====================================================
    8. GRÁFICOS — BARRAS FPDF
 ===================================================== */
