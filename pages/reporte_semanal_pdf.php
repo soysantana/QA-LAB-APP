@@ -5,9 +5,9 @@ require_once('../libs/fpdf/fpdf.php');
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// ============================================
-// HELPER: Contar registros entre dos fechas
-// ============================================
+/*=======================================================
+  1. HELPER: Contar registros entre fechas
+========================================================*/
 function get_count($table, $field, $start, $end) {
     $sql = "
         SELECT COUNT(*) AS total 
@@ -18,38 +18,32 @@ function get_count($table, $field, $start, $end) {
     return isset($res[0]['total']) ? (int)$res[0]['total'] : 0;
 }
 
-// ==============================
-// 1. FECHA BASE (desde GET o hoy)
-// ==============================
+/*=======================================================
+  2. FECHA BASE & SEMANA ISO
+========================================================*/
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
-
-// Convertir a DateTime
 $fecha_obj = new DateTime($fecha);
 
-// ==============================
-// 2. CÁLCULO DE SEMANA ISO
-// ==============================
 $week_iso = (int)$fecha_obj->format('W');
 $year_iso = (int)$fecha_obj->format('o');
 
-// Lunes de la semana ISO
+// Lunes de semana ISO
 $start = new DateTime();
-$start->setISODate($year_iso, $week_iso, 1);  // 1 = lunes
+$start->setISODate($year_iso, $week_iso, 1);
 $start_str = $start->format('Y-m-d 00:00:00');
 
-// Domingo de la semana ISO
+// Domingo de semana ISO
 $end = new DateTime();
-$end->setISODate($year_iso, $week_iso, 7);    // 7 = domingo
+$end->setISODate($year_iso, $week_iso, 7);
 $end_str = $end->format('Y-m-d 23:59:59');
 
 // Responsable
 $user = current_user();
 $responsable = $user['name'] ?? 'Laboratory Staff';
 
-
-// =====================================================
-// 3. CLASE PDF — Cabecera profesional estilo PVJ
-// =====================================================
+/*=======================================================
+  3. CLASE PDF
+========================================================*/
 class PDF_Weekly extends FPDF {
 
     public $week_iso;
@@ -74,10 +68,18 @@ class PDF_Weekly extends FPDF {
         $this->SetXY(120, 12);
         $this->Cell(80, 8, 'WEEKLY LABORATORY REPORT', 0, 1, 'R');
 
-        // Subtítulo: semana ISO
+        // Rango de fechas
+        $week_start = new DateTime();
+        $week_start->setISODate($this->year_iso, $this->week_iso, 1);
+
+        $week_end = new DateTime();
+        $week_end->setISODate($this->year_iso, $this->week_iso, 7);
+
+        $range = $week_start->format('d M Y') . " - " . $week_end->format('d M Y');
+
         $this->SetFont('Arial', '', 11);
         $this->SetXY(120, 20);
-        $this->Cell(80, 7, "ISO Week: {$this->week_iso} - {$this->year_iso}", 0, 1, 'R');
+        $this->Cell(80, 7, utf8_decode("ISO Week {$this->week_iso}  ($range)"), 0, 1, 'R');
 
         $this->Ln(15);
     }
@@ -85,14 +87,14 @@ class PDF_Weekly extends FPDF {
     function section_title($title) {
         $this->SetFont('Arial', 'B', 13);
         $this->SetFillColor(220, 230, 255);
-        $this->Cell(0, 9, $title, 0, 1, 'L', true);
+        $this->Cell(0, 9, utf8_decode($title), 0, 1, 'L', true);
         $this->Ln(3);
     }
 
     function table_header($cols, $widths) {
         $this->SetFont('Arial', 'B', 10);
         foreach ($cols as $i => $c) {
-            $this->Cell($widths[$i], 7, $c, 1, 0, 'C');
+            $this->Cell($widths[$i], 7, utf8_decode($c), 1, 0, 'C');
         }
         $this->Ln();
     }
@@ -100,7 +102,7 @@ class PDF_Weekly extends FPDF {
     function table_row($data, $widths) {
         $this->SetFont('Arial', '', 10);
         foreach ($data as $i => $d) {
-            $this->Cell($widths[$i], 7, $d, 1, 0, 'C');
+            $this->Cell($widths[$i], 7, utf8_decode($d), 1, 0, 'C');
         }
         $this->Ln();
     }
@@ -109,11 +111,12 @@ class PDF_Weekly extends FPDF {
 // Crear PDF
 $pdf = new PDF_Weekly($week_iso, $year_iso);
 $pdf->AddPage();
-// =====================================================
-// 4. FUNCIONES DE CONSULTA PARA EL REPORTE SEMANAL
-// =====================================================
 
-// ----------- 4.1 Total de ensayos/muestras por día -----------
+/*=======================================================
+  4. FUNCIONES SQL DEL REPORTE SEMANAL
+========================================================*/
+
+// 4.1 Muestras registradas por día
 function resumen_diario_semana($start_str, $end_str) {
     return find_by_sql("
         SELECT 
@@ -126,7 +129,7 @@ function resumen_diario_semana($start_str, $end_str) {
     ");
 }
 
-// ----------- 4.2 Ensayos por tipo en la semana -----------
+// 4.2 Ensayos por tipo entregados en la semana
 function resumen_tipo_semana($start_str, $end_str) {
     return find_by_sql("
         SELECT 
@@ -139,17 +142,15 @@ function resumen_tipo_semana($start_str, $end_str) {
     ");
 }
 
-// ----------- 4.3 % de cumplimiento por cliente -----------
+// 4.3 Cumplimiento por cliente
 function cumplimiento_cliente_semana($start_str, $end_str) {
     return find_by_sql("
         SELECT 
             UPPER(TRIM(r.Client)) AS Client,
             COUNT(*) AS solicitados,
-            SUM(CASE 
-                    WHEN d.id IS NOT NULL 
-                    THEN 1 
-                    ELSE 0 
-                END) AS entregados
+            SUM(
+                CASE WHEN d.id IS NOT NULL THEN 1 ELSE 0 END
+            ) AS entregados
         FROM lab_test_requisition_form r
         LEFT JOIN test_delivery d
             ON r.Sample_ID = d.Sample_ID
@@ -161,68 +162,64 @@ function cumplimiento_cliente_semana($start_str, $end_str) {
     ");
 }
 
-
-// =====================================================
-// 5. SECCIÓN: RESUMEN DE ACTIVIDADES SEMANALES
-// =====================================================
+/*=======================================================
+  5. SECCIÓN 1 — RESUMEN SEMANAL
+========================================================*/
 $pdf->section_title("1. Weekly Summary of Activities");
 
 $requisiciones = get_count("lab_test_requisition_form", "Registed_Date", $start_str, $end_str);
-$prep           = get_count("test_preparation",          "Register_Date", $start_str, $end_str);
-$realiz         = get_count("test_realization",          "Register_Date", $start_str, $end_str);
-$entregas       = get_count("test_delivery",             "Register_Date", $start_str, $end_str);
+$prep           = get_count("test_preparation", "Register_Date", $start_str, $end_str);
+$realiz         = get_count("test_realization", "Register_Date", $start_str, $end_str);
+$entregas       = get_count("test_delivery", "Register_Date", $start_str, $end_str);
 
-$pdf->table_header(["Activity", "Total"], [70, 30]);
-$pdf->table_row(["Requisitioned", $requisiciones], [70, 30]);
-$pdf->table_row(["In Preparation", $prep], [70, 30]);
-$pdf->table_row(["In Realization", $realiz], [70, 30]);
-$pdf->table_row(["Completed", $entregas], [70, 30]);
-$pdf->Ln(6);
+$pdf->table_header(["Activity", "Total"], [80, 30]);
+$pdf->table_row(["Requisitioned", $requisiciones], [80, 30]);
+$pdf->table_row(["In Preparation", $prep], [80, 30]);
+$pdf->table_row(["In Realization", $realiz], [80, 30]);
+$pdf->table_row(["Completed", $entregas], [80, 30]);
 
+$pdf->Ln(8);
 
-// =====================================================
-// 6. SECCIÓN: MUESTRAS POR DÍA DE LA SEMANA (Lun → Dom)
-// =====================================================
+/*=======================================================
+  6. SECCIÓN 2 — Muestras Registradas Por Día
+========================================================*/
 $pdf->section_title("2. Daily Breakdown (ISO Week)");
 
 $data_dia = resumen_diario_semana($start_str, $end_str);
 
-$pdf->table_header(["Date", "Samples Registered"], [50, 50]);
+$pdf->table_header(["Date", "Samples Registered"], [60, 50]);
 
 foreach ($data_dia as $row) {
     $pdf->table_row([
         date("D d-M", strtotime($row['dia'])),
         $row['total']
-    ], [50, 50]);
+    ], [60, 50]);
 }
 
 $pdf->Ln(8);
 
-
-// =====================================================
-// 7. SECCIÓN: DISTRIBUCIÓN DE ENSAYOS POR TIPO
-// =====================================================
+/*=======================================================
+  7. SECCIÓN 3 — Distribución de Ensayos por Tipo
+========================================================*/
 $pdf->section_title("3. Test Distribution by Type");
 
 $data_tipo = resumen_tipo_semana($start_str, $end_str);
 
-$pdf->table_header(["Test Type", "Completed"], [70, 30]);
+$pdf->table_header(["Test Type", "Completed"], [80, 30]);
 
 foreach ($data_tipo as $row) {
-    $pdf->table_row([$row['Test_Type'], $row['total']], [70, 30]);
+    $pdf->table_row([$row['Test_Type'], $row['total']], [80, 30]);
 }
 
 $pdf->Ln(8);
 
-
-// =====================================================
-// 8. SECCIÓN: CUMPLIMIENTO POR CLIENTE (Weekly KPI)
-// =====================================================
+/*=======================================================
+  8. SECCIÓN 4 — KPI por Cliente
+========================================================*/
 $pdf->section_title("4. Client Completion Summary");
 
 $clientes = cumplimiento_cliente_semana($start_str, $end_str);
 
-// Encabezado
 $pdf->table_header(["Client", "Requested", "Delivered", "%"], [60, 30, 30, 20]);
 
 foreach ($clientes as $c) {
@@ -239,11 +236,12 @@ foreach ($clientes as $c) {
 }
 
 $pdf->Ln(10);
-// =====================================================
-// 9. GRAFICOS DEL REPORTE SEMANAL (FPDF PURO)
-// =====================================================
 
-// ======= 9.1 Grafico: Samples per Day (Bar Chart) =======
+/*=======================================================
+  9. GRÁFICOS DEL REPORTE SEMANAL (FPDF PURO)
+========================================================*/
+
+/*-------------- 9.1 Samples per Day --------------*/
 function chart_samples_per_day($pdf, $data_dia) {
     if (empty($data_dia)) return;
 
@@ -255,34 +253,29 @@ function chart_samples_per_day($pdf, $data_dia) {
     $chartWidth = 170;
     $chartHeight = 50;
 
-    // Encontrar máximo
     $maxValue = 0;
     foreach ($data_dia as $row) {
         if ($row['total'] > $maxValue) $maxValue = $row['total'];
     }
     if ($maxValue == 0) $maxValue = 1;
 
-    // Ejes
     $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartHeight);
     $pdf->Line($chartX, $chartY + $chartHeight, $chartX + $chartWidth, $chartY + $chartHeight);
 
-    // Barras
     $numBars = count($data_dia);
     $barWidth = ($chartWidth - 20) / $numBars;
     $x = $chartX + 10;
 
     foreach ($data_dia as $row) {
+
         $value = (int)$row['total'];
         $barHeight = ($value / $maxValue) * $chartHeight;
 
         $y = $chartY + $chartHeight - $barHeight;
 
-        // Color
         $pdf->SetFillColor(100, 149, 237);
-
         $pdf->Rect($x, $y, $barWidth - 4, $barHeight, "F");
 
-        // Etiqueta
         $pdf->SetFont('Arial', '', 7);
         $pdf->SetXY($x, $chartY + $chartHeight + 2);
         $pdf->MultiCell($barWidth - 4, 3, date("D", strtotime($row['dia'])), 0, 'C');
@@ -293,8 +286,7 @@ function chart_samples_per_day($pdf, $data_dia) {
     $pdf->Ln(60);
 }
 
-
-// ======= 9.2 Graph: Test Distribution by Type =======
+/*-------------- 9.2 Test Distribution --------------*/
 function chart_tests_by_type($pdf, $data_tipo) {
     if (empty($data_tipo)) return;
 
@@ -306,13 +298,11 @@ function chart_tests_by_type($pdf, $data_tipo) {
     $chartWidth = 170;
     $chartHeight = 50;
 
-    // Maximo
     $maxValue = 1;
     foreach ($data_tipo as $row) {
         if ($row['total'] > $maxValue) $maxValue = $row['total'];
     }
 
-    // Ejes
     $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartHeight);
     $pdf->Line($chartX, $chartY + $chartHeight, $chartX + $chartWidth, $chartY + $chartHeight);
 
@@ -321,17 +311,15 @@ function chart_tests_by_type($pdf, $data_tipo) {
     $x = $chartX + 10;
 
     foreach ($data_tipo as $row) {
+
         $value = (int)$row['total'];
         $barHeight = ($value / $maxValue) * $chartHeight;
 
         $y = $chartY + $chartHeight - $barHeight;
 
-        // Color
         $pdf->SetFillColor(50, 180, 120);
-
         $pdf->Rect($x, $y, $barWidth - 4, $barHeight, "F");
 
-        // Etiqueta
         $pdf->SetFont('Arial', '', 6);
         $pdf->SetXY($x, $chartY + $chartHeight + 2);
         $pdf->MultiCell($barWidth - 4, 3, strtoupper($row['Test_Type']), 0, 'C');
@@ -342,15 +330,13 @@ function chart_tests_by_type($pdf, $data_tipo) {
     $pdf->Ln(60);
 }
 
-
-// ======= 9.3 Graph: Client Completion (%) =======
+/*-------------- 9.3 Client Completion Graph --------------*/
 function chart_client_completion($pdf, $clientes) {
     if (empty($clientes)) return;
 
     $pdf->SetFont('Arial', 'B', 11);
     $pdf->Cell(0, 8, "Graph 3: Client Completion Percentage", 0, 1);
 
-    // Transformar datos
     $data = [];
     foreach ($clientes as $c) {
         $sol = (int)$c['solicitados'];
@@ -363,36 +349,30 @@ function chart_client_completion($pdf, $clientes) {
         ];
     }
 
-    // Área del gráfico
     $chartX = 20;
     $chartY = $pdf->GetY() + 5;
     $chartWidth = 170;
     $chartHeight = 50;
 
-    // Maximo
     $maxValue = 100;
 
-    // Ejes
     $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartHeight);
     $pdf->Line($chartX, $chartY + $chartHeight, $chartX + $chartWidth, $chartY + $chartHeight);
 
-    // Barras
     $numBars = count($data);
     $barWidth = ($chartWidth - 20) / $numBars;
     $x = $chartX + 10;
 
     foreach ($data as $row) {
+
         $pct = $row['pct'];
-        $barHeight = ($pct / $maxValue) * $chartHeight;
+        $barHeight = ($pct / 100) * $chartHeight;
 
         $y = $chartY + $chartHeight - $barHeight;
 
-        // Color
-        $pdf->SetFillColor(255, 165, 0); // naranja
-
+        $pdf->SetFillColor(255, 165, 0);
         $pdf->Rect($x, $y, $barWidth - 4, $barHeight, "F");
 
-        // Etiquetas
         $pdf->SetFont('Arial', 'B', 7);
         $pdf->SetXY($x, $y - 4);
         $pdf->Cell($barWidth - 4, 4, $pct . "%", 0, 0, 'C');
@@ -407,63 +387,79 @@ function chart_client_completion($pdf, $clientes) {
     $pdf->Ln(60);
 }
 
-
-// =====================================================
-// LLAMADO A LOS GRAFICOS (después de las tablas)
-// =====================================================
-
+/*------------- EJECUCIÓN DE GRÁFICOS -------------*/
 chart_samples_per_day($pdf, $data_dia);
 chart_tests_by_type($pdf, $data_tipo);
 chart_client_completion($pdf, $clientes);
-// =====================================================
-// 10. NCR – NON-CONFORMITIES (WEEKLY)
-// =====================================================
-$pdf->section_title("5. Weekly Non-Conformities (NCR)");
 
-$ncr_semana = find_by_sql("
+/*=======================================================
+  10. NCR + OBSERVACIONES (Estilo reporte diario)
+========================================================*/
+
+$pdf->section_title("5. Weekly NCR & General Observations");
+
+$ncr_obs = find_by_sql("
     SELECT 
-        Sample_ID,
-        Sample_Number,
-        Structure,
-        Material_Type,
-        Noconformidad,
-        Report_Date
-    FROM ensayos_reporte
+        r.Client,
+        e.Sample_ID,
+        e.Sample_Number,
+        e.Structure,
+        e.Material_Type,
+        e.Noconformidad,
+        e.Comments,
+        e.Report_Date
+    FROM ensayos_reporte e
+    LEFT JOIN lab_test_requisition_form r
+        ON r.Sample_ID = e.Sample_ID
+       AND r.Sample_Number = e.Sample_Number
     WHERE 
-        Noconformidad IS NOT NULL 
-        AND TRIM(Noconformidad) != ''
-        AND Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    ORDER BY Report_Date DESC
+        (
+            (e.Noconformidad IS NOT NULL AND TRIM(e.Noconformidad) <> '')
+            OR (e.Comments IS NOT NULL AND TRIM(e.Comments) <> '')
+        )
+        AND e.Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    ORDER BY e.Report_Date DESC
 ");
 
-if (empty($ncr_semana)) {
+if (empty($ncr_obs)) {
+
     $pdf->SetFont('Arial', '', 10);
-    $pdf->Cell(0, 8, "No NCR reported during this week.", 0, 1);
+    $pdf->Cell(0, 8, "No NCR or observations reported this week.", 0, 1);
+
 } else {
+
     $pdf->table_header(
-        ["Sample", "Material", "NCR", "Date"],
-        [40, 30, 80, 20]
+        ["Client", "Sample", "Material", "Observation / NCR", "Date"],
+        [35, 30, 30, 75, 20]
     );
 
-    foreach ($ncr_semana as $n) {
+    foreach ($ncr_obs as $n) {
+
+        $texto = "";
+        if ($n['Noconformidad']) {
+            $texto .= "NCR: " . substr($n['Noconformidad'], 0, 150) . "\n";
+        }
+        if ($n['Comments']) {
+            $texto .= "OBS: " . substr($n['Comments'], 0, 150);
+        }
+
         $pdf->table_row(
             [
+                $n['Client'] ?? 'N/A',
                 $n['Sample_ID'] . "-" . $n['Sample_Number'],
                 $n['Material_Type'],
-                substr($n['Noconformidad'], 0, 120),
+                $texto,
                 date("d-M", strtotime($n['Report_Date']))
             ],
-            [40, 30, 80, 20]
+            [35, 30, 30, 75, 20]
         );
     }
 }
 
-$pdf->Ln(8);
-
-
-// =====================================================
-// 11. PENDING TESTS (WEEKLY)
-// =====================================================
+$pdf->Ln(10);
+/*=======================================================
+  11. PENDING TESTS (WEEKLY)
+========================================================*/
 $pdf->section_title("6. Pending Tests (Weekly)");
 
 $pendientes_semana = find_by_sql("
@@ -471,10 +467,12 @@ $pendientes_semana = find_by_sql("
         r.Sample_ID,
         r.Sample_Number,
         r.Test_Type,
-        r.Sample_Date
+        r.Sample_Date,
+        r.Client
     FROM lab_test_requisition_form r
     WHERE 
         r.Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
+        AND LOWER(r.Test_Type) NOT LIKE '%envio%'
         AND NOT EXISTS (
             SELECT 1 
             FROM test_delivery d
@@ -482,83 +480,47 @@ $pendientes_semana = find_by_sql("
               AND d.Sample_Number = r.Sample_Number
               AND d.Test_Type = r.Test_Type
         )
-        AND LOWER(r.Test_Type) NOT LIKE '%envio%'
     ORDER BY r.Sample_Date DESC
 ");
 
 if (empty($pendientes_semana)) {
+
     $pdf->SetFont('Arial', '', 10);
     $pdf->Cell(0, 8, "No pending tests for this week.", 0, 1);
+
 } else {
+
     $pdf->table_header(
-        ["Sample ID", "Sample No.", "Test Type", "Date"],
-        [40, 40, 60, 20]
+        ["Client", "Sample ID", "Sample No.", "Test Type", "Date"],
+        [40, 35, 35, 50, 20]
     );
 
     foreach ($pendientes_semana as $p) {
         $pdf->table_row(
             [
+                $p['Client'],
                 $p['Sample_ID'],
                 $p['Sample_Number'],
                 strtoupper($p['Test_Type']),
                 date("d-M", strtotime($p['Sample_Date']))
             ],
-            [40, 40, 60, 20]
+            [40, 35, 35, 50, 20]
         );
-    }
-}
-
-$pdf->Ln(8);
-
-
-// =====================================================
-// 12. GENERAL OBSERVATIONS
-// =====================================================
-$pdf->section_title("7. General Observations");
-
-$observaciones_semana = find_by_sql("
-    SELECT Comments, Report_Date
-    FROM ensayos_reporte
-    WHERE Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    ORDER BY Report_Date DESC
-");
-
-if (empty($observaciones_semana)) {
-    $pdf->SetFont('Arial', '', 10);
-    $pdf->Cell(0, 6, "No general observations were recorded this week.", 0, 1);
-} else {
-    foreach ($observaciones_semana as $obs) {
-        $pdf->SetFont('Arial', 'B', 9);
-        $pdf->Cell(0, 5, date("d-M", strtotime($obs['Report_Date'])) . ":", 0, 1);
-
-        $pdf->SetFont('Arial', '', 9);
-        $pdf->MultiCell(0, 5, "- " . $obs['Comments'], 0, 'L');
-        $pdf->Ln(1);
     }
 }
 
 $pdf->Ln(10);
 
-
-// =====================================================
-// 13. SIGNATURES & APPROVALS
-// =====================================================
-$pdf->section_title("8. Signatures & Approvals");
+/*=======================================================
+  12. SIGNATURES & APPROVALS
+========================================================*/
+$pdf->section_title("7. Signatures & Approvals");
 
 $pdf->SetFont('Arial', '', 10);
 $pdf->Cell(60, 8, "Prepared by:", 1);
-$pdf->Cell(120, 8, $user['name'], 1, 1);
+$pdf->Cell(120, 8, utf8_decode($user['name']), 1, 1);
 
-$pdf->Cell(60, 8, "Reviewed by:", 1);
-$pdf->Cell(120, 8, "__________________________", 1, 1);
-
-$pdf->Cell(60, 8, "Approved by:", 1);
-$pdf->Cell(120, 8, "__________________________", 1, 1);
-
-$pdf->Ln(15);
-
-
-// =====================================================
-// 14. OUTPUT FINAL DEL PDF
-// =====================================================
+/*=======================================================
+  13. OUTPUT FINAL PDF
+========================================================*/
 $pdf->Output("I", "Weekly_Laboratory_Report_Week{$week_iso}_{$year_iso}.pdf");
