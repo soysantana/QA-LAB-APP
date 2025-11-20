@@ -283,7 +283,7 @@ function chart_samples_per_day($pdf, $data_dia) {
         $x += $barWidth;
     }
 
-    $pdf->Ln(60);
+    $pdf->Ln(40);
 }
 
 /*-------------- 9.2 Test Distribution --------------*/
@@ -327,7 +327,7 @@ function chart_tests_by_type($pdf, $data_tipo) {
         $x += $barWidth;
     }
 
-    $pdf->Ln(60);
+    $pdf->Ln(40);
 }
 
 /*-------------- 9.3 Client Completion Graph --------------*/
@@ -384,7 +384,7 @@ function chart_client_completion($pdf, $clientes) {
         $x += $barWidth;
     }
 
-    $pdf->Ln(60);
+    $pdf->Ln(40);
 }
 
 /*------------- EJECUCIÓN DE GRÁFICOS -------------*/
@@ -392,12 +392,12 @@ chart_samples_per_day($pdf, $data_dia);
 chart_tests_by_type($pdf, $data_tipo);
 chart_client_completion($pdf, $clientes);
 
-/*=======================================================
-  10. NCR + OBSERVACIONES (Estilo reporte diario)
-========================================================*/
-
+// =====================================================
+// 5. WEEKLY NCR & GENERAL OBSERVATIONS (Unified Section)
+// =====================================================
 $pdf->section_title("5. Weekly NCR & General Observations");
 
+// Traer NCR + comentarios unidos con cliente
 $ncr_obs = find_by_sql("
     SELECT 
         r.Client,
@@ -415,48 +415,66 @@ $ncr_obs = find_by_sql("
     WHERE 
         (
             (e.Noconformidad IS NOT NULL AND TRIM(e.Noconformidad) <> '')
-            OR (e.Comments IS NOT NULL AND TRIM(e.Comments) <> '')
+            OR 
+            (e.Comments IS NOT NULL AND TRIM(e.Comments) <> '')
         )
         AND e.Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
     ORDER BY e.Report_Date DESC
 ");
 
 if (empty($ncr_obs)) {
-
     $pdf->SetFont('Arial', '', 10);
     $pdf->Cell(0, 8, "No NCR or observations reported this week.", 0, 1);
-
 } else {
 
+    // Cabeceras
     $pdf->table_header(
         ["Client", "Sample", "Material", "Observation / NCR", "Date"],
-        [35, 30, 30, 75, 20]
+        [25, 25, 25, 105, 20]
     );
+
+    // Definir anchos
+    $wClient = 25;
+    $wSample = 25;
+    $wMat    = 25;
+    $wObs    = 105;
+    $wDate   = 20;
 
     foreach ($ncr_obs as $n) {
 
+        // Combinar texto NCR + OBS
         $texto = "";
-        if ($n['Noconformidad']) {
-            $texto .= "NCR: " . substr($n['Noconformidad'], 0, 150) . "\n";
+        if (!empty($n['Noconformidad'])) {
+            $texto .= "NCR: " . utf8_decode($n['Noconformidad']) . "\n";
         }
-        if ($n['Comments']) {
-            $texto .= "OBS: " . substr($n['Comments'], 0, 150);
+        if (!empty($n['Comments'])) {
+            $texto .= "OBS: " . utf8_decode($n['Comments']);
         }
 
-        $pdf->table_row(
-            [
-                $n['Client'] ?? 'N/A',
-                $n['Sample_ID'] . "-" . $n['Sample_Number'],
-                $n['Material_Type'],
-                $texto,
-                date("d-M", strtotime($n['Report_Date']))
-            ],
-            [35, 30, 30, 75, 20]
-        );
+        // Guardar posición inicial de la fila
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+
+        // Dibujar columnas fijas
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell($wClient, 6, utf8_decode($n['Client'] ?: 'N/A'), 1);
+        $pdf->Cell($wSample, 6, $n['Sample_ID']."-".$n['Sample_Number'], 1);
+        $pdf->Cell($wMat, 6, utf8_decode($n['Material_Type']), 1);
+
+        // MultiCell para Observación / NCR
+        $pdf->MultiCell($wObs, 6, $texto, 1);
+
+        // Volver a la derecha donde va la fecha
+        $pdf->SetXY($x + $wClient + $wSample + $wMat + $wObs, $y);
+        $pdf->Cell($wDate, 6, date("d-M", strtotime($n['Report_Date'])), 1);
+
+        // Mover cursor debajo de la fila completa
+        $pdf->Ln();
     }
 }
 
-$pdf->Ln(10);
+$pdf->Ln(6);
+
 /*=======================================================
   11. PENDING TESTS (WEEKLY)
 ========================================================*/
