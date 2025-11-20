@@ -354,7 +354,16 @@ chart_samples_per_day($pdf,$data_dia);
 chart_tests_by_type($pdf,$data_tipo);
 
 $clientes_resumen = cumplimiento_cliente_semana($start_str,$end_str);
-chart_client_completion($pdf,$clientes_resumen);
+// ===== FIX PARA EVITAR QUE EL GRÁFICO SE DIVIDA EN PÁGINAS =====
+$neededHeight = 95;  // Alto estimado del gráfico completo (barras + etiquetas)
+
+if ($pdf->GetY() + $neededHeight > 250) {   // ← Límite seguro antes del footer
+    $pdf->AddPage(); 
+}
+
+// Ahora sí dibujar el gráfico
+chart_client_completion($pdf, $clientes_resumen);
+
 
 $pdf->Ln(10);
 
