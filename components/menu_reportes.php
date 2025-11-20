@@ -42,34 +42,19 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
         <h6 class="text-muted text-uppercase small mb-1">Reportes por período</h6>
       </div>
 
-      <!-- Reporte diario -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <a href="/pages/reporteDiario.php" class="text-decoration-none">
-          <div class="card h-100 shadow-sm border-0 hover-elevate">
-            <div class="card-body">
-              <div class="d-flex align-items-center mb-2">
-                <i class="bi bi-calendar-day me-2"></i>
-                <h5 class="card-title mb-0">Digitar Reporte Diario</h5>
-              </div>
-              <p class="card-text small text-muted mb-0">
-                Crear diario de muestras, ensayos realizados, entregas y observaciones.
-              </p>
-            </div>
-          </div>
-        </a>
-      </div>
+
 
       <!-- Reportes diarios (listado) -->
       <div class="col-12 col-md-6 col-lg-4">
-        <a href="/pages/reporte_diario_lab.php" class="text-decoration-none">
+        <a href="/components/menu_reporteria.php" class="text-decoration-none">
           <div class="card h-100 shadow-sm border-0 hover-elevate">
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
                 <i class="bi bi-calendar-range me-2"></i>
-                <h5 class="card-title mb-0">Listado de Reportes Diarios</h5>
+                <h5 class="card-title mb-0">Reporteria</h5>
               </div>
               <p class="card-text small text-muted mb-0">
-                Listado de todos los resportes de una semana.
+                Listado de todos los resportes Diarios, Semanales, Mensuales, Trimestral, Anual.
               </p>
             </div>
           </div>

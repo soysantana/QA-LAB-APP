@@ -75,7 +75,7 @@ $MENU_TOP = [
     nav_item('/components/menu_hojasdetrabajos.php', 'Ensayos de laboratorio', 'bi-flask' ),
 
     // Hub de reportes: desde aquí puedes enlazar diario, semanal, etc.
-    nav_item('/components/menu_reporte_diario.php', 'Reportes',       'bi-bar-chart'),
+    nav_item('/components/menu_reportes.php', 'Reportes',       'bi-bar-chart'),
 
     // Hub de inventario
     nav_item('/components/menu_inventarios.php',    'Inventario',     'bi-box-seam'),
