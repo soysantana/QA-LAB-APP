@@ -238,7 +238,7 @@ foreach ($clientes as $c) {
 $pdf->Ln(10);
 
 /*=======================================================
-  9. GRÁFICOS DEL REPORTE SEMANAL (FPDF PURO)
+  9. GRÁFICOS
 ========================================================*/
 
 /*-------------- 9.1 Samples per Day --------------*/
@@ -387,112 +387,143 @@ function chart_client_completion($pdf, $clientes) {
     $pdf->Ln(40);
 }
 
-/*------------- EJECUCIÓN DE GRÁFICOS -------------*/
 chart_samples_per_day($pdf, $data_dia);
 chart_tests_by_type($pdf, $data_tipo);
 chart_client_completion($pdf, $clientes);
+/*=======================================================
+  10. SECTION 5 — WEEKLY NCR (SEPARATED)
+========================================================*/
+$pdf->section_title("5. Weekly Non-Conformities (NCR)");
 
-// =====================================================
-// 5. WEEKLY NCR & GENERAL OBSERVATIONS (Unified Section)
-// =====================================================
-$pdf->section_title("5. Weekly NCR & General Observations");
-
-// Traer NCR + comentarios unidos con cliente
-$ncr_obs = find_by_sql("
+$ncr_semana = find_by_sql("
     SELECT 
         r.Client,
         e.Sample_ID,
         e.Sample_Number,
-        e.Structure,
         e.Material_Type,
         e.Noconformidad,
-        e.Comments,
         e.Report_Date
     FROM ensayos_reporte e
     LEFT JOIN lab_test_requisition_form r
         ON r.Sample_ID = e.Sample_ID
        AND r.Sample_Number = e.Sample_Number
     WHERE 
-        (
-            (e.Noconformidad IS NOT NULL AND TRIM(e.Noconformidad) <> '')
-            OR 
-            (e.Comments IS NOT NULL AND TRIM(e.Comments) <> '')
-        )
+        e.Noconformidad IS NOT NULL 
+        AND TRIM(e.Noconformidad) <> ''
         AND e.Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
     ORDER BY e.Report_Date DESC
 ");
 
-if (empty($ncr_obs)) {
+if (empty($ncr_semana)) {
     $pdf->SetFont('Arial', '', 10);
-    $pdf->Cell(0, 8, "No NCR or observations reported this week.", 0, 1);
+    $pdf->Cell(0, 8, "No NCR found during ISO week {$week_iso}.", 0, 1);
 } else {
 
-    // Cabeceras
     $pdf->table_header(
-        ["Client", "Sample", "Material", "Observation / NCR", "Date"],
-        [25, 25, 25, 105, 20]
+        ["Client", "Sample", "Material", "Non-Conformity", "Date"],
+        [35, 35, 30, 70, 20]
     );
 
-    // Definir anchos
-    $wClient = 25;
-    $wSample = 25;
-    $wMat    = 25;
-    $wObs    = 105;
-    $wDate   = 20;
+    foreach ($ncr_semana as $n) {
 
-    foreach ($ncr_obs as $n) {
+        $texto = utf8_decode($n['Noconformidad']);
 
-        // Combinar texto NCR + OBS
-        $texto = "";
-        if (!empty($n['Noconformidad'])) {
-            $texto .= "NCR: " . utf8_decode($n['Noconformidad']) . "\n";
-        }
-        if (!empty($n['Comments'])) {
-            $texto .= "OBS: " . utf8_decode($n['Comments']);
-        }
-
-        // Guardar posición inicial de la fila
+        // Guardamos posición actual
         $x = $pdf->GetX();
         $y = $pdf->GetY();
 
-        // Dibujar columnas fijas
+        // Celdas fijas
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell($wClient, 6, utf8_decode($n['Client'] ?: 'N/A'), 1);
-        $pdf->Cell($wSample, 6, $n['Sample_ID']."-".$n['Sample_Number'], 1);
-        $pdf->Cell($wMat, 6, utf8_decode($n['Material_Type']), 1);
+        $pdf->Cell(35, 6, utf8_decode($n['Client'] ?: 'N/A'), 1);
+        $pdf->Cell(35, 6, $n['Sample_ID']."-".$n['Sample_Number'], 1);
+        $pdf->Cell(30, 6, utf8_decode($n['Material_Type']), 1);
 
-        // MultiCell para Observación / NCR
-        $pdf->MultiCell($wObs, 6, $texto, 1);
+        // Columna Multiline
+        $pdf->MultiCell(70, 6, $texto, 1);
 
-        // Volver a la derecha donde va la fecha
-        $pdf->SetXY($x + $wClient + $wSample + $wMat + $wObs, $y);
-        $pdf->Cell($wDate, 6, date("d-M", strtotime($n['Report_Date'])), 1);
+        // Regresar al borde derecho para la fecha
+        $pdf->SetXY($x + 35 + 35 + 30 + 70, $y);
+        $pdf->Cell(20, 6, date("d-M", strtotime($n['Report_Date'])), 1);
 
-        // Mover cursor debajo de la fila completa
         $pdf->Ln();
     }
 }
 
-$pdf->Ln(6);
+$pdf->Ln(8);
 
 /*=======================================================
-  11. PENDING TESTS (WEEKLY)
+  11. SECTION 6 — WEEKLY GENERAL OBSERVATIONS
 ========================================================*/
-$pdf->section_title("6. Pending Tests (Weekly)");
+$pdf->section_title("6. Weekly General Observations");
+
+$obs_semana = find_by_sql("
+    SELECT 
+        r.Client,
+        e.Comments,
+        e.Sample_ID,
+        e.Sample_Number,
+        e.Report_Date
+    FROM ensayos_reporte e
+    LEFT JOIN lab_test_requisition_form r
+        ON r.Sample_ID = e.Sample_ID
+       AND r.Sample_Number = e.Sample_Number
+    WHERE 
+        e.Comments IS NOT NULL 
+        AND TRIM(e.Comments) <> ''
+        AND e.Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    ORDER BY e.Report_Date DESC
+");
+
+if (empty($obs_semana)) {
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell(0, 8, "No general observations during ISO week {$week_iso}.", 0, 1);
+} else {
+
+    $pdf->table_header(
+        ["Client", "Sample", "Observation", "Date"],
+        [40, 40, 90, 20]
+    );
+
+    foreach ($obs_semana as $o) {
+
+        $texto = utf8_decode($o['Comments']);
+
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(40, 6, utf8_decode($o['Client'] ?: 'N/A'), 1);
+        $pdf->Cell(40, 6, $o['Sample_ID']."-".$o['Sample_Number'], 1);
+
+        // Observación multilínea
+        $pdf->MultiCell(90, 6, $texto, 1);
+
+        $pdf->SetXY($x + 40 + 40 + 90, $y);
+        $pdf->Cell(20, 6, date("d-M", strtotime($o['Report_Date'])), 1);
+
+        $pdf->Ln();
+    }
+}
+
+$pdf->Ln(10);
+/*=======================================================
+  12. SECTION 7 — WEEKLY PENDING TESTS
+========================================================*/
+$pdf->section_title("7. Pending Tests (Weekly)");
 
 $pendientes_semana = find_by_sql("
     SELECT 
+        r.Client,
         r.Sample_ID,
         r.Sample_Number,
         r.Test_Type,
-        r.Sample_Date,
-        r.Client
+        r.Sample_Date
     FROM lab_test_requisition_form r
     WHERE 
         r.Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
         AND LOWER(r.Test_Type) NOT LIKE '%envio%'
         AND NOT EXISTS (
-            SELECT 1 
+            SELECT 1
             FROM test_delivery d
             WHERE d.Sample_ID = r.Sample_ID
               AND d.Sample_Number = r.Sample_Number
@@ -504,25 +535,25 @@ $pendientes_semana = find_by_sql("
 if (empty($pendientes_semana)) {
 
     $pdf->SetFont('Arial', '', 10);
-    $pdf->Cell(0, 8, "No pending tests for this week.", 0, 1);
+    $pdf->Cell(0, 8, "No pending tests during ISO week {$week_iso}.", 0, 1);
 
 } else {
 
     $pdf->table_header(
         ["Client", "Sample ID", "Sample No.", "Test Type", "Date"],
-        [40, 35, 35, 50, 20]
+        [40, 40, 35, 55, 20]
     );
 
     foreach ($pendientes_semana as $p) {
         $pdf->table_row(
             [
-                $p['Client'],
+                utf8_decode($p['Client']),
                 $p['Sample_ID'],
                 $p['Sample_Number'],
                 strtoupper($p['Test_Type']),
                 date("d-M", strtotime($p['Sample_Date']))
             ],
-            [40, 35, 35, 50, 20]
+            [40, 40, 35, 55, 20]
         );
     }
 }
@@ -530,15 +561,17 @@ if (empty($pendientes_semana)) {
 $pdf->Ln(10);
 
 /*=======================================================
-  12. SIGNATURES & APPROVALS
+  13. SECTION 8 — SIGNATURES & APPROVALS
 ========================================================*/
-$pdf->section_title("7. Signatures & Approvals");
+$pdf->section_title("8. Signatures & Approvals");
 
 $pdf->SetFont('Arial', '', 10);
 $pdf->Cell(60, 8, "Prepared by:", 1);
 $pdf->Cell(120, 8, utf8_decode($user['name']), 1, 1);
 
+$pdf->Ln(5);
+
 /*=======================================================
-  13. OUTPUT FINAL PDF
+  14. OUTPUT FINAL PDF
 ========================================================*/
 $pdf->Output("I", "Weekly_Laboratory_Report_Week{$week_iso}_{$year_iso}.pdf");
