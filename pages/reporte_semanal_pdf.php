@@ -420,8 +420,8 @@ if (empty($ncr_semana)) {
 } else {
 
     $pdf->table_header(
-        ["Client", "Sample", "Material", "Non-Conformity", "Date"],
-        [35, 35, 30, 70, 20]
+        ["Sample", "Material", "Non-Conformity", "Date"],
+        [ 35, 30, 70, 20]
     );
 
     foreach ($ncr_semana as $n) {
@@ -434,7 +434,6 @@ if (empty($ncr_semana)) {
 
         // Celdas fijas
         $pdf->SetFont('Arial', '', 9);
-        $pdf->Cell(35, 6, utf8_decode($n['Client'] ?: 'N/A'), 1);
         $pdf->Cell(35, 6, $n['Sample_ID']."-".$n['Sample_Number'], 1);
         $pdf->Cell(30, 6, utf8_decode($n['Material_Type']), 1);
 
