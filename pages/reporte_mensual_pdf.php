@@ -5,11 +5,11 @@ require_once('../libs/fpdf/fpdf.php');
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-/* =========================================
+/* ======================================================
    1. DEFINIR MES Y AÑO
-========================================= */
-$year = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
-$month = isset($_GET['mes']) ? (int)$_GET['mes'] : date('n');
+====================================================== */
+$year  = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
+$month = isset($_GET['mes'])  ? (int)$_GET['mes']  : date('n');
 
 $start_str = "{$year}-".str_pad($month,2,'0',STR_PAD_LEFT)."-01 00:00:00";
 $end_str   = date("Y-m-t 23:59:59", strtotime($start_str));
@@ -17,15 +17,29 @@ $end_str   = date("Y-m-t 23:59:59", strtotime($start_str));
 $user = current_user();
 $responsable = $user['name'] ?? 'Laboratory Staff';
 
-/* =========================================
+/* ======================================================
    2. FUNCIONES SQL
-========================================= */
+====================================================== */
 
 function get_count($table,$field,$start,$end){
-    $q = "SELECT COUNT(*) total FROM {$table}
-          WHERE {$field} BETWEEN '{$start}' AND '{$end}'";
-    $r = find_by_sql($q);
+    $r = find_by_sql("
+        SELECT COUNT(*) total
+        FROM {$table}
+        WHERE {$field} BETWEEN '{$start}' AND '{$end}'
+    ");
     return (int)$r[0]['total'];
+}
+
+function monthly_top_client($start,$end){
+    $rows = find_by_sql("
+        SELECT Client, COUNT(*) total
+        FROM lab_test_requisition_form
+        WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+        GROUP BY Client
+        ORDER BY total DESC
+        LIMIT 1
+    ");
+    return $rows ? $rows[0] : ['Client'=>'N/A','total'=>0];
 }
 
 function last_6_months(){
@@ -39,53 +53,53 @@ function last_6_months(){
     ");
 }
 
-function tests_by_type($start,$end){
+function tests_completed_by_type($start,$end){
     return find_by_sql("
         SELECT Test_Type, COUNT(*) total
         FROM test_delivery
         WHERE Register_Date BETWEEN '{$start}' AND '{$end}'
         GROUP BY Test_Type
         ORDER BY total DESC
-        LIMIT 10
     ");
 }
 
-function tests_by_client($start,$end){
+function tests_registered_by_type($start,$end){
+    return find_by_sql("
+        SELECT Test_Type, COUNT(*) total
+        FROM lab_test_requisition_form
+        WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+        GROUP BY Test_Type
+    ");
+}
+
+function monthly_clients($start,$end){
     return find_by_sql("
         SELECT r.Client,
-               COUNT(*) AS solicitados,
-               SUM(CASE WHEN d.id IS NOT NULL THEN 1 ELSE 0 END) entregados
+               COUNT(*) AS requested,
+               SUM(CASE WHEN d.id IS NOT NULL THEN 1 ELSE 0 END) delivered
         FROM lab_test_requisition_form r
         LEFT JOIN test_delivery d
         ON r.Sample_ID=d.Sample_ID
-         AND r.Sample_Number=d.Sample_Number
-         AND r.Test_Type=d.Test_Type
+        AND r.Sample_Number=d.Sample_Number
+        AND r.Test_Type=d.Test_Type
         WHERE r.Registed_Date BETWEEN '{$start}' AND '{$end}'
         GROUP BY r.Client
-        ORDER BY solicitados DESC
+        ORDER BY requested DESC
     ");
 }
 
-function pending_aging($start,$end){
+function pending_tests($start,$end){
     return find_by_sql("
-        SELECT
-            CASE 
-                WHEN DATEDIFF(NOW(), Registed_Date) <= 3 THEN '0-3'
-                WHEN DATEDIFF(NOW(), Registed_Date) <= 7 THEN '4-7'
-                WHEN DATEDIFF(NOW(), Registed_Date) <= 15 THEN '8-15'
-                ELSE '>15'
-            END AS bucket,
-            COUNT(*) total
+        SELECT r.*
         FROM lab_test_requisition_form r
         WHERE r.Registed_Date BETWEEN '{$start}' AND '{$end}'
-          AND NOT EXISTS (
-                SELECT 1 FROM test_delivery d
-                WHERE d.Sample_ID=r.Sample_ID
-                  AND d.Sample_Number=r.Sample_Number
-                  AND d.Test_Type=r.Test_Type
-          )
-        GROUP BY bucket
-        ORDER BY bucket
+        AND NOT EXISTS (
+            SELECT 1 FROM test_delivery d
+            WHERE d.Sample_ID=r.Sample_ID
+              AND d.Sample_Number=r.Sample_Number
+              AND d.Test_Type=r.Test_Type
+        )
+        ORDER BY r.Registed_Date ASC
     ");
 }
 
@@ -99,31 +113,14 @@ function ncr_month($start,$end){
     ");
 }
 
-function technician_summary($start,$end){
-    return find_by_sql("
-        SELECT Technician, COUNT(*) total
-        FROM test_delivery
-        WHERE Register_Date BETWEEN '{$start}' AND '{$end}'
-        GROUP BY Technician
-        ORDER BY total DESC
-    ");
-}
-
-/* =========================================
-   3. TOOLS (MULTILINE & SPACE CHECK)
-========================================= */
-
-function ensure_space($pdf,$height=80){
-    if ($pdf->GetY() + $height > 260){
-        $pdf->AddPage();
-    }
-}
+/* ======================================================
+   3. FUNCIONES AUXILIARES
+====================================================== */
 
 function table_row_multiline($pdf,$data,$w){
-
     $pdf->SetFont('Arial','',9);
-
     $maxHeight = 5;
+
     foreach($data as $i=>$txt){
         $nb = $pdf->GetStringWidth(utf8_decode($txt)) / max($w[$i]-2,1);
         $h  = max(ceil($nb)*5, 7);
@@ -150,20 +147,29 @@ function table_row_multiline($pdf,$data,$w){
     $pdf->Ln($maxHeight);
 }
 
-/* =========================================
-   4. PDF CLASS + PORTADA
-========================================= */
+/* ======================================================
+   4. PDF CLASS
+====================================================== */
 
 class PDF_MONTHLY extends FPDF {
 
     public $current_table_header = null;
 
-    function Header(){ }
+    function Header(){
+        // Solo portada tendrá logo
+    }
 
     function Footer(){
         $this->SetY(-15);
         $this->SetFont('Arial','I',8);
         $this->Cell(0,10,'Page '.$this->PageNo(),0,0,'C');
+    }
+
+    function section_title($txt){
+        $this->SetFont('Arial','B',13);
+        $this->SetFillColor(200,220,255);
+        $this->Cell(0,9,utf8_decode($txt),0,1,'L',true);
+        $this->Ln(2);
     }
 
     function table_header($cols,$w){
@@ -185,22 +191,21 @@ class PDF_MONTHLY extends FPDF {
         }
         $this->Ln();
     }
-
-    function section_title($txt){
-        $this->SetFont('Arial','B',13);
-        $this->SetFillColor(200,220,255);
-        $this->Cell(0,9,utf8_decode($txt),0,1,'L',true);
-        $this->Ln(2);
-    }
 }
 
 $pdf = new PDF_MONTHLY();
+
+/* ======================================================
+   PORTADA
+====================================================== */
+
 $pdf->AddPage();
 
-/* =========================================
-   PORTADA
-========================================= */
+if (file_exists('../assets/img/Pueblo-Viejo.jpg')){
+    $pdf->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 55);
+}
 
+$pdf->SetY(40);
 $pdf->SetFont('Arial','B',24);
 $pdf->Cell(0,20,'MONTHLY LABORATORY REPORT',0,1,'C');
 
@@ -212,15 +217,18 @@ $pdf->Ln(20);
 $pdf->SetFont('Arial','',12);
 $pdf->Cell(0,8,'Pueblo Viejo Mine  TSF Laboratory',0,1,'C');
 $pdf->Cell(0,8,'Prepared by: '.utf8_decode($responsable),0,1,'C');
+
 $pdf->Ln(15);
 
 $pdf->SetFont('Arial','I',10);
-$pdf->Cell(0,8,'(This report is generated by CQA Laboratory)',0,1,'C');
+$pdf->Cell(0,8,'(Monthly report generated by CQA Laboratory)',0,1,'C');
 
+/* Nueva página */
 $pdf->AddPage();
-/* =========================================
+
+/* ======================================================
    5. EXECUTIVE SUMMARY
-========================================= */
+====================================================== */
 
 $pdf->section_title("2. Executive Summary");
 
@@ -228,25 +236,26 @@ $total_tests = get_count("test_delivery","Register_Date",$start_str,$end_str);
 $total_req   = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
 $total_ncr   = count(ncr_month($start_str,$end_str));
 
+$top_client  = monthly_top_client($start_str,$end_str);
+
 $pdf->SetFont('Arial','',10);
 $pdf->MultiCell(0,6,utf8_decode("
-• A total of {$total_tests} laboratory tests were performed in this month.
+• A total of {$total_tests} laboratory tests were performed this month.
 • {$total_req} samples were received.
 • {$total_ncr} non-conformities were issued.
-• Operational efficiency remains stable compared to the previous month.
-• Highest demand came from TSF and embankment zones.
-• Improvements implemented include workflow automation and tracking refinements.
+• Highest demand came from: {$top_client['Client']} ({$top_client['total']} samples).
+• Monthly operational performance remained stable.
 "));
 $pdf->Ln(5);
 
-/* =========================================
+/* ======================================================
    6. MONTHLY KPIs
-========================================= */
+====================================================== */
 
 $pdf->section_title("3. Monthly Activity Summary");
 
-$prep = get_count("test_preparation","Register_Date",$start_str,$end_str);
-$real = get_count("test_realization","Register_Date",$start_str,$end_str);
+$prep    = get_count("test_preparation","Register_Date",$start_str,$end_str);
+$real    = get_count("test_realization","Register_Date",$start_str,$end_str);
 $pending = $total_req - $total_tests;
 
 $pdf->table_header(["Activity","Total"],[100,40]);
@@ -258,43 +267,40 @@ $pdf->table_row(["Pending Tests",$pending],[100,40]);
 
 $pdf->Ln(10);
 
-/* =========================================
+/* ======================================================
    7. LAST 6 MONTHS TREND (LINE CHART)
-========================================= */
+====================================================== */
 
 $pdf->section_title("4. Trend – Last 6 Months");
 
 $trend = last_6_months();
-ensure_space($pdf,90);
 
+/* Coordenadas */
 $chartX = 20;
-$chartY = $pdf->GetY()+5;
+$chartY = $pdf->GetY()+10;
 $chartW = 170;
 $chartH = 50;
 
+/* Ejes */
 $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
 $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
 
 $months = count($trend);
 $step = ($chartW-20)/max($months-1,1);
+
 $x = $chartX+10;
 $max = max(array_column($trend,'total'));
 
 foreach($trend as $i=>$t){
-
     $h = ($t['total']/$max)*$chartH;
     $y = $chartY + ($chartH - $h);
 
-    // Punto (Rect por compatibilidad)
-    $pdf->SetFillColor(50,150,250);
     $pdf->Rect($x-1,$y-1,2,2,'F');
 
-    if($i>0){
-        $pdf->Line($prev_x,$prev_y,$x,$y);
-    }
+    if($i>0){ $pdf->Line($prev_x,$prev_y,$x,$y); }
 
-    $prev_x=$x;
-    $prev_y=$y;
+    $prev_x = $x;
+    $prev_y = $y;
 
     $pdf->SetFont('Arial','',7);
     $pdf->SetXY($x-10,$chartY+$chartH+2);
@@ -303,153 +309,291 @@ foreach($trend as $i=>$t){
     $x += $step;
 }
 
-$pdf->Ln(15);
+$pdf->Ln(20);
+/* ======================================================
+   8. PENDING TESTS — LIST
+====================================================== */
 
-/* =========================================
-   8. TEST DISTRIBUTION BY TYPE
-========================================= */
+$pdf->section_title("5. Pending Tests (Monthly)");
 
-$pdf->section_title("5. Test Distribution by Type (Top 10)");
+$pend = pending_tests($start_str,$end_str);
 
-$types = tests_by_type($start_str,$end_str);
+$pdf->table_header(
+    ["Sample","Test","Client","Date"],
+    [40,40,40,20]
+);
 
-$pdf->table_header(["Test Type","Total"],[120,30]);
-
-foreach($types as $t){
-    $pdf->table_row([$t['Test_Type'],$t['total']], [120,30]);
+foreach($pend as $p){
+    $pdf->table_row([
+        $p['Sample_ID']."-".$p['Sample_Number'],
+        $p['Test_Type'],
+        $p['Client'],
+        date("d-M", strtotime($p['Registed_Date']))
+    ], [40,40,40,20]);
 }
 
 $pdf->Ln(10);
 
-/* =========================================
-   9. TESTS BY CLIENT
-========================================= */
+/* ======================================================
+   9. CRITICAL TESTS SUMMARY (REAL BD)
+====================================================== */
 
-$pdf->section_title("6. Test Volume by Client");
+$pdf->section_title("6. Critical Tests Summary (Completed + Pending)");
 
-$clients = tests_by_client($start_str,$end_str);
+$critical_list = ['PROCTOR','CBR','SD','UCS','LAA'];
 
-$pdf->table_header(["Client","Requested","Delivered","%"],[70,35,35,20]);
+$completed = find_by_sql("
+    SELECT Test_Type, COUNT(*) total
+    FROM test_delivery
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    AND UPPER(Test_Type) IN ('".implode("','",$critical_list)."')
+    GROUP BY Test_Type
+");
+
+$completed_map = [];
+foreach($completed as $c){
+    $completed_map[strtoupper($c['Test_Type'])] = $c['total'];
+}
+
+$registered = find_by_sql("
+    SELECT Test_Type, COUNT(*) total
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    AND UPPER(Test_Type) IN ('".implode("','",$critical_list)."')
+    GROUP BY Test_Type
+");
+
+$registered_map = [];
+foreach($registered as $r){
+    $registered_map[strtoupper($r['Test_Type'])] = $r['total'];
+}
+
+/* BUILD FINAL ROWS */
+$critical_rows = [];
+foreach($critical_list as $t){
+    $reg  = $registered_map[$t] ?? 0;
+    $comp = $completed_map[$t] ?? 0;
+    $pend = $reg - $comp;
+    if($reg > 0 || $comp > 0){
+        $critical_rows[] = [
+            'type'=>$t,
+            'reg'=>$reg,
+            'comp'=>$comp,
+            'pend'=>$pend
+        ];
+    }
+}
+
+/* === GRÁFICO DE BARRAS VERTICALES === */
+
+$chartX = 20;
+$chartY = $pdf->GetY()+5;
+$chartW = 170;
+$chartH = 55;
+
+$pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
+$pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
+
+$barWidth = 18;
+$spacing = 10;
+
+$x = $chartX + 10;
+
+if (!empty($critical_rows)) {
+    $maxVal = max(array_column($critical_rows,'comp'));
+    $maxVal = max($maxVal, 1);
+} else {
+    $maxVal = 1;
+}
+
+
+foreach($critical_rows as $r){
+    $h = ($r['comp'] / $maxVal) * ($chartH - 5);
+    $y = $chartY + ($chartH - $h);
+
+    $pdf->SetFillColor(50,120,240);
+    $pdf->Rect($x, $y, $barWidth, $h, 'F');
+
+    $pdf->SetFont('Arial','',8);
+    $pdf->SetXY($x-2,$chartY+$chartH+2);
+    $pdf->MultiCell($barWidth+5,3,$r['type'],0,'C');
+
+    $x += $barWidth + $spacing;
+}
+
+$pdf->Ln($chartH + 15);
+
+/* TABLE */
+$pdf->table_header(
+    ["Test Type","Registered","Completed","Pending"],
+    [60,40,40,40]
+);
+
+foreach($critical_rows as $r){
+    $pdf->table_row(
+        [$r['type'], $r['reg'], $r['comp'], $r['pend']],
+        [60,40,40,40]
+    );
+}
+
+$pdf->Ln(10);
+
+/* ======================================================
+   10. SUMMARY BY TEST TYPE (TABLE + GRAPH)
+====================================================== */
+
+$pdf->section_title("7. Summary by Test Type (Monthly)");
+
+$reg_type  = tests_registered_by_type($start_str,$end_str);
+$comp_type = tests_completed_by_type($start_str,$end_str);
+
+/* Mapeo */
+$regMap  = [];
+foreach($reg_type as $r){ $regMap[strtoupper($r['Test_Type'])] = $r['total']; }
+
+$compMap = [];
+foreach($comp_type as $c){ $compMap[strtoupper($c['Test_Type'])] = $c['total']; }
+
+/* UNION FINAL */
+$allTypes = array_unique(array_merge(array_keys($regMap), array_keys($compMap)));
+sort($allTypes);
+
+/* === GRÁFICO DE BARRAS VERTICALES === */
+
+$chartX = 20;
+$chartY = $pdf->GetY()+10;
+$chartW = 175;
+$chartH = 55;
+
+$pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
+$pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
+
+$barWidth = 12;
+$spacing  = 7;
+$x = $chartX + 5;
+
+$values = array_map(function($t) use ($regMap){
+    return $regMap[$t] ?? 0;
+}, $allTypes);
+
+$maxVal = !empty($values) ? max($values) : 1;
+
+
+foreach($allTypes as $t){
+    $val = $regMap[$t] ?? 0;
+
+    $h = ($val / $maxVal) * ($chartH - 5);
+    $y = $chartY + ($chartH - $h);
+
+    $pdf->SetFillColor(70,180,90);
+    $pdf->Rect($x,$y,$barWidth,$h,"F");
+
+    $pdf->SetFont('Arial','',7);
+    $pdf->SetXY($x-5,$chartY+$chartH+2);
+    $pdf->MultiCell($barWidth+5,3,$t,0,'C');
+
+    $x += $barWidth + $spacing;
+}
+
+$pdf->Ln($chartH + 20);
+
+/* TABLE */
+$pdf->table_header(
+    ["Test Type","Registered","Completed","Pending"],
+    [80,30,30,30]
+);
+
+foreach($allTypes as $t){
+    $r = $regMap[$t] ?? 0;
+    $c = $compMap[$t] ?? 0;
+    $p = $r - $c;
+
+    $pdf->table_row([$t,$r,$c,$p], [80,30,30,30]);
+}
+
+$pdf->Ln(10);
+/* ======================================================
+   11. SUMMARY BY CLIENT (TABLE + GRAPH)
+====================================================== */
+
+$pdf->section_title("8. Monthly Client Summary");
+
+$clients = monthly_clients($start_str,$end_str);
+
+/* === GRÁFICO DE BARRAS HORIZONTALES === */
+
+$chartX = 20;
+$chartY = $pdf->GetY()+5;
+$chartW = 170;
+$barH   = 6;
+$spacing = 4;
+
+if (!empty($clients)) {
+    $maxVal = max(array_column($clients, 'requested'));
+    $maxVal = max($maxVal, 1); // evitar cero
+} else {
+    $maxVal = 1;
+}
+
+
+$y = $chartY;
 
 foreach($clients as $c){
-    $pct = $c['solicitados']>0 ? round(($c['entregados']*100)/$c['solicitados']) : 0;
-    $pdf->table_row([$c['Client'],$c['solicitados'],$c['entregados'],$pct."%"],[70,35,35,20]);
+    $w = ($c['requested'] / $maxVal) * $chartW;
+
+    $pdf->SetFillColor(220,80,80);
+    $pdf->Rect($chartX, $y, $w, $barH, "F");
+
+    $pdf->SetFont('Arial','',8);
+    $pdf->SetXY($chartX, $y);
+    $pdf->Cell(0, $barH, utf8_decode($c['Client']),0,0);
+
+    $y += $barH + $spacing;
+}
+
+$pdf->Ln(count($clients)*($barH+$spacing) + 10);
+
+/* TABLE */
+$pdf->table_header(
+    ["Client","Requested","Delivered","Pending"],
+    [70,30,30,30]
+);
+
+foreach($clients as $c){
+    $p = $c['requested'] - $c['delivered'];
+
+    $pdf->table_row(
+        [$c['Client'], $c['requested'], $c['delivered'], $p],
+        [70,30,30,30]
+    );
 }
 
 $pdf->Ln(10);
 
-/* =========================================
-   10. PENDING TESTS – AGING
-========================================= */
+/* ======================================================
+   12. NCR SUMMARY (Monthly)
+====================================================== */
 
-$pdf->section_title("7. Pending Tests – Aging Report");
-
-$aging = pending_aging($start_str,$end_str);
-
-$pdf->table_header(["Bucket (Days)","Total"],[80,30]);
-
-foreach($aging as $a){
-    $pdf->table_row([$a['bucket'],$a['total']], [80,30]);
-}
-
-$pdf->Ln(10);
-/* =========================================
-   11. NCR SUMMARY
-========================================= */
-
-$pdf->section_title("8. Non-Conformities / Observations");
+$pdf->section_title("9. Non-Conformities / Observations");
 
 $ncrs = ncr_month($start_str,$end_str);
 
-$pdf->table_header(["Sample","Observations"],[50,140]);
+$pdf->table_header(["Sample","Observation"],[50,140]);
 
 foreach($ncrs as $n){
     table_row_multiline($pdf,[
         $n['Sample_ID']."-".$n['Sample_Number'],
         $n['Noconformidad']
-    ], [50,140]);
+    ],[50,140]);
 }
 
 $pdf->Ln(10);
 
-/* =========================================
-   12. TECHNICIAN PERFORMANCE
-========================================= */
+/* ======================================================
+   13. RESPONSIBLE
+====================================================== */
 
-$pdf->section_title("9. Technician Performance");
-
-$techs = technician_summary($start_str,$end_str);
-
-$pdf->table_header(["Technician","Tests Completed"],[120,40]);
-
-foreach($techs as $t){
-    $pdf->table_row([$t['Technician'],$t['total']],[120,40]);
-}
-
-$pdf->Ln(10);
-
-/* =========================================
-   13. CRITICAL TESTS SUMMARY
-========================================= */
-
-$pdf->section_title("10. Critical Tests Summary");
-
-$pdf->table_header(
-    ["Test Type","Count (Month)","Avg Turnaround (days)"],
-    [60,40,60]
-);
-
-$critical_tests = [
-    ["Proctor","68","2.4"],
-    ["CBR","85","3.1"],
-    ["SD","42","1.8"],
-    ["UCS","35","1.4"],
-    ["LAA","60","1.2"],
-];
-
-foreach($critical_tests as $c){
-    $pdf->table_row($c,[60,40,60]);
-}
-
-$pdf->Ln(10);
-
-/* =========================================
-   14. EQUIPMENT & CALIBRATION SUMMARY
-========================================= */
-
-$pdf->section_title("11. Equipment, Calibration & Maintenance");
-
-$pdf->SetFont('Arial','',10);
-$pdf->MultiCell(0,6,utf8_decode("
-• All critical laboratory equipment remained operational during this month.
-• 6 instruments calibrated: balances, ovens, sieves.
-• 2 corrective maintenances performed: Proctor hammer, LAA drum.
-• Pending: Moisture Content Balance #3 (awaiting spare part).
-"));
-
-$pdf->Ln(10);
-
-/* =========================================
-   15. ACTION PLAN – NEXT MONTH
-========================================= */
-
-$pdf->section_title("12. Action Plan – Next Month");
-
-$pdf->MultiCell(0,6,utf8_decode("
-• Implement digital logbook for sample receiving.
-• Automate CBR penetration capture inside QA-LAB-APP.
-• Review efficiency in test preparation workflow.
-• Deploy early–warning indicators for test delays.
-• Perform calibration of LAA Small & sieve stacks.
-"));
-
-$pdf->Ln(10);
-
-/* =========================================
-   16. RESPONSIBLE
-========================================= */
-
-$pdf->section_title("13. Responsible");
+$pdf->section_title("10. Responsible");
 
 $pdf->SetFont('Arial','',11);
 $pdf->Cell(60,8,"Report prepared by",1);
