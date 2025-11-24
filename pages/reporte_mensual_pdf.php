@@ -9,7 +9,7 @@ error_reporting(E_ALL);
    1. DEFINIR MES Y AÑO
 ====================================================== */
 $year  = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
-$month = isset($_GET['mes'])  ? (int)$_GET['mes'])  : date('n');
+$month = isset($_GET['mes'])  ? (int)$_GET['mes']  : date('n');
 
 $start_str = "{$year}-".str_pad($month,2,'0',STR_PAD_LEFT)."-01 00:00:00";
 $end_str   = date("Y-m-t 23:59:59", strtotime($start_str));
