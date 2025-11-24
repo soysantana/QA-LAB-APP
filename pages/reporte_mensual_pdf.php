@@ -240,11 +240,11 @@ $top_client  = monthly_top_client($start_str,$end_str);
 
 $pdf->SetFont('Arial','',10);
 $pdf->MultiCell(0,6,utf8_decode("
-• A total of {$total_tests} laboratory tests were performed this month.
-• {$total_req} samples were received.
-• {$total_ncr} non-conformities were issued.
-• Highest demand came from: {$top_client['Client']} ({$top_client['total']} samples).
-• Monthly operational performance remained stable.
+- A total of {$total_tests} laboratory tests were performed this month.
+- {$total_req} samples were received.
+- {$total_ncr} non-conformities were issued.
+- Highest demand came from: {$top_client['Client']} ({$top_client['total']} samples).
+- Monthly operational performance remained stable.
 "));
 $pdf->Ln(5);
 
@@ -271,7 +271,7 @@ $pdf->Ln(10);
    7. LAST 6 MONTHS TREND (LINE CHART)
 ====================================================== */
 
-$pdf->section_title("4. Trend – Last 6 Months");
+$pdf->section_title("4. Trend - Last 6 Months");
 
 $trend = last_6_months();
 
@@ -320,7 +320,7 @@ $pend = pending_tests($start_str,$end_str);
 
 $pdf->table_header(
     ["Sample","Test","Client","Date"],
-    [60,60,40,20]
+    [60,65,40,20]
 );
 
 foreach($pend as $p){
@@ -329,7 +329,7 @@ foreach($pend as $p){
         $p['Test_Type'],
         $p['Client'],
         date("d-M", strtotime($p['Registed_Date']))
-    ], [60,60,40,20]);
+    ], [60,65,40,20]);
 }
 
 $pdf->Ln(10);
