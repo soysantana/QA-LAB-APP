@@ -192,6 +192,11 @@ function table_row_multiline($pdf,$data,$w){
 
     $pdf->Ln($maxHeight);
 }
+function ensure_space_for_graph($pdf, $height_needed = 80){
+    if ($pdf->GetY() + $height_needed > 250){
+        $pdf->AddPage();
+    }
+}
 
 
 /* ======================================================
@@ -396,7 +401,14 @@ $pdf->Ln(12);
 
 $pdf->section_title("6. Trend – Last 6 Months");
 
+ensure_space_for_graph($pdf, 80);
+
 $trend = last_6_months();
+
+$chartX = 20;
+$chartY = $pdf->GetY()+10;
+
+
 
 $chartX = 20;
 $chartY = $pdf->GetY()+10;
@@ -441,7 +453,10 @@ $pdf->Ln(10);
    7. SECTION 7 — SUMMARY BY TEST TYPE (STACKED BAR)
 ====================================================== */
 
-$pdf->section_title("7. Summary by Test Type (Registered vs Delivered)");
+$pdf->section_title("7. Summary by Test Type");
+
+ensure_space_for_graph($pdf, 100);
+
 
 $reg_type  = tests_registered_by_type($start_str,$end_str);
 $comp_type = tests_completed_by_type($start_str,$end_str);
