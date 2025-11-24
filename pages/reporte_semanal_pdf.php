@@ -505,7 +505,7 @@ foreach($ensayos as $e){
         $e['Test_Type'],
         $e['Test_Condition'],
         $e['Comments']
-    ], [60,25,30,25,50]);
+    ], [40,25,50,25,50]);
 }
 
 $pdf->Ln(10);
