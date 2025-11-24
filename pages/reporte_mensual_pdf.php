@@ -168,7 +168,7 @@ function table_row_multiline($pdf,$data,$w){
         if($h > $maxHeight) $maxHeight = $h;
     }
 
-    if($pdf->GetY() + $maxHeight > $pdf->PageBreakTrigger){
+    if($pdf->GetY() + $maxHeight > $pdf->getPageBreakTrigger()){
         $pdf->AddPage();
         if($pdf->current_table_header){
             $pdf->table_header(
@@ -195,6 +195,11 @@ function table_row_multiline($pdf,$data,$w){
 class PDF_MONTHLY extends FPDF {
 
     public $current_table_header = null;
+
+    /* PARA PERMITIR QUE MULTILINE EVALÚE PAGE BREAK */
+    function getPageBreakTrigger() {
+        return $this->PageBreakTrigger;
+    }
 
     function Header(){ }
 
@@ -232,7 +237,6 @@ class PDF_MONTHLY extends FPDF {
     }
 }
 
-$pdf = new PDF_MONTHLY();
 
 /* ======================================================
    PORTADA
@@ -423,7 +427,7 @@ if (!empty($trend)){
     }
 }
 
-$pdf->Ln(20);
+$pdf->Ln(10);
 
 /* ======================================================
    7. SECTION 7 — SUMMARY BY TEST TYPE (STACKED BAR)
