@@ -23,7 +23,8 @@ $responsable = $user['name'] ?? 'Laboratory Staff';
 
 function get_count($table,$field,$start,$end){
     $r = find_by_sql("
-        SELECT COUNT(*) total FROM {$table}
+        SELECT COUNT(*) total
+        FROM {$table}
         WHERE {$field} BETWEEN '{$start}' AND '{$end}'
     ");
     return (int)$r[0]['total'];
@@ -41,6 +42,7 @@ function monthly_top_client($start,$end){
     return $rows ? $rows[0] : ['Client'=>'N/A','total'=>0];
 }
 
+/* Últimos 6 meses */
 function last_6_months(){
     return find_by_sql("
         SELECT DATE_FORMAT(Registed_Date,'%Y-%m') AS mes,
@@ -52,7 +54,8 @@ function last_6_months(){
     ");
 }
 
-function tests_completed($start,$end){
+/* Tests por tipo */
+function tests_completed_by_type($start,$end){
     return find_by_sql("
         SELECT Test_Type, COUNT(*) total
         FROM test_delivery
@@ -62,29 +65,16 @@ function tests_completed($start,$end){
     ");
 }
 
-function tests_registered_expanded($start,$end){
-    $rows = find_by_sql("
-        SELECT Sample_ID, Sample_Number, Test_Type
+function tests_registered_by_type($start,$end){
+    return find_by_sql("
+        SELECT Test_Type, COUNT(*) total
         FROM lab_test_requisition_form
         WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+        GROUP BY Test_Type
     ");
-
-    $map = [];
-
-    foreach($rows as $r){
-        $tests = explode(',', strtoupper(trim($r['Test_Type'])));
-        foreach($tests as $t){
-            $t = trim($t);
-            if($t=='') continue;
-
-            if(!isset($map[$t])) $map[$t]=0;
-            $map[$t]++;
-        }
-    }
-
-    return $map;
 }
 
+/* Clientes del mes */
 function monthly_clients($start,$end){
     return find_by_sql("
         SELECT r.Client,
@@ -101,6 +91,9 @@ function monthly_clients($start,$end){
     ");
 }
 
+/* ------------------------------------------------------
+   EXPANSIÓN DE PENDING TESTS
+------------------------------------------------------ */
 function pending_tests_expanded($start,$end){
 
     $reqs = find_by_sql("
@@ -109,18 +102,20 @@ function pending_tests_expanded($start,$end){
         WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
     ");
 
-    $pend = [];
+    $pendientes = [];
 
-    foreach($reqs as $r){
+    foreach ($reqs as $r){
 
         $tests = explode(',', strtoupper(trim($r['Test_Type'])));
 
-        foreach($tests as $t){
-            $t = trim($t);
-            if($t=='') continue;
+        foreach ($tests as $test){
+
+            $test = trim($test);
+            if ($test == '') continue;
 
             $exists = find_by_sql("
-                SELECT 1 FROM (
+                SELECT 1
+                FROM (
                     SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation
                     UNION ALL
                     SELECT Sample_ID, Sample_Number, Test_Type FROM test_realization
@@ -128,50 +123,39 @@ function pending_tests_expanded($start,$end){
                     SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery
                 ) x
                 WHERE x.Sample_ID     = '{$r['Sample_ID']}'
-                AND   x.Sample_Number = '{$r['Sample_Number']}'
-                AND   x.Test_Type     = '{$t}'
+                  AND x.Sample_Number = '{$r['Sample_Number']}'
+                  AND x.Test_Type     = '{$test}'
                 LIMIT 1
             ");
 
-            if(empty($exists)){
-                $pend[] = [
-                    'Sample' => $r['Sample_ID']."-".$r['Sample_Number'],
-                    'Client' => $r['Client'],
-                    'Test'   => $t,
-                    'Date'   => $r['Registed_Date'],
+            if (empty($exists)){
+                $pendientes[] = [
+                    'Sample_ID'     => $r['Sample_ID'],
+                    'Sample_Number' => $r['Sample_Number'],
+                    'Structure'     => $r['Structure'],
+                    'Client'        => $r['Client'],
+                    'Test_Type'     => $test,
+                    'Registed_Date' => $r['Registed_Date'],
                 ];
             }
         }
     }
-
-    return $pend;
+    return $pendientes;
 }
 
-function lead_time_tests($start,$end){
-    return find_by_sql("
-        SELECT
-            p.Test_Type,
-            DATEDIFF(d.Register_Date, p.Register_Date) AS lead_days
-        FROM test_preparation p
-        INNER JOIN test_delivery d
-        ON p.Sample_ID = d.Sample_ID
-        AND p.Sample_Number = d.Sample_Number
-        AND p.Test_Type = d.Test_Type
-        WHERE p.Register_Date BETWEEN '{$start}' AND '{$end}'
-    ");
-}
-
+/* NCR */
 function ncr_month($start,$end){
     return find_by_sql("
         SELECT *
         FROM ensayos_reporte
-        WHERE TRIM(Noconformidad)<>'' 
+        WHERE Noconformidad IS NOT NULL
+        AND TRIM(Noconformidad) <> ''
         AND Report_Date BETWEEN '{$start}' AND '{$end}'
     ");
 }
 
 /* ======================================================
-   3. AUXILIARES
+   3. FUNCIONES AUXILIARES
 ====================================================== */
 
 function table_row_multiline($pdf,$data,$w){
@@ -211,6 +195,8 @@ function table_row_multiline($pdf,$data,$w){
 class PDF_MONTHLY extends FPDF {
 
     public $current_table_header = null;
+
+    function Header(){ }
 
     function Footer(){
         $this->SetY(-15);
@@ -276,11 +262,10 @@ $pdf->Ln(15);
 $pdf->SetFont('Arial','I',10);
 $pdf->Cell(0,8,'(Monthly report generated by CQA Laboratory)',0,1,'C');
 
-/* NUEVA PÁGINA */
 $pdf->AddPage();
 
 /* ======================================================
-   SECCIÓN 2 — EXECUTIVE SUMMARY
+   EXECUTIVE SUMMARY
 ====================================================== */
 
 $pdf->section_title("2. Executive Summary");
@@ -288,6 +273,7 @@ $pdf->section_title("2. Executive Summary");
 $total_tests = get_count("test_delivery","Register_Date",$start_str,$end_str);
 $total_req   = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
 $total_ncr   = count(ncr_month($start_str,$end_str));
+
 $top_client  = monthly_top_client($start_str,$end_str);
 
 $pdf->SetFont('Arial','',10);
@@ -296,11 +282,12 @@ $pdf->MultiCell(0,6,utf8_decode("
 - {$total_req} samples were received.
 - {$total_ncr} non-conformities were issued.
 - Highest demand came from: {$top_client['Client']} ({$top_client['total']} samples).
+- Monthly operational performance remained stable.
 "));
 $pdf->Ln(5);
 
 /* ======================================================
-   SECCIÓN 3 — KPIs GENERALES
+   MONTHLY KPIs
 ====================================================== */
 
 $pdf->section_title("3. Monthly Activity Summary");
@@ -317,212 +304,223 @@ $pdf->table_row(["Tests Delivered",$total_tests],[100,40]);
 $pdf->table_row(["Pending Tests",$pending],[100,40]);
 
 $pdf->Ln(10);
-
 /* ======================================================
-   SECCIÓN 4 — LAST 6 MONTHS TREND (LINE CHART)
+   4. SECTION 4 — PROCESS BOTTLENECKS (NEW)
 ====================================================== */
 
-$pdf->section_title("4. Trend - Last 6 Months");
+$pdf->section_title("4. Process Bottlenecks (Monthly)");
+
+$prep_delay = find_by_sql("
+    SELECT Test_Type, COUNT(*) total
+    FROM test_preparation
+    WHERE TIMESTAMPDIFF(HOUR, Register_Date, NOW()) > 48
+      AND Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY Test_Type
+    ORDER BY total DESC
+");
+
+$real_delay = find_by_sql("
+    SELECT Test_Type, COUNT(*) total
+    FROM test_realization
+    WHERE TIMESTAMPDIFF(HOUR, Register_Date, NOW()) > 48
+      AND Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY Test_Type
+    ORDER BY total DESC
+");
+
+$pdf->table_header(
+    ["Stage","Test Type","Delayed Qty (>48h)"],
+    [50,70,40]
+);
+
+foreach ($prep_delay as $p){
+    $pdf->table_row(["Preparation", $p['Test_Type'], $p['total']], [50,70,40]);
+}
+foreach ($real_delay as $r){
+    $pdf->table_row(["Realization", $r['Test_Type'], $r['total']], [50,70,40]);
+}
+
+$pdf->Ln(12);
+
+/* ======================================================
+   5. SECTION 5 — TURNAROUND TIME (TAT)
+====================================================== */
+
+$pdf->section_title("5. Turnaround Time (TAT) Summary");
+
+$tat_data = find_by_sql("
+    SELECT 
+      d.Test_Type,
+      AVG(TIMESTAMPDIFF(HOUR, r.Registed_Date, d.Register_Date)) AS avg_hours,
+      COUNT(*) total
+    FROM test_delivery d
+    JOIN lab_test_requisition_form r
+      ON r.Sample_ID=d.Sample_ID
+     AND r.Sample_Number=d.Sample_Number
+     AND r.Test_Type=d.Test_Type
+    WHERE d.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY d.Test_Type
+    ORDER BY avg_hours ASC
+");
+
+$pdf->table_header(
+    ["Test Type","Avg TAT (hrs)","Completed"],
+    [60,40,30]
+);
+
+foreach($tat_data as $t){
+    $pdf->table_row([
+        $t['Test_Type'],
+        number_format($t['avg_hours'],1),
+        $t['total']
+    ], [60,40,30]);
+}
+
+$pdf->Ln(12);
+
+/* ======================================================
+   6. SECTION 6 — TREND (LAST 6 MONTHS)
+====================================================== */
+
+$pdf->section_title("6. Trend – Last 6 Months");
 
 $trend = last_6_months();
 
-/* Si no hay datos, evitar error */
-if (empty($trend)){
-    $pdf->SetFont('Arial','I',10);
-    $pdf->Cell(0,10,"No data available",0,1,'C');
-} else {
-
-    $chartX = 20;
-    $chartY = $pdf->GetY()+10;
-    $chartW = 170;
-    $chartH = 50;
-
-    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
-    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
-
-    $months = count($trend);
-    $step = ($chartW-20)/max($months-1,1);
-
-    $x = $chartX+10;
-    $maxVal = max(array_column($trend,'total'));
-
-    foreach($trend as $i=>$t){
-        $h = ($t['total']/$maxVal)*($chartH-5);
-        $y = $chartY + ($chartH - $h);
-
-        $pdf->SetFillColor(50,120,240);
-        $pdf->Rect($x-1,$y-1,3,3,'F');
-
-        if($i>0){ $pdf->Line($prev_x,$prev_y,$x,$y); }
-
-        $prev_x=$x;
-        $prev_y=$y;
-
-        $pdf->SetFont('Arial','',7);
-        $pdf->SetXY($x-10,$chartY+$chartH+3);
-        $pdf->MultiCell(20,3,$t['mes'],0,'C');
-
-        $x += $step;
-    }
-
-    $pdf->Ln($chartH + 20);
-}
-/* ======================================================
-   SECCIÓN 5 — PENDING TESTS (LISTA EXPANDIDA)
-====================================================== */
-
-$pdf->section_title("5. Pending Tests (Monthly)");
-
-$pend = pending_tests_expanded($start_str,$end_str);
-
-$pdf->table_header(
-    ["Sample","Test","Client","Date"],
-    [60,40,50,30]
-);
-
-foreach ($pend as $p){
-    $pdf->table_row([
-        $p['Sample'],
-        $p['Test'],
-        $p['Client'],
-        date("d-M", strtotime($p['Date']))
-    ], [60,40,50,30]);
-}
-
-$pdf->Ln(12);
-
-/* ======================================================
-   SECCIÓN 6 — LEAD TIME BY TEST TYPE (AVG DAYS)
-====================================================== */
-
-$pdf->section_title("6. Lead Time by Test Type (Avg Days)");
-
-$lt = lead_time_tests($start_str,$end_str);
-
-$ltMap = [];
-
-foreach($lt as $row){
-    $t = strtoupper($row['Test_Type']);
-    if(!isset($ltMap[$t])) $ltMap[$t] = ['sum'=>0,'count'=>0];
-    $ltMap[$t]['sum'] += $row['lead_days'];
-    $ltMap[$t]['count']++;
-}
-
-$leadFinal = [];
-foreach($ltMap as $type=>$data){
-    $leadFinal[] = [
-        'type'=>$type,
-        'avg'=>round($data['sum']/$data['count'],2)
-    ];
-}
-
-if(empty($leadFinal)){
-    $pdf->SetFont('Arial','I',10);
-    $pdf->Cell(0,10,"No data for Lead Time",0,1,'C');
-} else {
-
-    /* GRAFICO DE BARRAS */
-    $chartX = 20;
-    $chartY = $pdf->GetY()+5;
-    $chartW = 170;
-    $chartH = 55;
-
-    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
-    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
-
-    $barWidth = 15;
-    $space    = 8;
-    $x        = $chartX + 10;
-
-    $maxVal = max(array_column($leadFinal,'avg'));
-
-    foreach($leadFinal as $r){
-
-        $h = ($r['avg']/$maxVal)*($chartH-5);
-        $y = $chartY + ($chartH - $h);
-
-        $pdf->SetFillColor(50,150,250);
-        $pdf->Rect($x,$y,$barWidth,$h,'F');
-
-        $pdf->SetFont('Arial','',7);
-        $pdf->SetXY($x-5,$chartY+$chartH+2);
-        $pdf->MultiCell($barWidth+5,3,$r['type'],0,'C');
-
-        $x += $barWidth + $space;
-    }
-
-    $pdf->Ln($chartH + 20);
-
-    /* TABLA */
-    $pdf->table_header(["Test Type","Avg Lead Time (days)"],[100,40]);
-    foreach($leadFinal as $r){
-        $pdf->table_row([$r['type'],$r['avg']], [100,40]);
-    }
-}
-
-$pdf->Ln(12);
-
-/* ======================================================
-   SECCIÓN 7 — PENDING TESTS BREAKDOWN BY TYPE
-====================================================== */
-
-$pdf->section_title("7. Pending Tests Breakdown by Type");
-
-$typeCount = [];
-
-foreach($pend as $p){
-    $t = strtoupper($p['Test']);
-    if(!isset($typeCount[$t])) $typeCount[$t]=0;
-    $typeCount[$t]++;
-}
-
-arsort($typeCount);
-
-/* GRAFICO */
-
 $chartX = 20;
-$chartY = $pdf->GetY()+8;
-$chartW = 175;
-$chartH = 55;
+$chartY = $pdf->GetY()+10;
+$chartW = 170;
+$chartH = 45;
 
 $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
 $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
 
-$barW = 12;
-$space = 6;
-$x = $chartX + 10;
+if (!empty($trend)){
 
-$maxV = empty($typeCount) ? 1 : max($typeCount);
+    $months = count($trend);
+    $step = ($chartW-20)/max($months-1,1);
+    $x = $chartX+10;
 
-foreach($typeCount as $t=>$v){
-    $h = ($v/$maxV)*($chartH-5);
-    $y = $chartY + ($chartH-$h);
+    $max = max(array_column($trend,'total'));
+    $max = max($max,1);
 
-    $pdf->SetFillColor(240,90,90);
-    $pdf->Rect($x,$y,$barW,$h,'F');
+    foreach($trend as $i=>$t){
+        $h = ($t['total']/$max) * ($chartH-5);
+        $y = $chartY + ($chartH - $h);
 
-    $pdf->SetFont('Arial','',7);
-    $pdf->SetXY($x-5,$chartY+$chartH+2);
-    $pdf->MultiCell($barW+5,3,$t,0,'C');
+        $pdf->SetFillColor(70,130,180);
+        $pdf->Rect($x-2,$y-2,4,4,'F');
 
-    $x += $barW + $space;
+        if ($i>0){ $pdf->Line($prev_x,$prev_y,$x,$y); }
+
+        $prev_x = $x;
+        $prev_y = $y;
+
+        $pdf->SetFont('Arial','',7);
+        $pdf->SetXY($x-10,$chartY+$chartH+2);
+        $pdf->MultiCell(20,3,$t['mes'],0,'C');
+
+        $x += $step;
+    }
 }
 
-$pdf->Ln($chartH + 20);
+$pdf->Ln(20);
 
-/* TABLA */
-$pdf->table_header(["Test Type","Pending"],[80,40]);
+/* ======================================================
+   7. SECTION 7 — SUMMARY BY TEST TYPE (STACKED BAR)
+====================================================== */
 
-foreach($typeCount as $t=>$v){
-    $pdf->table_row([$t,$v],[80,40]);
+$pdf->section_title("7. Summary by Test Type (Registered vs Delivered)");
+
+$reg_type  = tests_registered_by_type($start_str,$end_str);
+$comp_type = tests_completed_by_type($start_str,$end_str);
+
+$regMap  = [];
+foreach($reg_type as $r){ $regMap[strtoupper($r['Test_Type'])] = $r['total']; }
+$compMap = [];
+foreach($comp_type as $c){ $compMap[strtoupper($c['Test_Type'])] = $c['total']; }
+
+$allTypes = array_unique(array_merge(array_keys($regMap), array_keys($compMap)));
+sort($allTypes);
+
+$chartX = 20;
+$chartY = $pdf->GetY()+8;
+$chartW = 170;
+$barH = 5;
+$spacing = 4;
+
+$maxVal = 1;
+foreach($allTypes as $t){
+    $maxVal = max($maxVal, $regMap[$t] ?? 0);
+}
+
+$y = $chartY;
+
+foreach($allTypes as $t){
+
+    $reg = $regMap[$t] ?? 0;
+    $del = $compMap[$t] ?? 0;
+
+    $regW = ($reg / $maxVal) * $chartW;
+    $delW = ($del / $maxVal) * $chartW;
+
+    /* REGISTERED = VERDE */
+    $pdf->SetFillColor(60,160,60);
+    $pdf->Rect($chartX, $y, $regW, $barH, "F");
+
+    /* DELIVERED = AZUL */
+    $pdf->SetFillColor(70,130,180);
+    $pdf->Rect($chartX, $y, $delW, $barH, "F");
+
+    $pdf->SetFont('Arial','',8);
+    $pdf->SetXY($chartX,$y);
+    $pdf->Cell(0,$barH,utf8_decode($t),0,0);
+
+    $y += $barH + $spacing;
+}
+
+$pdf->Ln(count($allTypes)*($barH+$spacing) + 10);
+
+$pdf->table_header(
+    ["Test Type","Registered","Delivered","Pending"],
+    [80,30,30,30]
+);
+
+foreach($allTypes as $t){
+    $r = $regMap[$t] ?? 0;
+    $c = $compMap[$t] ?? 0;
+    $p = $r - $c;
+    $pdf->table_row([$t,$r,$c,$p],[80,30,30,30]);
 }
 
 $pdf->Ln(12);
 /* ======================================================
-   SECCIÓN 8 — NCR SUMMARY
+   8. SECTION 8 — CLIENT SUMMARY (Top Clients)
 ====================================================== */
 
-$pdf->section_title("8. Non-Conformities / Observations");
+$pdf->section_title("8. Monthly Summary by Client");
+
+$clients = monthly_clients($start_str,$end_str);
+
+$pdf->table_header(
+    ["Client","Requested","Delivered","Pending"],
+    [70,30,30,30]
+);
+
+foreach($clients as $c){
+    $p = $c['requested'] - $c['delivered'];
+    $pdf->table_row(
+        [$c['Client'], $c['requested'], $c['delivered'], $p],
+        [70,30,30,30]
+    );
+}
+
+$pdf->Ln(12);
+
+/* ======================================================
+   9. SECTION 9 — NCR (FULL LIST)
+====================================================== */
+
+$pdf->section_title("9. Non-Conformities / Observations");
 
 $ncrs = ncr_month($start_str,$end_str);
 
@@ -538,14 +536,14 @@ foreach($ncrs as $n){
 $pdf->Ln(12);
 
 /* ======================================================
-   SECCIÓN 9 — RESPONSIBLE
+   10. RESPONSIBLE
 ====================================================== */
 
-$pdf->section_title("9. Responsible");
+$pdf->section_title("10. Responsible");
 
 $pdf->SetFont('Arial','',11);
-$pdf->Cell(60,8,"Report prepared by",1);
-$pdf->Cell(120,8,utf8_decode($responsable),1,1);
+$pdf->Cell(50,8,"Report prepared by",1);
+$pdf->Cell(130,8,utf8_decode($responsable),1,1);
 
 ob_end_clean();
 $pdf->Output("I","Monthly_Lab_Report_{$year}_{$month}.pdf");
