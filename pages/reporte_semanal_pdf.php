@@ -482,7 +482,7 @@ $ensayos = find_by_sql("
 
 $pdf->table_header(
     ["Sample","Structure","Material","Test","Condition","Comments"],
-    [35,25,20,25,25,60]
+    [35,25,15,35,25,60]
 );
 
 foreach($ensayos as $e){
