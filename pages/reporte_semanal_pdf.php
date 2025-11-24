@@ -281,7 +281,7 @@ $muestras = find_by_sql("
     ORDER BY Registed_Date ASC
 ");
 
-$pdf->table_header(["Sample","Structure","Client","Test Type"],[45,30,35,60]);
+$pdf->table_header(["Sample","Structure","Client","Test Type"],[45,35,30,60]);
 
 foreach($muestras as $m){
     $pdf->table_row([
@@ -289,7 +289,7 @@ foreach($muestras as $m){
         $m['Structure'],
         $m['Client'],
         $m['Test_Type']
-    ],[45,30,35,60]);
+    ],[45,35,30,60]);
 }
 
 $pdf->Ln(10);
@@ -436,14 +436,14 @@ $ncr = find_by_sql("
       AND Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
 ");
 
-$pdf->table_header(["Sample","Observations"],[45,145]);
+$pdf->table_header(["Sample","Observations"],[40,150]);
 
 foreach($ncr as $n){
     $pdf->table_row([
         $n['Sample_ID']."-".$n['Sample_Number']."-".$n['Material_Type'],
         substr($n['Noconformidad'],0,250)
     ],
-    [45,145]);
+    [40,150]);
 }
 
 $pdf->Ln(10);
