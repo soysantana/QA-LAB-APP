@@ -79,6 +79,7 @@ class PDF_WEEKLY extends FPDF {
 
     public $week; 
     public $year;
+    public $current_table_header = null;
 
     function __construct($week,$year){
         parent::__construct();
@@ -110,7 +111,6 @@ class PDF_WEEKLY extends FPDF {
         $this->Ln(10);
         $this->section_title("1. Personnel Assigned");
 
-        // SEMANA = TODOS
         $this->SetFont('Arial','',10);
         $this->MultiCell(0,6,utf8_decode("
 Chief Laboratory: Wendin De Jesús
@@ -119,7 +119,6 @@ Lab Supervisors: Diana Vázquez, Victor Mercedes
 Lab Technicians: Wilson Martínez, Rafy Leocadio, Rony Vargas, Jonathan Vargas,
                  Rafael Reyes, Darielvy Félix, Jordany Almonte, Melvin Castillo
 "));
-
         $this->Ln(3);
     }
 
@@ -136,22 +135,42 @@ Lab Technicians: Wilson Martínez, Rafy Leocadio, Rony Vargas, Jonathan Vargas,
             $this->Cell($w[$i],7,utf8_decode($c),1,0,'C');
         }
         $this->Ln();
+
+        // Guardamos el header para repetir si pasa de página
+        $this->current_table_header = [
+            'cols' => $cols,
+            'widths' => $w
+        ];
     }
 }
 
-/* ===============================
-   NEW — MULTILINE ROW
-================================*/
+/* =============================================
+   ROW MULTILÍNEA CON DETECTOR DE PAGE BREAK
+=============================================*/
 function table_row_multiline($pdf, $data, $w){
+
     $pdf->SetFont('Arial','',9);
 
+    // calcular altura de fila
     $maxHeight = 5;
     foreach($data as $i => $txt){
         $nb = $pdf->GetStringWidth(utf8_decode($txt)) / ($w[$i] - 2);
-        $h = (ceil($nb) * 5);
+        $h = max(ceil($nb) * 5, 7);
         if($h > $maxHeight) $maxHeight = $h;
     }
 
+    // si no cabe, creamos nueva página + header
+    if ($pdf->GetY() + $maxHeight > $pdf->PageBreakTrigger){
+        $pdf->AddPage();
+        if($pdf->current_table_header){
+            $pdf->table_header(
+                $pdf->current_table_header['cols'],
+                $pdf->current_table_header['widths']
+            );
+        }
+    }
+
+    // imprimir la fila
     foreach($data as $i => $txt){
         $x = $pdf->GetX();
         $y = $pdf->GetY();
@@ -173,10 +192,10 @@ $pdf->AddPage();
 ================================*/
 $pdf->section_title("2. Weekly Summary of Activities");
 
-$req = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
+$req  = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
 $prep = get_count("test_preparation","Register_Date",$start_str,$end_str);
 $real = get_count("test_realization","Register_Date",$start_str,$end_str);
-$del = get_count("test_delivery","Register_Date",$start_str,$end_str);
+$del  = get_count("test_delivery","Register_Date",$start_str,$end_str);
 
 $pdf->table_header(["Activity","Total"],[100,30]);
 table_row_multiline($pdf,["Requisitioned",$req],[100,30]);
@@ -221,12 +240,9 @@ $pdf->Ln(10);
 /* ===============================
    8. GRÁFICOS
 ================================*/
-
-// Charts se quedan igual porque no afectan ancho
-
-function chart_samples($pdf,$data){ /* ... igual ... */ }
-function chart_types($pdf,$data){ /* ... igual ... */ }
-function chart_client($pdf,$clientData){ /* ... igual ... */ }
+function chart_samples($pdf,$data){ /* tu versión anterior */ }
+function chart_types($pdf,$data){ /* tu versión anterior */ }
+function chart_client($pdf,$data){ /* tu versión anterior */ }
 
 chart_samples($pdf,$data_dia);
 chart_types($pdf,$data_tipo);
