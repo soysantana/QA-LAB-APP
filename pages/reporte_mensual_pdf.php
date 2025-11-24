@@ -250,7 +250,7 @@ $pdf->Cell(0,10,date("F Y", strtotime($start_str)),0,1,'C');
 $pdf->Ln(20);
 
 $pdf->SetFont('Arial','',12);
-$pdf->Cell(0,8,'Pueblo Viejo Mine – TSF Laboratory',0,1,'C');
+$pdf->Cell(0,8,'Pueblo Viejo Mine - TSF Laboratory',0,1,'C');
 $pdf->Cell(0,8,'Prepared by: '.utf8_decode($responsable),0,1,'C');
 
 $pdf->Ln(15);
@@ -301,7 +301,7 @@ $pdf->Ln(10);
    7. LAST 6 MONTHS TREND (LINE GRAPH)
 ====================================================== */
 
-$pdf->section_title("4. Trend – Last 6 Months");
+$pdf->section_title("4. Trend - Last 6 Months");
 $trend = last_6_months();
 
 ensure_graph_space($pdf,80);
@@ -537,7 +537,7 @@ $pdf->table_header(["Sample","Observation"],[50,140]);
 
 foreach($ncrs as $n){
     table_row_multiline($pdf,[
-        $n['Sample_ID']."-".$n['Sample_Number'],
+        $n['Sample_ID']."-".$n['Sample_Number']."-".$n['Material_Type'],
         $n['Noconformidad']
     ],[50,140]);
 }
