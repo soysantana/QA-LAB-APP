@@ -270,15 +270,23 @@ $muestras = find_by_sql("
     ORDER BY Registed_Date ASC
 ");
 
-$pdf->table_header(["Sample","Structure","Client","Test Type"],[55,30,40,60]);
+// NUEVOS ANCHOS: Sample más ancho para 3 líneas, Test Type amplio
+$pdf->table_header(["Sample","Structure","Client","Test Type"],[70,30,40,50]);
 
 foreach($muestras as $m){
+
+    // CELDA SAMPLE con 3 elementos
+    $sample_full = 
+        $m['Sample_ID'] . "-" . $m['Sample_Number'] . "\n" .
+        "Material: " . $m['Material_Type'];
+
     table_row_multiline($pdf,[
-        $m['Sample_ID']."-".$m['Sample_Number'],
+        $sample_full,
         $m['Structure'],
         $m['Client'],
         $m['Test_Type']
-    ],[55,30,40,60]);
+    ],
+    [70,30,40,50]);
 }
 
 $pdf->Ln(10);
@@ -384,23 +392,36 @@ $ensayos = find_by_sql("
     WHERE Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
 ");
 
+/*
+   Columnas: Sample | Structure | Test | Condition | Comments
+   Anchos:    60      25          30      25         50  = 190
+*/
+
 $pdf->table_header(
-    ["Sample","Structure","Material","Test","Condition","Comments"],
-    [50,30,20,40,25,85]
+    ["Sample","Structure","Test","Condition","Comments"],
+    [60,25,30,25,50]
 );
 
 foreach($ensayos as $e){
+
+    // Construir Sample Full
+    $sampleFull = $e['Sample_ID']."-".$e['Sample_Number'];
+
+    if (!empty($e['Material_Type'])) {
+        $sampleFull .= " / ".$e['Material_Type'];
+    }
+
     table_row_multiline($pdf,[
-        $e['Sample_ID']."-".$e['Sample_Number'],
+        $sampleFull,
         $e['Structure'],
-        $e['Material_Type'],
         $e['Test_Type'],
         $e['Test_Condition'],
-        $e['Comments'],
-    ], [50,30,20,40,25,85]);
+        $e['Comments']
+    ], [60,25,30,25,50]);
 }
 
 $pdf->Ln(10);
+
 
 /* ===============================
    14. OBSERVATIONS / NCR
