@@ -159,6 +159,11 @@ function ncr_month($start,$end){
 ====================================================== */
 
 function table_row_multiline($pdf,$data,$w){
+
+    if (!$pdf instanceof FPDF) {
+        return; // evita error si el PDF aún no existe
+    }
+
     $pdf->SetFont('Arial','',9);
     $maxHeight = 5;
 
@@ -187,6 +192,7 @@ function table_row_multiline($pdf,$data,$w){
 
     $pdf->Ln($maxHeight);
 }
+
 
 /* ======================================================
    4. PDF CLASS
@@ -242,7 +248,9 @@ class PDF_MONTHLY extends FPDF {
    PORTADA
 ====================================================== */
 
-$pdf->AddPage();
+$pdf = new PDF_MONTHLY();   // 1️⃣ primero creas el PDF
+$pdf->AddPage();            // 2️⃣ luego puedes usar AddPage()
+
 
 if (file_exists('../assets/img/Pueblo-Viejo.jpg')){
     $pdf->Image('../assets/img/Pueblo-Viejo.jpg', 10, 10, 55);
