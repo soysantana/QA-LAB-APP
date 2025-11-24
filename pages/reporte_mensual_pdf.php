@@ -53,24 +53,68 @@ function last_6_months(){
     ");
 }
 
-function tests_completed_by_type($start,$end){
-    return find_by_sql("
-        SELECT Test_Type, COUNT(*) total
-        FROM test_delivery
-        WHERE Register_Date BETWEEN '{$start}' AND '{$end}'
-        GROUP BY Test_Type
-        ORDER BY total DESC
-    ");
-}
-
+/* ======================================================
+   FIX: TESTS REGISTERED — EXPANDED
+====================================================== */
 function tests_registered_by_type($start,$end){
-    return find_by_sql("
-        SELECT Test_Type, COUNT(*) total
+
+    $rows = find_by_sql("
+        SELECT Test_Type
         FROM lab_test_requisition_form
         WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
-        GROUP BY Test_Type
     ");
+
+    $map = [];
+
+    foreach($rows as $r){
+        $tests = explode(',', strtoupper(trim($r['Test_Type'])));
+        foreach($tests as $t){
+            $t = trim($t);
+            if($t === '') continue;
+            if(!isset($map[$t])) $map[$t] = 0;
+            $map[$t]++;
+        }
+    }
+
+    $final = [];
+    foreach($map as $type=>$total){
+        $final[] = ['Test_Type'=>$type, 'total'=>$total];
+    }
+
+    return $final;
 }
+
+/* ======================================================
+   FIX: TESTS COMPLETED — EXPANDED
+====================================================== */
+function tests_completed_by_type($start,$end){
+
+    $rows = find_by_sql("
+        SELECT Test_Type
+        FROM test_delivery
+        WHERE Register_Date BETWEEN '{$start}' AND '{$end}'
+    ");
+
+    $map = [];
+
+    foreach($rows as $r){
+        $tests = explode(',', strtoupper(trim($r['Test_Type'])));
+        foreach($tests as $t){
+            $t = trim($t);
+            if($t === '') continue;
+            if(!isset($map[$t])) $map[$t] = 0;
+            $map[$t]++;
+        }
+    }
+
+    $final = [];
+    foreach($map as $type=>$total){
+        $final[] = ['Test_Type'=>$type, 'total'=>$total];
+    }
+
+    return $final;
+}
+
 
 function monthly_clients($start,$end){
     return find_by_sql("
@@ -179,6 +223,13 @@ function table_row_multiline($pdf,$data,$w){
 
     $pdf->Ln($maxHeight);
 }
+function ensure_space($pdf, $height){
+    if ($pdf->GetY() + $height > 260) { 
+        $pdf->AddPage();
+    }
+}
+
+
 
 /* ======================================================
    4. PDF CLASS
@@ -433,6 +484,8 @@ $pdf->Ln(30);
 ====================================================== */
 
 $pdf->section_title("7. Top 10 Test Types – Requested vs Delivered");
+ensure_space($pdf, 140);
+
 
 /* 1) Obtener totales del mes */
 $reg_type  = tests_registered_by_type($start_str,$end_str);
