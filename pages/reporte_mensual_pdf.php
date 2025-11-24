@@ -320,7 +320,7 @@ $pend = pending_tests($start_str,$end_str);
 
 $pdf->table_header(
     ["Sample","Test","Client","Date"],
-    [40,40,40,20]
+    [60,50,40,20]
 );
 
 foreach($pend as $p){
@@ -329,7 +329,7 @@ foreach($pend as $p){
         $p['Test_Type'],
         $p['Client'],
         date("d-M", strtotime($p['Registed_Date']))
-    ], [40,40,40,20]);
+    ], [60,50,40,20]);
 }
 
 $pdf->Ln(10);
