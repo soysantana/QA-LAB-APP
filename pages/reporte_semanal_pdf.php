@@ -11,7 +11,6 @@ error_reporting(E_ALL);
 $year = isset($_GET['anio']) ? (int)$_GET['anio'] : date('o');
 $week = isset($_GET['semana']) ? (int)$_GET['semana'] : date('W');
 
-// Obtener lunes y domingo de la semana ISO
 $dt = new DateTime();
 $dt->setISODate($year, $week, 1);
 $start_str = $dt->format("Y-m-d 00:00:00");
@@ -33,7 +32,7 @@ function get_count($table, $field, $start, $end) {
 }
 
 /* ===============================
-   3. CONSULTAS SEMANALES
+   3. CONSULTAS
 ================================*/
 function resumen_diario($start, $end){
     return find_by_sql("
@@ -87,6 +86,11 @@ class PDF_WEEKLY extends FPDF {
         $this->year = $year;
     }
 
+    /* PUBLIC WRAPPER PARA ACCESO AL PAGEBREAKTRIGGER */
+    function getPageBreakTrigger(){
+        return $this->PageBreakTrigger;
+    }
+
     function Header() {
 
         if ($this->PageNo() > 1) return;
@@ -106,7 +110,7 @@ class PDF_WEEKLY extends FPDF {
 
         $this->SetFont('Arial','',11);
         $this->SetXY(120,22);
-        $this->Cell(80,7,"ISO WEEK {$this->week}  ( ".$start->format('d M Y')." - ".$end->format('d M Y')." )",0,1,'R');
+        $this->Cell(80,7,"ISO WEEK {$this->week} ( ".$start->format('d M Y')." - ".$end->format('d M Y')." )",0,1,'R');
 
         $this->Ln(10);
         $this->section_title("1. Personnel Assigned");
@@ -136,7 +140,6 @@ Lab Technicians: Wilson Martínez, Rafy Leocadio, Rony Vargas, Jonathan Vargas,
         }
         $this->Ln();
 
-        // Guardamos el header para repetir si pasa de página
         $this->current_table_header = [
             'cols' => $cols,
             'widths' => $w
@@ -145,13 +148,13 @@ Lab Technicians: Wilson Martínez, Rafy Leocadio, Rony Vargas, Jonathan Vargas,
 }
 
 /* =============================================
-   ROW MULTILÍNEA CON DETECTOR DE PAGE BREAK
+   ROW MULTILÍNEA CON PAGE BREAK CONTROL
 =============================================*/
 function table_row_multiline($pdf, $data, $w){
 
     $pdf->SetFont('Arial','',9);
 
-    // calcular altura de fila
+    // CALCULAR ALTURA REQUERIDA
     $maxHeight = 5;
     foreach($data as $i => $txt){
         $nb = $pdf->GetStringWidth(utf8_decode($txt)) / ($w[$i] - 2);
@@ -159,9 +162,10 @@ function table_row_multiline($pdf, $data, $w){
         if($h > $maxHeight) $maxHeight = $h;
     }
 
-    // si no cabe, creamos nueva página + header
-    if ($pdf->GetY() + $maxHeight > $pdf->PageBreakTrigger){
+    // PAGE BREAK CONTROL
+    if ($pdf->GetY() + $maxHeight > $pdf->getPageBreakTrigger()){
         $pdf->AddPage();
+
         if($pdf->current_table_header){
             $pdf->table_header(
                 $pdf->current_table_header['cols'],
@@ -170,7 +174,7 @@ function table_row_multiline($pdf, $data, $w){
         }
     }
 
-    // imprimir la fila
+    // IMPRIMIR FILA
     foreach($data as $i => $txt){
         $x = $pdf->GetX();
         $y = $pdf->GetY();
@@ -202,6 +206,7 @@ table_row_multiline($pdf,["Requisitioned",$req],[100,30]);
 table_row_multiline($pdf,["In Preparation",$prep],[100,30]);
 table_row_multiline($pdf,["In Realization",$real],[100,30]);
 table_row_multiline($pdf,["Completed",$del],[100,30]);
+
 $pdf->Ln(10);
 
 /* ===============================
@@ -240,9 +245,9 @@ $pdf->Ln(10);
 /* ===============================
    8. GRÁFICOS
 ================================*/
-function chart_samples($pdf,$data){ /* tu versión anterior */ }
-function chart_types($pdf,$data){ /* tu versión anterior */ }
-function chart_client($pdf,$data){ /* tu versión anterior */ }
+function chart_samples($pdf,$data){ /* deja tus gráficos igual */ }
+function chart_types($pdf,$data){ /* deja tus gráficos igual */ }
+function chart_client($pdf,$data){ /* deja tus gráficos igual */ }
 
 chart_samples($pdf,$data_dia);
 chart_types($pdf,$data_tipo);
@@ -279,7 +284,7 @@ foreach($muestras as $m){
 $pdf->Ln(10);
 
 /* ===============================
-   10. Tests by Technician
+   10. TESTS BY TECHNICIAN
 ================================*/
 $pdf->section_title("6. Summary of Tests by Technician");
 
@@ -309,7 +314,7 @@ foreach($tec as $t){
 $pdf->Ln(10);
 
 /* ===============================
-   11. Summary of Tests by Type
+   11. TESTS BY TYPE
 ================================*/
 $pdf->section_title("7. Summary of Tests by Type");
 
@@ -318,16 +323,12 @@ $tipos = find_by_sql("
     FROM test_preparation
     WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
     GROUP BY Test_Type
-
     UNION ALL
-
     SELECT Test_Type, COUNT(*) total, 'In Realization'
     FROM test_realization
     WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
     GROUP BY Test_Type
-
     UNION ALL
-
     SELECT Test_Type, COUNT(*) total, 'Completed'
     FROM test_delivery
     WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
@@ -343,7 +344,7 @@ foreach($tipos as $t){
 $pdf->Ln(10);
 
 /* ===============================
-   12. Pending Tests
+   12. PENDING TESTS
 ================================*/
 $pdf->section_title("8. Pending Tests");
 
@@ -373,7 +374,7 @@ foreach($pendientes as $p){
 $pdf->Ln(10);
 
 /* ===============================
-   13. Dam Construction Tests
+   13. DAM CONSTRUCTION TESTS
 ================================*/
 $pdf->section_title("9. Summary of Dam Construction Tests");
 
@@ -402,7 +403,7 @@ foreach($ensayos as $e){
 $pdf->Ln(10);
 
 /* ===============================
-   14. Observations / NCR
+   14. OBSERVATIONS / NCR
 ================================*/
 $pdf->section_title("10. Observations & Non-Conformities");
 
@@ -436,3 +437,4 @@ $pdf->Cell(120,8,utf8_decode($responsable),1,1);
 
 ob_end_clean();
 $pdf->Output("I","Weekly_Lab_Report_Week{$week}_{$year}.pdf");
+?>
