@@ -72,6 +72,44 @@ function resumen_cliente($start,$end){
     ");
 }
 
+/* =============================================
+   ROW MULTILÍNEA CON PAGE BREAK CONTROL
+=============================================*/
+function table_row_multiline($pdf, $data, $w){
+
+    $pdf->SetFont('Arial','',9);
+
+    // Calcular altura aproximada requerida
+    $maxHeight = 5;
+    foreach($data as $i => $txt){
+        $nb = $pdf->GetStringWidth(utf8_decode($txt)) / max($w[$i] - 2, 1);
+        $h  = max(ceil($nb) * 5, 7);
+        if($h > $maxHeight) $maxHeight = $h;
+    }
+
+    // Control de salto de página
+    if ($pdf->GetY() + $maxHeight > $pdf->getPageBreakTrigger()){
+        $pdf->AddPage();
+
+        if($pdf->current_table_header){
+            $pdf->table_header(
+                $pdf->current_table_header['cols'],
+                $pdf->current_table_header['widths']
+            );
+        }
+    }
+
+    // Imprimir fila
+    foreach($data as $i => $txt){
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+        $pdf->MultiCell($w[$i],5,utf8_decode($txt),1,'L');
+        $pdf->SetXY($x + $w[$i], $y);
+    }
+
+    $pdf->Ln($maxHeight);
+}
+
 /* ===============================
    4. PDF CLASS
 ================================*/
