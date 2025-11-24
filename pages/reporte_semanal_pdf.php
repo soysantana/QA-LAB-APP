@@ -11,11 +11,9 @@ error_reporting(E_ALL);
 $year = isset($_GET['anio']) ? (int)$_GET['anio'] : date('o');
 $week = isset($_GET['semana']) ? (int)$_GET['semana'] : date('W');
 
-// Obtener lunes y domingo de la semana ISO
 $dt = new DateTime();
 $dt->setISODate($year, $week, 1);
 $start_str = $dt->format("Y-m-d 00:00:00");
-
 $dt->setISODate($year, $week, 7);
 $end_str = $dt->format("Y-m-d 23:59:59");
 
@@ -73,24 +71,20 @@ function resumen_cliente($start,$end){
 }
 
 /* =============================================
-   ROW MULTILÍNEA CON PAGE BREAK CONTROL
+   ROW MULTILÍNEA + PAGE BREAK CONTROL
 =============================================*/
 function table_row_multiline($pdf, $data, $w){
-
     $pdf->SetFont('Arial','',9);
-
-    // Calcular altura aproximada requerida
     $maxHeight = 5;
+
     foreach($data as $i => $txt){
         $nb = $pdf->GetStringWidth(utf8_decode($txt)) / max($w[$i] - 2, 1);
         $h  = max(ceil($nb) * 5, 7);
         if($h > $maxHeight) $maxHeight = $h;
     }
 
-    // Control de salto de página
     if ($pdf->GetY() + $maxHeight > $pdf->getPageBreakTrigger()){
         $pdf->AddPage();
-
         if($pdf->current_table_header){
             $pdf->table_header(
                 $pdf->current_table_header['cols'],
@@ -99,7 +93,6 @@ function table_row_multiline($pdf, $data, $w){
         }
     }
 
-    // Imprimir fila
     foreach($data as $i => $txt){
         $x = $pdf->GetX();
         $y = $pdf->GetY();
@@ -111,7 +104,16 @@ function table_row_multiline($pdf, $data, $w){
 }
 
 /* ===============================
-   4. PDF CLASS
+   4. FUNCION PARA EVITAR QUE EL GRÁFICO SE PARTA
+================================*/
+function ensure_space($pdf, $neededHeight = 80){
+    if ($pdf->GetY() + $neededHeight > 260) {
+        $pdf->AddPage();
+    }
+}
+
+/* ===============================
+   5. PDF CLASS
 ================================*/
 class PDF_WEEKLY extends FPDF {
 
@@ -125,13 +127,11 @@ class PDF_WEEKLY extends FPDF {
         $this->year = $year;
     }
 
-    // NECESARIO PARA PAGE BREAK
     function getPageBreakTrigger() {
         return $this->PageBreakTrigger;
     }
 
     function Header() {
-
         if ($this->PageNo() > 1) return;
 
         if (file_exists('../assets/img/Pueblo-Viejo.jpg')) {
@@ -178,7 +178,6 @@ Lab Technicians: Rafael Reyes, Darielvy Félix, Jordany Almonte, Melvin Castillo
             $this->Cell($w[$i],7,utf8_decode($c),1,0,'C');
         }
         $this->Ln();
-
         $this->current_table_header = [
             'cols' => $cols,
             'widths' => $w
@@ -196,9 +195,157 @@ Lab Technicians: Rafael Reyes, Darielvy Félix, Jordany Almonte, Melvin Castillo
 
 $pdf = new PDF_WEEKLY($week,$year);
 $pdf->AddPage();
+/* ===============================
+   6. GRÁFICOS COMPLETOS
+================================*/
+
+/* ---------- GRAPH 1 ---------- */
+function chart_samples($pdf,$data){
+    if(empty($data)) return;
+
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,8,"Graph 1: Samples Registered Per Day",0,1);
+
+    ensure_space($pdf, 80);
+
+    $chartX = 20;
+    $chartY = $pdf->GetY()+5;
+    $chartW = 170;
+    $chartH = 50;
+
+    $max = 1;
+    foreach($data as $d){
+        if($d['total'] > $max) $max = $d['total'];
+    }
+
+    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
+    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
+
+    $bars = count($data);
+    $bw = ($chartW-20)/$bars;
+    $x = $chartX+10;
+
+    foreach($data as $d){
+
+        $h = ($d['total'] / $max) * $chartH;
+        $y = $chartY + ($chartH - $h);
+
+        $pdf->SetFillColor(100,149,237);
+        $pdf->Rect($x, $y, $bw-4, $h, "F");
+
+        $pdf->SetFont('Arial','',7);
+        $pdf->SetXY($x, $chartY + $chartH + 2);
+        $pdf->MultiCell($bw-4, 3, date("D",strtotime($d['dia'])), 0, 'C');
+
+        $x += $bw;
+    }
+
+    $pdf->Ln(10);
+}
+
+
+/* ---------- GRAPH 2 ---------- */
+function chart_types($pdf,$data){
+    if(empty($data)) return;
+
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,8,"Graph 2: Tests Completed By Type",0,1);
+
+    ensure_space($pdf, 80);
+
+    $chartX = 20;
+    $chartY = $pdf->GetY()+5;
+    $chartW = 170;
+    $chartH = 50;
+
+    $max = 1;
+    foreach($data as $t){
+        if($t['total'] > $max) $max = $t['total'];
+    }
+
+    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
+    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
+
+    $bars = count($data);
+    $bw = ($chartW-20)/$bars;
+    $x = $chartX+10;
+
+    foreach($data as $t){
+
+        $h = ($t['total'] / $max) * $chartH;
+        $y = $chartY + ($chartH - $h);
+
+        $pdf->SetFillColor(50,180,120);
+        $pdf->Rect($x, $y, $bw-4, $h, "F");
+
+        $pdf->SetFont('Arial','',6);
+        $pdf->SetXY($x, $chartY + $chartH + 2);
+        $pdf->MultiCell($bw-4, 3, $t['Test_Type'], 0, 'C');
+
+        $x += $bw;
+    }
+
+    $pdf->Ln(12);
+}
+
+
+/* ---------- GRAPH 3 ---------- */
+function chart_client($pdf,$clientData){
+    if(empty($clientData)) return;
+
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,8,"Graph 3: Client Completion Percentage",0,1);
+
+    ensure_space($pdf, 90);
+
+    $points = [];
+    foreach($clientData as $c){
+        $sol = (int)$c['solicitados'];
+        $ent = (int)$c['entregados'];
+        $pct = $sol > 0 ? round(($ent*100)/$sol) : 0;
+
+        $points[] = [
+            "label" => $c['Client'],
+            "pct"   => $pct
+        ];
+    }
+
+    $chartX = 20;
+    $chartY = $pdf->GetY()+5;
+    $chartW = 170;
+    $chartH = 50;
+
+    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
+    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
+
+    $bars = count($points);
+    $bw = ($chartW-20)/$bars;
+    $x  = $chartX + 10;
+
+    foreach($points as $p){
+
+        $h = ($p["pct"]/100) * $chartH;
+        $y = $chartY + ($chartH - $h);
+
+        $pdf->SetFillColor(255,165,0);
+        $pdf->Rect($x,$y,$bw-4,$h,"F");
+
+        $pdf->SetFont('Arial','B',7);
+        $pdf->SetXY($x,$y-4);
+        $pdf->Cell($bw-4,4,$p["pct"]."%",0,0,'C');
+
+        $pdf->SetFont('Arial','',6);
+        $pdf->SetXY($x,$chartY+$chartH+2);
+        $pdf->MultiCell($bw-4,3,$p["label"],0,'C');
+
+        $x += $bw;
+    }
+
+    $pdf->Ln(12);
+}
 
 /* ===============================
-   5. WEEKLY SUMMARY
+   SECCIÓN 2 — WEEKLY SUMMARY
 ================================*/
 $pdf->section_title("2. Weekly Summary of Activities");
 
@@ -212,11 +359,10 @@ $pdf->table_row(["Requisitioned",$req],[90,30]);
 $pdf->table_row(["In Preparation",$prep],[90,30]);
 $pdf->table_row(["In Realization",$real],[90,30]);
 $pdf->table_row(["Completed",$del],[90,30]);
-
 $pdf->Ln(10);
 
 /* ===============================
-   6. DAILY BREAKDOWN
+   SECCIÓN 3 — DAILY BREAKDOWN
 ================================*/
 $pdf->section_title("3. Daily Breakdown (ISO Week)");
 
@@ -234,7 +380,7 @@ foreach($data_dia as $d){
 $pdf->Ln(10);
 
 /* ===============================
-   7. TEST DISTRIBUTION BY TYPE
+   SECCIÓN 4 — TEST DISTRIBUTION
 ================================*/
 $pdf->section_title("4. Test Distribution by Type");
 
@@ -249,174 +395,21 @@ foreach($data_tipo as $t){
 $pdf->Ln(10);
 
 /* ===============================
-   8. GRÁFICOS — FUNCIONES COMPLETAS
+   GRAFICOS
 ================================*/
-
-/* ----------- 8.1 — Graph: Samples per Day ----------- */
-function chart_samples($pdf,$data){
-
-    if(empty($data)) return;
-
-    $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,8,"Graph 1: Samples Registered Per Day",0,1);
-
-    $chartX = 20;
-    $chartY = $pdf->GetY() + 5;
-    $chartW = 170;
-    $chartH = 50;
-
-    // Ejes
-    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
-    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
-
-    // Máximo
-    $max = 1;
-    foreach($data as $d){
-        if($d['total']>$max) $max = $d['total'];
-    }
-
-    // Barras
-    $bars = count($data);
-    $bw = ($chartW-20) / $bars;
-    $x = $chartX + 10;
-
-    foreach($data as $d){
-
-        $h = ($d['total'] / $max) * $chartH;
-        $y = $chartY + $chartH - $h;
-
-        $pdf->SetFillColor(100,149,237);
-        $pdf->Rect($x,$y,$bw-4,$h,"F");
-
-        $pdf->SetFont('Arial','',7);
-        $pdf->SetXY($x,$chartY+$chartH+2);
-        $pdf->MultiCell($bw-4,3,date("D",strtotime($d['dia'])),0,'C');
-
-        $x += $bw;
-    }
-
-    $pdf->Ln($chartH + 15);
-}
-
-/* ----------- 8.2 — Graph: Tests By Type ----------- */
-function chart_types($pdf,$data){
-
-    if(empty($data)) return;
-
-    $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,8,"Graph 2: Tests Completed By Type",0,1);
-
-    $chartX = 20;
-    $chartY = $pdf->GetY() + 5;
-    $chartW = 170;
-    $chartH = 50;
-
-    // Ejes
-    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
-    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
-
-    // Máximo
-    $max = 1;
-    foreach($data as $t){
-        if($t['total'] > $max) $max = $t['total'];
-    }
-
-    // Barras
-    $bars = count($data);
-    $bw = ($chartW-20) / $bars;
-    $x = $chartX + 10;
-
-    foreach($data as $t){
-
-        $h = ($t['total'] / $max) * $chartH;
-        $y = $chartY + $chartH - $h;
-
-        $pdf->SetFillColor(50,180,120);
-        $pdf->Rect($x,$y,$bw-4,$h,"F");
-
-        $pdf->SetFont('Arial','',6);
-        $pdf->SetXY($x,$chartY+$chartH+2);
-        $pdf->MultiCell($bw-4,3,$t['Test_Type'],0,'C');
-
-        $x += $bw;
-    }
-
-    $pdf->Ln($chartH + 15);
-}
-
-/* ----------- 8.3 — Graph: Client Completion % ----------- */
-function chart_client($pdf,$clientData){
-
-    if(empty($clientData)) return;
-
-    $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,8,"Graph 3: Client Completion Percentage",0,1);
-
-    // Convertir datos
-    $data = [];
-    foreach($clientData as $c){
-        $sol = (int)$c['solicitados'];
-        $ent = (int)$c['entregados'];
-        $pct = $sol > 0 ? round(($ent*100)/$sol) : 0;
-
-        $data[] = [
-            "label" => $c['Client'],
-            "pct"   => $pct
-        ];
-    }
-
-    $chartX = 20;
-    $chartY = $pdf->GetY() + 5;
-    $chartW = 170;
-    $chartH = 50;
-
-    // Ejes
-    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
-    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
-
-    // Barras
-    $bars = count($data);
-    $bw = ($chartW-20) / $bars;
-    $x = $chartX + 10;
-
-    foreach($data as $d){
-
-        $h = ($d["pct"] / 100) * $chartH;
-        $y = $chartY + $chartH - $h;
-
-        $pdf->SetFillColor(255,165,0);
-        $pdf->Rect($x,$y,$bw-4,$h,"F");
-
-        // % encima
-        $pdf->SetFont('Arial','B',7);
-        $pdf->SetXY($x,$y-4);
-        $pdf->Cell($bw-4,4,$d["pct"]."%",0,0,'C');
-
-        // Nombre del cliente
-        $pdf->SetFont('Arial','',6);
-        $pdf->SetXY($x,$chartY+$chartH+2);
-        $pdf->MultiCell($bw-4,3,$d["label"],0,'C');
-
-        $x += $bw;
-    }
-
-    $pdf->Ln($chartH + 15);
-}
-
-/* Ejecutar gráficos */
+ensure_space($pdf, 80);
 chart_samples($pdf,$data_dia);
+
+ensure_space($pdf, 80);
 chart_types($pdf,$data_tipo);
 
 $clientes_res = resumen_cliente($start_str,$end_str);
-
-if ($pdf->GetY() > 210) $pdf->AddPage();
-
+ensure_space($pdf, 90);
 chart_client($pdf,$clientes_res);
 
 $pdf->Ln(10);
-
 /* ===============================
-   9. NEWLY REGISTERED SAMPLES
+   5. NEWLY REGISTERED SAMPLES
 ================================*/
 $pdf->section_title("5. Newly Registered Samples (Weekly)");
 
@@ -431,7 +424,7 @@ $pdf->table_header(["Sample","Structure","Client","Test Type"],[45,35,30,60]);
 
 foreach($muestras as $m){
     $pdf->table_row([
-        $m['Sample_ID']."-".$m['Sample_Number']." / ".$m['Material_Type'],
+        $m['Sample_ID']."-".$m['Sample_Number'],
         $m['Structure'],
         $m['Client'],
         $m['Test_Type']
@@ -441,7 +434,7 @@ foreach($muestras as $m){
 $pdf->Ln(10);
 
 /* ===============================
-   10. TESTS BY TECHNICIAN
+   6. TESTS BY TECHNICIAN
 ================================*/
 $pdf->section_title("6. Summary of Tests by Technician");
 
@@ -471,7 +464,7 @@ foreach($tec as $t){
 $pdf->Ln(10);
 
 /* ===============================
-   11. TEST SUMMARY BY TYPE
+   7. TEST SUMMARY BY TYPE
 ================================*/
 $pdf->section_title("7. Summary of Tests by Type");
 
@@ -505,7 +498,7 @@ foreach($tipos as $t){
 $pdf->Ln(10);
 
 /* ===============================
-   12. PENDING TESTS
+   8. PENDING TESTS
 ================================*/
 $pdf->section_title("8. Pending Tests");
 
@@ -529,14 +522,13 @@ foreach($pendientes as $p){
         $p['Sample_Number'],
         $p['Test_Type'],
         date("d-M",strtotime($p['Sample_Date']))
-    ],
-    [40,35,50,25]);
+    ],[40,35,50,25]);
 }
 
 $pdf->Ln(10);
 
 /* ===============================
-   13. DAM CONSTRUCTION TESTS
+   9. DAM CONSTRUCTION TESTS
 ================================*/
 $pdf->section_title("9. Summary of Dam Construction Tests");
 
@@ -570,7 +562,7 @@ foreach($ensayos as $e){
 $pdf->Ln(10);
 
 /* ===============================
-   14. OBSERVATIONS / NCR
+   10. OBSERVATIONS & NCR
 ================================*/
 $pdf->section_title("10. Observations & Non-Conformities");
 
@@ -585,17 +577,16 @@ $ncr = find_by_sql("
 $pdf->table_header(["Sample","Observations"],[40,150]);
 
 foreach($ncr as $n){
-    $pdf->table_row([
+    table_row_multiline($pdf,[
         $n['Sample_ID']."-".$n['Sample_Number']."-".$n['Material_Type'],
-        substr($n['Noconformidad'],0,250)
-    ],
-    [40,150]);
+        $n['Noconformidad']
+    ], [40,150]);
 }
 
 $pdf->Ln(10);
 
 /* ===============================
-   15. RESPONSIBLE
+   11. RESPONSIBLE
 ================================*/
 $pdf->section_title("11. Responsible");
 
