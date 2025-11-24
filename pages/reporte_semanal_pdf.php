@@ -107,28 +107,17 @@ class PDF_WEEKLY extends FPDF {
         $this->SetXY(120,22);
         $this->Cell(80,7,"ISO WEEK {$this->week}  ( ".$start->format('d M Y')." - ".$end->format('d M Y')." )",0,1,'R');
 
-        $this->Ln(12);
-        $this->section_title("1. Weekly Personnel Assigned");
+        $this->Ln(10);
+        $this->section_title("1.  Personnel Assigned");
 
         // SEMANA = TODOS
         $this->SetFont('Arial','',10);
 $this->MultiCell(0,6,utf8_decode("
-Wendin De Jesús – Chief Laboratory
-Yamilexi Mejía – Document Control
-Arturo Santana – Document Control Support
-Frandy Espinal – Document Control Support
-Diana Vázquez – PV Supervisor
-Víctor Mercedes – PV Supervisor
-
---- Contractor Lab Technicians ---
-Wilson Martínez – Contractor Technician
-Rafy Leocadio – Contractor Technician
-Rony Vargas – Contractor Technician
-Jonathan Vargas – Contractor Technician
-Rafael Reyes – Contractor Technician
-Darielvy Félix – Contractor Technician
-Jordany Almonte – Contractor Technician
-Melvin Castillo – Contractor Technician
+Chief Laboratory : Wendin De Jesús.
+Document Control : Yamilexi Mejía, Arturo Santana, Frandy Esppinal.
+Lab Supervisor : Diana Vázquez, Victor Mercedes.
+Contractor Technician : Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas.
+Contractor Technician : Rafael Reyes,Darielvy Félix, Jordany Almonte, Melvin Castillo.
 "));
 
         $this->Ln(3);
