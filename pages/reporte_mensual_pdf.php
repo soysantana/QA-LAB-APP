@@ -320,7 +320,7 @@ $pend = pending_tests($start_str,$end_str);
 
 $pdf->table_header(
     ["Sample","Test","Client","Date"],
-    [60,50,40,20]
+    [60,60,40,20]
 );
 
 foreach($pend as $p){
@@ -329,7 +329,7 @@ foreach($pend as $p){
         $p['Test_Type'],
         $p['Client'],
         date("d-M", strtotime($p['Registed_Date']))
-    ], [60,50,40,20]);
+    ], [60,60,40,20]);
 }
 
 $pdf->Ln(10);
@@ -340,7 +340,7 @@ $pdf->Ln(10);
 
 $pdf->section_title("6. Critical Tests Summary (Completed + Pending)");
 
-$critical_list = ['PROCTOR','CBR','SD','UCS','LAA'];
+$critical_list = ['SP','HY','SND','UCS','LAA'];
 
 $completed = find_by_sql("
     SELECT Test_Type, COUNT(*) total
