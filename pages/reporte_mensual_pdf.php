@@ -226,7 +226,7 @@ $pdf->Cell(0,10,date("F Y",strtotime($start_str)),0,1,'C');
 
 $pdf->Ln(15);
 $pdf->SetFont('Arial','',12);
-$pdf->Cell(0,8,"Pueblo Viejo Mine – TSF Laboratory",0,1,'C');
+$pdf->Cell(0,8,"Pueblo Viejo Mine - TSF Laboratory",0,1,'C');
 $pdf->Cell(0,8,"Prepared by: ".utf8_decode($responsable),0,1,'C');
 
 /* ============================
@@ -245,11 +245,11 @@ $pdf->SetFont('Arial','',11);
 $pdf->MultiCell(0,7,utf8_decode("
 During this reporting period, the laboratory maintained a stable workflow and consistent operational performance.
 
-• Total samples registered: {$total_reg}
-• Total tests delivered: {$total_del}
-• Total pending tests: ".($total_reg - $total_del)."
-• Non-conformities reported: {$total_ncr}
-• Client with highest demand: {$top_client['Client']} ({$top_client['total']} samples)
+- Total samples registered: {$total_reg}
+- Total tests delivered: {$total_del}
+- Total pending tests: ".($total_reg - $total_del)."
+- Non-conformities reported: {$total_ncr}
+- Client with highest demand: {$top_client['Client']} ({$top_client['total']} samples)
 
 Overall, laboratory operations remained balanced across sample reception and test execution stages.
 "));
@@ -358,7 +358,7 @@ $regMap = tests_registered_expanded($start_str,$end_str);
 $totalReg = array_sum($regMap);
 if($totalReg==0) $totalReg=1;
 
-graph_page_break($pdf,130);
+graph_page_break($pdf,120);
 
 $cx = 105;
 $cy = $pdf->GetY()+55;
