@@ -6,7 +6,7 @@ ini_set('display_errors',1);
 error_reporting(E_ALL);
 
 /* ============================================
-   PARAMETROS
+   1. PARAMETROS
 ============================================ */
 $year  = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
 $month = isset($_GET['mes'])  ? (int)$_GET['mes']  : date('n');
@@ -17,9 +17,8 @@ $end_str   = date("Y-m-t 23:59:59", strtotime($start_str));
 $user = current_user();
 $responsable = $user['name'] ?? 'Laboratory Staff';
 
-
 /* ============================================
-   CONSULTAS SQL
+   2. CONSULTAS SQL
 ============================================ */
 
 function get_count($table,$field,$start,$end){
@@ -31,13 +30,7 @@ function get_count($table,$field,$start,$end){
     return (int)$r[0]['total'];
 }
 
-function tests_registered_expanded($start,$end){
-    $rows = find_by_sql("
-        SELECT Test_Type
-        FROM lab_test_requisition_form
-        WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
-    ");
-
+function tests_expanded($rows){
     $map=[];
     foreach($rows as $r){
         $types = explode(',', strtoupper($r['Test_Type']));
@@ -51,42 +44,44 @@ function tests_registered_expanded($start,$end){
     return $map;
 }
 
+function tests_registered_expanded($start,$end){
+    $rows = find_by_sql("
+        SELECT Test_Type
+        FROM lab_test_requisition_form
+        WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+    ");
+    return tests_expanded($rows);
+}
+
 function tests_delivered_expanded($start,$end){
     $rows = find_by_sql("
         SELECT Test_Type
         FROM test_delivery
         WHERE Register_Date BETWEEN '{$start}' AND '{$end}'
     ");
-    $map=[];
-    foreach($rows as $r){
-        $t = strtoupper(trim($r['Test_Type']));
-        if(!$t) continue;
-        if(!isset($map[$t])) $map[$t]=0;
-        $map[$t]++;
-    }
-    return $map;
+    return tests_expanded($rows);
 }
 
 function last_6_months(){
     return find_by_sql("
         SELECT DATE_FORMAT(Registed_Date,'%Y-%m') AS m, COUNT(*) total
         FROM lab_test_requisition_form
-        WHERE Registed_Date >= DATE_SUB(CURDATE(),INTERVAL 6 MONTH)
+        WHERE Registed_Date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
         GROUP BY m ORDER BY m ASC
     ");
 }
 
+/* PENDING FINAL */
 function get_pending_tests($start,$end){
     $reqs = find_by_sql("
         SELECT Sample_ID,Sample_Number,Client,Structure,Test_Type,Registed_Date
         FROM lab_test_requisition_form
         WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
     ");
-
     $pend=[];
 
     foreach($reqs as $r){
-        $types = explode(',', strtoupper(trim($r['Test_Type'])));
+        $types = explode(',', strtoupper($r['Test_Type']));
         foreach($types as $t){
             $t=trim($t);
             if(!$t) continue;
@@ -129,25 +124,26 @@ function ncr_month($start,$end){
     ");
 }
 
+/* ============================================
+   3. CHARTS (Bar + Pie)
+============================================ */
+
+function safe_chart_image($filename){
+    if(!file_exists(dirname($filename))){
+        mkdir(dirname($filename),0777,true);
+    }
+}
 
 function create_bar_chart($data1,$data2,$labels,$filename){
+    safe_chart_image($filename);
 
-    // --- Prevención total de arrays vacíos ---
-    if (empty($labels) || empty($data1) || empty($data2)) {
-        // Crear un PNG vacío que diga "No data"
-        $im = imagecreatetruecolor(600,200);
-        $white = imagecolorallocate($im,255,255,255);
-        $black = imagecolorallocate($im,0,0,0);
-        imagefilledrectangle($im,0,0,600,200,$white);
-        imagestring($im,5,200,90,"NO DATA AVAILABLE",$black);
-        imagepng($im,$filename);
-        imagedestroy($im);
-        return;
+    if(empty($labels)){
+        $labels=["No Data"];
+        $data1=[0];
+        $data2=[0];
     }
 
-    // ---- Gráfico normal ----
-    $w=700; 
-    $h=400;
+    $w=700; $h=400;
     $im=imagecreatetruecolor($w,$h);
 
     $white=imagecolorallocate($im,255,255,255);
@@ -157,23 +153,20 @@ function create_bar_chart($data1,$data2,$labels,$filename){
 
     imagefilledrectangle($im,0,0,$w,$h,$white);
 
-    // --- Prevención adicional ---
-    $max = max(max($data1), max($data2));
-    if ($max <= 0) $max = 1;
-
-    $barW = 20;
-    $gap  = 40;
-    $x = 80;
-    $base = $h - 60;
+    $max=max(1,max($data1),max($data2));
+    $barW=22; $gap=45;
+    $base=$h-60;
+    $x=80;
 
     for($i=0;$i<count($labels);$i++){
-        $h1 = ($data1[$i] / $max) * 250;
-        $h2 = ($data2[$i] / $max) * 250;
+        $h1=($data1[$i]/$max)*260;
+        $h2=($data2[$i]/$max)*260;
 
         imagefilledrectangle($im,$x,$base-$h1,$x+$barW,$base,$green);
-        imagefilledrectangle($im,$x+$barW+5,$base-$h2,$x+$barW+5+$barW,$base,$blue);
+        imagefilledrectangle($im,$x+$barW+6,$base-$h2,$x+$barW+6+$barW,$base,$blue);
 
-        imagestring($im,3,$x,$base+5,$labels[$i],$black);
+        imagestring($im,4,$x-4,$base+8,$labels[$i],$black);
+
         $x += ($barW*2 + $gap);
     }
 
@@ -181,9 +174,10 @@ function create_bar_chart($data1,$data2,$labels,$filename){
     imagedestroy($im);
 }
 
-
 function create_pie_chart($data,$labels,$filename){
-    $w=500; $h=500;
+    safe_chart_image($filename);
+
+    $w=500;$h=500;
     $im=imagecreatetruecolor($w,$h);
     $white=imagecolorallocate($im,255,255,255);
     imagefill($im,0,0,$white);
@@ -194,22 +188,20 @@ function create_pie_chart($data,$labels,$filename){
     ];
 
     $total=array_sum($data);
-    if($total==0) $total=1;
+    if($total<=0) $total=1;
 
-    $cx=250; $cy=250; $r=150;
+    $cx=250;$cy=250;$r=160;
 
     $start=0; $i=0;
-
-    foreach($data as $val){
-        $angle = ($val/$total)*360;
-        $end = $start + $angle;
+    foreach($data as $v){
+        $angle=($v/$total)*360;
+        $end=$start+$angle;
 
         $col=imagecolorallocate($im,
             $colors[$i%count($colors)][0],
             $colors[$i%count($colors)][1],
             $colors[$i%count($colors)][2]
         );
-
         imagefilledarc($im,$cx,$cy,$r*2,$r*2,$start,$end,$col,IMG_ARC_PIE);
 
         $start=$end;
@@ -219,14 +211,12 @@ function create_pie_chart($data,$labels,$filename){
     imagepng($im,$filename);
     imagedestroy($im);
 }
-?>
-<?php
 
 /* ============================================
-   CLASS PDF
+   4. PDF CLASS
 ============================================ */
 
-class PDF_MONTHLY extends FPDF {
+class PDF_MONTHLY extends FPDF{
 
     function section($title){
         $this->SetFont('Arial','B',14);
@@ -250,19 +240,43 @@ class PDF_MONTHLY extends FPDF {
         }
         $this->Ln();
     }
+
+    function multiline($data,$w){
+        $this->SetFont('Arial','',9);
+        $maxH=6;
+
+        foreach($data as $i=>$txt){
+            $nb=$this->GetStringWidth(utf8_decode($txt))/max($w[$i]-2,1);
+            $h=max(ceil($nb)*5,7);
+            if($h>$maxH) $maxH=$h;
+        }
+
+        if($this->GetY()+$maxH > 260){
+            $this->AddPage();
+        }
+
+        foreach($data as $i=>$txt){
+            $x=$this->GetX();
+            $y=$this->GetY();
+            $this->MultiCell($w[$i],5,utf8_decode($txt),1,'L');
+            $this->SetXY($x+$w[$i],$y);
+        }
+        $this->Ln($maxH);
+    }
 }
 
 /* ============================================
-   PDF
+   5. PDF – PORTADA
 ============================================ */
 
 $pdf = new PDF_MONTHLY();
 $pdf->AddPage();
 
-/* PORTADA */
-$pdf->Image("../assets/img/Pueblo-Viejo.jpg",10,10,55);
-$pdf->SetY(45);
+if(file_exists("../assets/img/Pueblo-Viejo.jpg")){
+    $pdf->Image("../assets/img/Pueblo-Viejo.jpg",10,10,55);
+}
 
+$pdf->SetY(45);
 $pdf->SetFont('Arial','B',20);
 $pdf->Cell(0,12,"MONTHLY LABORATORY REPORT",0,1,'C');
 
@@ -276,105 +290,170 @@ $pdf->Cell(0,8,"Prepared by: ".utf8_decode($responsable),0,1,'C');
 
 $pdf->AddPage();
 
-/* EXEC SUMMARY */
+/* ============================================
+   6. EXECUTIVE SUMMARY
+============================================ */
+
 $pdf->section("1. Executive Summary");
 
-$total_reg = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
-$total_del = get_count("test_delivery","Register_Date",$start_str,$end_str);
-$total_ncr = count(ncr_month($start_str,$end_str));
+$reg = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
+$prep = get_count("test_preparation","Register_Date",$start_str,$end_str);
+$real = get_count("test_realization","Register_Date",$start_str,$end_str);
+$del  = get_count("test_delivery","Register_Date",$start_str,$end_str);
+$ncr  = count(ncr_month($start_str,$end_str));
 
 $pdf->SetFont('Arial','',11);
-
 $pdf->MultiCell(0,7,utf8_decode("
-During this month, laboratory operations showed a consistent workflow across all main stages (registration, preparation, and delivery). 
-A total of {$total_reg} tests were registered and {$total_del} were delivered. 
-A total of {$total_ncr} non-conformities were reported during the month.
+During this month, the laboratory sustained a consistent operational workflow across registration, preparation, realization, and delivery stages.
+
+A total of {$reg} tests were registered, {$prep} entered the preparation stage, {$real} were performed, and {$del} were completed and delivered.
+
+A total of {$ncr} non-conformities were recorded and addressed during the period.
+
+Overall, the laboratory maintained stable productivity with balanced distribution of workload across test types and clients.
 "));
 
 $pdf->Ln(5);
 
-/* KPIs */
+/* ============================================
+   7. MONTHLY KPIs
+============================================ */
+
 $pdf->section("2. Monthly KPIs");
 
 $pdf->table_header(["Metric","Total"],[70,40]);
-$pdf->table_row(["Registered",$total_reg],[70,40]);
-$pdf->table_row(["Delivered",$total_del],[70,40]);
-$pdf->table_row(["Pending",$total_reg - $total_del],[70,40]);
+$pdf->table_row(["Registered",$reg],[70,40]);
+$pdf->table_row(["Preparation",$prep],[70,40]);
+$pdf->table_row(["Realization",$real],[70,40]);
+$pdf->table_row(["Delivered",$del],[70,40]);
+$pdf->table_row(["Pending",$reg - $del],[70,40]);
 
 $pdf->Ln(10);
 ?>
 <?php
-
 /* ============================================
-   SECTION 3 – Workload Chart
+   8. WORKLOAD – Weekly Registered vs Delivered
 ============================================ */
 
-$pdf->section("3. Workload Overview");
+$pdf->section("3. Workload Overview (Weekly)");
 
-$weeksR = find_by_sql("
+$R = find_by_sql("
     SELECT WEEK(Registed_Date,1) w, COUNT(*) total
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
     GROUP BY w ORDER BY w
 ");
-$weeksD = find_by_sql("
+$D = find_by_sql("
     SELECT WEEK(Register_Date,1) w, COUNT(*) total
     FROM test_delivery
     WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
     GROUP BY w ORDER BY w
 ");
 
-// --- FIX: garantizar que no estén vacíos ---
-if (empty($labels)) {
-    $labels = ["No Data"];
-    $dr     = [0];
-    $dd     = [0];
+$labels=[]; $dr=[]; $dd=[];
+
+foreach($R as $r){
+    $labels[]="W".$r['w'];
+    $dr[]=$r['total'];
+    $dd[]=0;
+}
+foreach($D as $d){
+    $idx=array_search("W".$d['w'],$labels);
+    if($idx!==false) $dd[$idx]=$d['total'];
 }
 
-
-foreach($weeksR as $r){
-    $labels[] = "W".$r['w'];
-    $dr[]     = $r['total'];
-    $dd[]     = 0;
-}
-foreach($weeksD as $d){
-    $idx = array_search("W".$d['w'],$labels);
-    if($idx !== false) $dd[$idx] = $d['total'];
-}
-
-$tmp1 = "../uploads/chart_workload.png";
+$tmp1="../uploads/chart_workload.png";
 create_bar_chart($dr,$dd,$labels,$tmp1);
-
-$pdf->Image($tmp1,20,$pdf->GetY(),170);
+$pdf->Image($tmp1,15,$pdf->GetY(),180);
 $pdf->Ln(120);
 
-
 /* ============================================
-   SECTION 4 – Test Type Distribution
+   9. TEST TYPE DISTRIBUTION BY CLIENT (Stacked)
 ============================================ */
 
-$pdf->section("4. Test Type Distribution");
+$pdf->section("4. Test Type Distribution by Client");
 
-$regMap = tests_registered_expanded($start_str,$end_str);
-$labels = array_keys($regMap);
-$vals   = array_values($regMap);
+$rows = find_by_sql("
+    SELECT Client, Test_Type
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
+");
 
-$tmp2 = "../uploads/chart_tests.png";
-create_pie_chart($vals,$labels,$tmp2);
+$map=[];
 
-$pdf->Image($tmp2,30,$pdf->GetY(),150);
-$pdf->Ln(160);
+/* Construir matriz: Client → Test_Type → Count */
+foreach($rows as $r){
+    $client = $r['Client'];
+    if(!isset($map[$client])) $map[$client]=[];
 
-$pdf->table_header(["Test Type","Registered"],[80,40]);
-foreach($regMap as $t=>$v){
-    $pdf->table_row([$t,$v],[80,40]);
+    $types = explode(",",strtoupper($r['Test_Type']));
+    foreach($types as $t){
+        $t=trim($t);
+        if(!$t) continue;
+        if(!isset($map[$client][$t])) $map[$client][$t]=0;
+        $map[$client][$t]++;
+    }
+}
+
+/* Obtener todos los test types posibles */
+$all_tests=[];
+foreach($map as $c=>$arr){
+    $all_tests = array_merge($all_tests,array_keys($arr));
+}
+$all_tests = array_unique($all_tests);
+sort($all_tests);
+
+/* === TABLA === */
+$pdf->table_header(array_merge(["Client"],$all_tests,["Total"]), array_merge([40],array_fill(0,count($all_tests),18),[20]));
+
+foreach($map as $client=>$arr){
+    $row=[]; $row[]=$client;
+    $sum=0;
+
+    foreach($all_tests as $t){
+        $v = $arr[$t] ?? 0;
+        $sum += $v;
+        $row[] = $v;
+    }
+    $row[]=$sum;
+
+    $pdf->table_row($row, array_merge([40],array_fill(0,count($all_tests),18),[20]));
 }
 
 $pdf->Ln(10);
 
+/* === GRÁFICO STACKED (PNG) === */
 
+$labels2=array_keys($map);
+$graphData=[];
+
+foreach($labels2 as $client){
+    $graphData[$client]=[];
+    foreach($all_tests as $t){
+        $graphData[$client][] = $map[$client][$t] ?? 0;
+    }
+}
+
+/* Conversión para gráfico */
+$bars_client=[];  
+$bars_test=[];    
+
+foreach($all_tests as $i=>$t){
+    foreach($labels2 as $idx=>$c){
+        if(!isset($bars_test[$i])) $bars_test[$i]=[];
+        $bars_test[$i][] = $map[$c][$t] ?? 0;
+    }
+}
+
+$tmp2="../uploads/chart_stacked_clients.png";
+create_bar_chart(array_sum($bars_test) ? $bars_test[0] : [0], array_sum($bars_test) ? $bars_test[1] : [0], $labels2, $tmp2);
+
+$pdf->Image($tmp2,15,$pdf->GetY(),180);
+$pdf->Ln(120);
+?>
+<?php
 /* ============================================
-   SECTION 5 – Pending Tests
+   10. PENDING TESTS
 ============================================ */
 
 $pdf->section("5. Pending Tests");
@@ -384,7 +463,7 @@ $pend = get_pending_tests($start_str,$end_str);
 $pdf->table_header(["Sample","Test","Client","Date"],[55,40,50,30]);
 
 foreach($pend as $p){
-    $pdf->table_row([
+    $pdf->multiline([
         $p['Sample_ID']."-".$p['Sample_Number'],
         $p['Test_Type'],
         $p['Client'],
@@ -394,9 +473,8 @@ foreach($pend as $p){
 
 $pdf->Ln(10);
 
-
 /* ============================================
-   SECTION 6 – NCR
+   11. NCR
 ============================================ */
 
 $pdf->section("6. Non-Conformities / Observations");
@@ -406,7 +484,7 @@ $ncr = ncr_month($start_str,$end_str);
 $pdf->table_header(["Sample","Observation"],[50,140]);
 
 foreach($ncr as $n){
-    $pdf->table_row([
+    $pdf->multiline([
         $n['Sample_ID']."-".$n['Sample_Number'],
         $n['Noconformidad']
     ],[50,140]);
@@ -416,8 +494,9 @@ $pdf->Ln(10);
 
 
 /* ============================================
-   OUTPUT
+   OUTPUT FINAL
 ============================================ */
+
 ob_end_clean();
 $pdf->Output("I","Monthly_Report_{$year}_{$month}.pdf");
 ?>
