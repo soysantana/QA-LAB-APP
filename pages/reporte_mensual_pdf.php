@@ -88,20 +88,60 @@ function monthly_clients($start,$end){
     ");
 }
 
-function pending_tests($start,$end){
-    return find_by_sql("
-        SELECT r.*
-        FROM lab_test_requisition_form r
-        WHERE r.Registed_Date BETWEEN '{$start}' AND '{$end}'
-        AND NOT EXISTS (
-            SELECT 1 FROM test_delivery d
-            WHERE d.Sample_ID=r.Sample_ID
-              AND d.Sample_Number=r.Sample_Number
-              AND d.Test_Type=r.Test_Type
-        )
-        ORDER BY r.Registed_Date ASC
+function pending_tests_expanded($start, $end) {
+
+    // 1. Obtener requisiciones del mes
+    $reqs = find_by_sql("
+        SELECT *
+        FROM lab_test_requisition_form
+        WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
     ");
+
+    $pendientes = [];
+
+    foreach ($reqs as $r) {
+
+        // 2. Expandir los tests del array GS, AL, SP...
+        $tests = explode(',', strtoupper(trim($r['Test_Type'])));
+
+        foreach ($tests as $test) {
+
+            $test = trim($test);
+            if ($test == '') continue;
+
+            // 3. Verificar si el test ya existe en PREP / REAL / DELIVERY
+            $exists = find_by_sql("
+                SELECT 1
+                FROM (
+                    SELECT Sample_ID, Sample_Number, Test_Type FROM test_preparation
+                    UNION ALL
+                    SELECT Sample_ID, Sample_Number, Test_Type FROM test_realization
+                    UNION ALL
+                    SELECT Sample_ID, Sample_Number, Test_Type FROM test_delivery
+                ) x
+                WHERE x.Sample_ID     = '{$r['Sample_ID']}'
+                  AND x.Sample_Number = '{$r['Sample_Number']}'
+                  AND x.Test_Type     = '{$test}'
+                LIMIT 1
+            ");
+
+            // 4. Si NO existe → está pendiente
+            if (empty($exists)) {
+                $pendientes[] = [
+                    'Sample_ID'     => $r['Sample_ID'],
+                    'Sample_Number' => $r['Sample_Number'],
+                    'Structure'     => $r['Structure'],
+                    'Client'        => $r['Client'],
+                    'Test_Type'     => $test,
+                    'Registed_Date' => $r['Registed_Date'],
+                ];
+            }
+        }
+    }
+
+    return $pendientes;
 }
+
 
 function ncr_month($start,$end){
     return find_by_sql("
@@ -316,14 +356,14 @@ $pdf->Ln(20);
 
 $pdf->section_title("5. Pending Tests (Monthly)");
 
-$pend = pending_tests($start_str,$end_str);
+$pend = pending_tests_expanded($start_str,$end_str);
 
 $pdf->table_header(
     ["Sample","Test","Client","Date"],
     [60,65,40,20]
 );
 
-foreach($pend as $p){
+foreach ($pendientes as $p){
     $pdf->table_row([
         $p['Sample_ID']."-".$p['Sample_Number'],
         $p['Test_Type'],
@@ -340,7 +380,7 @@ $pdf->Ln(10);
 
 $pdf->section_title("6. Critical Tests Summary (Completed + Pending)");
 
-$critical_list = ['SP','HY','SND','UCS','LAA'];
+$critical_list = ['SP','HY','SND','UCS','LAA' ,'SG','GS','AR'];
 
 $completed = find_by_sql("
     SELECT Test_Type, COUNT(*) total
