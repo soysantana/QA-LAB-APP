@@ -482,7 +482,7 @@ $label = strtoupper(trim($cli));
 $label = pdf_text_safe($label); // <-- conversión limpia
 
 // Si es demasiado largo
-if (strlen($label) > 12) {
+if (strlen($label) > 16) {
     // cortar sin partir caracteres
     $label = substr($label, 0, 12) . "...";   // <-- 3 puntos, 100% compatible
 }
