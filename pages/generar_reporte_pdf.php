@@ -581,29 +581,44 @@ $pdf->section_table(
 );
 
 // 3. Client Summary of Completed Tests
-$pdf->section_title("3. Client Summary of Completed Tests");
+$pdf->section_title(utf8_decode("3. Client Summary of Completed Tests"));
 
 $clientes = resumen_entregas_por_cliente($end);
 $rows = [];
+
 foreach ($clientes as $cli => $d) {
-  $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
-  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
+
+  // Evitar errores con caracteres especiales
+  $cli_utf8 = utf8_decode($cli);
+
+  $pct = $d['solicitados'] > 0 
+        ? round($d['entregados'] * 100 / $d['solicitados']) 
+        : 0;
+
+  $rows[] = [
+      $cli_utf8,
+      $d['solicitados'],
+      $d['entregados'],
+      utf8_decode("$pct%")
+  ];
 }
 
+// Tabla formateada
 $pdf->section_table(
-  ["Client", "Requested", "Completed", "%"],
+  [utf8_decode("Client"), utf8_decode("Requested"), utf8_decode("Completed"), "%"],
   $rows,
   [50, 35, 35, 25]
 );
 
-// Título del gráfico de barras
+// Título del gráfico
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(0, 6, 'Client Completion %', 0, 1, 'L');
+$pdf->Cell(0, 6, utf8_decode('Client Completion %'), 0, 1, 'L');
 
-// Gráfico de barras de % completado por cliente
+// Gráfico de barras (asegurando conversión)
 draw_client_bar_chart($pdf, $clientes);
 
 $pdf->Ln(4);
+
 
 
 // 4. Newly Registered Samples
