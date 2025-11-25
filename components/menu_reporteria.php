@@ -71,7 +71,7 @@ include_once('../components/header.php');
 
       <!-- Reporte Mensual -->
       <div class="col-12 col-md-6 col-lg-4">
-        <a href="/pages/reporte_mensual_pdf.php" class="text-decoration-none">
+        <a href="/pages/lista_reportes_mensuales.php" class="text-decoration-none">
           <div class="card h-100 shadow-sm border-0 hover-elevate">
             <div class="card-body text-center">
               <i class="bi bi-calendar-month" style="font-size:2rem;"></i>
