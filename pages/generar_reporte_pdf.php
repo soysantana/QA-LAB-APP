@@ -17,9 +17,9 @@ $fecha_en = $fecha_obj ? $fecha_obj->format('Y/m/d') : 'Fecha inválida';
 $start = date('Y-m-d H:i:s', strtotime("$fecha -1 day 15:59:59"));
 $end   = date('Y-m-d H:i:s', strtotime("$fecha 15:59:59"));
 
-// =============================
-// Helpers de consulta
-// =============================
+/* =============================
+ * Helpers de consulta
+ * ============================= */
 function get_count($table, $field, $start, $end) {
   $r = find_by_sql("SELECT COUNT(*) as total FROM {$table} WHERE {$field} BETWEEN '{$start}' AND '{$end}'");
   return (int)$r[0]['total'];
@@ -34,9 +34,9 @@ if (!function_exists('es_envio_tt')) {
   }
 }
 
-// =============================
-// 3. Resumen entregas por cliente
-// =============================
+/* =============================
+ * 3. Resumen entregas por cliente
+ * ============================= */
 function resumen_entregas_por_cliente($end) {
   $stats  = [];
   $inicio = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($end)));
@@ -109,9 +109,9 @@ function count_by_sample($table, $sample, $field = 'Sample_ID') {
   return count(find_by_sql("SELECT id FROM {$table} WHERE {$field} = '{$sample}'"));
 }
 
-// =============================
-// 4. Muestras nuevas (excluyendo "envío")
-// =============================
+/* =============================
+ * 4. Muestras nuevas (excluyendo "envío")
+ * ============================= */
 function muestras_nuevas($start, $end) {
   // 1) Filtro en SQL: evita traer filas cuyo Test_Type sea solo "envío/envio"
   $sql = "
@@ -163,9 +163,9 @@ function muestras_nuevas($start, $end) {
   return $out;
 }
 
-// =============================
-// 7. Ensayos pendientes
-// =============================
+/* =============================
+ * 7. Ensayos pendientes
+ * ============================= */
 
 // Función auxiliar para detectar columnas existentes
 function get_columns_for_table($tabla) {
@@ -253,9 +253,9 @@ function ensayos_pendientes($start, $end) {
   return $pendientes;
 }
 
-// =============================
-// 5 y 6. Resumen por técnico y por tipo
-// =============================
+/* =============================
+ * 5 y 6. Resumen por técnico y por tipo
+ * ============================= */
 function resumen_tecnico($start, $end) {
   return find_by_sql("
     SELECT Technician, COUNT(*) as total, 'In Preparation' as etapa 
@@ -294,9 +294,9 @@ function resumen_tipo($start, $end) {
   ");
 }
 
-// =============================
-// 3.1 Gráfico de barras por cliente
-// =============================
+/* =============================
+ * 3.1 Gráfico de barras por cliente
+ * ============================= */
 function draw_client_bar_chart($pdf, array $clientes) {
   if (empty($clientes)) return;
 
@@ -309,8 +309,9 @@ function draw_client_bar_chart($pdf, array $clientes) {
 
     // Abreviar nombre del cliente para que quepa
     $label = strtoupper(trim($cli));
-    if (mb_strlen($label, 'UTF-8') > 10) {
-      $label = mb_substr($label, 0, 10, 'UTF-8') . '…';
+    if (mb_strlen($label, 'UTF-8') > 20) {
+      // MUY IMPORTANTE: usar SOLO "..." ASCII (no el caracter "…" unicode)
+      $label = mb_substr($label, 0, 10, 'UTF-8') . '...';
     }
 
     $data[] = [
@@ -396,9 +397,9 @@ function draw_client_bar_chart($pdf, array $clientes) {
   $pdf->SetY($y0 + $chartHeight + $chartBottomMargin);
 }
 
-// =============================
-// 8. Ensayos reporte + 9. Observaciones
-// =============================
+/* =============================
+ * 8. Ensayos reporte + 9. Observaciones
+ * ============================= */
 function render_ensayos_reporte($pdf, $start, $end) {
   // Obtener datos desde la tabla `ensayos_reporte`
   $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
@@ -452,81 +453,9 @@ function observaciones_ensayos_reporte($start, $end) {
   ");
 }
 
-function pdf_text_safe($txt) {
-    // eliminar caracteres invisibles y unicode raro
-    $txt = preg_replace('/[\x00-\x1F\x7F]/u', '', $txt);
-
-    // reemplazar puntos suspensivos unicode por '...'
-    $txt = str_replace(["…","•••","●"], "...", $txt);
-
-    // quitar caracteres fuera de ASCII/Latín
-    $converted = @iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $txt);
-
-    if ($converted === false) {
-        $converted = utf8_decode($txt); // fallback
-    }
-
-    return $converted;
-}
-
-function pdf_label_short($txt, $max = 20) {
-    $clean = pdf_text_safe($txt);
-
-    if (strlen($clean) > $max) {
-        return substr($clean, 0, $max) . "...";
-    }
-    return $clean;
-}
-function pdf_clean_text($str) {
-
-    // Si viene ya como ISO con UTF-8 mezclado → lo repara
-    $str = mb_convert_encoding($str, 'UTF-8', 'UTF-8');
-
-    // Elimina caracteres invisibles
-    $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-
-    // Normaliza a NFC
-    if (class_exists('Normalizer')) {
-        $str = Normalizer::normalize($str, Normalizer::FORM_C);
-    }
-
-    // Repara textos mal convertidos (â€“, â€™, etc.)
-    $replacements = [
-        "â€™" => "'",
-        "â€œ" => '"',
-        "â€�" => '"',
-        "â€“" => "-",
-        "â€”" => "-",
-        "â€˜" => "'",
-        "â€¦" => "...",
-        "Ã±" => "ñ",
-        "Ã"  => "í",
-    ];
-    $str = strtr($str, $replacements);
-
-    // Intenta ISO-8859-1 translit
-    $converted = @iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $str);
-
-    // Si falla, usa utf8_decode como fallback
-    if ($converted === false) {
-        $converted = utf8_decode($str);
-    }
-
-    return $converted;
-}
-
-function pdf_label_clean($txt, $max = 20) {
-    $clean = pdf_clean_text($txt);
-    if (strlen($clean) > $max) {
-        return substr($clean, 0, $max) . "...";
-    }
-    return $clean;
-}
-
-
-// =============================
-// Clase PDF
-// =============================
+/* =============================
+ * Clase PDF
+ * ============================= */
 class PDF extends FPDF {
   public $day_of_week;
   public $week_number;
@@ -566,32 +495,26 @@ class PDF extends FPDF {
     $semana = $this->week_number;
     $dia = $this->day_of_week;
 
-    // =============================
     // GRUPO DIANA — Domingo a miércoles (TODAS LAS SEMANAS)
-    // =============================
     if (in_array($dia, [0, 1, 2, 3])) {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Wilson Martinez, Rafy Leocadio, Rony Vargas, Jonathan Vargas", 0, 'L');
       $this->MultiCell(0, 6, "PV Laboratory Supervisors: Diana Vazquez", 0, 'L');
       $this->MultiCell(0, 6, "Lab Document Control: Frandy Espinal", 0, 'L');
     }
 
-    // =============================
     // GRUPO LAURA — Miércoles a sábado (TODAS LAS SEMANAS)
-    // =============================
     if (in_array($dia, [3, 4, 5, 6])) {
       $this->MultiCell(0, 6, "Contractor Lab Technicians: Rafael Reyes, Darielvy Felix, Jordany Almonte, Melvin Castillo", 0, 'L');
       $this->MultiCell(0, 6, "PV Laboratory Supervisors: Victor Mercedes", 0, 'L');
       $this->MultiCell(0, 6, "Lab Document Control: Arturo Santana", 0, 'L');
     }
 
-    // =============================
     // YAMILEXI + WENDIN — Rotación semanal
-    // =============================
     if (
       ($semana % 2 === 0 && in_array($dia, [1, 2, 3, 4, 5])) ||  // Semana par: lunes a viernes
       ($semana % 2 !== 0 && in_array($dia, [1, 2, 3, 4]))        // Semana impar: lunes a jueves
     ) {
-      $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');   
+      $this->MultiCell(0, 6, "Lab Document Control: Yamilexi Mejia", 0, 'L');
       $this->MultiCell(0, 6, utf8_decode("Chief laboratory: Wendin De Jesús"), 0, 'L');
     }
 
@@ -631,12 +554,11 @@ class PDF extends FPDF {
     }
     $this->Ln(3);
   }
-  
 }
 
-// =============================
-// Generación del PDF
-// =============================
+/* =============================
+ * Generación del PDF
+ * ============================= */
 $pdf = new PDF($fecha_en);
 $pdf->AddPage();
 
@@ -658,25 +580,19 @@ $pdf->section_title("3. Client Summary of Completed Tests");
 
 $clientes = resumen_entregas_por_cliente($end);
 
-// ===============================
-// TABLA
-// ===============================
+// Tabla
 $rows = [];
 foreach ($clientes as $cli => $d) {
+  $pct = ($d['solicitados'] > 0)
+        ? round($d['entregados'] * 100 / $d['solicitados'])
+        : 0;
 
-    // limpiar y convertir a ISO-8859-1 seguro
-    $cli_safe = pdf_text_safe($cli);
-
-    $pct = ($d['solicitados'] > 0)
-            ? round($d['entregados'] * 100 / $d['solicitados'])
-            : 0;
-
-    $rows[] = [
-        $cli_safe,
-        $d['solicitados'],
-        $d['entregados'],
-        pdf_text_safe("{$pct}%")
-    ];
+  $rows[] = [
+    $cli,
+    $d['solicitados'],
+    $d['entregados'],
+    "{$pct}%"
+  ];
 }
 
 $pdf->section_table(
@@ -685,38 +601,14 @@ $pdf->section_table(
   [50, 35, 35, 25]
 );
 
-// ===============================
-// GRÁFICO
-// ===============================
+// Título gráfico
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(0, 6, pdf_text_safe('Client Completion %'), 0, 1, 'L');
+$pdf->Cell(0, 6, 'Client Completion %', 0, 1, 'L');
 
-// Construir data limpia para el gráfico
-$clientes_chart = [];
-
-foreach ($clientes as $cli => $d) {
-
-    $pct = ($d['solicitados'] > 0)
-            ? round(($d['entregados'] * 100) / $d['solicitados'])
-            : 0;
-
-    // etiqueta limpia y abreviada
-    $label = pdf_label_clean($cli);
-
-    $clientes_chart[$label] = [
-        'solicitados' => $d['solicitados'],
-        'entregados'  => $d['entregados'],
-        'pct'         => $pct
-    ];
-}
-
-
-
-// Gráfico corregido (sin caracteres corruptos)
-draw_client_bar_chart($pdf, $clientes_chart);
+// Gráfico de barras (ya con labels arreglados)
+draw_client_bar_chart($pdf, $clientes);
 
 $pdf->Ln(4);
-
 
 // 4. Newly Registered Samples
 $pdf->section_title("4. Newly Registered Samples");
