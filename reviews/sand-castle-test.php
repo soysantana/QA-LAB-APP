@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   ?>
                   <tr id="timeSetRow">
                     <th scope="row">Time of Set (Min):</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="TimeSet" id="TimeSet" readonly tabindex="-1" value="<?php echo $Search['TimeSet']; ?>"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="TimeSet" id="TimeSet"  value="<?php echo $Search['TimeSet']; ?>"></td>
                   </tr>
                 </tbody>
               </table>
