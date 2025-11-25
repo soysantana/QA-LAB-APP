@@ -451,6 +451,18 @@ function observaciones_ensayos_reporte($start, $end) {
       AND Report_Date BETWEEN '{$start}' AND '{$end}'
   ");
 }
+function pdf_text_safe($txt) {
+    // 1. Convertir UTF-8 → ISO-8859-1 sin romper caracteres
+    $converted = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $txt);
+
+    // 2. Si iconv falla, usar utf8_decode como fallback
+    if ($converted === false) {
+        $converted = utf8_decode($txt);
+    }
+
+    return $converted;
+}
+
 
 // =============================
 // Clase PDF
@@ -581,27 +593,44 @@ $pdf->section_table(
 );
 
 // 3. Client Summary of Completed Tests
-$pdf->section_title(utf8_decode("3. Client Summary of Completed Tests"));
+$pdf->section_title(pdf_text_safe("3. Client Summary of Completed Tests"));
 
 $clientes = resumen_entregas_por_cliente($end);
+
+// Crear matriz final limpia
 $rows = [];
 
 foreach ($clientes as $cli => $d) {
 
-  // Evitar errores con caracteres especiales
-  $cli_utf8 = utf8_decode($cli);
+    // Calcular %
+    $pct = ($d['solicitados'] > 0)
+            ? round($d['entregados'] * 100 / $d['solicitados'])
+            : 0;
 
-  $pct = $d['solicitados'] > 0 
-        ? round($d['entregados'] * 100 / $d['solicitados']) 
-        : 0;
-
-  $rows[] = [
-      $cli_utf8,
-      $d['solicitados'],
-      $d['entregados'],
-      utf8_decode("$pct%")
-  ];
+    // Insertar fila limpia y compatible con FPDF
+    $rows[] = [
+        pdf_text_safe($cli),
+        $d['solicitados'],
+        $d['entregados'],
+        pdf_text_safe("$pct%")
+    ];
 }
+
+// Dibujar tabla final
+$pdf->section_table(
+    [pdf_text_safe("Client"), "Requested", "Completed", "%"],
+    $rows,
+    [50, 35, 35, 25]
+);
+
+// Título gráfico
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, pdf_text_safe("Client Completion %"), 0, 1, 'L');
+
+// Gráfico
+draw_client_bar_chart($pdf, $clientes);
+
+$pdf->Ln(4);
 
 // Tabla formateada
 $pdf->section_table(
