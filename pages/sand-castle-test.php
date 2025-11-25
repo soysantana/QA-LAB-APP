@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>
                   <tr id="timeSetRow">
                     <th scope="row">Time of Set (Min):</th>
-                    <td><input type="text" style="border: none;" class="form-control" name="TimeSet" id="TimeSet" readonly tabindex="-1"></td>
+                    <td><input type="text" style="border: none;" class="form-control" name="TimeSet" id="TimeSet"></td>
                   </tr>
                 </tbody>
               </table>

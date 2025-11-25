@@ -452,6 +452,78 @@ function observaciones_ensayos_reporte($start, $end) {
   ");
 }
 
+function pdf_text_safe($txt) {
+    // eliminar caracteres invisibles y unicode raro
+    $txt = preg_replace('/[\x00-\x1F\x7F]/u', '', $txt);
+
+    // reemplazar puntos suspensivos unicode por '...'
+    $txt = str_replace(["…","•••","●"], "...", $txt);
+
+    // quitar caracteres fuera de ASCII/Latín
+    $converted = @iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $txt);
+
+    if ($converted === false) {
+        $converted = utf8_decode($txt); // fallback
+    }
+
+    return $converted;
+}
+
+function pdf_label_short($txt, $max = 20) {
+    $clean = pdf_text_safe($txt);
+
+    if (strlen($clean) > $max) {
+        return substr($clean, 0, $max) . "...";
+    }
+    return $clean;
+}
+function pdf_clean_text($str) {
+
+    // Si viene ya como ISO con UTF-8 mezclado → lo repara
+    $str = mb_convert_encoding($str, 'UTF-8', 'UTF-8');
+
+    // Elimina caracteres invisibles
+    $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+
+    // Normaliza a NFC
+    if (class_exists('Normalizer')) {
+        $str = Normalizer::normalize($str, Normalizer::FORM_C);
+    }
+
+    // Repara textos mal convertidos (â€“, â€™, etc.)
+    $replacements = [
+        "â€™" => "'",
+        "â€œ" => '"',
+        "â€�" => '"',
+        "â€“" => "-",
+        "â€”" => "-",
+        "â€˜" => "'",
+        "â€¦" => "...",
+        "Ã±" => "ñ",
+        "Ã"  => "í",
+    ];
+    $str = strtr($str, $replacements);
+
+    // Intenta ISO-8859-1 translit
+    $converted = @iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $str);
+
+    // Si falla, usa utf8_decode como fallback
+    if ($converted === false) {
+        $converted = utf8_decode($str);
+    }
+
+    return $converted;
+}
+
+function pdf_label_clean($txt, $max = 20) {
+    $clean = pdf_clean_text($txt);
+    if (strlen($clean) > $max) {
+        return substr($clean, 0, $max) . "...";
+    }
+    return $clean;
+}
+
+
 // =============================
 // Clase PDF
 // =============================
@@ -559,6 +631,7 @@ class PDF extends FPDF {
     }
     $this->Ln(3);
   }
+  
 }
 
 // =============================
@@ -584,10 +657,26 @@ $pdf->section_table(
 $pdf->section_title("3. Client Summary of Completed Tests");
 
 $clientes = resumen_entregas_por_cliente($end);
+
+// ===============================
+// TABLA
+// ===============================
 $rows = [];
 foreach ($clientes as $cli => $d) {
-  $pct = $d['solicitados'] > 0 ? round($d['entregados'] * 100 / $d['solicitados']) : 0;
-  $rows[] = [$cli, $d['solicitados'], $d['entregados'], "$pct%"];
+
+    // limpiar y convertir a ISO-8859-1 seguro
+    $cli_safe = pdf_text_safe($cli);
+
+    $pct = ($d['solicitados'] > 0)
+            ? round($d['entregados'] * 100 / $d['solicitados'])
+            : 0;
+
+    $rows[] = [
+        $cli_safe,
+        $d['solicitados'],
+        $d['entregados'],
+        pdf_text_safe("{$pct}%")
+    ];
 }
 
 $pdf->section_table(
@@ -596,12 +685,35 @@ $pdf->section_table(
   [50, 35, 35, 25]
 );
 
-// Título del gráfico de barras
+// ===============================
+// GRÁFICO
+// ===============================
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(0, 6, 'Client Completion %', 0, 1, 'L');
+$pdf->Cell(0, 6, pdf_text_safe('Client Completion %'), 0, 1, 'L');
 
-// Gráfico de barras de % completado por cliente
-draw_client_bar_chart($pdf, $clientes);
+// Construir data limpia para el gráfico
+$clientes_chart = [];
+
+foreach ($clientes as $cli => $d) {
+
+    $pct = ($d['solicitados'] > 0)
+            ? round(($d['entregados'] * 100) / $d['solicitados'])
+            : 0;
+
+    // etiqueta limpia y abreviada
+    $label = pdf_label_clean($cli);
+
+    $clientes_chart[$label] = [
+        'solicitados' => $d['solicitados'],
+        'entregados'  => $d['entregados'],
+        'pct'         => $pct
+    ];
+}
+
+
+
+// Gráfico corregido (sin caracteres corruptos)
+draw_client_bar_chart($pdf, $clientes_chart);
 
 $pdf->Ln(4);
 
