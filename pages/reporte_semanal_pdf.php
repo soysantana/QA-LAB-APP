@@ -1588,14 +1588,20 @@ if (empty($rows)) {
         $cond    = strtoupper((string)$r['Test_Condition']);
         $ncr     = strtoupper((string)$r['Noconformidad']);
 
-        /* REGLA PARA FAIL */
-        $isFail =
-            str_contains($comment,"FAIL") ||
-            str_contains($comment,"NO CUMPLE") ||
-            str_contains($comment,"RECHAZ") ||
-            str_contains($comment,"NCR") ||
-            str_contains($ncr,"NCR") ||
-            str_contains($cond,"NOT OK");
+        // Función segura para buscar texto en PHP 5/7/8
+$contains = function($text, $needle){
+    return strpos($text, $needle) !== false;
+};
+
+// Reglas para determinar FAIL
+$isFail =
+    $contains($comment, "FAIL") ||
+    $contains($comment, "NO CUMPLE") ||
+    $contains($comment, "RECHAZ") ||
+    $contains($comment, "NCR") ||
+    $contains($ncr, "NCR") ||
+    $contains($cond, "NOT OK");
+
 
         if (!isset($matrix[$structure])) $matrix[$structure] = [];
         if (!isset($matrix[$structure][$material])) $matrix[$structure][$material] = [];
