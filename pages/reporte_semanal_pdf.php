@@ -1157,18 +1157,17 @@ if (empty($techSummary)) {
 }
 
 /* ===============================
-   SECCIÓN 7 — SUMMARY OF TESTS BY TYPE × CLIENT × PROCESS
-   FORMATO — CABECERA DOBLE:
-   | Test Type | Cliente 1 (Prep / Real / Del) | Cliente 2 (Prep / Real / Del) |
+   SECCIÓN 7 — TEST TYPE × CLIENT × PROCESS
+   TABLA DINÁMICA (MULTI-PÁGINAS)
 ================================*/
 
-$pdf->section_title("7. Summary of Tests by Type and Client");
+$pdf->section_title("7. Summary of Tests by Type and Client (Dynamic Width)");
 
-// ==========================================================
-// 1) TRAER LOS DATOS CRUDOS
-// ==========================================================
+/* ===============================
+   1. Cargar datos crudos
+================================*/
 $raw7 = find_by_sql("
-    SELECT r.Client, p.Test_Type, 'Prep' AS etapa, COUNT(*) total
+    SELECT r.Client, p.Test_Type, 'Prep' etapa, COUNT(*) total
     FROM test_preparation p
     LEFT JOIN lab_test_requisition_form r
       ON p.Sample_ID = r.Sample_ID
@@ -1179,7 +1178,7 @@ $raw7 = find_by_sql("
 
     UNION ALL
 
-    SELECT r.Client, z.Test_Type, 'Real' AS etapa, COUNT(*) total
+    SELECT r.Client, z.Test_Type, 'Real' etapa, COUNT(*) total
     FROM test_realization z
     LEFT JOIN lab_test_requisition_form r
       ON z.Sample_ID = r.Sample_ID
@@ -1190,7 +1189,7 @@ $raw7 = find_by_sql("
 
     UNION ALL
 
-    SELECT r.Client, d.Test_Type, 'Del' AS etapa, COUNT(*) total
+    SELECT r.Client, d.Test_Type, 'Del' etapa, COUNT(*) total
     FROM test_delivery d
     LEFT JOIN lab_test_requisition_form r
       ON d.Sample_ID = r.Sample_ID
@@ -1200,25 +1199,22 @@ $raw7 = find_by_sql("
     GROUP BY r.Client, d.Test_Type
 ");
 
-// ==========================================================
-// 2) ARMAR MATRIZ: [Test_Type][Cliente]['Prep','Real','Del']
-// ==========================================================
+/* ===============================
+   2. Construir matriz
+================================*/
 $matrix7 = [];
 $clientes7 = [];
 $tipos7 = [];
 
 foreach ($raw7 as $r){
-
-    $client = trim((string)$r['Client']);
-    if ($client === "" || $client === null) $client = "N/A";
-
-    $test  = trim($r['Test_Type']);
+    $client = trim($r['Client']) ?: "N/A";
+    $test   = trim($r['Test_Type']);
     if ($test === "") continue;
 
-    $etapa = $r['etapa'];
-    $cnt   = (int)$r['total'];
+    $etapa  = $r['etapa'];
+    $cnt    = (int)$r['total'];
 
-    if (!isset($matrix7[$test]))      $matrix7[$test] = [];
+    if (!isset($matrix7[$test])) $matrix7[$test] = [];
     if (!isset($matrix7[$test][$client]))
         $matrix7[$test][$client] = ['Prep'=>0,'Real'=>0,'Del'=>0];
 
@@ -1228,73 +1224,67 @@ foreach ($raw7 as $r){
     if (!in_array($test,$tipos7,true))      $tipos7[] = $test;
 }
 
-if (empty($matrix7)) {
+sort($clientes7);
+sort($tipos7);
 
-    $pdf->SetFont('Arial','B',10);
-    $pdf->SetFillColor(245,245,245);
-    $pdf->Cell(0,10,"No data in this section.",1,1,'C',true);
-    $pdf->Ln(5);
+/* ===============================
+   3. CONFIGURAR ANCHOS DINÁMICOS
+================================*/
+$wTest = 35;
+$wSub  = 18; // Prep / Real / Del
+$usableWidth = 190 - $wTest;
 
-} else {
+// cuántos clientes caben por página
+$clientBlockCapacity = floor($usableWidth / ($wSub * 3));
+if ($clientBlockCapacity < 1) $clientBlockCapacity = 1;
 
-    sort($clientes7);
-    sort($tipos7);
+// dividir clientes en bloques
+$clientBlocks = array_chunk($clientes7, $clientBlockCapacity);
 
-    // ==========================================================
-    // 3) DEFINIR ANCHOS
-    // ==========================================================
-    $wTest = 35;
-    $wSub  = 15; // ancho para Prep, Real, Del (cada columna)
-    $colWidths = [$wTest];
+/* ===============================
+   4. PINTAR TABLAS POR BLOQUES
+================================*/
+foreach ($clientBlocks as $blockIndex => $blockClients){
 
-    foreach ($clientes7 as $c){
-        $colWidths[] = $wSub; // Prep
-        $colWidths[] = $wSub; // Real
-        $colWidths[] = $wSub; // Del
+    if ($blockIndex > 0){
+        $pdf->AddPage();
+        $pdf->section_title("7. Summary of Tests by Type and Client (cont.)");
     }
 
-    // ==========================================================
-    // 4) ENCABEZADO DOBLE
-    // ==========================================================
+    // ENCABEZADO LÍNEA 1
     $pdf->SetFont('Arial','B',10);
-
-    // ---------- FILA 1: Test Type + clientes (celdas fusionadas) ----------
     $pdf->Cell($wTest, 10, "Test Type", 1, 0, 'C');
 
-    foreach ($clientes7 as $c){
+    foreach ($blockClients as $c){
         $pdf->Cell($wSub*3, 10, utf8_decode($c), 1, 0, 'C');
     }
     $pdf->Ln();
 
-    // ---------- FILA 2: Prep, Real, Del ----------
-    $pdf->Cell($wTest, 7, "", 1, 0, 'C'); // celda vacía bajo Test Type
-
-    foreach ($clientes7 as $c){
+    // ENCABEZADO LÍNEA 2
+    $pdf->Cell($wTest, 7, "", 1, 0, 'C');
+    foreach ($blockClients as $c){
         $pdf->SetFont('Arial','',9);
-        $pdf->Cell($wSub, 7, "Prep", 1, 0, 'C');
-        $pdf->Cell($wSub, 7, "Real", 1, 0, 'C');
-        $pdf->Cell($wSub, 7, "Del", 1, 0, 'C');
+        $pdf->Cell($wSub,7,"Prep",1,0,'C');
+        $pdf->Cell($wSub,7,"Real",1,0,'C');
+        $pdf->Cell($wSub,7,"Del",1,0,'C');
     }
     $pdf->Ln();
 
-    // ==========================================================
-    // 5) FILAS DE DATOS
-    // ==========================================================
+    // FILAS
     $pdf->SetFont('Arial','',10);
-
     foreach ($tipos7 as $tp){
 
         $pdf->Cell($wTest, 7, utf8_decode($tp), 1, 0, 'L');
 
-        foreach ($clientes7 as $cl){
+        foreach ($blockClients as $cl){
 
             $prep = $matrix7[$tp][$cl]['Prep'] ?? 0;
             $real = $matrix7[$tp][$cl]['Real'] ?? 0;
             $del  = $matrix7[$tp][$cl]['Del']  ?? 0;
 
-            $pdf->Cell($wSub, 7, $prep, 1, 0, 'C');
-            $pdf->Cell($wSub, 7, $real, 1, 0, 'C');
-            $pdf->Cell($wSub, 7, $del, 1, 0, 'C');
+            $pdf->Cell($wSub,7,$prep,1,0,'C');
+            $pdf->Cell($wSub,7,$real,1,0,'C');
+            $pdf->Cell($wSub,7,$del,1,0,'C');
         }
 
         $pdf->Ln();
