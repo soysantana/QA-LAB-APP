@@ -471,53 +471,6 @@ function chart_samples($pdf,$data){
 }
 
 
-/* ---------- GRAPH 2 ---------- */
-function chart_types($pdf,$data){
-    if(empty($data)) return;
-
-    $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,8,"Graph 2: Tests Completed By Type",0,1);
-
-    ensure_space($pdf, 80);
-
-    $chartX = 20;
-    $chartY = $pdf->GetY()+5;
-    $chartW = 170;
-    $chartH = 50;
-
-    $max = 1;
-    foreach($data as $t){
-        if($t['total'] > $max) $max = $t['total'];
-    }
-
-    // ejes
-    $pdf->Line($chartX,$chartY,$chartX,$chartY+$chartH);
-    $pdf->Line($chartX,$chartY+$chartH,$chartX+$chartW,$chartY+$chartH);
-
-    $bars = count($data);
-    if ($bars == 0) return;
-
-    $bw = ($chartW-20)/$bars;
-    $x = $chartX+10;
-
-    foreach($data as $t){
-
-        $h = ($t['total'] / $max) * ($chartH - 5);
-        $y = $chartY + ($chartH - $h);
-
-        $pdf->SetFillColor(50,180,120);
-        $pdf->Rect($x, $y, $bw-4, $h, "F");
-
-        $pdf->SetFont('Arial','',6);
-        $pdf->SetXY($x, $chartY + $chartH + 2);
-        $pdf->MultiCell($bw-4, 3, $t['Test_Type'], 0, 'C');
-
-        $x += $bw;
-    }
-
-    $pdf->Ln(12);
-}
-
 
 /* ---------- GRAPH 3 ---------- */
 function chart_client($pdf,$clientData){
