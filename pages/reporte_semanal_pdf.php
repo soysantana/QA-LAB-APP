@@ -1288,22 +1288,7 @@ if (empty($muestras)) {
         $pdf->Ln(4);
     }
 
-    // ===========================
-    // 4) DETAILED TEST LIST
-    // ===========================
-
-    $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Detailed Test List (Sample - Client - Test Type)"),0,1,'L');
-    $pdf->Ln(1);
-
-    $pdf->SetFont('Arial','',9);
-
-    foreach ($detailList as $d) {
-        $line = "• ".$d['sample']." - ".$d['client']." - ".$d['test'];
-        $pdf->MultiCell(0,5,utf8_decode($line),0,'L');
-    }
-
-    $pdf->Ln(6);
+    
 }
 
 
