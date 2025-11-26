@@ -681,7 +681,7 @@ $pdf->SubTitle("Daily Registered Samples by Client");
 
 // ancho de columnas
 $colWidths = [40];  // fecha
-foreach ($clientNames as $cl) $colWidths[] = 22;
+foreach ($clientNames as $cl) $colWidths[] = 25;
 
 // ======= Encabezado MULTILÍNEA =======
 $pdf->SetFont('Arial','B',9);
