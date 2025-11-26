@@ -1000,26 +1000,29 @@ if (empty($testTypes) || empty($clientNames)) {
     $colorIndex = 0;
 
     foreach ($testTypes as $t){
-        foreach ($clientNames as $cl){
+    foreach ($clientNames as $cIndex => $cl){
 
-            $v = $data4[$t][$cl] ?? 0;
-            $h = ($v / $maxVal) * ($chartH - 4);
-            $y = $chartY + ($chartH - $h);
+        $v = $data4[$t][$cl] ?? 0;
+        $h = ($v / $maxVal) * ($chartH - 4);
+        $y = $chartY + ($chartH - $h);
 
-            list($r,$g,$b) = pickColor($colorIndex++);
-            $pdf->SetFillColor($r,$g,$b);
+        // color único por cliente
+        list($r,$g,$b) = pickColor($cIndex);
+        $pdf->SetFillColor($r,$g,$b);
 
-            $pdf->Rect($x, $y, $bw, $h, "F");
+        $pdf->Rect($x, $y, $bw, $h, "F");
 
-            if ($v > 0){
-                $pdf->SetFont("Arial","B",7);
-                $pdf->SetXY($x, $y - 4);
-                $pdf->Cell($bw,4,$v,0,0,'C');
-            }
-
-            $x += $bw;
+        // valor encima de barra
+        if ($v > 0){
+            $pdf->SetFont("Arial","B",7);
+            $pdf->SetXY($x, $y - 4);
+            $pdf->Cell($bw, 4, $v, 0, 0, 'C');
         }
+
+        $x += $bw;
     }
+}
+
 
     // EJE X (Test Types)
     $pdf->SetFont("Arial","",7);
