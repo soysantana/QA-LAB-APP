@@ -1161,7 +1161,7 @@ if (empty($techSummary)) {
    TABLA DINÁMICA (MULTI-PÁGINAS)
 ================================*/
 
-$pdf->section_title("7. Summary of Tests by Type and Client (Dynamic Width)");
+$pdf->section_title("7. Summary of Tests by Type and Client");
 
 /* ===============================
    1. Cargar datos crudos
@@ -1300,12 +1300,34 @@ foreach ($clientBlocks as $blockIndex => $blockClients){
 $pdf->section_title("8. Pending Tests");
 
 $pendientes = find_by_sql("
-    SELECT r.*
+    SELECT 
+        r.Sample_ID,
+        r.Sample_Number,
+        r.Client,
+        r.Test_Type
     FROM lab_test_requisition_form r
     WHERE r.Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
+
+      /* NO en Preparation */
+      AND NOT EXISTS (
+          SELECT 1 FROM test_preparation p
+          WHERE p.Sample_ID     = r.Sample_ID
+            AND p.Sample_Number = r.Sample_Number
+            AND p.Test_Type     = r.Test_Type
+      )
+
+      /* NO en Realization */
+      AND NOT EXISTS (
+          SELECT 1 FROM test_realization z
+          WHERE z.Sample_ID     = r.Sample_ID
+            AND z.Sample_Number = r.Sample_Number
+            AND z.Test_Type     = r.Test_Type
+      )
+
+      /* NO en Delivery */
       AND NOT EXISTS (
           SELECT 1 FROM test_delivery d
-          WHERE d.Sample_ID    = r.Sample_ID
+          WHERE d.Sample_ID     = r.Sample_ID
             AND d.Sample_Number = r.Sample_Number
             AND d.Test_Type     = r.Test_Type
       )
@@ -1333,50 +1355,186 @@ if (empty($pendientes)) {
 
     $pdf->Ln(8);
 }
-
 /* ===============================
-   SECCIÓN 9 — DAM CONSTRUCTION TESTS
+   SECCIÓN 8 — PENDING TESTS
 ================================*/
-$pdf->section_title("9. Summary of Dam Construction Tests");
+$pdf->section_title("8. Pending Tests");
 
-$ensayos = find_by_sql("
-    SELECT *
-    FROM ensayos_reporte
-    WHERE Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
+/* 1) Traer todas las muestras pendientes */
+$pendRaw = find_by_sql("
+    SELECT 
+        r.Sample_ID,
+        r.Sample_Number,
+        r.Client,
+        r.Test_Type
+    FROM lab_test_requisition_form r
+    WHERE r.Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
+      AND NOT EXISTS (
+          SELECT 1 FROM test_delivery d
+          WHERE d.Sample_ID     = r.Sample_ID
+            AND d.Sample_Number = r.Sample_Number
+            AND d.Test_Type     = r.Test_Type
+      )
 ");
 
-if (empty($ensayos)) {
-
+/* Si NO hay pendientes */
+if (empty($pendRaw)) {
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(245,245,245);
-    $pdf->Cell(0,10,"No dam construction tests reported this week.",1,1,'C',true);
+    $pdf->Cell(0,10,"No pending tests for this week.",1,1,'C',true);
     $pdf->Ln(5);
+    goto skip_pending;
+}
 
-} else {
+/* =====================================================
+   2) Procesar Test Types individuales
+===================================================== */
+$pending = [];     // pending[testType][client] = qty
+$clients = [];     // lista única de clientes
+$typeTotals = [];  // total qty por test type
+$totalPending = 0; // total general
 
-    $pdf->table_header(
-        ["Sample","Structure","Test","Condition","Comments"],
-        [40,25,50,25,50]
-    );
+foreach ($pendRaw as $r) {
 
-    foreach($ensayos as $e){
+    $client = trim((string)$r['Client']);
+    if ($client === "") $client = "N/A";
 
-        $sampleFull = $e['Sample_ID']."-".$e['Sample_Number'];
-        if (!empty($e['Material_Type'])) {
-            $sampleFull .= " / ".$e['Material_Type'];
-        }
-
-        table_row_multiline($pdf,[
-            $sampleFull,
-            $e['Structure'],
-            $e['Test_Type'],
-            $e['Test_Condition'],
-            $e['Comments']
-        ], [40,25,50,25,50]);
+    if (!in_array($client, $clients, true)) {
+        $clients[] = $client;
     }
 
-    $pdf->Ln(8);
+    /* Separar test types individuales */
+    $tests = array_filter(array_map('trim', explode(',', (string)$r['Test_Type'])));
+
+    foreach ($tests as $t) {
+        if ($t === "") continue;
+
+        if (!isset($pending[$t])) $pending[$t] = [];
+        if (!isset($pending[$t][$client])) $pending[$t][$client] = 0;
+
+        $pending[$t][$client]++;
+        $totalPending++;
+
+        if (!isset($typeTotals[$t])) $typeTotals[$t] = 0;
+        $typeTotals[$t]++;
+    }
 }
+
+sort($clients);
+ksort($pending);
+
+/* =====================================================
+   3) Determinar cantidad de clientes por bloque
+===================================================== */
+$maxColsPerBlock = 4; // igual que sección 7
+$totalClients    = count($clients);
+$blocks = ceil($totalClients / $maxColsPerBlock);
+
+for ($b = 0; $b < $blocks; $b++) {
+
+    $start = $b * $maxColsPerBlock;
+    $slice = array_slice($clients, $start, $maxColsPerBlock);
+    $end   = $start + count($slice);
+
+    /* Subtítulo por bloque */
+    $pdf->SubTitle("Pending Tests (Clients ".($start+1)."–".$end.")");
+
+    /* =====================================================
+       4) Construir encabezado doble
+    ====================================================== */
+
+    /* Anchos dinámicos */
+    $wType  = 35;
+    $wQty   = 12;
+    $wPct   = 14;
+    $wTotal = 20;
+
+    /* Primera fila del encabezado */
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell($wType, 10, "Test Type", 1, 0, 'C');
+
+    foreach ($slice as $c) {
+        $pdf->Cell($wQty + $wPct, 10, utf8_decode($c), 1, 0, 'C');
+    }
+
+    /* TOTAL al final */
+    $pdf->Cell($wTotal + $wPct, 10, "TOTAL", 1, 1, 'C');
+
+    /* Segunda fila: subcolumnas */
+    $pdf->SetFont('Arial','B',9);
+    $pdf->Cell($wType, 6, "", 1, 0, 'C');
+
+    foreach ($slice as $c) {
+        $pdf->Cell($wQty, 6, "Qty", 1, 0, 'C');
+        $pdf->Cell($wPct, 6, "%Pend", 1, 0, 'C');
+    }
+
+    $pdf->Cell($wTotal, 6, "Qty", 1, 0, 'C');
+    $pdf->Cell($wPct,   6, "%Pend", 1, 1, 'C');
+
+    /* =====================================================
+       5)   Filas por Test Type
+    ====================================================== */
+    $pdf->SetFont('Arial','',9);
+
+    foreach ($pending as $type => $row) {
+
+        /* Control de salto de página */
+        if ($pdf->GetY() > 255) {
+            $pdf->AddPage();
+        }
+
+        $pdf->Cell($wType, 6, $type, 1, 0, 'L');
+
+        $sumType = $typeTotals[$type];
+
+        foreach ($slice as $cl) {
+
+            $qty = $row[$cl] ?? 0;
+            $pct = ($sumType > 0) ? round(($qty * 100) / $sumType) : 0;
+
+            $pdf->Cell($wQty, 6, $qty, 1, 0, 'C');
+            $pdf->Cell($wPct, 6, $pct."%", 1, 0, 'C');
+        }
+
+        /* TOTAL de la fila (Qty + %) */
+        $totalQty = $sumType;
+        $totalPct = ($totalPending > 0) ? round(($totalQty * 100) / $totalPending) : 0;
+
+        $pdf->Cell($wTotal, 6, $totalQty, 1, 0, 'C');
+        $pdf->Cell($wPct,   6, $totalPct."%", 1, 1, 'C');
+    }
+
+    /* =====================================================
+       6) Fila final TOTAL por cliente dentro del bloque
+    ====================================================== */
+    $pdf->SetFont('Arial','B',9);
+
+    $pdf->Cell($wType, 7, "TOTAL", 1, 0, 'C');
+
+    foreach ($slice as $cl) {
+
+        /* total de ese cliente */
+        $qtyCl = 0;
+        foreach ($pending as $tp => $rw) {
+            $qtyCl += ($rw[$cl] ?? 0);
+        }
+
+        $pctCl = ($totalPending > 0) ? round(($qtyCl * 100) / $totalPending) : 0;
+
+        $pdf->Cell($wQty, 7, $qtyCl, 1, 0, 'C');
+        $pdf->Cell($wPct, 7, $pctCl."%", 1, 0, 'C');
+    }
+
+    /* TOTAL global */
+    $pdf->Cell($wTotal, 7, $totalPending, 1, 0, 'C');
+    $pdf->Cell($wPct,   7, "100%", 1, 1, 'C');
+
+    $pdf->Ln(6);
+}
+
+skip_pending:
+
 
 /* ===============================
    SECCIÓN 10 — OBSERVATIONS & NCR
