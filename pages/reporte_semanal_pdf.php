@@ -69,6 +69,49 @@ function resumen_cliente($start,$end){
         ORDER BY solicitados DESC
     ");
 }
+/* ======================================================
+   NUEVO: RESUMEN DIARIO POR CLIENTE (SEMANA ISO)
+======================================================*/
+function resumen_diario_cliente($start, $end){
+    return find_by_sql("
+        SELECT 
+            DATE(Registed_Date) AS dia,
+            Client,
+            COUNT(*) AS total
+        FROM lab_test_requisition_form
+        WHERE Registed_Date BETWEEN '{$start}' AND '{$end}'
+        GROUP BY DATE(Registed_Date), Client
+        ORDER BY dia ASC, Client ASC
+    ");
+}
+
+$data_dia_cliente = resumen_diario_cliente($start_str, $end_str);
+/* ======================================================
+   CREAR MATRIZ DIA × CLIENTE
+======================================================*/
+$diasSemana = [];
+$clientes = [];
+
+foreach ($data_dia_cliente as $r){
+    $d = $r['dia'];
+    $c = trim($r['Client']);
+    $v = (int)$r['total'];
+
+    if (!in_array($d, $diasSemana)) $diasSemana[] = $d;
+    if (!in_array($c, $clientes)) $clientes[] = $c;
+
+    $matriz[$d][$c] = $v;
+}
+
+sort($diasSemana);
+sort($clientes);
+
+/* Completar ceros */
+foreach ($diasSemana as $d){
+    foreach ($clientes as $c){
+        if (!isset($matriz[$d][$c])) $matriz[$d][$c] = 0;
+    }
+}
 
 /* =============================================
    ROW MULTILÍNEA + PAGE BREAK CONTROL
@@ -191,10 +234,34 @@ Lab Technicians: Rafael Reyes, Darielvy Félix, Jordany Almonte, Melvin Castillo
         }
         $this->Ln();
     }
+    function SubTitle($txt){
+    $this->SetFont('Arial','B',11);
+    $this->Cell(0,7,utf8_decode($txt),0,1,'L');
+    $this->Ln(2);
+}
+
+    
 }
 
 $pdf = new PDF_WEEKLY($week,$year);
 $pdf->AddPage();
+/* ===============================
+   PALETA DE COLORES PARA GRÁFICOS
+   (NECESARIA PARA pickColor)
+================================*/
+function pickColor($i){
+    $colors = [
+        [66,133,244],   // Azul
+        [219,68,55],    // Rojo
+        [244,180,0],    // Amarillo
+        [15,157,88],    // Verde
+        [171,71,188],   // Morado
+        [0,172,193],    // Cyan
+        [255,112,67]    // Naranja
+    ];
+    return $colors[$i % count($colors)];
+}
+
 /* ===============================
    6. GRÁFICOS COMPLETOS
 ================================*/
@@ -343,6 +410,85 @@ function chart_client($pdf,$clientData){
 
     $pdf->Ln(12);
 }
+/* ======================================================
+   GRAFICO MULTISERIE (CLIENTE × DIA)
+   Una barra por día dentro de cada cliente
+======================================================*/
+function chart_client_daily($pdf, $dias, $clientes, $matriz){
+
+    if (empty($clientes) || empty($dias)) return;
+
+    ensure_space($pdf, 90);
+
+    $chartX = 20;
+    $chartY = $pdf->GetY() + 5;
+    $chartW = 170;
+    $chartH = 55;
+
+    // Ejes
+    $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);
+    $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);
+
+    /* -------- Máximo -------- */
+    $max = 1;
+    foreach ($dias as $d){
+        foreach ($clientes as $c){
+            if ($matriz[$d][$c] > $max) $max = $matriz[$d][$c];
+        }
+    }
+
+    /* -------- Config -------- */
+    $groups = count($clientes);
+    $series = count($dias);
+
+    $groupW = floor($chartW / $groups);
+    $barW   = floor(($groupW - 5) / $series);
+
+    /* -------- Dibujar -------- */
+    foreach ($clientes as $g => $cliente){
+
+        $baseX = $chartX + ($g * $groupW);
+
+        foreach ($dias as $i => $dia){
+
+            $v = $matriz[$dia][$cliente];
+            $barH = ($v / $max) * ($chartH - 5);
+
+            list($r,$gC,$b) = pickColor($i);
+            $pdf->SetFillColor($r,$gC,$b);
+
+            $x = $baseX + ($i * $barW) + 3;
+            $y = $chartY + ($chartH - $barH);
+
+            $pdf->Rect($x, $y, $barW, $barH, "F");
+        }
+
+        // Label cliente
+        $pdf->SetFont('Arial','',7);
+        $pdf->SetXY($baseX, $chartY + $chartH + 1);
+        $pdf->Cell($groupW, 4, $cliente, 0, 0, 'C');
+    }
+
+    /* -------- Leyenda -------- */
+    $pdf->SetFont('Arial','B',8);
+    $pdf->SetXY($chartX, $chartY - 4);
+    $pdf->Cell(40,4,"Legend");
+
+    $i = 0;
+    foreach ($dias as $d){
+        list($r,$gC,$b) = pickColor($i);
+        $pdf->SetFillColor($r,$gC,$b);
+
+        $pdf->Rect($chartX + 45 + ($i*20), $chartY - 3, 4, 4, "F");
+        $pdf->SetXY($chartX + 50 + ($i*20), $chartY - 4);
+        $pdf->SetFont("Arial","",7);
+        $pdf->Cell(20,5,date("D",strtotime($d)));
+
+        $i++;
+    }
+
+    $pdf->SetY($chartY + $chartH + 12);
+}
 
 /* ===============================
    SECCIÓN 2 — WEEKLY SUMMARY
@@ -360,24 +506,117 @@ $pdf->table_row(["In Preparation",$prep],[90,30]);
 $pdf->table_row(["In Realization",$real],[90,30]);
 $pdf->table_row(["Completed",$del],[90,30]);
 $pdf->Ln(10);
+//----------------------------------------------
+// GRAFICO KPI COMPACTO (SECCIÓN 2)
+//----------------------------------------------
 
-/* ===============================
-   SECCIÓN 3 — DAILY BREAKDOWN
-================================*/
-$pdf->section_title("3. Daily Breakdown (ISO Week)");
+ensure_space($pdf, 60);
 
-$data_dia = resumen_diario($start_str,$end_str);
+$pdf->SetFont('Arial','B',11);
+$pdf->Cell(0,8,"Graph: Weekly Activity Summary",0,1);
 
-$pdf->table_header(["Date","Registered Samples"],[60,60]);
+$labels  = ["Req","Prep","Real","Del"];
+$values  = [$req, $prep, $real, $del];
 
-foreach($data_dia as $d){
-    $pdf->table_row([
-        date("D d-M",strtotime($d['dia'])),
-        $d['total']
-    ],[60,60]);
+$chartX = 20;
+$chartY = $pdf->GetY() + 4;
+$chartW = 120;
+$chartH = 40;
+
+// Ejes
+$pdf->SetDrawColor(0,0,0);
+$pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);
+$pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);
+
+// Max
+$maxVal = max($values);
+if ($maxVal == 0) $maxVal = 1;
+
+// Valores del eje Y
+$pdf->SetFont('Arial','',7);
+$steps = 3;
+for($i = 0; $i <= $steps; $i++){
+    $posY = $chartY + $chartH - ($chartH / $steps * $i);
+    $val  = round($maxVal / $steps * $i);
+    $pdf->SetXY($chartX - 8, $posY - 2);
+    $pdf->Cell(7,3,$val,0,0,'R');
 }
 
-$pdf->Ln(10);
+// Barras
+$barWidth = floor($chartW / count($values)) - 12;
+
+for($i = 0; $i < count($values); $i++){
+    list($r,$g,$b) = pickColor($i);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $barH = ($values[$i] / $maxVal) * ($chartH - 5);
+    $barX = $chartX + 10 + $i * ($barWidth + 12);
+    $barY = $chartY + $chartH - $barH;
+
+    // barra
+    $pdf->Rect($barX, $barY, $barWidth, $barH, "F");
+
+    // valor
+    $pdf->SetFont('Arial','B',7);
+    $pdf->SetXY($barX, $barY - 4);
+    $pdf->Cell($barWidth,4,$values[$i],0,0,'C');
+
+    // label eje X
+    $pdf->SetFont('Arial','',7);
+    $pdf->SetXY($barX, $chartY + $chartH + 1);
+    $pdf->Cell($barWidth,4,$labels[$i],0,0,'C');
+}
+
+// Leyenda compacta
+$legendX = $chartX + $chartW + 4;
+$legendY = $chartY + 2;
+
+$pdf->SetFont('Arial','B',7);
+$pdf->SetXY($legendX, $legendY);
+$pdf->Cell(20,4,"Legend",0,1);
+
+foreach($labels as $i=>$lbl){
+    list($r,$g,$b) = pickColor($i);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $pdf->Rect($legendX, $legendY + 5 + ($i*5), 4, 4, "F");
+    $pdf->SetXY($legendX + 6, $legendY + 4 + ($i*5));
+    $pdf->SetFont('Arial','',6);
+    $pdf->Cell(20,4,$lbl);
+}
+
+$pdf->Ln(50);
+
+
+$pdf->section_title("3. Daily Breakdown by Client (ISO Week)");
+
+/* ------- Encabezado dinámico -------- */
+$header = ["Day"];
+$widths = [25];
+
+foreach($clientes as $c){
+    $header[] = $c;
+    $widths[] = 25;
+}
+
+$pdf->table_header($header, $widths);
+
+/* ------- Filas ------- */
+foreach($diasSemana as $d){
+    $row = [date("D d-M", strtotime($d))];
+
+    foreach($clientes as $c){
+        $row[] = $matriz[$d][$c];
+    }
+
+    $pdf->table_row($row, $widths);
+}
+
+$pdf->Ln(8);
+$pdf->SubTitle("Graph: Samples Per Day by Client");
+
+chart_client_daily($pdf, $diasSemana, $clientes, $matriz);
+
 
 /* ===============================
    SECCIÓN 4 — TEST DISTRIBUTION
