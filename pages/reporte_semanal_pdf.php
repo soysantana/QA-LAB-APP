@@ -87,6 +87,27 @@ function pickColor($i){
     return $colors[$i % count($colors)];
 }
 
+/* ======================================================
+   RESUMEN CLIENTE PARA COMPLETION GRAPH — WEEKLY REPORT
+======================================================*/
+function resumen_cliente($start, $end){
+    return find_by_sql("
+        SELECT 
+            UPPER(TRIM(r.Client)) AS Client,
+            COUNT(*) AS solicitados,
+            SUM(CASE WHEN d.id IS NOT NULL THEN 1 ELSE 0 END) AS entregados
+        FROM lab_test_requisition_form r
+        LEFT JOIN test_delivery d
+            ON r.Sample_ID = d.Sample_ID
+            AND r.Sample_Number = d.Sample_Number
+            AND r.Test_Type = d.Test_Type
+        WHERE r.Registed_Date BETWEEN '{$start}' AND '{$end}'
+        GROUP BY r.Client
+        ORDER BY solicitados DESC
+    ");
+}
+
+
 /* ===============================
    6. MAPA DE ALIAS → NOMBRE
 ================================*/
