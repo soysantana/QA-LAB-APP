@@ -1161,7 +1161,7 @@ if (empty($techSummary)) {
    TABLA DINÁMICA (MULTI-PÁGINAS)
 ================================*/
 
-$pdf->section_title("7. Summary of Tests by Type and Client");
+$pdf->section_title("7. Summary of Tests by Type and Client (Dynamic Width)");
 
 /* ===============================
    1. Cargar datos crudos
@@ -1266,7 +1266,7 @@ foreach ($clientBlocks as $blockIndex => $blockClients){
         $pdf->SetFont('Arial','',9);
         $pdf->Cell($wSub,7,"Prep",1,0,'C');
         $pdf->Cell($wSub,7,"Real",1,0,'C');
-        $pdf->Cell($wSub,7,"Del",1,0,'C');
+        $pdf->Cell($wSub,7,"Comp",1,0,'C');
     }
     $pdf->Ln();
 
@@ -1293,13 +1293,11 @@ foreach ($clientBlocks as $blockIndex => $blockClients){
     $pdf->Ln(8);
 }
 
-
 /* ===============================
    SECCIÓN 8 — PENDING TESTS
 ================================*/
 $pdf->section_title("8. Pending Tests");
 
-/* 1) Traer todas las muestras pendientes */
 $pendRaw = find_by_sql("
     SELECT 
         r.Sample_ID,
@@ -1333,6 +1331,7 @@ $pendRaw = find_by_sql("
             AND d.Test_Type     = r.Test_Type
       )
 ");
+
 
 /* Si NO hay pendientes */
 if (empty($pendRaw)) {
@@ -1394,7 +1393,7 @@ for ($b = 0; $b < $blocks; $b++) {
     $end   = $start + count($slice);
 
     /* Subtítulo por bloque */
-    $pdf->SubTitle("Pending Tests (Clients ".($start+1)."–".$end.")");
+    $pdf->SubTitle("Pending Tests (Clients ".($start+1)."to".$end.")");
 
     /* =====================================================
        4) Construir encabezado doble
@@ -1490,7 +1489,177 @@ for ($b = 0; $b < $blocks; $b++) {
     $pdf->Ln(6);
 }
 
-skip_pending:
+
+
+/* ===============================
+   SECCIÓN 9 — DAM CONSTRUCTION SUMMARY (EXECUTIVE)
+================================*/
+$pdf->section_title("9. Dam Construction Summary (Executive)");
+
+/* =====================================================
+    Traer datos de la semana
+===================================================== */
+$rows = find_by_sql("
+    SELECT *
+    FROM ensayos_reporte
+    WHERE Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
+");
+
+/* =====================================================
+    Si no hay datos
+===================================================== */
+if (empty($rows)) {
+
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(245,245,245);
+    $pdf->Cell(0,10,"No dam construction tests reported this week.",1,1,'C',true);
+    $pdf->Ln(5);
+    goto skip_section_9;
+}
+
+/* =====================================================
+    Función para clasificar la estructura
+===================================================== */
+function classifyStructure($sampleID, $structureRaw) {
+
+    $id  = strtoupper(trim((string)$sampleID));
+    $str = strtoupper(trim((string)$structureRaw));
+
+    /* 1) STOCKPILE por Sample_ID */
+    if (strpos($id, "PVDJ-AGG") === 0) return "STOCKPILE";
+
+    /* 2) BORROWS por Sample_ID */
+    if (strpos($id, "LBOR") === 0) return "BORROWS";
+
+    /* 3) LLD */
+    if (strpos($str, "LLD") !== false) return "LLD";
+
+    /* 4) SD1 */
+    if (strpos($str, "SD1") !== false) return "SD1";
+
+    /* 5) SD2 */
+    if (strpos($str, "SD2") !== false) return "SD2";
+
+    /* 6) SD3 */
+    if (strpos($str, "SD3") !== false) return "SD3";
+
+    /* 7) NARANJO */
+    if (strpos($str, "NARAN") !== false) return "NARANJO";
+
+    /* 8) STOCKPILE por Structure */
+    if (strpos($str, "STOCK") !== false || strpos($str, "SP") === 0)
+        return "STOCKPILE";
+
+    /* 9) Default */
+    return "OTHER";
+}
+
+/* =====================================================
+    1. Total de ensayos completados
+===================================================== */
+$totalTests = count($rows);
+
+/* =====================================================
+    2. Contar por estructura
+===================================================== */
+$structureCounts = [
+    "LLD" => 0,
+    "SD1" => 0,
+    "SD2" => 0,
+    "SD3" => 0,
+    "NARANJO" => 0,
+    "BORROWS" => 0,
+    "STOCKPILE" => 0,
+    "OTHER" => 0
+];
+
+foreach ($rows as $r) {
+    $cls = classifyStructure($r['Sample_ID'], $r['Structure']);
+    $structureCounts[$cls]++;
+}
+
+/* =====================================================
+    3. Contar por Material_Type
+===================================================== */
+$materialCounts = [];
+foreach ($rows as $r) {
+
+    $m = strtoupper(trim((string)$r['Material_Type']));
+    if ($m === "") $m = "OTHER";
+
+    if (!isset($materialCounts[$m])) $materialCounts[$m] = 0;
+    $materialCounts[$m]++;
+}
+
+ksort($materialCounts);
+
+/* =====================================================
+    4. PASSED vs FAILED
+===================================================== */
+$passed = 0;
+$failed = 0;
+
+foreach ($rows as $r) {
+
+    $comment = strtoupper((string)$r['Comments']);
+    $cond    = strtoupper((string)$r['Test_Condition']);
+    $ncr     = strtoupper((string)$r['Noconformidad']);
+
+    /* REGLAS DE FALLA */
+    $isFail =
+        strpos($comment, "FAIL") !== false ||
+        strpos($comment, "NO CUMPLE") !== false ||
+        strpos($comment, "RECHAZ") !== false ||
+        strpos($comment, "NCR") !== false ||
+        strpos($ncr, "NCR") !== false ||
+        strpos($cond, "NOT OK") !== false;
+
+    if ($isFail) $failed++;
+    else         $passed++;
+}
+
+$failRate = ($totalTests > 0) ? round(($failed * 100) / $totalTests, 1) : 0;
+
+/* =====================================================
+    5. IMPRIMIR RESUMEN EJECUTIVO
+===================================================== */
+
+$pdf->SetFont('Arial','B',11);
+$pdf->Cell(0,6,"Total Tests Completed: ".$totalTests,0,1);
+$pdf->Ln(3);
+
+/* ---------- Tests por estructura ---------- */
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,6,"Tests by Structure:",0,1);
+
+$pdf->SetFont('Arial','',10);
+foreach ($structureCounts as $st => $cnt) {
+    $pdf->Cell(0,5,"   - {$st}: {$cnt} tests",0,1);
+}
+$pdf->Ln(3);
+
+/* ---------- Tests por material ---------- */
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,6,"Tests by Material:",0,1);
+
+$pdf->SetFont('Arial','',10);
+foreach ($materialCounts as $mat => $cnt) {
+    $pdf->Cell(0,5,"   - {$mat}: {$cnt} tests",0,1);
+}
+$pdf->Ln(3);
+
+/* ---------- Resultados ---------- */
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,6,"Test Results:",0,1);
+
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(0,5,"   - Passed: {$passed} tests",0,1);
+$pdf->Cell(0,5,"   - Failed: {$failed} tests",0,1);
+$pdf->Cell(0,5,"   (".$failRate."% Failure Rate)",0,1);
+
+$pdf->Ln(8);
+
+
 
 
 /* ===============================
