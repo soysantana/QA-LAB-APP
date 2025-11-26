@@ -65,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="DispersionDevice" class="form-label">Dispersion Device</label>
                                     <select id="DispersionDevice" class="form-select" name="DispersionDevice">
                                         <option selected>Choose...</option>
-                                        <option value="Cup-Mixer">Cup Mixer</option>
-                                        <option value="Air-Jet">Air Jet</option>
+                                        <option value="Cup Mixer">Cup Mixer</option>
+                                        <option value="Air Jet">Air Jet</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">

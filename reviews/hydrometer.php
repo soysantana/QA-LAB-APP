@@ -74,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="DispersionDevice" class="form-label">Dispersion Device</label>
                                     <select id="DispersionDevice" class="form-select" name="DispersionDevice">
                                         <option selected>Choose...</option>
-                                        <option <?php if ($Search['DispersionDevice'] == 'Cup-Mixer') echo 'selected'; ?>>Cup Mixer</option>
-                                        <option <?php if ($Search['DispersionDevice'] == 'Air-Jet') echo 'selected'; ?>>Air Jet</option>
+                                        <option <?php if ($Search['DispersionDevice'] == 'Cup Mixer') echo 'selected'; ?>>Cup Mixer</option>
+                                        <option <?php if ($Search['DispersionDevice'] == 'Air Jet') echo 'selected'; ?>>Air Jet</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">

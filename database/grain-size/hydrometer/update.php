@@ -166,6 +166,10 @@ if (isset($_POST['UpdateHydrometer'])) {
         $query .= "Comments = '{$Comments}', ";
         $query .= "FieldComment = '{$FieldComment}', ";
         $query .= "Preparation_Method = '{$PMethods}', ";
+        $query .= "DispersionDevice = '{$DispersionDevice}', ";
+        $query .= "HydrometerType = '{$HydrometerType}', ";
+        $query .= "MixingMethod = '{$MixingMethod}', ";
+        $query .= "SpecificGravitywas = '{$SpecificGravitywas}', ";
         $query .= "Modified_Date = '{$ModifiedDate}', ";
         $query .= "Modified_By = '{$ModifiedBy}', ";
         $query .= "Test_Type = '{$TestType}', ";
