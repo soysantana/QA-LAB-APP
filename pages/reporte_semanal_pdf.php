@@ -683,22 +683,37 @@ $pdf->SubTitle("Daily Registered Samples by Client");
 $colWidths = [28];  // fecha
 foreach ($clientNames as $cl) $colWidths[] = 18;
 
-// encabezado
+// ======= Encabezado MULTILÍNEA =======
+$pdf->SetFont('Arial','B',9);
+$pdf->SetFillColor(200,220,255);
+
+$yHeader = $pdf->GetY();
+$xStart  = $pdf->GetX();
+
 $header = ["Date"];
 foreach ($clientNames as $cl) $header[] = $cl;
 
-$pdf->table_header($header, $colWidths);
+// Dibujar el encabezado con multicell
+foreach ($header as $i => $h) {
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+    $pdf->MultiCell($colWidths[$i], 6, utf8_decode($h), 1, 'C');
+    $pdf->SetXY($x + $colWidths[$i], $y);
+}
 
-// filas
+$pdf->Ln();
+
+// ======= Cuerpo =======
 foreach ($matriz as $dia => $row) {
+
     $cells = [ date("D d-M", strtotime($dia)) ];
-    foreach ($clientNames as $cl) {
-        $cells[] = $row[$cl];
-    }
+    foreach ($clientNames as $cl) $cells[] = $row[$cl];
+
     $pdf->table_row($cells, $colWidths);
 }
 
 $pdf->Ln(8);
+
 
 /* ============================
    GRAFICO (MULTISERIE CLIENTE × DIA)
