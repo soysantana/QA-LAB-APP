@@ -148,6 +148,14 @@ function table_row_multiline($pdf, $data, $w){
 
     $pdf->Ln($maxHeight);
 }
+function headerCell($pdf, $w, $txt){
+    $pdf->SetFont('Arial','B',8);
+    $pdf->MultiCell($w, 4, utf8_decode($txt), 1, 'C');
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+    $pdf->SetXY($x + $w, $y - 8); // subir 2 líneas
+}
+
 
 /*******************************************************
    EVITAR QUE EL GRÁFICO SE PARTA
@@ -681,27 +689,22 @@ $pdf->SubTitle("Daily Registered Samples by Client");
 
 // ancho de columnas
 $colWidths = [28];  // fecha
-foreach ($clientNames as $cl) $colWidths[] = 18;
+foreach ($clientNames as $cl) $colWidths[] = 22;
 
 // ======= Encabezado MULTILÍNEA =======
-$pdf->SetFont('Arial','B',9);
-$pdf->SetFillColor(200,220,255);
+// ---------- ENCABEZADO ----------
+$pdf->SetFont('Arial','B',8);
 
-$yHeader = $pdf->GetY();
-$xStart  = $pdf->GetX();
+// Dibujar columna DATE normal
+$pdf->Cell($colWidths[0], 8, "Date", 1, 0, 'C');
 
-$header = ["Date"];
-foreach ($clientNames as $cl) $header[] = $cl;
-
-// Dibujar el encabezado con multicell
-foreach ($header as $i => $h) {
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
-    $pdf->MultiCell($colWidths[$i], 6, utf8_decode($h), 1, 'C');
-    $pdf->SetXY($x + $colWidths[$i], $y);
+// Dibujar clientes con MultiCell
+for ($i = 0; $i < count($clientNames); $i++) {
+    headerCell($pdf, $colWidths[$i+1], $clientNames[$i]);
 }
 
 $pdf->Ln();
+
 
 // ======= Cuerpo =======
 foreach ($matriz as $dia => $row) {
