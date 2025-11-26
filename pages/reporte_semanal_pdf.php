@@ -1291,41 +1291,159 @@ if (empty($muestras)) {
     
 }
 
-
-
 /* ===============================
-   SECCIÓN 9 — TESTS BY TECHNICIAN
+   6. Summary of Tests by Technician (PIVOT)
 ================================*/
-$pdf->section_title("6. Summary of Tests by Technician");
 
-$tec = find_by_sql("
-    SELECT Technician, COUNT(*) total, 'In Preparation' etapa
-    FROM test_preparation
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Technician
+// --- 1) Helper: normalizar y separar nombres ---
+function normalize_tech_names($raw){
+    if ($raw === null || trim($raw) === "") return [];
 
-    UNION ALL
+    // reemplazar separadores por coma
+    $raw = str_replace(["/", "\\", "|", ";", "-", "  "], ",", $raw);
 
-    SELECT Technician, COUNT(*) total, 'In Realization'
-    FROM test_realization
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Technician
+    // dividir
+    $parts = array_map('trim', explode(",", $raw));
 
-    UNION ALL
+    // eliminar vacíos
+    $parts = array_filter($parts, function($v){ return $v !== ""; });
 
-    SELECT Technician, COUNT(*) total, 'Completed'
-    FROM test_delivery
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Technician
-");
-
-$pdf->table_header(["Technician","Process","Qty"],[70,50,20]);
-
-foreach($tec as $t){
-    $pdf->table_row([$t['Technician'],$t['etapa'],$t['total']], [70,50,20]);
+    // normalizar capitalización
+    $clean = [];
+    foreach ($parts as $p){
+        $p = strtolower($p);
+        $p = ucwords($p);
+        $clean[] = $p;
+    }
+    return $clean;
 }
 
-$pdf->Ln(10);
+// --- 2) Mapa de alias -> nombre real en tabla users ---
+$users = find_by_sql("SELECT username, name FROM users");
+$aliasMap = [];
+
+foreach ($users as $u){
+    $username = strtolower(trim($u['username']));
+    $realname = trim($u['name']);
+
+    $aliasMap[$username] = $realname;
+}
+
+// --- 3) Inicializar estructura pivot ---
+$pivot = [];  // [Technician] = ['Prep'=>x,'Real'=>y,'Comp'=>z]
+
+// helper para incrementar
+function add_tech_count(&$pivot, $tech, $col){
+    if (!isset($pivot[$tech])){
+        $pivot[$tech] = ['Prep'=>0, 'Real'=>0, 'Comp'=>0];
+    }
+    $pivot[$tech][$col]++;
+}
+
+// --- 4) Procesar PREPARATION ---
+$prepRows = find_by_sql("
+    SELECT Technician
+    FROM test_preparation
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+");
+
+foreach ($prepRows as $r){
+    $techs = normalize_tech_names($r['Technician']);
+
+    foreach ($techs as $t){
+
+        // si coincide con alias en users
+        $key = strtolower($t);
+        $real = $aliasMap[$key] ?? $t; // usa name real si existe
+
+        add_tech_count($pivot, $real, 'Prep');
+    }
+}
+
+// --- 5) Procesar REALIZATION ---
+$realRows = find_by_sql("
+    SELECT Technician
+    FROM test_realization
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+");
+
+foreach ($realRows as $r){
+    $techs = normalize_tech_names($r['Technician']);
+
+    foreach ($techs as $t){
+        $key = strtolower($t);
+        $real = $aliasMap[$key] ?? $t;
+
+        add_tech_count($pivot, $real, 'Real');
+    }
+}
+
+// --- 6) Procesar COMPLETED ---
+$compRows = find_by_sql("
+    SELECT Technician
+    FROM test_delivery
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+");
+
+foreach ($compRows as $r){
+    $techs = normalize_tech_names($r['Technician']);
+
+    foreach ($techs as $t){
+        $key = strtolower($t);
+        $real = $aliasMap[$key] ?? $t;
+
+        add_tech_count($pivot, $real, 'Comp');
+    }
+}
+
+// --- 7) Calcular TOTAL por técnico ---
+foreach ($pivot as $tech => $vals){
+    $pivot[$tech]['Total'] = $vals['Prep'] + $vals['Real'] + $vals['Comp'];
+}
+
+// --- 8) Ordenar por Total DESC ---
+uasort($pivot, function($a,$b){
+    return $b['Total'] <=> $a['Total'];
+});
+
+// --- 9) Dibujar tabla ---
+$pdf->section_title("6. Summary of Tests by Technician");
+
+$pdf->table_header(
+    ["Technician","Prep","Real","Completed","Total"],
+    [70,20,20,25,20]
+);
+
+$totalPrep = $totalReal = $totalComp = $totalAll = 0;
+
+foreach ($pivot as $tech => $vals){
+
+    $pdf->table_row(
+        [
+            utf8_decode($tech),
+            $vals['Prep'],
+            $vals['Real'],
+            $vals['Comp'],
+            $vals['Total']
+        ],
+        [70,20,20,25,20]
+    );
+
+    $totalPrep += $vals['Prep'];
+    $totalReal += $vals['Real'];
+    $totalComp += $vals['Comp'];
+    $totalAll  += $vals['Total'];
+}
+
+// --- 10) Totales finales ---
+$pdf->SetFont('Arial','B',10);
+$pdf->table_row(
+    ["TOTAL", $totalPrep, $totalReal, $totalComp, $totalAll],
+    [70,20,20,25,20]
+);
+
+$pdf->Ln(8);
+
 
 
 /* ===============================
