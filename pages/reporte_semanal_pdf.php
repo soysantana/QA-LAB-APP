@@ -935,8 +935,8 @@ if (empty($testTypes) || empty($clientNames)) {
     $pdf->SubTitle("Completed Tests by Type and Client");
 
     // Columnas
-    $colWidths = [28]; // Test Type
-    foreach ($clientNames as $cl) $colWidths[] = 18;
+    $colWidths = [40]; // Test Type
+    foreach ($clientNames as $cl) $colWidths[] = 25;
 
     $header = ["Test"];
     foreach ($clientNames as $cl) $header[] = $cl;
@@ -952,7 +952,7 @@ if (empty($testTypes) || empty($clientNames)) {
         $pdf->table_row($cells, $colWidths);
     }
 
-    $pdf->Ln(10);
+    $pdf->Ln(8);
     /* ---------- GRÁFICO ---------- */
 
     $pdf->SubTitle("Graph: Tests by Type and Client");
