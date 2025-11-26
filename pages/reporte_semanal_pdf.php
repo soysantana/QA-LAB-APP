@@ -1087,82 +1087,28 @@ chart_client($pdf,$clientes_res);
 
 $pdf->Ln(10);
 
+
 /* ===============================
-   5. Newly Registered Samples (Weekly)
+   5. NEWLY REGISTERED SAMPLES (WEEKLY)
 ================================*/
 $pdf->section_title("5. Newly Registered Samples (Weekly)");
 
-/* ---- Datos ---- */
-$totalWeek = $req; // ya calculado arriba con get_count
-
-$topClient = find_by_sql("
-    SELECT Client, COUNT(*) AS total
-    FROM lab_test_requisition_form
-    WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Client
-    ORDER BY total DESC
-    LIMIT 1
-");
-
-$topClientTxt = empty($topClient)
-    ? "No data"
-    : $topClient[0]['Client']." – ".$topClient[0]['total']." samples";
-
-$typesRaw = find_by_sql("
-    SELECT Test_Type
+$muestras = find_by_sql("
+    SELECT 
+        Sample_ID,
+        Sample_Number,
+        Client,
+        Test_Type
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
 ");
 
-$allTypes = [];
-foreach ($typesRaw as $t){
-    $parts = array_map('trim', explode(',', $t['Test_Type']));
-    foreach ($parts as $p){
-        if ($p !== "" && !in_array($p, $allTypes)){
-            $allTypes[] = $p;
-        }
-    }
-}
+if (empty($muestras)) {
 
-$typesList = implode(", ", $allTypes);
-
-/* ---- Tabla estilo dashboard ---- */
-
-$leftW  = 70;
-$rightW = 120;
-$hCell  = 8;
-
-/* ---- Fila 1 ---- */
-
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell($leftW, $hCell, "Total Samples this Week", 1, 0, 'L');
-$pdf->Cell($rightW, $hCell, "Top Samples this Week", 1, 1, 'L');
-
-$pdf->SetFont('Arial','',10);
-$pdf->Cell($leftW, $hCell, $totalWeek, 1, 0, 'C');
-$pdf->Cell($rightW, $hCell, utf8_decode($topClientTxt), 1, 1, 'C');
-
-/* ---- Fila 2 ---- */
-
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell($leftW, $hCell, "Top Test Types", 1, 0, 'L');
-
-$pdf->SetFont('Arial','',9);
-
-/* MULTICELL PARA LISTA LARGA */
-$x = $pdf->GetX();
-$y = $pdf->GetY();
-
-$pdf->MultiCell($rightW, 6, utf8_decode($typesList), 1, 'C');
-
-/* Reconstruir borde izquierdo para que se vea parejo */
-$finalY = $pdf->GetY();
-$pdf->SetXY(10, $y); 
-$pdf->Cell($leftW, $finalY - $y, "", 1, 0); 
-
-$pdf->SetXY($x + $rightW, $finalY); // continuar flujo
-$pdf->Ln(4);
-
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(245,245,245);
+    $pdf->Cell(0,10,"No samples were registered during this week.",1,1,'C',true);
+    $pdf->Ln(5);
 
 } else {
 
@@ -1260,13 +1206,7 @@ $pdf->Ln(4);
     // Segunda fila: top test type + clients involved
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell($boxW,6,"TOp Test Type",1,0,'L',true);
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
-
-$pdf->MultiCell($boxW,5,utf8_decode($clientsInvolvedText),1,'C');
-
-$pdf->SetXY($x + $boxW, $y); // reposicionar cursor para que no rompa el layout
-
+    $pdf->Cell($boxW,6,"Clients Involved",1,1,'L',true);
 
     $pdf->SetFont('Arial','',11);
     $txtTopTest = ($topTestName === "-")
