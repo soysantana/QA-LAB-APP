@@ -465,8 +465,8 @@ if (empty($clientNames)) {
 } else {
 
     // ancho columnas: fecha + 18 mm por cliente
-    $colWidths = [28];  // fecha
-    foreach ($clientNames as $cl) $colWidths[] = 18;
+    $colWidths = [45];  // fecha
+    foreach ($clientNames as $cl) $colWidths[] = 22;
 
     // encabezado
     $header = ["Date"];
@@ -1157,48 +1157,153 @@ if (empty($techSummary)) {
 }
 
 /* ===============================
-   SECCIÓN 7 — SUMMARY OF TESTS BY TYPE
+   SECCIÓN 7 — SUMMARY OF TESTS BY TYPE × CLIENT × PROCESS
+   FORMATO — CABECERA DOBLE:
+   | Test Type | Cliente 1 (Prep / Real / Del) | Cliente 2 (Prep / Real / Del) |
 ================================*/
-$pdf->section_title("7. Summary of Tests by Type");
 
-$tipos = find_by_sql("
-    SELECT Test_Type, COUNT(*) total, 'In Preparation' etapa
-    FROM test_preparation
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Test_Type
+$pdf->section_title("7. Summary of Tests by Type and Client");
+
+// ==========================================================
+// 1) TRAER LOS DATOS CRUDOS
+// ==========================================================
+$raw7 = find_by_sql("
+    SELECT r.Client, p.Test_Type, 'Prep' AS etapa, COUNT(*) total
+    FROM test_preparation p
+    LEFT JOIN lab_test_requisition_form r
+      ON p.Sample_ID = r.Sample_ID
+     AND p.Sample_Number = r.Sample_Number
+     AND p.Test_Type = r.Test_Type
+    WHERE p.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY r.Client, p.Test_Type
 
     UNION ALL
 
-    SELECT Test_Type, COUNT(*) total, 'In Realization' etapa
-    FROM test_realization
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Test_Type
+    SELECT r.Client, z.Test_Type, 'Real' AS etapa, COUNT(*) total
+    FROM test_realization z
+    LEFT JOIN lab_test_requisition_form r
+      ON z.Sample_ID = r.Sample_ID
+     AND z.Sample_Number = r.Sample_Number
+     AND z.Test_Type = r.Test_Type
+    WHERE z.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY r.Client, z.Test_Type
 
     UNION ALL
 
-    SELECT Test_Type, COUNT(*) total, 'Completed' etapa
-    FROM test_delivery
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY Test_Type
+    SELECT r.Client, d.Test_Type, 'Del' AS etapa, COUNT(*) total
+    FROM test_delivery d
+    LEFT JOIN lab_test_requisition_form r
+      ON d.Sample_ID = r.Sample_ID
+     AND d.Sample_Number = r.Sample_Number
+     AND d.Test_Type = r.Test_Type
+    WHERE d.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY r.Client, d.Test_Type
 ");
 
-if (empty($tipos)) {
+// ==========================================================
+// 2) ARMAR MATRIZ: [Test_Type][Cliente]['Prep','Real','Del']
+// ==========================================================
+$matrix7 = [];
+$clientes7 = [];
+$tipos7 = [];
+
+foreach ($raw7 as $r){
+
+    $client = trim((string)$r['Client']);
+    if ($client === "" || $client === null) $client = "N/A";
+
+    $test  = trim($r['Test_Type']);
+    if ($test === "") continue;
+
+    $etapa = $r['etapa'];
+    $cnt   = (int)$r['total'];
+
+    if (!isset($matrix7[$test]))      $matrix7[$test] = [];
+    if (!isset($matrix7[$test][$client]))
+        $matrix7[$test][$client] = ['Prep'=>0,'Real'=>0,'Del'=>0];
+
+    $matrix7[$test][$client][$etapa] += $cnt;
+
+    if (!in_array($client,$clientes7,true)) $clientes7[] = $client;
+    if (!in_array($test,$tipos7,true))      $tipos7[] = $test;
+}
+
+if (empty($matrix7)) {
 
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(245,245,245);
-    $pdf->Cell(0,10,"No tests in preparation, realization or completed for this week.",1,1,'C',true);
+    $pdf->Cell(0,10,"No data in this section.",1,1,'C',true);
     $pdf->Ln(5);
 
 } else {
 
-    $pdf->table_header(["Test Type","Process","Qty"],[70,50,20]);
+    sort($clientes7);
+    sort($tipos7);
 
-    foreach($tipos as $t){
-        $pdf->table_row([$t['Test_Type'],$t['etapa'],$t['total']], [70,50,20]);
+    // ==========================================================
+    // 3) DEFINIR ANCHOS
+    // ==========================================================
+    $wTest = 35;
+    $wSub  = 15; // ancho para Prep, Real, Del (cada columna)
+    $colWidths = [$wTest];
+
+    foreach ($clientes7 as $c){
+        $colWidths[] = $wSub; // Prep
+        $colWidths[] = $wSub; // Real
+        $colWidths[] = $wSub; // Del
+    }
+
+    // ==========================================================
+    // 4) ENCABEZADO DOBLE
+    // ==========================================================
+    $pdf->SetFont('Arial','B',10);
+
+    // ---------- FILA 1: Test Type + clientes (celdas fusionadas) ----------
+    $pdf->Cell($wTest, 10, "Test Type", 1, 0, 'C');
+
+    foreach ($clientes7 as $c){
+        $pdf->Cell($wSub*3, 10, utf8_decode($c), 1, 0, 'C');
+    }
+    $pdf->Ln();
+
+    // ---------- FILA 2: Prep, Real, Del ----------
+    $pdf->Cell($wTest, 7, "", 1, 0, 'C'); // celda vacía bajo Test Type
+
+    foreach ($clientes7 as $c){
+        $pdf->SetFont('Arial','',9);
+        $pdf->Cell($wSub, 7, "Prep", 1, 0, 'C');
+        $pdf->Cell($wSub, 7, "Real", 1, 0, 'C');
+        $pdf->Cell($wSub, 7, "Del", 1, 0, 'C');
+    }
+    $pdf->Ln();
+
+    // ==========================================================
+    // 5) FILAS DE DATOS
+    // ==========================================================
+    $pdf->SetFont('Arial','',10);
+
+    foreach ($tipos7 as $tp){
+
+        $pdf->Cell($wTest, 7, utf8_decode($tp), 1, 0, 'L');
+
+        foreach ($clientes7 as $cl){
+
+            $prep = $matrix7[$tp][$cl]['Prep'] ?? 0;
+            $real = $matrix7[$tp][$cl]['Real'] ?? 0;
+            $del  = $matrix7[$tp][$cl]['Del']  ?? 0;
+
+            $pdf->Cell($wSub, 7, $prep, 1, 0, 'C');
+            $pdf->Cell($wSub, 7, $real, 1, 0, 'C');
+            $pdf->Cell($wSub, 7, $del, 1, 0, 'C');
+        }
+
+        $pdf->Ln();
     }
 
     $pdf->Ln(8);
 }
+
+
 /* ===============================
    SECCIÓN 8 — PENDING TESTS
 ================================*/
