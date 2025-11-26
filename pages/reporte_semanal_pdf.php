@@ -680,7 +680,7 @@ foreach ($raw as $r) {
 $pdf->SubTitle("Daily Registered Samples by Client");
 
 // ancho de columnas
-$colWidths = [35];  // fecha
+$colWidths = [40];  // fecha
 foreach ($clientNames as $cl) $colWidths[] = 22;
 
 // ======= Encabezado MULTILÍNEA =======
