@@ -1510,12 +1510,26 @@ function classifyStructure($sampleId, $structure){
     $sid = strtoupper(trim($sampleId));
     $st  = strtoupper(trim($structure));
 
-    if (str_starts_with($sid, "PVDJ-AGG")) return "STOCKPILE";
-    if (str_contains($st, "STOCK")) return "STOCKPILE";
+    // Funciones auxiliares: startsWith y contains
+    $startsWith = function($haystack, $needle){
+        return substr($haystack, 0, strlen($needle)) === $needle;
+    };
 
-    if (str_starts_with($sid, "LBOR")) return "BORROW";
+    $contains = function($haystack, $needle){
+        return strpos($haystack, $needle) !== false;
+    };
 
-    return ($st === "") ? "UNKNOWN" : $st;
+    // ---- STOCKPILE REGLAS ----
+    if ($startsWith($sid, "PVDJ-AGG")) return "STOCKPILE";
+    if ($contains($st, "STOCK")) return "STOCKPILE";
+
+    // ---- BORROW REGLA ----
+    if ($startsWith($sid, "LBOR")) return "BORROW";
+
+    // ---- OTRAS ESTRUCTURAS ----
+    if ($st !== "") return $st;
+
+    return "UNKNOWN";
 }
 
 /* ============================================================
