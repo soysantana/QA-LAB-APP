@@ -1489,7 +1489,7 @@ for ($b = 0; $b < $blocks; $b++) {
     $pdf->Ln(6);
 }
 
-
+skip_pending:
 
 /* ===============================
    SECCIÓN 9 — DAM CONSTRUCTION SUMMARY (EXECUTIVE)
@@ -1659,7 +1659,7 @@ $pdf->Cell(0,5,"   (".$failRate."% Failure Rate)",0,1);
 
 $pdf->Ln(8);
 
-
+skip_section_9:
 
 
 /* ===============================
