@@ -1186,7 +1186,7 @@ if (empty($muestras)) {
     $clientsInvolvedText = implode(", ", $clientNames);
 
     // ---- Tarjetas 2x2 ----
-    $boxW = 100;
+    $boxW = 95;
 
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(230,230,230);
@@ -1206,7 +1206,13 @@ if (empty($muestras)) {
     // Segunda fila: top test type + clients involved
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell($boxW,6,"TOp Test Type",1,0,'L',true);
-    $pdf->Cell($boxW,6,"Clients Involved",1,1,'L',true);
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+
+$pdf->MultiCell($boxW,5,utf8_decode($clientsInvolvedText),1,'C');
+
+$pdf->SetXY($x + $boxW, $y); // reposicionar cursor para que no rompa el layout
+
 
     $pdf->SetFont('Arial','',11);
     $txtTopTest = ($topTestName === "-")
