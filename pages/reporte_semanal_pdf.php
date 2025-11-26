@@ -584,6 +584,105 @@ if (empty($clientNames)) {
         $pdf->Ln(5);
     }
 }
+// Datos desde tu función existente
+$clientes_res = resumen_cliente($start_str,$end_str);
+
+if (!empty($clientes_res)) {
+
+    $pdf->SubTitle("Graph: Client Completion Percentage");
+
+    ensure_space($pdf, 85);
+
+    // Preparar puntos (% completado)
+    $points = [];
+    foreach ($clientes_res as $c){
+        $sol = (int)$c['solicitados'];
+        $ent = (int)$c['entregados'];
+        $pct = ($sol > 0) ? round(($ent * 100) / $sol) : 0;
+
+        $points[] = [
+            "label" => $c['Client'],
+            "pct"   => $pct
+        ];
+    }
+
+    // Área del gráfico
+    $chartX = 20;
+    $chartY = $pdf->GetY() + 5;
+    $chartW = 150;
+    $chartH = 55;
+
+    // Ejes
+    $pdf->SetDrawColor(0,0,0);
+    $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);              // Y
+    $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);  // X
+
+    // Y-axis labels 0-100%
+    $pdf->SetFont('Arial','',7);
+    $steps = 4;
+    for ($i=0; $i <= $steps; $i++){
+        $yPos = $chartY + $chartH - ($chartH / $steps * $i);
+        $val  = round(100 / $steps * $i);
+        $pdf->SetXY($chartX - 10, $yPos - 2);
+        $pdf->Cell(8,4,$val,0,0,'R');
+    }
+
+    // Barras
+    $bars = count($points);
+    $bw   = ($chartW - 20) / max($bars,1);
+    if ($bw < 10) $bw = 10;  // ancho mínimo
+
+    $x = $chartX + 10;
+
+    foreach ($points as $i => $p){
+
+        $pct = $p['pct'];
+        $h   = ($pct / 100) * ($chartH - 4);
+        $y   = $chartY + ($chartH - $h);
+
+        // Color consistente
+        list($r,$g,$b) = pickColor($i);
+        $pdf->SetFillColor($r,$g,$b);
+
+        // Barra
+        $pdf->Rect($x, $y, $bw, $h, "F");
+
+        // Valor porcentaje encima
+        $pdf->SetFont('Arial','B',7);
+        $pdf->SetXY($x, $y - 4);
+        $pdf->Cell($bw,4,$pct."%",0,0,'C');
+
+        // Label cliente en X
+        $pdf->SetFont('Arial','',7);
+        $pdf->SetXY($x, $chartY + $chartH + 2);
+        $pdf->MultiCell($bw,4,$p["label"],0,'C');
+
+        $x += $bw;
+    }
+
+    // Leyenda vertical derecha
+    $legendX = $chartX + $chartW + 6;
+    $legendY = $chartY;
+
+    $pdf->SetFont('Arial','B',8);
+    $pdf->SetXY($legendX, $legendY);
+    $pdf->Cell(20,4,"Legend",0,1);
+
+    foreach ($points as $i => $p){
+        list($r,$g,$b) = pickColor($i);
+        $pdf->SetFillColor($r,$g,$b);
+
+        $pdf->SetXY($legendX, $legendY + 6 + ($i * 6));
+        $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
+
+        $pdf->SetXY($legendX + 6, $legendY + 5 + ($i * 6));
+        $pdf->SetFont("Arial","",7);
+        $pdf->Cell(30,5, $p['label'],0,1,'L');
+    }
+
+    $pdf->SetY($chartY + $chartH + 16);
+}
+
 /* ===============================
    SECCIÓN 4 — TEST DISTRIBUTION BY TYPE AND CLIENT
 ================================*/
