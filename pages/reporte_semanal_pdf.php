@@ -1492,172 +1492,145 @@ for ($b = 0; $b < $blocks; $b++) {
 skip_pending:
 
 /* ===============================
-   SECCIÓN 9 — DAM CONSTRUCTION SUMMARY (EXECUTIVE)
+   SECCIÓN 9 — SUMMARY OF DAM CONSTRUCTION TESTS
 ================================*/
-$pdf->section_title("9. Dam Construction Summary (Executive)");
 
-/* =====================================================
-    Traer datos de la semana
-===================================================== */
+/*
+ REGLA DE CLASIFICACIÓN (ESTRUCTURA):
+ -------------------------------------
+ - Stockpile:
+      a) Structure contiene 'STOCK'
+      b) ó Sample_ID comienza con 'PVDJ-AGG'
+ - Borrow:
+      a) Sample_ID comienza con 'LBOR'
+ - De lo contrario se usa la columna Structure
+*/
+
+function classifyStructure($sampleId, $structure){
+    $sid = strtoupper(trim($sampleId));
+    $st  = strtoupper(trim($structure));
+
+    if (str_starts_with($sid, "PVDJ-AGG")) return "STOCKPILE";
+    if (str_contains($st, "STOCK")) return "STOCKPILE";
+
+    if (str_starts_with($sid, "LBOR")) return "BORROW";
+
+    return ($st === "") ? "UNKNOWN" : $st;
+}
+
+/* ============================================================
+   1. CARGAR DATOS BRUTOS DE LA SEMANA
+==============================================================*/
 $rows = find_by_sql("
     SELECT *
     FROM ensayos_reporte
     WHERE Report_Date BETWEEN '{$start_str}' AND '{$end_str}'
 ");
 
-/* =====================================================
-    Si no hay datos
-===================================================== */
+$pdf->section_title("9. Summary of Dam Construction Tests");
+
 if (empty($rows)) {
 
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(245,245,245);
     $pdf->Cell(0,10,"No dam construction tests reported this week.",1,1,'C',true);
     $pdf->Ln(5);
-    goto skip_section_9;
+
+} else {
+
+    /* ============================================================
+       2. ARMAR MATRIZ ESTRUCTURA → MATERIAL → TEST → PASSED/FAILED
+    ===============================================================*/
+    $matrix = [];
+
+    foreach ($rows as $r) {
+
+        $structure = classifyStructure($r['Sample_ID'], $r['Structure']);
+        $material   = strtoupper(trim((string)$r['Material_Type']));
+        if ($material === "") $material = "OTHER";
+
+        $testType   = strtoupper(trim((string)$r['Test_Type']));
+        if ($testType === "") $testType = "UNKNOWN";
+
+        $comment = strtoupper((string)$r['Comments']);
+        $cond    = strtoupper((string)$r['Test_Condition']);
+        $ncr     = strtoupper((string)$r['Noconformidad']);
+
+        /* REGLA PARA FAIL */
+        $isFail =
+            str_contains($comment,"FAIL") ||
+            str_contains($comment,"NO CUMPLE") ||
+            str_contains($comment,"RECHAZ") ||
+            str_contains($comment,"NCR") ||
+            str_contains($ncr,"NCR") ||
+            str_contains($cond,"NOT OK");
+
+        if (!isset($matrix[$structure])) $matrix[$structure] = [];
+        if (!isset($matrix[$structure][$material])) $matrix[$structure][$material] = [];
+        if (!isset($matrix[$structure][$material][$testType])) {
+            $matrix[$structure][$material][$testType] = [
+                "passed" => 0,
+                "failed" => 0
+            ];
+        }
+
+        if ($isFail) $matrix[$structure][$material][$testType]["failed"]++;
+        else         $matrix[$structure][$material][$testType]["passed"]++;
+    }
+
+    /* ============================================================
+       3. TABLA EJECUTIVA (DOBLE FILA DE ENCABEZADO)
+    ===============================================================*/
+
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,8,"9.1 Summary Table",0,1);
+    $pdf->Ln(2);
+
+    // --- FILA 1 DEL ENCABEZADO ---
+    $pdf->SetFont('Arial','B',9);
+    $pdf->SetFillColor(220,220,220);
+
+    $pdf->Cell(40,7,"Structure",1,0,'C',true);
+    $pdf->Cell(35,7,"Material",1,0,'C',true);
+    $pdf->Cell(30,7,"Test Type",1,0,'C',true);
+
+    $pdf->Cell(44,7,"RESULTS",1,1,'C',true);  // grupo de dos columnas
+
+    // --- FILA 2 DEL ENCABEZADO ---
+    $pdf->Cell(40,6,"",1,0);
+    $pdf->Cell(35,6,"",1,0);
+    $pdf->Cell(30,6,"",1,0);
+
+    $pdf->SetFont('Arial','B',9);
+    $pdf->Cell(22,6,"Passed",1,0,'C',true);
+    $pdf->Cell(22,6,"Failed",1,1,'C',true);
+
+    /* ---------- FILAS ---------- */
+    $pdf->SetFont('Arial','',9);
+
+    foreach ($matrix as $structure => $matData) {
+
+        foreach ($matData as $material => $testData) {
+
+            foreach ($testData as $testType => $info) {
+
+                $passed = $info["passed"];
+                $failed = $info["failed"];
+
+                if ($passed==0 && $failed==0) continue;
+
+                $pdf->Cell(40,6,$structure,1);
+                $pdf->Cell(35,6,$material,1);
+                $pdf->Cell(30,6,$testType,1);
+
+                $pdf->Cell(22,6,$passed,1,0,'C');
+                $pdf->Cell(22,6,$failed,1,1,'C');
+            }
+        }
+    }
+
+    $pdf->Ln(8);
 }
-
-/* =====================================================
-    Función para clasificar la estructura
-===================================================== */
-function classifyStructure($sampleID, $structureRaw) {
-
-    $id  = strtoupper(trim((string)$sampleID));
-    $str = strtoupper(trim((string)$structureRaw));
-
-    /* 1) STOCKPILE por Sample_ID */
-    if (strpos($id, "PVDJ-AGG") === 0) return "STOCKPILE";
-
-    /* 2) BORROWS por Sample_ID */
-    if (strpos($id, "LBOR") === 0) return "BORROWS";
-
-    /* 3) LLD */
-    if (strpos($str, "LLD") !== false) return "LLD";
-
-    /* 4) SD1 */
-    if (strpos($str, "SD1") !== false) return "SD1";
-
-    /* 5) SD2 */
-    if (strpos($str, "SD2") !== false) return "SD2";
-
-    /* 6) SD3 */
-    if (strpos($str, "SD3") !== false) return "SD3";
-
-    /* 7) NARANJO */
-    if (strpos($str, "NARAN") !== false) return "NARANJO";
-
-    /* 8) STOCKPILE por Structure */
-    if (strpos($str, "STOCK") !== false || strpos($str, "SP") === 0)
-        return "STOCKPILE";
-
-    /* 9) Default */
-    return "OTHER";
-}
-
-/* =====================================================
-    1. Total de ensayos completados
-===================================================== */
-$totalTests = count($rows);
-
-/* =====================================================
-    2. Contar por estructura
-===================================================== */
-$structureCounts = [
-    "LLD" => 0,
-    "SD1" => 0,
-    "SD2" => 0,
-    "SD3" => 0,
-    "NARANJO" => 0,
-    "BORROWS" => 0,
-    "STOCKPILE" => 0,
-    "OTHER" => 0
-];
-
-foreach ($rows as $r) {
-    $cls = classifyStructure($r['Sample_ID'], $r['Structure']);
-    $structureCounts[$cls]++;
-}
-
-/* =====================================================
-    3. Contar por Material_Type
-===================================================== */
-$materialCounts = [];
-foreach ($rows as $r) {
-
-    $m = strtoupper(trim((string)$r['Material_Type']));
-    if ($m === "") $m = "OTHER";
-
-    if (!isset($materialCounts[$m])) $materialCounts[$m] = 0;
-    $materialCounts[$m]++;
-}
-
-ksort($materialCounts);
-
-/* =====================================================
-    4. PASSED vs FAILED
-===================================================== */
-$passed = 0;
-$failed = 0;
-
-foreach ($rows as $r) {
-
-    $comment = strtoupper((string)$r['Comments']);
-    $cond    = strtoupper((string)$r['Test_Condition']);
-    $ncr     = strtoupper((string)$r['Noconformidad']);
-
-    /* REGLAS DE FALLA */
-    $isFail =
-        strpos($comment, "FAIL") !== false ||
-        strpos($comment, "NO CUMPLE") !== false ||
-        strpos($comment, "RECHAZ") !== false ||
-        strpos($comment, "NCR") !== false ||
-        strpos($ncr, "NCR") !== false ||
-        strpos($cond, "NOT OK") !== false;
-
-    if ($isFail) $failed++;
-    else         $passed++;
-}
-
-$failRate = ($totalTests > 0) ? round(($failed * 100) / $totalTests, 1) : 0;
-
-/* =====================================================
-    5. IMPRIMIR RESUMEN EJECUTIVO
-===================================================== */
-
-$pdf->SetFont('Arial','B',11);
-$pdf->Cell(0,6,"Total Tests Completed: ".$totalTests,0,1);
-$pdf->Ln(3);
-
-/* ---------- Tests por estructura ---------- */
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(0,6,"Tests by Structure:",0,1);
-
-$pdf->SetFont('Arial','',10);
-foreach ($structureCounts as $st => $cnt) {
-    $pdf->Cell(0,5,"   - {$st}: {$cnt} tests",0,1);
-}
-$pdf->Ln(3);
-
-/* ---------- Tests por material ---------- */
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(0,6,"Tests by Material:",0,1);
-
-$pdf->SetFont('Arial','',10);
-foreach ($materialCounts as $mat => $cnt) {
-    $pdf->Cell(0,5,"   - {$mat}: {$cnt} tests",0,1);
-}
-$pdf->Ln(3);
-
-/* ---------- Resultados ---------- */
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(0,6,"Test Results:",0,1);
-
-$pdf->SetFont('Arial','',10);
-$pdf->Cell(0,5,"   - Passed: {$passed} tests",0,1);
-$pdf->Cell(0,5,"   - Failed: {$failed} tests",0,1);
-$pdf->Cell(0,5,"   (".$failRate."% Failure Rate)",0,1);
-
-$pdf->Ln(8);
 
 skip_section_9:
 
