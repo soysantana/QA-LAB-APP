@@ -1299,7 +1299,8 @@ foreach ($clientBlocks as $blockIndex => $blockClients){
 ================================*/
 $pdf->section_title("8. Pending Tests");
 
-$pendientes = find_by_sql("
+/* 1) Traer todas las muestras pendientes */
+$pendRaw = find_by_sql("
     SELECT 
         r.Sample_ID,
         r.Sample_Number,
@@ -1325,50 +1326,6 @@ $pendientes = find_by_sql("
       )
 
       /* NO en Delivery */
-      AND NOT EXISTS (
-          SELECT 1 FROM test_delivery d
-          WHERE d.Sample_ID     = r.Sample_ID
-            AND d.Sample_Number = r.Sample_Number
-            AND d.Test_Type     = r.Test_Type
-      )
-");
-
-if (empty($pendientes)) {
-
-    $pdf->SetFont('Arial','B',10);
-    $pdf->SetFillColor(245,245,245);
-    $pdf->Cell(0,10,"No pending tests for this week.",1,1,'C',true);
-    $pdf->Ln(5);
-
-} else {
-
-    $pdf->table_header(["Sample","Number","Type","Date"],[40,35,50,25]);
-
-    foreach($pendientes as $p){
-        $pdf->table_row([
-            $p['Sample_ID'],
-            $p['Sample_Number'],
-            $p['Test_Type'],
-            date("d-M",strtotime($p['Sample_Date']))
-        ],[40,35,50,25]);
-    }
-
-    $pdf->Ln(8);
-}
-/* ===============================
-   SECCIÓN 8 — PENDING TESTS
-================================*/
-$pdf->section_title("8. Pending Tests");
-
-/* 1) Traer todas las muestras pendientes */
-$pendRaw = find_by_sql("
-    SELECT 
-        r.Sample_ID,
-        r.Sample_Number,
-        r.Client,
-        r.Test_Type
-    FROM lab_test_requisition_form r
-    WHERE r.Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
       AND NOT EXISTS (
           SELECT 1 FROM test_delivery d
           WHERE d.Sample_ID     = r.Sample_ID
