@@ -1186,32 +1186,32 @@ if (empty($muestras)) {
     $clientsInvolvedText = implode(", ", $clientNames);
 
     // ---- Tarjetas 2x2 ----
-    $boxW = 95;
+    $boxW = 100;
 
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(230,230,230);
 
     // Primera fila: total samples + top client
-    $pdf->Cell($boxW,6,"TOTAL SAMPLES THIS WEEK",1,0,'L',true);
-    $pdf->Cell($boxW,6,"TOP CLIENT THIS WEEK",1,1,'L',true);
+    $pdf->Cell($boxW,6,"Total Samples this Week",1,0,'L',true);
+    $pdf->Cell($boxW,6,"Top Samples this Week",1,1,'L',true);
 
     $pdf->SetFont('Arial','',11);
     $pdf->Cell($boxW,8,$totalSamplesWeek,1,0,'C');
 
     $txtTopClient = ($topClientName === "-")
         ? "-"
-        : ($topClientName." – ".$topClientCount." samples");
+        : ($topClientName." - ".$topClientCount." samples");
     $pdf->Cell($boxW,8,utf8_decode($txtTopClient),1,1,'C');
 
     // Segunda fila: top test type + clients involved
     $pdf->SetFont('Arial','B',10);
-    $pdf->Cell($boxW,6,"TOP TEST TYPE",1,0,'L',true);
-    $pdf->Cell($boxW,6,"CLIENTS INVOLVED",1,1,'L',true);
+    $pdf->Cell($boxW,6,"TOp Test Type",1,0,'L',true);
+    $pdf->Cell($boxW,6,"Clients Involved",1,1,'L',true);
 
     $pdf->SetFont('Arial','',11);
     $txtTopTest = ($topTestName === "-")
         ? "-"
-        : ($topTestName." – ".$topTestCount." tests");
+        : ($topTestName." - ".$topTestCount." tests");
     $pdf->Cell($boxW,8,utf8_decode($txtTopTest),1,0,'C');
 
     $pdf->SetFont('Arial','',9);
@@ -1224,7 +1224,7 @@ if (empty($muestras)) {
     // ===========================
 
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Test Type vs Client Matrix"),0,1,'L');
+    $pdf->Cell(0,7,utf8_decode("Test Type per Client "),0,1,'L');
 
     if (!empty($matrix)) {
 
