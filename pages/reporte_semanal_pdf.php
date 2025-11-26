@@ -1089,29 +1089,223 @@ $pdf->Ln(10);
 
 
 /* ===============================
-   SECCIÓN 8 — NEWLY REGISTERED SAMPLES
+   5. NEWLY REGISTERED SAMPLES (WEEKLY)
 ================================*/
 $pdf->section_title("5. Newly Registered Samples (Weekly)");
 
 $muestras = find_by_sql("
-    SELECT *
+    SELECT 
+        Sample_ID,
+        Sample_Number,
+        Client,
+        Test_Type
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    ORDER BY Registed_Date ASC
 ");
 
-$pdf->table_header(["Sample","Structure","Client","Test Type"],[45,35,30,60]);
+if (empty($muestras)) {
 
-foreach($muestras as $m){
-    $pdf->table_row([
-        $m['Sample_ID']."-".$m['Sample_Number'],
-        $m['Structure'],
-        $m['Client'],
-        $m['Test_Type']
-    ],[45,35,30,60]);
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(245,245,245);
+    $pdf->Cell(0,10,"No samples were registered during this week.",1,1,'C',true);
+    $pdf->Ln(5);
+
+} else {
+
+    // ===========================
+    // 1) PREPARE DATA
+    // ===========================
+    $totalSamplesWeek = count($muestras);   // total de muestras (sin separar por ensayo)
+
+    $clientsMap      = []; // samples por cliente
+    $testTypeTotals  = []; // ensayos totales por tipo
+    $matrix          = []; // [Test_Type][Client] = count
+    $detailList      = []; // lista individual Sample–Client–Test_Type
+
+    foreach ($muestras as $row) {
+
+        $client = trim($row['Client']);
+        if ($client === '') $client = 'N/A';
+
+        // contar muestras por cliente (no por ensayo)
+        if (!isset($clientsMap[$client])) $clientsMap[$client] = 0;
+        $clientsMap[$client]++;
+
+        // separar los test types si vienen como "GS, SP, LAA"
+        $testsRaw = (string)$row['Test_Type'];
+        $testsArr = array_filter(array_map('trim', explode(',', $testsRaw)));
+
+        foreach ($testsArr as $t) {
+            if ($t === '') continue;
+
+            // total por tipo de ensayo
+            if (!isset($testTypeTotals[$t])) $testTypeTotals[$t] = 0;
+            $testTypeTotals[$t]++;
+
+            // matriz tipo × cliente
+            if (!isset($matrix[$t])) $matrix[$t] = [];
+            if (!isset($matrix[$t][$client])) $matrix[$t][$client] = 0;
+            $matrix[$t][$client]++;
+
+            // lista detallada
+            $detailList[] = [
+                'sample' => $row['Sample_ID'] . "-" . $row['Sample_Number'],
+                'client' => $client,
+                'test'   => $t
+            ];
+        }
+    }
+
+    // ===========================
+    // 2) SUMMARY CARDS
+    // ===========================
+
+    // Top client
+    $topClientName  = "-";
+    $topClientCount = 0;
+    foreach ($clientsMap as $c => $cnt) {
+        if ($cnt > $topClientCount) {
+            $topClientCount = $cnt;
+            $topClientName  = $c;
+        }
+    }
+
+    // Top test type
+    $topTestName  = "-";
+    $topTestCount = 0;
+    foreach ($testTypeTotals as $t => $cnt) {
+        if ($cnt > $topTestCount) {
+            $topTestCount = $cnt;
+            $topTestName  = $t;
+        }
+    }
+
+    // Clients involved
+    $clientNames = array_keys($clientsMap);
+    sort($clientNames);
+    $clientsInvolvedText = implode(", ", $clientNames);
+
+    // ---- Tarjetas 2x2 ----
+    $boxW = 95;
+
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(230,230,230);
+
+    // Primera fila: total samples + top client
+    $pdf->Cell($boxW,6,"TOTAL SAMPLES THIS WEEK",1,0,'L',true);
+    $pdf->Cell($boxW,6,"TOP CLIENT THIS WEEK",1,1,'L',true);
+
+    $pdf->SetFont('Arial','',11);
+    $pdf->Cell($boxW,8,$totalSamplesWeek,1,0,'C');
+
+    $txtTopClient = ($topClientName === "-")
+        ? "-"
+        : ($topClientName." – ".$topClientCount." samples");
+    $pdf->Cell($boxW,8,utf8_decode($txtTopClient),1,1,'C');
+
+    // Segunda fila: top test type + clients involved
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell($boxW,6,"TOP TEST TYPE",1,0,'L',true);
+    $pdf->Cell($boxW,6,"CLIENTS INVOLVED",1,1,'L',true);
+
+    $pdf->SetFont('Arial','',11);
+    $txtTopTest = ($topTestName === "-")
+        ? "-"
+        : ($topTestName." – ".$topTestCount." tests");
+    $pdf->Cell($boxW,8,utf8_decode($txtTopTest),1,0,'C');
+
+    $pdf->SetFont('Arial','',9);
+    $pdf->Cell($boxW,8,utf8_decode($clientsInvolvedText),1,1,'C');
+
+    $pdf->Ln(8);
+
+    // ===========================
+    // 3) MATRIX TEST TYPE × CLIENT
+    // ===========================
+
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,7,utf8_decode("Test Type vs Client Matrix"),0,1,'L');
+
+    if (!empty($matrix)) {
+
+        $testTypes = array_keys($matrix);
+        sort($testTypes);
+
+        // Asegurar que todos los testTypes tengan todas las columnas de cliente
+        foreach ($testTypes as $t) {
+            foreach ($clientNames as $cl) {
+                if (!isset($matrix[$t][$cl])) {
+                    $matrix[$t][$cl] = 0;
+                }
+            }
+        }
+
+        // Anchuras dinámicas de columnas
+        $firstColW  = 40; // Test Type
+        $numClients = max(count($clientNames), 1);
+        $remainingW = 190 - $firstColW;  // espacio restante
+        $clientColW = max(20, floor($remainingW / $numClients));
+
+        $colWidths = [$firstColW];
+        for ($i=0; $i<$numClients; $i++) {
+            $colWidths[] = $clientColW;
+        }
+
+        // Encabezado
+        $header = ["Test Type"];
+        foreach ($clientNames as $cl) {
+            $header[] = $cl;
+        }
+
+        $pdf->table_header($header, $colWidths);
+
+        // Totales por cliente
+        $totClient = array_fill_keys($clientNames, 0);
+
+        // Filas por tipo de ensayo
+        foreach ($testTypes as $t) {
+            $rowCells = [ $t ];
+            foreach ($clientNames as $cl) {
+                $val = $matrix[$t][$cl];
+                $rowCells[] = $val;
+                $totClient[$cl] += $val;
+            }
+            $pdf->table_row($rowCells, $colWidths);
+        }
+
+        // Fila TOTAL
+        $pdf->SetFont('Arial','B',10);
+        $totalRow = ["TOTAL"];
+        foreach ($clientNames as $cl) {
+            $totalRow[] = $totClient[$cl];
+        }
+        $pdf->table_row($totalRow, $colWidths);
+        $pdf->Ln(6);
+
+    } else {
+        $pdf->SetFont('Arial','',9);
+        $pdf->Cell(0,6,"No tests types found for this week.",0,1,'L');
+        $pdf->Ln(4);
+    }
+
+    // ===========================
+    // 4) DETAILED TEST LIST
+    // ===========================
+
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,7,utf8_decode("Detailed Test List (Sample - Client - Test Type)"),0,1,'L');
+    $pdf->Ln(1);
+
+    $pdf->SetFont('Arial','',9);
+
+    foreach ($detailList as $d) {
+        $line = "• ".$d['sample']." - ".$d['client']." - ".$d['test'];
+        $pdf->MultiCell(0,5,utf8_decode($line),0,'L');
+    }
+
+    $pdf->Ln(6);
 }
 
-$pdf->Ln(10);
 
 
 /* ===============================
