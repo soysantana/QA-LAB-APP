@@ -87,6 +87,95 @@ function resumen_diario_cliente($start, $end){
 }
 
 $data_dia_cliente = resumen_diario_cliente($start_str, $end_str);
+/* ============================================================
+    FUNCTION: Load alias → real-name map from users table
+============================================================ */
+function loadTechnicianAliasMap(){
+
+    $rows = find_by_sql("
+        SELECT name AS realname, alias AS rawaliases
+        FROM users
+        WHERE alias IS NOT NULL AND TRIM(alias) <> ''
+    ");
+
+    $aliasMap = [];
+    $names = [];
+
+    foreach ($rows as $r){
+
+        $real = trim($r['realname']);
+        $names[] = $real;
+
+        $raw = strtolower(trim($r['rawaliases']));
+        $parts = preg_split("/[\/,;|\\\\\-]+/", $raw);
+
+        foreach ($parts as $a){
+            $a = trim($a);
+            if ($a !== ''){
+                $aliasMap[$a] = $real;
+            }
+        }
+    }
+
+    return [
+        "aliasMap" => $aliasMap,
+        "names"    => $names
+    ];
+}
+
+
+/* ============================================================
+    Simple fuzzy match (para alias no exactos)
+============================================================ */
+function fuzzyMatchTechnician($txt, $names){
+
+    $txt = strtolower($txt);
+
+    foreach ($names as $n){
+        if (levenshtein($txt, strtolower($n)) <= 2){
+            return $n;
+        }
+    }
+    return null;
+}
+
+/* ============================================================
+    Normalizar múltiples técnicos
+============================================================ */
+function normalizeTechnicians($raw, $aliasMap, $names){
+
+    $raw = strtolower(trim($raw));
+
+    // DIVIDIR por cualquier separador extraño
+    $parts = preg_split("/[\/,;|\\\\\-]+/", $raw);
+
+    $res = [];
+
+    foreach ($parts as $p){
+
+        $p = trim($p);
+        if ($p === '') continue;
+
+        // 1) alias exacto
+        if (isset($aliasMap[$p])){
+            $res[] = $aliasMap[$p];
+            continue;
+        }
+
+        // 2) fuzzy
+        $fz = fuzzyMatchTechnician($p, $names);
+        if ($fz){
+            $res[] = $fz;
+            continue;
+        }
+
+        // 3) fallback → mayúscula primera letra
+        $res[] = ucwords($p);
+    }
+
+    return array_unique($res);
+}
+
 
 /* ======================================================
    SECCIÓN 4 — TESTS BY TYPE AND CLIENT (SQL + MATRIX)
@@ -487,6 +576,8 @@ function chart_client($pdf,$clientData){
     $pdf->Ln(12);
 }
 
+$data_dia  = resumen_diario($start_str, $end_str);
+$data_tipo = resumen_tipo($start_str, $end_str);
 
 /* ======================================================
    GRAFICO MULTISERIE (CLIENTE × DIA) — CORREGIDO
@@ -1290,159 +1381,115 @@ if (empty($muestras)) {
 
     
 }
-
 /* ===============================
-   6. Summary of Tests by Technician (PIVOT)
+   6. SUMMARY OF TESTS BY TECHNICIAN
 ================================*/
-
-// --- 1) Helper: normalizar y separar nombres ---
-function normalize_tech_names($raw){
-    if ($raw === null || trim($raw) === "") return [];
-
-    // reemplazar separadores por coma
-    $raw = str_replace(["/", "\\", "|", ";", "-", "  "], ",", $raw);
-
-    // dividir
-    $parts = array_map('trim', explode(",", $raw));
-
-    // eliminar vacíos
-    $parts = array_filter($parts, function($v){ return $v !== ""; });
-
-    // normalizar capitalización
-    $clean = [];
-    foreach ($parts as $p){
-        $p = strtolower($p);
-        $p = ucwords($p);
-        $clean[] = $p;
-    }
-    return $clean;
-}
-
-// --- 2) Mapa de alias -> nombre real en tabla users ---
-$users = find_by_sql("SELECT username, name FROM users");
-$aliasMap = [];
-
-foreach ($users as $u){
-    $username = strtolower(trim($u['username']));
-    $realname = trim($u['name']);
-
-    $aliasMap[$username] = $realname;
-}
-
-// --- 3) Inicializar estructura pivot ---
-$pivot = [];  // [Technician] = ['Prep'=>x,'Real'=>y,'Comp'=>z]
-
-// helper para incrementar
-function add_tech_count(&$pivot, $tech, $col){
-    if (!isset($pivot[$tech])){
-        $pivot[$tech] = ['Prep'=>0, 'Real'=>0, 'Comp'=>0];
-    }
-    $pivot[$tech][$col]++;
-}
-
-// --- 4) Procesar PREPARATION ---
-$prepRows = find_by_sql("
-    SELECT Technician
-    FROM test_preparation
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-");
-
-foreach ($prepRows as $r){
-    $techs = normalize_tech_names($r['Technician']);
-
-    foreach ($techs as $t){
-
-        // si coincide con alias en users
-        $key = strtolower($t);
-        $real = $aliasMap[$key] ?? $t; // usa name real si existe
-
-        add_tech_count($pivot, $real, 'Prep');
-    }
-}
-
-// --- 5) Procesar REALIZATION ---
-$realRows = find_by_sql("
-    SELECT Technician
-    FROM test_realization
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-");
-
-foreach ($realRows as $r){
-    $techs = normalize_tech_names($r['Technician']);
-
-    foreach ($techs as $t){
-        $key = strtolower($t);
-        $real = $aliasMap[$key] ?? $t;
-
-        add_tech_count($pivot, $real, 'Real');
-    }
-}
-
-// --- 6) Procesar COMPLETED ---
-$compRows = find_by_sql("
-    SELECT Technician
-    FROM test_delivery
-    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-");
-
-foreach ($compRows as $r){
-    $techs = normalize_tech_names($r['Technician']);
-
-    foreach ($techs as $t){
-        $key = strtolower($t);
-        $real = $aliasMap[$key] ?? $t;
-
-        add_tech_count($pivot, $real, 'Comp');
-    }
-}
-
-// --- 7) Calcular TOTAL por técnico ---
-foreach ($pivot as $tech => $vals){
-    $pivot[$tech]['Total'] = $vals['Prep'] + $vals['Real'] + $vals['Comp'];
-}
-
-// --- 8) Ordenar por Total DESC ---
-uasort($pivot, function($a,$b){
-    return $b['Total'] <=> $a['Total'];
-});
-
-// --- 9) Dibujar tabla ---
 $pdf->section_title("6. Summary of Tests by Technician");
 
+/* =====================================
+   1) Cargar mapa alias → nombre real
+======================================*/
+$techData  = loadTechnicianAliasMap();
+$aliasMap  = $techData["aliasMap"];
+$nameList  = $techData["names"];
+
+/* =====================================
+   2) Buscar datos crudos por etapa
+======================================*/
+$prepRaw = find_by_sql("
+    SELECT Technician, COUNT(*) AS total
+    FROM test_preparation
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY Technician
+");
+
+$realRaw = find_by_sql("
+    SELECT Technician, COUNT(*) AS total
+    FROM test_realization
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY Technician
+");
+
+$compRaw = find_by_sql("
+    SELECT Technician, COUNT(*) AS total
+    FROM test_delivery
+    WHERE Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    GROUP BY Technician
+");
+
+/* =====================================
+   3) Estructura final por técnico
+   [Technician Real Name] → { Prep, Real, Comp }
+======================================*/
+$final = [];
+
+/* --- Función interna para acumular --- */
+$accum = function($rows, $etapa) use (&$final, $aliasMap, $nameList){
+
+    foreach ($rows as $r){
+
+        $raw = trim($r['Technician']);
+        $count = (int)$r['total'];
+
+        // Si el campo viene vacío o NULL, ignorar
+        if ($raw === '' || $raw === null) continue;
+
+        // Normalizar múltiples técnicos separados
+        $names = normalizeTechnicians($raw, $aliasMap, $nameList);
+
+        foreach ($names as $n){
+
+            if (!isset($final[$n])) {
+                $final[$n] = [
+                    'prep' => 0,
+                    'real' => 0,
+                    'comp' => 0
+                ];
+            }
+
+            $final[$n][$etapa] += $count;
+        }
+    }
+};
+
+/* =====================================
+   4) Acumular por etapa
+======================================*/
+$accum($prepRaw, 'prep');
+$accum($realRaw, 'real');
+$accum($compRaw, 'comp');
+
+/* =====================================
+   5) Ordenar por nombre del técnico
+======================================*/
+ksort($final);
+
+/* =====================================
+   6) Presentar tabla
+======================================*/
 $pdf->table_header(
-    ["Technician","Prep","Real","Completed","Total"],
-    [70,20,20,25,20]
+    ["Technician", "Preparation", "Realization", "Completed", "Total"],
+    [60, 30, 30, 30, 20]
 );
 
-$totalPrep = $totalReal = $totalComp = $totalAll = 0;
+foreach ($final as $tech => $vals){
 
-foreach ($pivot as $tech => $vals){
+    $total = $vals['prep'] + $vals['real'] + $vals['comp'];
 
     $pdf->table_row(
         [
             utf8_decode($tech),
-            $vals['Prep'],
-            $vals['Real'],
-            $vals['Comp'],
-            $vals['Total']
+            $vals['prep'],
+            $vals['real'],
+            $vals['comp'],
+            $total
         ],
-        [70,20,20,25,20]
+        [60, 30, 30, 30, 20]
     );
-
-    $totalPrep += $vals['Prep'];
-    $totalReal += $vals['Real'];
-    $totalComp += $vals['Comp'];
-    $totalAll  += $vals['Total'];
 }
 
-// --- 10) Totales finales ---
-$pdf->SetFont('Arial','B',10);
-$pdf->table_row(
-    ["TOTAL", $totalPrep, $totalReal, $totalComp, $totalAll],
-    [70,20,20,25,20]
-);
+$pdf->Ln(10);
 
-$pdf->Ln(8);
 
 
 
