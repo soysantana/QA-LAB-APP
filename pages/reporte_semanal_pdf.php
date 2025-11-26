@@ -88,6 +88,49 @@ function resumen_diario_cliente($start, $end){
 
 $data_dia_cliente = resumen_diario_cliente($start_str, $end_str);
 
+/* ======================================================
+   SECCIÓN 4 — TESTS BY TYPE AND CLIENT (SQL + MATRIX)
+======================================================*/
+
+function test_type_by_client($start, $end){
+
+    // 1) Traer Test_Type + Client desde requisitions JOIN delivery
+    $rows = find_by_sql("
+        SELECT 
+            r.Client AS Client,
+            d.Test_Type AS Test_Type
+        FROM test_delivery d
+        INNER JOIN lab_test_requisition_form r
+            ON r.Sample_ID     = d.Sample_ID
+           AND r.Sample_Number = d.Sample_Number
+           AND r.Test_Type     = d.Test_Type
+        WHERE d.Register_Date BETWEEN '{$start}' AND '{$end}'
+    ");
+
+    $data = [];
+
+    foreach ($rows as $r){
+
+        $client = trim($r['Client']);
+        $raw    = trim($r['Test_Type']);
+
+        // 2) Separar por coma: "GS, SP, LAA"
+        $tests = array_map('trim', explode(',', $raw));
+
+        foreach ($tests as $t){
+            if ($t === "") continue;
+
+            if (!isset($data[$t])) $data[$t] = [];
+            if (!isset($data[$t][$client])) $data[$t][$client] = 0;
+
+            $data[$t][$client]++;
+        }
+    }
+
+    return $data; // matriz tipo → cliente → total
+}
+
+
 /*******************************************************
    CREAR MATRIZ DIA × CLIENTE
 *******************************************************/
@@ -115,6 +158,30 @@ foreach ($diasSemana as $d){
         if (!isset($matriz[$d][$c])) $matriz[$d][$c] = 0;
     }
 }
+
+$dataTipoCliente = test_type_by_client($start_str, $end_str);
+
+$testTypes  = array_keys($dataTipoCliente);
+$clientNames = [];
+
+foreach ($dataTipoCliente as $t => $row){
+    foreach ($row as $cl => $v){
+        if (!in_array($cl, $clientNames))
+            $clientNames[] = $cl;
+    }
+}
+
+sort($testTypes);
+sort($clientNames);
+
+// completar ceros
+foreach ($testTypes as $t){
+    foreach ($clientNames as $cl){
+        if (!isset($dataTipoCliente[$t][$cl]))
+            $dataTipoCliente[$t][$cl] = 0;
+    }
+}
+
 
 /*******************************************************
    FUNCIONES DE TABLA Y SALTOS DE PÁGINA
@@ -835,19 +902,163 @@ if (!$hasData) {
 }
 
 /* ===============================
-   SECCIÓN 4 — TEST DISTRIBUTION BY TYPE
+   SECCIÓN 4 — TEST DISTRIBUTION BY TYPE & CLIENT
 ================================*/
-$pdf->section_title("4. Test Distribution by Type");
+$pdf->section_title("4. Test Distribution by Type & Client");
 
-$data_tipo = resumen_tipo($start_str,$end_str);
+// 1) Obtener matriz tipo × cliente
+$data4 = test_type_by_client($start_str, $end_str);
 
-$pdf->table_header(["Test Type","Completed"],[80,40]);
+// 2) Listas ordenadas
+$testTypes   = array_keys($data4);
+$clientNames = [];
 
-foreach($data_tipo as $t){
-    $pdf->table_row([$t['Test_Type'],$t['total']],[80,40]);
+// extraer clientes únicos
+foreach ($data4 as $type => $clients){
+    foreach ($clients as $cl => $v){
+        if (!in_array($cl, $clientNames))
+            $clientNames[] = $cl;
+    }
 }
 
-$pdf->Ln(10);
+sort($testTypes);
+sort($clientNames);
+
+// 3) Validación total — evitar división por cero o gráfico vacío
+if (empty($testTypes) || empty($clientNames)) {
+    $pdf->SetFont("Arial","B",10);
+    $pdf->SetFillColor(245,245,245);
+    $pdf->Cell(0,10,"No completed tests found for this week.",1,1,'C',true);
+    $pdf->Ln(5);
+} else {
+    /* ---------- TABLA ---------- */
+    $pdf->SubTitle("Completed Tests by Type and Client");
+
+    // Columnas
+    $colWidths = [28]; // Test Type
+    foreach ($clientNames as $cl) $colWidths[] = 18;
+
+    $header = ["Test"];
+    foreach ($clientNames as $cl) $header[] = $cl;
+
+    $pdf->table_header($header, $colWidths);
+
+    // Filas
+    foreach ($testTypes as $t){
+        $cells = [$t];
+        foreach ($clientNames as $cl){
+            $cells[] = $data4[$t][$cl] ?? 0;
+        }
+        $pdf->table_row($cells, $colWidths);
+    }
+
+    $pdf->Ln(10);
+    /* ---------- GRÁFICO ---------- */
+
+    $pdf->SubTitle("Graph: Tests by Type and Client");
+
+    ensure_space($pdf, 95);
+
+    $chartX = 20;
+    $chartY = $pdf->GetY() + 5;
+    $chartW = 150;
+    $chartH = 55;
+
+    // Ejes
+    $pdf->SetDrawColor(0,0,0);
+    $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);
+    $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);
+
+    // Max value
+    $maxVal = 1;
+    foreach ($data4 as $type => $clients){
+        foreach ($clients as $v){
+            if ($v > $maxVal) $maxVal = $v;
+        }
+    }
+
+    // Escala eje Y
+    $pdf->SetFont("Arial","",7);
+    $steps = 4;
+    for ($i=0; $i <= $steps; $i++){
+        $yPos = $chartY + $chartH - ($chartH/$steps * $i);
+        $val  = round($maxVal/$steps * $i);
+        $pdf->SetXY($chartX - 8, $yPos - 2);
+        $pdf->Cell(7, 4, $val, 0, 0, 'R');
+    }
+
+    // Cálculo de barras
+    $barsPerType = count($clientNames);
+    $totalBars   = $barsPerType * count($testTypes);
+
+    if ($totalBars == 0) $totalBars = 1; // anti division-by-zero
+
+    $bw = ($chartW - 20) / $totalBars;
+    if ($bw <= 0) $bw = 1;
+
+    $x = $chartX + 10;
+    $colorIndex = 0;
+
+    foreach ($testTypes as $t){
+        foreach ($clientNames as $cl){
+
+            $v = $data4[$t][$cl] ?? 0;
+            $h = ($v / $maxVal) * ($chartH - 4);
+            $y = $chartY + ($chartH - $h);
+
+            list($r,$g,$b) = pickColor($colorIndex++);
+            $pdf->SetFillColor($r,$g,$b);
+
+            $pdf->Rect($x, $y, $bw, $h, "F");
+
+            if ($v > 0){
+                $pdf->SetFont("Arial","B",7);
+                $pdf->SetXY($x, $y - 4);
+                $pdf->Cell($bw,4,$v,0,0,'C');
+            }
+
+            $x += $bw;
+        }
+    }
+
+    // EJE X (Test Types)
+    $pdf->SetFont("Arial","",7);
+    $x = $chartX + 10;
+    $groupW = $bw * $barsPerType;
+
+    foreach ($testTypes as $t){
+        $pdf->SetXY($x, $chartY + $chartH + 2);
+        $pdf->MultiCell($groupW, 4, $t, 0, 'C');
+        $x += $groupW;
+    }
+
+    /* ---------- LEYENDA ---------- */
+    $pdf->SetFont("Arial","B",8);
+    $legendX = $chartX + $chartW + 6;
+    $legendY = $chartY + 2;
+
+    $pdf->SetXY($legendX, $legendY);
+    $pdf->Cell(20,5,"Legend",0,1);
+
+    $i = 0;
+    foreach ($clientNames as $cl){
+        list($r,$g,$b) = pickColor($i);
+        $pdf->SetFillColor($r,$g,$b);
+
+        $pdf->SetXY($legendX, $legendY + 6 + ($i*6));
+        $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
+
+        $pdf->SetXY($legendX + 6, $legendY + 5 + ($i * 6));
+        $pdf->SetFont("Arial","",7);
+        $pdf->Cell(22,5,$cl);
+
+        $i++;
+    }
+
+    $pdf->SetY($chartY + $chartH + 14);
+
+} // <-- CIERRE de validación de datos
+
 
 
 /* ===============================
