@@ -954,10 +954,10 @@ if (empty($testTypes) || empty($clientNames)) {
 
     $pdf->Ln(8);
     /* ---------- GRÁFICO ---------- */
-
+   ensure_space($pdf, 110);
     $pdf->SubTitle("Graph: Tests by Type and Client");
 
-    ensure_space($pdf, 95);
+  
 
     $chartX = 20;
     $chartY = $pdf->GetY() + 5;
