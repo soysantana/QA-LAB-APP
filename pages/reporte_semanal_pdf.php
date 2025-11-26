@@ -1507,26 +1507,44 @@ skip_pending:
 */
 
 function classifyStructure($sampleId, $structure){
-    $sid = strtoupper(trim($sampleId));
-    $st  = strtoupper(trim($structure));
 
-    // Funciones auxiliares: startsWith y contains
-    $startsWith = function($haystack, $needle){
-        return substr($haystack, 0, strlen($needle)) === $needle;
+    $sid = strtoupper(trim((string)$sampleId));
+    $st  = strtoupper(trim((string)$structure));
+
+    // ============================
+    // FUNCIONES COMPATIBLES PHP 5/7/8
+    // ============================
+    $startsWith = function($text, $prefix){
+        return substr($text, 0, strlen($prefix)) === $prefix;
     };
 
-    $contains = function($haystack, $needle){
-        return strpos($haystack, $needle) !== false;
+    $contains = function($text, $needle){
+        return strpos($text, $needle) !== false;
     };
 
-    // ---- STOCKPILE REGLAS ----
-    if ($startsWith($sid, "PVDJ-AGG")) return "STOCKPILE";
-    if ($contains($st, "STOCK")) return "STOCKPILE";
+    // ============================
+    // REGLAS DE STOCKPILE
+    // ============================
+    // 1. PVDJ-AGG → Stockpile
+    if ($startsWith($sid, "PVDJ-AGG")) {
+        return "STOCKPILE";
+    }
 
-    // ---- BORROW REGLA ----
-    if ($startsWith($sid, "LBOR")) return "BORROW";
+    // 2. Structure contiene "STOCK"
+    if ($contains($st, "STOCK")) {
+        return "STOCKPILE";
+    }
 
-    // ---- OTRAS ESTRUCTURAS ----
+    // ============================
+    // REGLAS DE BORROW
+    // ============================
+    if ($startsWith($sid, "LBOR")) {
+        return "BORROW";
+    }
+
+    // ============================
+    // OTRAS ESTRUCTURAS
+    // ============================
     if ($st !== "") return $st;
 
     return "UNKNOWN";
