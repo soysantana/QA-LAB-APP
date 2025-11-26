@@ -774,7 +774,7 @@ if (empty($matrix4)) {
 }
 
 /* ===============================
-   SECCIÓN 5 — NEWLY REGISTERED SAMPLES (WEEKLY)
+   5. Newly Registered Samples (Weekly)
 ================================*/
 $pdf->section_title("5. Newly Registered Samples (Weekly)");
 
@@ -797,20 +797,25 @@ if (empty($muestras)) {
 
 } else {
 
-    // PREPARAR RESUMEN
-    $totalSamplesWeek = count($muestras);   // muestras (no separado por ensayo)
+    // ===========================
+    // 1) PREPARE MATRICES
+    // ===========================
+    $totalSamplesWeek = count($muestras);
 
-    $clientsMap      = []; // samples por cliente
-    $testTypeTotals  = []; // ensayos totales por tipo
+    $clientsMap     = []; // muestras por cliente
+    $testTypeTotals = []; // total de ensayos por tipo
+    $matrix5        = []; // matriz tipo × cliente
 
     foreach ($muestras as $row) {
 
         $client = trim((string)$row['Client']);
         if ($client === '') $client = 'N/A';
 
+        // Contar muestras por cliente
         if (!isset($clientsMap[$client])) $clientsMap[$client] = 0;
         $clientsMap[$client]++;
 
+        // Separar test types si vienen "GS, SP, LAA"
         $testsRaw = (string)$row['Test_Type'];
         $testsArr = array_filter(array_map('trim', explode(',', $testsRaw)));
 
@@ -819,9 +824,17 @@ if (empty($muestras)) {
 
             if (!isset($testTypeTotals[$t])) $testTypeTotals[$t] = 0;
             $testTypeTotals[$t]++;
+
+            if (!isset($matrix5[$t])) $matrix5[$t] = [];
+            if (!isset($matrix5[$t][$client])) $matrix5[$t][$client] = 0;
+
+            $matrix5[$t][$client]++;
         }
     }
 
+    // ===========================
+    // 2) SUMMARY CARDS
+    // ===========================
     // Top client
     $topClientName  = "-";
     $topClientCount = 0;
@@ -842,7 +855,7 @@ if (empty($muestras)) {
         }
     }
 
-    // Tarjetas tipo dashboard
+    // ---- Tarjetas estilo dashboard ----
     $boxW = 95;
 
     $pdf->SetFont('Arial','B',10);
@@ -860,7 +873,7 @@ if (empty($muestras)) {
         : ($topClientName." - ".$topClientCount." samples");
     $pdf->Cell($boxW,8,utf8_decode($txtTopClient),1,1,'C');
 
-    // Segunda fila: Top test type (solo una tarjeta, ancho completo)
+    // Segunda fila — full width
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell($boxW*2,6,"Top Test Type this Week",1,1,'L',true);
 
@@ -870,8 +883,57 @@ if (empty($muestras)) {
         : ($topTestName." - ".$topTestCount." tests");
     $pdf->Cell($boxW*2,8,utf8_decode($txtTopTest),1,1,'C');
 
-    $pdf->Ln(8);
+    $pdf->Ln(10);
+
+    // ===========================
+    // 3) TABLA TIPO × CLIENTE (OPCIÓN B + D)
+    // ===========================
+    $pdf->SubTitle("Test Type vs Client (Registered This Week)");
+
+    $clients5 = array_keys($clientsMap);
+    sort($clients5);
+
+    $types5 = array_keys($matrix5);
+    sort($types5);
+
+    if (empty($types5) || empty($clients5)) {
+
+        $pdf->SetFont('Arial','B',10);
+        $pdf->SetFillColor(245,245,245);
+        $pdf->Cell(0,10,"No test types available for this week.",1,1,'C',true);
+        $pdf->Ln(5);
+
+    } else {
+
+        // anchos de columnas
+        $colWidths = [40]; // columna de Test Type
+        $numClients = count($clients5);
+        $restWidth = 190 - 40;
+        $wClient = max(22, floor($restWidth / $numClients));
+
+        foreach ($clients5 as $c) {
+            $colWidths[] = $wClient;
+        }
+
+        // encabezado
+        $header = ["Test Type"];
+        foreach ($clients5 as $c) $header[] = $c;
+
+        $pdf->table_header($header,$colWidths);
+
+        // filas
+        foreach ($types5 as $tp) {
+            $row = [$tp];
+            foreach ($clients5 as $cl) {
+                $row[] = $matrix5[$tp][$cl] ?? 0;
+            }
+            $pdf->table_row($row,$colWidths);
+        }
+
+        $pdf->Ln(10);
+    }
 }
+
 /* ===============================
    SECCIÓN 6 — SUMMARY OF TESTS BY TECHNICIAN
 ================================*/
