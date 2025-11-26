@@ -962,7 +962,7 @@ if (empty($testTypes) || empty($clientNames)) {
     $chartX = 20;
     $chartY = $pdf->GetY() + 5;
     $chartW = 150;
-    $chartH = 55;
+    $chartH = 45;
 
     // Ejes
     $pdf->SetDrawColor(0,0,0);
