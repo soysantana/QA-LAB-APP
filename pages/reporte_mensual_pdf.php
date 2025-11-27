@@ -347,222 +347,93 @@ $pdf->BodyText("
 
 
 /* ======================================================
-   SECTION 3 — Monthly Registered Samples (Grouped & Analyzed)
+   SECTION 3 — Monthly Registered Samples (Trend)
+   (Improved — Simple Weekly Trend, No Daily Client Trend)
 ====================================================== */
 
-$pdf->SectionTitle("3. Monthly Registered Samples (Overview)");
+$pdf->SubTitle("Weekly Registration Trend");
 
-/* ======================================================
-   3A — RAW MONTHLY REGISTRATION
-====================================================== */
-
-$rows = $db->query("
-    SELECT Registed_Date, Client, Sample_ID, Sample_Number, Test_Type
-    FROM lab_test_requisition_form
-    WHERE Registed_Date BETWEEN '$start' AND '$end'
-    ORDER BY Registed_Date ASC
-")->fetch_all(MYSQLI_ASSOC);
-
-/* ---------- Expand test types and normalize ----------- */
-
-$expanded = [];
-
-foreach ($rows as $r) {
-
-    $client = trim($r["Client"]);
-    if ($client === "" || $client === null) continue;   // 🔥 evita cliente vacío
-
-    $sample_id     = trim($r["Sample_ID"]);
-    $sample_number = trim($r["Sample_Number"]);
-    $date          = substr($r["Registed_Date"], 0, 10);
-
-    $types = array_filter(array_map('trim', explode(',', $r["Test_Type"])));
-
-    foreach ($types as $tp) {
-        if ($tp === "") continue;
-        $expanded[] = [
-            "date"          => $date,
-            "client"        => $client,
-            "sample_id"     => $sample_id,
-            "sample_number" => $sample_number,
-            "test_type"     => $tp
-        ];
-    }
-}
-
-/* ---------- Unique clients (filtered, sorted) ---------- */
-
-$clients = [];
-foreach ($expanded as $e) {
-    $clients[$e["client"]] = true;
-}
-$clients = array_keys($clients);
-sort($clients);
-
-/* ---------- Unique test types ---------- */
-
-$test_types = [];
-foreach ($expanded as $e) {
-    $test_types[$e["test_type"]] = true;
-}
-$test_types = array_keys($test_types);
-sort($test_types);
-
-/* ======================================================
-   3B — TABLE: Monthly Registered Samples (Expanded)
-====================================================== */
-
-$pdf->SubTitle("Registered Samples (Expanded by Test Type)");
-
-$pdf->TableHeader([
-    25=>"Date",
-    35=>"Client",
-    40=>"Sample ID",
-    30=>"Number",
-    40=>"Test Type"
-]);
-
-foreach ($expanded as $e) {
-    $pdf->TableRow([
-        25=>$e["date"],
-        35=>$e["client"],
-        40=>$e["sample_id"],
-        30=>$e["sample_number"],
-        40=>$e["test_type"]
-    ]);
-}
-
-$pdf->Ln(6);
-
-/* ======================================================
-   3C — HEATMAP: Clients × Test Types (Frequency Matrix)
-====================================================== */
-
-$pdf->SubTitle("Client × Test Type Frequency (Heatmap Table)");
-
-/* ---- Build Matrix ---- */
-
-$matrix = [];
-foreach ($clients as $cl) {
-    foreach ($test_types as $tp) {
-        $matrix[$cl][$tp] = 0;
-    }
-}
-
-foreach ($expanded as $e) {
-    $matrix[$e["client"]][$e["test_type"]]++;
-}
-
-/* ---- Draw Table ---- */
-
-$header = [35=>"Client"];
-foreach ($test_types as $tp) {
-    $header[20] = $tp;
-}
-$pdf->TableHeader($header);
-
-foreach ($clients as $cl) {
-    $row = [35=>$cl];
-    foreach ($test_types as $tp) {
-        $row[20] = $matrix[$cl][$tp];
-    }
-    $pdf->TableRow($row);
-}
-
-$pdf->Ln(6);
-
-/* ======================================================
-   3D — WEEKLY REGISTRATION TREND (Better Visualization)
-====================================================== */
-
-$pdf->SubTitle("Weekly Registration Trend (Summaries)");
-
-/* ---- Build Weekly Summary ---- */
-
-$weekly = [];         // week_number → total count
-$week_dates = [];     // week_number → label
+/* ---------- Build weekly trend ---------- */
+$trend = [];
 
 $cursor = strtotime($start);
 $last   = strtotime($end);
 
 while ($cursor <= $last) {
-    $d  = date("Y-m-d", $cursor);
-    $w  = date("W", $cursor);
-
-    if (!isset($weekly[$w])) $weekly[$w] = 0;
-
-    foreach ($expanded as $e) {
-        if ($e["date"] === $d) $weekly[$w]++;
-    }
-
-    $week_dates[$w] = "W$w";
-
+    $week = date("W", $cursor);
+    if (!isset($trend[$week])) $trend[$week] = 0;
     $cursor = strtotime("+1 day", $cursor);
 }
 
-/* ---- Prepare Data for Chart ---- */
+/* Count daily registrations in each week */
+foreach ($rows as $r) {
+    $date = substr($r["Registed_Date"], 0, 10);
+    $week = date("W", strtotime($date));
+    if (isset($trend[$week])) {
+        $trend[$week]++;
+    }
+}
 
-$labels = array_values($week_dates);
-$values = array_values($weekly);
+$labels = [];
+$values = [];
 
-/* ---- Draw Chart ---- */
+foreach ($trend as $w => $v) {
+    $labels[] = "W$w";
+    $values[] = $v;
+}
 
-$pdf->SubTitle("Weekly Registration Chart");
-
+/* ---------- DRAW GRAPH ---------- */
 $chartX = 20;
-$chartY = $pdf->GetY() + 6;
+$chartY = $pdf->GetY() + 8;
 $chartW = 150;
 $chartH = 45;
 
 drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
 
-$maxVal = (count($values) > 0) ? max($values) : 1;
+$maxVal = max($values);
 if ($maxVal == 0) $maxVal = 1;
 
-$barW = (int)(($chartW - 10) / max(1, count($values)));
+$barW = (int)(($chartW - 10) / count($labels));
 
-for ($i = 0; $i < count($values); $i++) {
+for ($i=0; $i<count($labels); $i++) {
 
-    $v  = $values[$i];
-    $bh = ($v / $maxVal) * ($chartH - 5);
+    $v = $values[$i];
+    $barH = ($v / $maxVal) * ($chartH - 5);
 
     $x = $chartX + 5 + $i * $barW;
-    $y = $chartY + $chartH - $bh;
+    $y = $chartY + $chartH - $barH;
 
     list($r,$g,$b) = pickColor($i);
     $pdf->SetFillColor($r,$g,$b);
+    $pdf->Rect($x, $y, $barW-1, $barH, "F");
 
-    $pdf->Rect($x, $y, $barW - 1, $bh, "F");
-
-    // value above bar
+    // VALUE ABOVE BAR
     if ($v > 0) {
         $pdf->SetFont("Arial","B",7);
         $pdf->SetXY($x, $y - 4);
         $pdf->Cell($barW, 4, $v, 0, 0, 'C');
     }
 
-    // label
+    // LABEL BELOW
     $pdf->SetFont("Arial","",7);
     $pdf->SetXY($x, $chartY + $chartH + 1);
     $pdf->Cell($barW, 4, $labels[$i], 0, 0, 'C');
 }
 
-$pdf->SetY($chartY + $chartH + 10);
+$pdf->SetY($chartY + $chartH + 12);
 
 /* ======================================================
-   3E — INSIGHTS
+   INSIGHTS
 ====================================================== */
 
 $pdf->SubTitle("Insights & Observations");
 
 $pdf->BodyText("
-• Test registration activity shows weekly variability aligned with site operations.  
-• The heatmap reveals concentration of specific test types for key clients.  
-• Weekly frequency peaks typically coincide with major campaign phases or material receiving cycles.  
-• Expanded registration allows tracking real workload realistically per test type.
+• Weekly registration activity shows clear operational cycles.  
+• The trend helps identify peak weeks and resource demands.  
+• This simplified weekly view replaces the difficult-to-read daily chart.  
+• The behavior across the month is now much more intuitive to interpret.
 ");
-
-
 
 /* ======================================================
    SECTION 4 — Client Summary: Requested vs Completed
