@@ -823,246 +823,264 @@ foreach($ins as $t){
     $pdf->BodyText($t);
 }
 
-
-
 /* ======================================================
-   SECTION 5 — Workload by ISO Week (Client-Based)
+   SECTION 5 — Workload by ISO Week
+   (Registered vs Completed per Week + Per Client)
 ====================================================== */
 
 $pdf->SectionTitle("5. Workload by ISO Week");
 
 /* ======================================================
-   5A — BUILD MATRIX (Week × Client)
+   5A — Build weekly data (REGISTERED + COMPLETED)
 ====================================================== */
 
-// 1) Obtener todas las semanas del mes
-$weeks = [];
+$weekly = [];         // weekly totals per week
+$weeklyClients = [];  // weekly matrix: week → client → reg/completed
+
 $cursor = strtotime($start);
 $last   = strtotime($end);
 
-while($cursor <= $last){
-    $w = date("W", $cursor);
-    if (!in_array($w, $weeks)) $weeks[] = $w;
+while ($cursor <= $last) {
+
+    $date = date("Y-m-d", $cursor);
+    $week = date("W", $cursor);
+
+    if (!isset($weekly[$week])) {
+        $weekly[$week] = ["reg" => 0, "cmp" => 0];
+        $weeklyClients[$week] = [];
+    }
+
+    /* ---------- REGISTERED ---------- */
+    $regRows = $db->query("
+        SELECT Client, Sample_ID, Sample_Number, Test_Type
+        FROM lab_test_requisition_form
+        WHERE DATE(Registed_Date) = '$date'
+    ")->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($regRows as $r) {
+        $client = trim($r["Client"]);
+
+        if (!isset($weeklyClients[$week][$client])) {
+            $weeklyClients[$week][$client] = ["reg" => 0, "cmp" => 0];
+        }
+
+        // expand tests
+        $types = explode(",", $r["Test_Type"]);
+        foreach ($types as $t) {
+            $weekly[$week]["reg"]++;
+            $weeklyClients[$week][$client]["reg"]++;
+        }
+    }
+
+    /* ---------- COMPLETED = (delivery + reviewed + docs) ---------- */
+    $cmpRows = $db->query("
+        SELECT r.Client, r.Sample_ID, r.Sample_Number, r.Test_Type
+        FROM lab_test_requisition_form r
+        WHERE 
+            (SELECT 1 FROM test_delivery d
+                WHERE d.Sample_ID=r.Sample_ID 
+                AND d.Sample_Number=r.Sample_Number
+                AND DATE(d.Start_Date)='$date') IS NOT NULL
+        OR  (SELECT 1 FROM test_review rv
+                WHERE rv.Sample_ID=r.Sample_ID 
+                AND rv.Sample_Number=r.Sample_Number
+                AND DATE(rv.Start_Date)='$date') IS NOT NULL
+        OR  (SELECT 1 FROM test_reviewed rd
+                WHERE rd.Sample_ID=r.Sample_ID 
+                AND rd.Sample_Number=r.Sample_Number
+                AND DATE(rd.Start_Date)='$date') IS NOT NULL
+        OR  (SELECT 1 FROM doc_files df
+                WHERE df.Sample_ID=r.Sample_ID 
+                AND df.Sample_Number=r.Sample_Number
+                AND DATE(df.created_at)='$date') IS NOT NULL
+    ")->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($cmpRows as $r) {
+        $client = trim($r["Client"]);
+
+        if (!isset($weeklyClients[$week][$client])) {
+            $weeklyClients[$week][$client] = ["reg" => 0, "cmp" => 0];
+        }
+
+        $types = explode(",", $r["Test_Type"]);
+        foreach ($types as $t) {
+            $weekly[$week]["cmp"]++;
+            $weeklyClients[$week][$client]["cmp"]++;
+        }
+    }
+
     $cursor = strtotime("+1 day", $cursor);
 }
 
-// 2) Obtener todos los clientes del mes
-$clientesRes = $db->query("
-    SELECT DISTINCT TRIM(Client) AS Client
-    FROM lab_test_requisition_form
-    WHERE Registed_Date BETWEEN '$start' AND '$end'
-      AND TRIM(IFNULL(Client,'')) <> ''
-    ORDER BY Client ASC
-")->fetch_all(MYSQLI_ASSOC);
-
-$clients = array_column($clientesRes, 'Client');
-
-// 3) Inicializar matriz
-$matrixReq = [];   // Requested
-$matrixCmp = [];   // Completed
-
-foreach($weeks as $w){
-    foreach($clients as $cl){
-        $matrixReq[$w][$cl] = 0;
-        $matrixCmp[$w][$cl] = 0;
-    }
-}
-
-// 4) Rellenar REQUESTED por semana y cliente
-foreach($weeks as $w){
-
-    $reqRows = $db->query("
-        SELECT TRIM(Client) AS Client
-        FROM lab_test_requisition_form
-        WHERE YEAR(Registed_Date)=YEAR('$start')
-          AND WEEK(Registed_Date)= $w
-    ")->fetch_all(MYSQLI_ASSOC);
-
-    foreach ($reqRows as $r){
-        $cl = $r["Client"];
-        if ($cl != "" && isset($matrixReq[$w][$cl])) {
-            $matrixReq[$w][$cl]++;
-        }
-    }
-}
-
-// 5) Rellenar COMPLETED (delivery + review + reviewed + doc_files)
-foreach($weeks as $w){
-
-    $cmpRows = $db->query("
-        SELECT TRIM(Client) AS Client
-        FROM lab_test_requisition_form r
-        WHERE (
-            EXISTS (
-                SELECT 1 FROM test_delivery d
-                WHERE d.Sample_ID = r.Sample_ID
-                  AND d.Sample_Number = r.Sample_Number
-                  AND YEAR(d.Start_Date)=YEAR('$start')
-                  AND WEEK(d.Start_Date)=$w
-            )
-            OR EXISTS (
-                SELECT 1 FROM test_review rv
-                WHERE rv.Sample_ID = r.Sample_ID
-                  AND rv.Sample_Number = r.Sample_Number
-                  AND YEAR(rv.Start_Date)=YEAR('$start')
-                  AND WEEK(rv.Start_Date)=$w
-            )
-            OR EXISTS (
-                SELECT 1 FROM test_reviewed rd
-                WHERE rd.Sample_ID = r.Sample_ID
-                  AND rd.Sample_Number = r.Sample_Number
-                  AND YEAR(rd.Start_Date)=YEAR('$start')
-                  AND WEEK(rd.Start_Date)=$w
-            )
-            OR EXISTS(
-                SELECT 1 FROM doc_files df
-                WHERE df.Sample_ID = r.Sample_ID
-                  AND df.Sample_Number = r.Sample_Number
-                  AND YEAR(df.created_at)=YEAR('$start')
-                  AND WEEK(df.created_at)=$w
-            )
-        )
-    ")->fetch_all(MYSQLI_ASSOC);
-
-    foreach ($cmpRows as $r){
-        $cl = $r["Client"];
-        if ($cl != "" && isset($matrixCmp[$w][$cl])) {
-            $matrixCmp[$w][$cl]++;
-        }
-    }
-}
-
 /* ======================================================
-   5A — Weekly Workload Table (Week × Client)
+   5B — TABLE (Weekly Totals)
 ====================================================== */
 
-$pdf->SubTitle("ISO Week Workload Table");
+$pdf->SubTitle("Weekly Summary Table");
 
 $pdf->TableHeader([
-    25=>"Week",
-    50=>"Client",
-    25=>"Requested",
-    25=>"Completed",
-    25=>"Completion (%)"
+    30=>"Week",
+    40=>"Registered",
+    40=>"Completed",
+    40=>"Completion (%)"
 ]);
 
-foreach ($weeks as $w){
+foreach($weekly as $week => $v){
+    $pct = ($v["reg"]>0)? round(($v["cmp"]/$v["reg"])*100,1):0;
 
-    foreach ($clients as $cl){
+    $pdf->TableRow([
+        30=>"W$week",
+        40=>$v["reg"],
+        40=>$v["cmp"],
+        40=>$pct."%"
+    ]);
+}
 
-        $req = $matrixReq[$w][$cl] ?? 0;
-        $cmp = $matrixCmp[$w][$cl] ?? 0;
+$pdf->Ln(6);
 
-        // Solo mostrar filas con algún valor
-        if ($req == 0 && $cmp == 0) continue;
 
-        $pct = ($req > 0) ? round(($cmp * 100) / $req, 1) : 0;
+/* ======================================================
+   5C — GRAPH (Weekly Registered vs Completed)
+====================================================== */
+
+$pdf->SubTitle("Weekly Workload Chart");
+
+$weeks   = array_keys($weekly);
+$regArr  = array_column($weekly,"reg");
+$cmpArr  = array_column($weekly,"cmp");
+
+$chartX = 25;
+$chartY = $pdf->GetY() + 5;
+$chartW = 150;
+$chartH = 45;
+
+drawAxis($pdf,$chartX,$chartY,$chartW,$chartH);
+
+$maxVal = max(array_merge($regArr,$cmpArr)); 
+if($maxVal==0) $maxVal=1;
+
+$barGroupW = (int)(($chartW - 10) / count($weeks));
+$barW = (int)($barGroupW / 2) - 2;
+
+for($i=0;$i<count($weeks);$i++){
+
+    /* Registered bar */
+    $regH = ($regArr[$i]/$maxVal)*($chartH-5);
+    $x1 = $chartX + 5 + $i*$barGroupW;
+    $y1 = $chartY + $chartH - $regH;
+
+    list($r1,$g1,$b1) = [66,133,244]; // Blue
+    $pdf->SetFillColor($r1,$g1,$b1);
+    $pdf->Rect($x1,$y1,$barW,$regH,"F");
+
+    /* Completed bar */
+    $cmpH = ($cmpArr[$i]/$maxVal)*($chartH-5);
+    $x2 = $x1 + $barW + 2;
+    $y2 = $chartY + $chartH - $cmpH;
+
+    list($r2,$g2,$b2) = [15,157,88]; // Green
+    $pdf->SetFillColor($r2,$g2,$b2);
+    $pdf->Rect($x2,$y2,$barW,$cmpH,"F");
+}
+
+/* ---------- LEGEND ---------- */
+$legendX = $chartX + $chartW + 5;
+$legendY = $chartY;
+
+$pdf->SetFont("Arial","B",8);
+$pdf->SetXY($legendX,$legendY);
+$pdf->Cell(25,5,"Legend");
+
+$pdf->SetFont("Arial","",7);
+
+/* Registered */
+$pdf->SetXY($legendX,$legendY+8);
+$pdf->SetFillColor(66,133,244);
+$pdf->Rect($legendX,$legendY+8,4,4,"F");
+$pdf->SetXY($legendX+6,$legendY+7);
+$pdf->Cell(25,5,"Registered");
+
+/* Completed */
+$pdf->SetXY($legendX,$legendY+14);
+$pdf->SetFillColor(15,157,88);
+$pdf->Rect($legendX,$legendY+14,4,4,"F");
+$pdf->SetXY($legendX+6,$legendY+13);
+$pdf->Cell(25,5,"Completed");
+
+$pdf->SetY($chartY + $chartH + 10);
+
+
+/* ======================================================
+   5D — INSIGHTS
+====================================================== */
+
+$pdf->SubTitle("Workload Insights");
+
+$insights = [];
+
+foreach ($weekly as $week => $v){
+
+    if ($v["reg"] == 0) continue;
+
+    $pct = round(($v["cmp"]/$v["reg"])*100,1);
+
+    $insights[] = "- ISO Week W$week processed {$v["reg"]} tests with {$v["cmp"]} completed ({$pct}%).";
+
+    // spike detection
+    if ($v["reg"] > ($maxVal*0.75)) {
+        $insights[] = "  • Significant workload peak detected in Week W$week.";
+    }
+}
+
+if(empty($insights)){
+    $insights[] = "No significant weekly patterns detected this month.";
+}
+
+foreach($insights as $txt){
+    $pdf->BodyText($txt);
+}
+
+
+/* ======================================================
+   5.1 — Weekly Workload per Client (Summary Table Only)
+====================================================== */
+
+$pdf->Ln(6);
+$pdf->SubTitle("5.1 Weekly Workload per Client");
+
+$allClients = [];
+foreach ($weeklyClients as $week => $clients){
+    foreach ($clients as $cl => $v){
+        $allClients[$cl] = true;
+    }
+}
+$allClients = array_keys($allClients);
+
+$pdf->TableHeader([
+    20=>"Week",
+    30=>"Client",
+    30=>"Registered",
+    30=>"Completed",
+    30=>"Completion %"
+]);
+
+foreach ($weeklyClients as $week => $clients){
+
+    foreach ($clients as $cl => $v){
+
+        $pct = ($v["reg"]>0)? round(($v["cmp"]/$v["reg"])*100,1):0;
 
         $pdf->TableRow([
-            25=>"W$w",
-            50=>$cl,
-            25=>$req,
-            25=>$cmp,
-            25=>$pct . "%"
+            20=>"W$week",
+            30=>$cl,
+            30=>$v["reg"],
+            30=>$v["cmp"],
+            30=>$pct."%"
         ]);
     }
 }
 
 $pdf->Ln(6);
-
-/* ======================================================
-   5C — GRAPH (Registered vs Completed)
-====================================================== */
-
-$pdf->SubTitle("Workload Completion Chart");
-
-// Asegura espacio para el gráfico
-if ($pdf->GetY() > 170) $pdf->AddPage();
-
-// Preparar datos
-$seriesClients = $clients;
-$seriesWeeks   = $weeks;
-
-// Calculamos el máximo global para el eje Y
-$globalMax = 1;
-foreach ($weeks as $w){
-    foreach ($clients as $cl){
-        $globalMax = max($globalMax, $matrixReq[$w][$cl], $matrixCmp[$w][$cl]);
-    }
-}
-
-// Coordenadas del gráfico
-$chartX = 20;
-$chartY = $pdf->GetY() + 10;
-$chartW = 150;
-$chartH = 50;
-
-drawAxis($pdf,$chartX,$chartY,$chartW,$chartH);
-
-// Dibujar escala en eje Y
-$pdf->SetFont("Arial","",7);
-for ($i=0;$i<=4;$i++){
-    $val = round(($globalMax/4)*$i);
-    $y   = $chartY + $chartH - ($chartH/4)*$i;
-    $pdf->SetXY($chartX-8,$y-2);
-    $pdf->Cell(7,4,$val,0,0,'R');
-}
-
-// Ancho por semana
-$groupW = max(10, floor($chartW / count($weeks)));
-
-// Dentro de cada semana → 2 barras por cliente
-foreach ($weeks as $wi=>$w){
-
-    $xWeek = $chartX + $wi*$groupW;
-
-    foreach ($clients as $ci=>$cl){
-
-        $req = $matrixReq[$w][$cl];
-        $cmp = $matrixCmp[$w][$cl];
-
-        $reqH = ($req/$globalMax)*($chartH-5);
-        $cmpH = ($cmp/$globalMax)*($chartH-5);
-
-        $barW = max(2, floor(($groupW-3) / (count($clients)*2)));
-
-        $barX_req = $xWeek + ($ci*2)*$barW;
-        $barX_cmp = $barX_req + $barW;
-
-        list($r,$g,$b)=pickColor($ci);
-        // Completed = color sólido
-        $pdf->SetFillColor($r,$g,$b);
-        $pdf->Rect($barX_cmp,$chartY+$chartH-$cmpH,$barW,$cmpH,'F');
-
-        // Registered = color más claro
-        $pdf->SetFillColor($r+40,$g+40,$b+40);
-        $pdf->Rect($barX_req,$chartY+$chartH-$reqH,$barW,$reqH,'F');
-    }
-
-    // Label Semana
-    $pdf->SetXY($xWeek, $chartY + $chartH + 2);
-    $pdf->SetFont("Arial","",7);
-    $pdf->Cell($groupW,4,"W$w",0,0,'C');
-}
-
-// Leyenda lateral profesional
-$pdf->SetXY($chartX + $chartW + 6, $chartY);
-$pdf->SetFont("Arial","B",9);
-$pdf->Cell(25,5,"Legend",0,1);
-
-foreach ($clients as $ci=>$cl){
-    list($r,$g,$b)=pickColor($ci);
-
-    $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
-    $pdf->SetXY($pdf->GetX()+6, $pdf->GetY()-1);
-    $pdf->SetFont("Arial","",8);
-    $pdf->Cell(30,5,$cl);
-    $pdf->Ln(5);
-}
-
-$pdf->SetY($chartY + $chartH + 12);
-
 
 
 
