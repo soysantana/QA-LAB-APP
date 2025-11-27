@@ -1496,14 +1496,17 @@ skip_pending:
 ================================*/
 
 /*
- REGLA DE CLASIFICACIÓN (ESTRUCTURA):
+ CLASIFICACIÓN DE ESTRUCTURAS (PV):
  -------------------------------------
- - Stockpile:
-      a) Structure contiene 'STOCK'
-      b) ó Sample_ID comienza con 'PVDJ-AGG'
- - Borrow:
-      a) Sample_ID comienza con 'LBOR'
- - De lo contrario se usa la columna Structure
+ Stockpile:
+    a) Structure contiene 'STOCK'
+    b) Sample_ID inicia con 'PVDJ-AGG'
+
+ Borrow:
+    a) Sample_ID inicia con 'LBOR'
+
+ Otras:
+    se usa columna Structure
 */
 
 function classifyStructure($sampleId, $structure){
@@ -1511,9 +1514,7 @@ function classifyStructure($sampleId, $structure){
     $sid = strtoupper(trim((string)$sampleId));
     $st  = strtoupper(trim((string)$structure));
 
-    // ============================
-    // FUNCIONES COMPATIBLES PHP 5/7/8
-    // ============================
+    // Funciones helper compatibles PHP 5/7/8
     $startsWith = function($text, $prefix){
         return substr($text, 0, strlen($prefix)) === $prefix;
     };
@@ -1522,36 +1523,24 @@ function classifyStructure($sampleId, $structure){
         return strpos($text, $needle) !== false;
     };
 
-    // ============================
-    // REGLAS DE STOCKPILE
-    // ============================
-    // 1. PVDJ-AGG → Stockpile
-    if ($startsWith($sid, "PVDJ-AGG")) {
-        return "STOCKPILE";
-    }
+    // Stockpile por Sample_ID
+    if ($startsWith($sid, "PVDJ-AGG")) return "Stockpile";
 
-    // 2. Structure contiene "STOCK"
-    if ($contains($st, "STOCK")) {
-        return "STOCKPILE";
-    }
+    // Stockpile por Structure
+    if ($contains($st, "STOCK")) return "Stockpile";
 
-    // ============================
-    // REGLAS DE BORROW
-    // ============================
-    if ($startsWith($sid, "LBOR")) {
-        return "BORROW";
-    }
+    // Borrow
+    if ($startsWith($sid, "LBOR")) return "Borrow";
 
-    // ============================
-    // OTRAS ESTRUCTURAS
-    // ============================
-    if ($st !== "") return $st;
+    // Otras estructuras
+    if ($st !== "") return ucwords(strtolower($st));
 
-    return "UNKNOWN";
+    return "Unknown";
 }
 
+
 /* ============================================================
-   1. CARGAR DATOS BRUTOS DE LA SEMANA
+   1. CARGAR DATOS DE LA SEMANA
 ==============================================================*/
 $rows = find_by_sql("
     SELECT *
@@ -1578,51 +1567,42 @@ if (empty($rows)) {
     foreach ($rows as $r) {
 
         $structure = classifyStructure($r['Sample_ID'], $r['Structure']);
-        $material   = strtoupper(trim((string)$r['Material_Type']));
-        if ($material === "") $material = "OTHER";
 
-        $testType   = strtoupper(trim((string)$r['Test_Type']));
-        if ($testType === "") $testType = "UNKNOWN";
+        $material = trim((string)$r['Material_Type']);
+        if ($material === "") $material = "Other";
+        $material = ucwords(strtolower($material));  // Formato gramatical
+
+        // test type en formato Title Case (Gs, Sp, Cbr…)
+        $rawType = trim((string)$r['Test_Type']);
+        if ($rawType === "") $rawType = "Unknown";
+        $testType = ucfirst(strtolower($rawType));
 
         $comment = strtoupper((string)$r['Comments']);
         $cond    = strtoupper((string)$r['Test_Condition']);
         $ncr     = strtoupper((string)$r['Noconformidad']);
 
-        // Función segura para buscar texto en PHP 5/7/8
-// Función universal de búsqueda (compatible PHP 5/7/8)
-$contains = function($text, $needle){
-    return strpos($text, $needle) !== false;
-};
+        // Función contains compatible PHP 5/7
+        $contains = function($text, $needle){
+            return strpos($text, $needle) !== false;
+        };
 
-// Convertir todo a mayúsculas para evitar problemas
-$c = strtoupper($comment);
-$cnd = strtoupper($cond);
-$nc = strtoupper($ncr);
+        // Keywords para FAIL
+        $failKeywords = [
+            "FAIL", "FAILED", "FAILURE",
+            "NO CUMPLE", "RECHAZ",
+            "REJECT", "REJECTED",
+            "NCR", "NOT OK"
+        ];
 
-// Lista de palabras clave para FAIL
-$failKeywords = [
-    "FAIL",
-    "FAILED",
-    "FAILURE",
-    "NO CUMPLE",
-    "RECHAZ",
-    "REJECT",
-    "REJECTED",
-    "NCR",
-    "NOT OK",
-];
+        $isFail = false;
+        foreach ($failKeywords as $k){
+            if ($contains($comment, $k) || $contains($cond, $k) || $contains($ncr, $k)) {
+                $isFail = true;
+                break;
+            }
+        }
 
-// Detectar FAIL
-$isFail = false;
-foreach ($failKeywords as $k){
-    if ($contains($c, $k) || $contains($cnd, $k) || $contains($nc, $k)) {
-        $isFail = true;
-        break;
-    }
-}
-
-
-
+        // Inicializar matriz
         if (!isset($matrix[$structure])) $matrix[$structure] = [];
         if (!isset($matrix[$structure][$material])) $matrix[$structure][$material] = [];
         if (!isset($matrix[$structure][$material][$testType])) {
@@ -1632,45 +1612,44 @@ foreach ($failKeywords as $k){
             ];
         }
 
+        // Contabilizar
         if ($isFail) $matrix[$structure][$material][$testType]["failed"]++;
         else         $matrix[$structure][$material][$testType]["passed"]++;
     }
 
     /* ============================================================
-       3. TABLA EJECUTIVA (DOBLE FILA DE ENCABEZADO)
+       3. TABLA EJECUTIVA (DOBLE ENCABEZADO)
     ===============================================================*/
 
     $pdf->SetFont('Arial','B',11);
     $pdf->Cell(0,8,"9.1 Summary Table",0,1);
     $pdf->Ln(2);
 
-    // --- FILA 1 DEL ENCABEZADO ---
+    // ENCABEZADO FILA 1
     $pdf->SetFont('Arial','B',9);
     $pdf->SetFillColor(220,220,220);
 
     $pdf->Cell(40,7,"Structure",1,0,'C',true);
-    $pdf->Cell(35,7,"Material",1,0,'C',true);
-    $pdf->Cell(30,7,"Test Type",1,0,'C',true);
+    $pdf->Cell(40,7,"Material",1,0,'C',true);
+    $pdf->Cell(40,7,"Test Type",1,0,'C',true);
 
-    $pdf->Cell(44,7,"RESULTS",1,1,'C',true);  // grupo de dos columnas
+    $pdf->Cell(44,7,"Results",1,1,'C',true);
 
-    // --- FILA 2 DEL ENCABEZADO ---
+    // ENCABEZADO FILA 2
     $pdf->Cell(40,6,"",1,0);
-    $pdf->Cell(35,6,"",1,0);
-    $pdf->Cell(30,6,"",1,0);
+    $pdf->Cell(40,6,"",1,0);
+    $pdf->Cell(40,6,"",1,0);
 
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(22,6,"Passed",1,0,'C',true);
     $pdf->Cell(22,6,"Failed",1,1,'C',true);
 
-    /* ---------- FILAS ---------- */
+    // CONTENIDO
     $pdf->SetFont('Arial','',9);
 
-    foreach ($matrix as $structure => $matData) {
-
-        foreach ($matData as $material => $testData) {
-
-            foreach ($testData as $testType => $info) {
+    foreach ($matrix as $structure => $materials) {
+        foreach ($materials as $material => $tests) {
+            foreach ($tests as $testType => $info) {
 
                 $passed = $info["passed"];
                 $failed = $info["failed"];
@@ -1678,8 +1657,8 @@ foreach ($failKeywords as $k){
                 if ($passed==0 && $failed==0) continue;
 
                 $pdf->Cell(40,6,$structure,1);
-                $pdf->Cell(35,6,$material,1);
-                $pdf->Cell(30,6,$testType,1);
+                $pdf->Cell(40,6,$material,1);
+                $pdf->Cell(40,6,$testType,1);
 
                 $pdf->Cell(22,6,$passed,1,0,'C');
                 $pdf->Cell(22,6,$failed,1,1,'C');
@@ -1689,6 +1668,7 @@ foreach ($failKeywords as $k){
 
     $pdf->Ln(8);
 }
+
 
 skip_section_9:
 
