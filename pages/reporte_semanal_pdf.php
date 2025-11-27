@@ -1496,25 +1496,13 @@ skip_pending:
 ================================*/
 
 /*
- CLASIFICACIÓN DE ESTRUCTURAS (PV):
- -------------------------------------
- Stockpile:
-    a) Structure contiene 'STOCK'
-    b) Sample_ID inicia con 'PVDJ-AGG'
-
- Borrow:
-    a) Sample_ID inicia con 'LBOR'
-
- Otras:
-    se usa columna Structure
+ CLASIFICACIÓN DE ESTRUCTURAS
 */
-
 function classifyStructure($sampleId, $structure){
 
     $sid = strtoupper(trim((string)$sampleId));
     $st  = strtoupper(trim((string)$structure));
 
-    // Funciones helper compatibles PHP 5/7/8
     $startsWith = function($text, $prefix){
         return substr($text, 0, strlen($prefix)) === $prefix;
     };
@@ -1523,25 +1511,16 @@ function classifyStructure($sampleId, $structure){
         return strpos($text, $needle) !== false;
     };
 
-    // Stockpile por Sample_ID
     if ($startsWith($sid, "PVDJ-AGG")) return "Stockpile";
-
-    // Stockpile por Structure
     if ($contains($st, "STOCK")) return "Stockpile";
-
-    // Borrow
     if ($startsWith($sid, "LBOR")) return "Borrow";
 
-    // Otras estructuras
-    if ($st !== "") return ucwords(strtolower($st));
+    if ($st !== "") return $st;
 
     return "Unknown";
 }
 
-
-/* ============================================================
-   1. CARGAR DATOS DE LA SEMANA
-==============================================================*/
+/* CARGAR DATOS */
 $rows = find_by_sql("
     SELECT *
     FROM ensayos_reporte
@@ -1559,20 +1538,20 @@ if (empty($rows)) {
 
 } else {
 
-    /* ============================================================
-       2. ARMAR MATRIZ ESTRUCTURA → MATERIAL → TEST → PASSED/FAILED
-    ===============================================================*/
+    /* ===============================
+       1. MATRIZ AGRUPADA
+    ===============================*/
     $matrix = [];
 
     foreach ($rows as $r) {
 
         $structure = classifyStructure($r['Sample_ID'], $r['Structure']);
 
+        // Material sin tocar formato
         $material = trim((string)$r['Material_Type']);
         if ($material === "") $material = "Other";
-        $material = ucwords(strtolower($material));  // Formato gramatical
 
-        // test type en formato Title Case (Gs, Sp, Cbr…)
+        // Test type SOLO primera mayúscula
         $rawType = trim((string)$r['Test_Type']);
         if ($rawType === "") $rawType = "Unknown";
         $testType = ucfirst(strtolower($rawType));
@@ -1581,19 +1560,18 @@ if (empty($rows)) {
         $cond    = strtoupper((string)$r['Test_Condition']);
         $ncr     = strtoupper((string)$r['Noconformidad']);
 
-        // Función contains compatible PHP 5/7
         $contains = function($text, $needle){
             return strpos($text, $needle) !== false;
         };
 
-        // Keywords para FAIL
         $failKeywords = [
-            "FAIL", "FAILED", "FAILURE",
-            "NO CUMPLE", "RECHAZ",
-            "REJECT", "REJECTED",
-            "NCR", "NOT OK"
+            "FAIL","FAILED","FAILURE",
+            "NO CUMPLE","RECHAZ",
+            "REJECT","REJECTED",
+            "NCR","NOT OK"
         ];
 
+        // Detectar FAIL
         $isFail = false;
         foreach ($failKeywords as $k){
             if ($contains($comment, $k) || $contains($cond, $k) || $contains($ncr, $k)) {
@@ -1602,7 +1580,7 @@ if (empty($rows)) {
             }
         }
 
-        // Inicializar matriz
+        // AGRUPACIÓN REAL (sin duplicar)
         if (!isset($matrix[$structure])) $matrix[$structure] = [];
         if (!isset($matrix[$structure][$material])) $matrix[$structure][$material] = [];
         if (!isset($matrix[$structure][$material][$testType])) {
@@ -1612,39 +1590,36 @@ if (empty($rows)) {
             ];
         }
 
-        // Contabilizar
-        if ($isFail) $matrix[$structure][$material][$testType]["failed"]++;
-        else         $matrix[$structure][$material][$testType]["passed"]++;
+        if ($isFail)
+            $matrix[$structure][$material][$testType]["failed"]++;
+        else
+            $matrix[$structure][$material][$testType]["passed"]++;
     }
 
-    /* ============================================================
-       3. TABLA EJECUTIVA (DOBLE ENCABEZADO)
-    ===============================================================*/
+    /* ===============================
+       2. TABLA DE RESULTADOS
+    ===============================*/
 
     $pdf->SetFont('Arial','B',11);
     $pdf->Cell(0,8,"9.1 Summary Table",0,1);
     $pdf->Ln(2);
 
-    // ENCABEZADO FILA 1
+    // Encabezado doble fila
     $pdf->SetFont('Arial','B',9);
     $pdf->SetFillColor(220,220,220);
 
     $pdf->Cell(40,7,"Structure",1,0,'C',true);
     $pdf->Cell(40,7,"Material",1,0,'C',true);
     $pdf->Cell(40,7,"Test Type",1,0,'C',true);
-
     $pdf->Cell(44,7,"Results",1,1,'C',true);
 
-    // ENCABEZADO FILA 2
     $pdf->Cell(40,6,"",1,0);
     $pdf->Cell(40,6,"",1,0);
     $pdf->Cell(40,6,"",1,0);
-
-    $pdf->SetFont('Arial','B',9);
     $pdf->Cell(22,6,"Passed",1,0,'C',true);
     $pdf->Cell(22,6,"Failed",1,1,'C',true);
 
-    // CONTENIDO
+    // FILAS AGRUPADAS
     $pdf->SetFont('Arial','',9);
 
     foreach ($matrix as $structure => $materials) {
