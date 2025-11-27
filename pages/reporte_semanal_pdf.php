@@ -1261,9 +1261,9 @@ foreach ($clientBlocks as $blockIndex => $blockClients){
     $pdf->Cell($wTest, 7, "", 1, 0);
     foreach ($blockClients as $c){
         $pdf->SetFont('Arial','',9);
-        $pdf->Cell($wSub,7,"Prep",1,0,'C');
-        $pdf->Cell($wSub,7,"Real",1,0,'C');
-        $pdf->Cell($wSub,7,"Comp",1,0,'C');
+        $pdf->Cell($wSub,7,"P.",1,0,'C');
+        $pdf->Cell($wSub,7,"R.",1,0,'C');
+        $pdf->Cell($wSub,7,"C.",1,0,'C');
     }
     $pdf->Ln();
 
