@@ -457,9 +457,9 @@ foreach ($clientTotals as $cl => $totalTests){
 }
 
 $pdf->Ln(4);
-
 /* ------------------------------------------------------
    3) GRAPH — Tests per Client (Vertical Bar)
+   Improved with axis labels & bar values
 ------------------------------------------------------ */
 
 $pdf->SubTitle("Tests per Client Chart");
@@ -469,17 +469,41 @@ if (!empty($clientTotals)){
     $labels = array_keys($clientTotals);
     $values = array_values($clientTotals);
 
+    // chart area
     $chartX = 20;
     $chartY = $pdf->GetY() + 6;
     $chartW = 150;
-    $chartH = 45;
+    $chartH = 50;
 
+    /* ---------- DRAW AXIS ---------- */
     drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
 
+    /* ---------- Y-AXIS SCALE ---------- */
     $maxVal = max($values);
-    if($maxVal == 0) $maxVal = 1;
+    if ($maxVal == 0) $maxVal = 1;
 
-    $barW = (int)(($chartW - 10) / count($labels));
+    // define 4 major steps (0, 25%, 50%, 75%, 100% of max)
+    $steps = 4;
+    $pdf->SetFont("Arial","",7);
+
+    for ($i=0; $i <= $steps; $i++) {
+
+        $val = round(($maxVal / $steps) * $i);
+        $yPos = $chartY + $chartH - ($chartH / $steps * $i);
+
+        // grid line
+        $pdf->SetDrawColor(220,220,220);
+        $pdf->Line($chartX, $yPos, $chartX + $chartW, $yPos);
+
+        // label
+        $pdf->SetDrawColor(0,0,0);
+        $pdf->SetXY($chartX - 10, $yPos - 2);
+        $pdf->Cell(8, 4, $val, 0, 0, "R");
+    }
+
+    /* ---------- DRAW BARS ---------- */
+    $barW = (int)( ($chartW - 10) / count($labels) );
+    if ($barW < 10) $barW = 10; // minimum width
 
     foreach ($labels as $i => $lbl){
 
@@ -492,16 +516,25 @@ if (!empty($clientTotals)){
         list($r,$g,$b) = pickColor($i);
         $pdf->SetFillColor($r,$g,$b);
 
-        $pdf->Rect($x, $y, $barW-2, $barH, "F");
+        // bar
+        $pdf->Rect($x, $y, $barW - 2, $barH, "F");
 
-        // label under bar
+        // value above bar
+        if ($v > 0){
+            $pdf->SetFont("Arial","B",7);
+            $pdf->SetXY($x, $y - 4);
+            $pdf->Cell($barW - 2, 4, $v, 0, 0, "C");
+        }
+
+        // label below bar
         $pdf->SetFont("Arial","",7);
         $pdf->SetXY($x, $chartY + $chartH + 2);
-        $pdf->Cell($barW-2,3,utf8_decode($lbl),0,0,'C');
+        $pdf->MultiCell($barW - 2, 3, utf8_decode($lbl), 0, "C");
     }
 
-    $pdf->SetY($chartY + $chartH + 10);
+    $pdf->SetY($chartY + $chartH + 14);
 }
+
 
 /* ------------------------------------------------------
    5) Insights
@@ -534,71 +567,76 @@ foreach ($insights as $txt){
 
 
 /* ======================================================
-   SECTION 4 — Client Summary: Requested vs Completed
+   SECTION 4 — Client Summary (Requested vs Completed)
 ====================================================== */
 
 $pdf->SectionTitle("4. Client Summary (Requested vs Completed)");
 
-/* ---------- HISTORICAL REQUESTED (ALL TIME UP TO END OF MONTH) ---------- */
-$hist_requests = $db->query("
+/* ======================================================
+   4A — MONTHLY KPIs PER CLIENT
+   (Requested vs Completed only for THIS MONTH)
+====================================================== */
+
+$pdf->SubTitle("4A. Monthly Client KPIs");
+
+$monthly_requested = $db->query("
     SELECT Client, COUNT(*) AS total
     FROM lab_test_requisition_form
-    WHERE Registed_Date <= '$end'
+    WHERE Registed_Date BETWEEN '$start' AND '$end'
     GROUP BY Client
 ")->fetch_all(MYSQLI_ASSOC);
 
-/* ---------- MONTH COMPLETED (delivery + review + reviewed + doc_files) ---------- */
-$hist_completed = $db->query("
-    SELECT Client, COUNT(*) AS total
+$monthly_completed = $db->query("
+    SELECT r.Client, COUNT(*) AS total
     FROM lab_test_requisition_form r
-    WHERE EXISTS (
-        SELECT 1 FROM test_delivery d
-        WHERE d.Sample_ID = r.Sample_ID
-          AND d.Sample_Number = r.Sample_Number
-          AND d.Start_Date <= '$end'
-    )
-    OR EXISTS(
-        SELECT 1 FROM test_review ed
-        WHERE ed.Sample_ID = r.Sample_ID
-          AND ed.Sample_Number = r.Sample_Number
-          AND ed.Start_Date <= '$end'
-    )
-    OR EXISTS(
-        SELECT 1 FROM test_reviewed rv
-        WHERE rv.Sample_ID = r.Sample_ID
-          AND rv.Sample_Number = r.Sample_Number
-          AND rv.Start_Date <= '$end'
-    )
-    OR EXISTS(
-        SELECT 1 FROM doc_files df
-        WHERE df.Sample_ID = r.Sample_ID
-          AND df.Sample_Number = r.Sample_Number
-          AND df.created_at <= '$end'
-    )
-    GROUP BY Client
+    WHERE r.Registed_Date BETWEEN '$start' AND '$end'
+      AND (
+            EXISTS (
+                SELECT 1 FROM test_delivery d
+                WHERE d.Sample_ID = r.Sample_ID
+                  AND d.Sample_Number = r.Sample_Number
+                  AND d.Start_Date BETWEEN '$start' AND '$end'
+            )
+         OR EXISTS(
+                SELECT 1 FROM test_review rv
+                WHERE rv.Sample_ID = r.Sample_ID
+                  AND rv.Sample_Number = r.Sample_Number
+                  AND rv.Start_Date BETWEEN '$start' AND '$end'
+            )
+         OR EXISTS(
+                SELECT 1 FROM test_reviewed rd
+                WHERE rd.Sample_ID = r.Sample_ID
+                  AND rd.Sample_Number = r.Sample_Number
+                  AND rd.Start_Date BETWEEN '$start' AND '$end'
+            )
+         OR EXISTS(
+                SELECT 1 FROM doc_files df
+                WHERE df.Sample_ID = r.Sample_ID
+                  AND df.Sample_Number = r.Sample_Number
+                  AND df.created_at BETWEEN '$start' AND '$end'
+            )
+      )
+    GROUP BY r.Client
 ")->fetch_all(MYSQLI_ASSOC);
 
-/* ---------- NORMALIZE INTO MATRIX ---------- */
-$clientStats = [];
+/* Normalizar estructura */
+$monthly = [];
 
-foreach($hist_requests as $r){
-    $clientStats[$r['Client']]['requested'] = $r['total'];
+foreach ($monthly_requested as $r) {
+    $monthly[$r['Client']]['requested'] = $r['total'];
+}
+foreach ($monthly_completed as $r) {
+    $monthly[$r['Client']]['completed'] = $r['total'];
 }
 
-foreach($hist_completed as $r){
-    $clientStats[$r['Client']]['completed'] = $r['total'];
-}
-
-foreach($clientStats as $c => &$v){
+foreach ($monthly as $cl => &$v) {
     $req = $v['requested'] ?? 0;
     $cmp = $v['completed'] ?? 0;
-    $v['pct'] = ($req>0) ? round(($cmp*100)/$req,1) : 0;
+    $v['pct'] = ($req > 0) ? round(($cmp * 100) / $req, 1) : 0;
 }
 unset($v);
 
-/* ---------- TABLE ---------- */
-
-$pdf->SubTitle("Client Completion Table");
+/* ---------- TABLE 4A ---------- */
 
 $pdf->TableHeader([
     50=>"Client",
@@ -607,7 +645,7 @@ $pdf->TableHeader([
     30=>"Completion (%)"
 ]);
 
-foreach($clientStats as $cl=>$v){
+foreach ($monthly as $cl => $v) {
     $pdf->TableRow([
         50=>$cl,
         30=>$v['requested'] ?? 0,
@@ -616,42 +654,168 @@ foreach($clientStats as $cl=>$v){
     ]);
 }
 
-$pdf->Ln(4);
+$pdf->Ln(6);
 
-/* ---------- GRAPH ---------- */
+/* ======================================================
+   4B — HISTORICAL REQUESTED VS COMPLETED
+   (All time up to END OF MONTH)
+====================================================== */
 
-$pdf->SubTitle("Client Completion Chart");
+$pdf->SubTitle("4B. Historical Client KPIs (Until $end)");
 
-$labels = array_keys($clientStats);
-$values = array_column($clientStats,"pct");
+$hist_req = $db->query("
+    SELECT Client, COUNT(*) AS total
+    FROM lab_test_requisition_form
+    WHERE Registed_Date <= '$end'
+    GROUP BY Client
+")->fetch_all(MYSQLI_ASSOC);
 
-$chartX = 25;
-$chartY = $pdf->GetY() + 5;
-$chartW = 150;
-$chartH = 45;
+$hist_cmp = $db->query("
+    SELECT r.Client, COUNT(*) AS total
+    FROM lab_test_requisition_form r
+    WHERE r.Registed_Date <= '$end'
+      AND (
+            EXISTS (
+                SELECT 1 FROM test_delivery d
+                WHERE d.Sample_ID = r.Sample_ID
+                  AND d.Sample_Number = r.Sample_Number
+                  AND d.Start_Date <= '$end'
+            )
+         OR EXISTS(
+                SELECT 1 FROM test_review rv
+                WHERE rv.Sample_ID = r.Sample_ID
+                  AND rv.Sample_Number = r.Sample_Number
+                  AND rv.Start_Date <= '$end'
+            )
+         OR EXISTS(
+                SELECT 1 FROM test_reviewed rd
+                WHERE rd.Sample_ID = r.Sample_ID
+                  AND rd.Sample_Number = r.Sample_Number
+                  AND rd.Start_Date <= '$end'
+            )
+         OR EXISTS(
+                SELECT 1 FROM doc_files df
+                WHERE df.Sample_ID = r.Sample_ID
+                  AND df.Sample_Number = r.Sample_Number
+                  AND df.created_at <= '$end'
+            )
+      )
+    GROUP BY r.Client
+")->fetch_all(MYSQLI_ASSOC);
 
-drawAxis($pdf,$chartX,$chartY,$chartW,$chartH);
-
-$maxVal = max($values); if($maxVal==0) $maxVal=1;
-
-$barW = (int)(($chartW-10)/count($labels));
-
-for($i=0;$i<count($labels);$i++){
-    $pct = $values[$i];
-    $barH = ($pct/$maxVal)*($chartH-5);
-    $x = $chartX + 5 + $i*$barW;
-    $y = $chartY + $chartH - $barH;
-
-    list($r,$g,$b) = pickColor($i);
-    $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect($x,$y,$barW-2,$barH,"F");
-
-    $pdf->SetFont("Arial","",6);
-    $pdf->SetXY($x,$chartY+$chartH+2);
-    $pdf->MultiCell($barW-2,3,substr($labels[$i],0,10),0,'C');
+/* Normalizar */
+$hist = [];
+foreach ($hist_req as $r) {
+    $hist[$r['Client']]['requested'] = $r['total'];
+}
+foreach ($hist_cmp as $r) {
+    $hist[$r['Client']]['completed'] = $r['total'];
 }
 
-$pdf->SetY($chartY+$chartH+10);
+foreach ($hist as $cl => &$v) {
+    $req = $v['requested'] ?? 0;
+    $cmp = $v['completed'] ?? 0;
+    $v['backlog'] = max($req - $cmp, 0);
+    $v['pct'] = ($req > 0) ? round(($cmp * 100) / $req, 1) : 0;
+}
+unset($v);
+
+/* ---------- TABLE 4B ---------- */
+
+$pdf->TableHeader([
+    45=>"Client",
+    30=>"Hist. Requested",
+    30=>"Hist. Completed",
+    25=>"Backlog",
+    30=>"Completion (%)"
+]);
+
+foreach ($hist as $cl=>$v){
+    $pdf->TableRow([
+        45=>$cl,
+        30=>$v['requested'] ?? 0,
+        30=>$v['completed'] ?? 0,
+        25=>$v['backlog'],
+        30=>$v['pct']
+    ]);
+}
+
+$pdf->Ln(6);
+
+/* ======================================================
+   4C — HISTORICAL COMPLETION GRAPH (Vertical Bars)
+====================================================== */
+
+$pdf->SubTitle("4C. Historical Completion Chart");
+
+$labels = array_keys($hist);
+$values = array_column($hist, "pct");
+
+if (!empty($labels)) {
+
+    $chartX = 25;
+    $chartY = $pdf->GetY() + 8;
+    $chartW = 150;
+    $chartH = 50;
+
+    drawAxis($pdf,$chartX,$chartY,$chartW,$chartH);
+
+    $maxVal = max($values);
+    if($maxVal == 0) $maxVal = 1;
+
+    $barW = max(12, intval(($chartW - 10) / count($labels)));
+
+    for ($i=0; $i < count($labels); $i++) {
+
+        $pct = $values[$i];
+        $barH = ($pct / $maxVal) * ($chartH - 5);
+
+        $x = $chartX + 5 + $i * $barW;
+        $y = $chartY + $chartH - $barH;
+
+        list($r,$g,$b) = pickColor($i);
+        $pdf->SetFillColor($r,$g,$b);
+        $pdf->Rect($x, $y, $barW-2, $barH, "F");
+
+        // client label
+        $lbl = $labels[$i];
+        if (strlen($lbl) > 12) $lbl = substr($lbl,0,10)."...";
+
+        $pdf->SetFont("Arial","",7);
+        $pdf->SetXY($x, $chartY + $chartH + 2);
+        $pdf->MultiCell($barW-2, 3, utf8_decode($lbl), 0, 'C');
+    }
+
+    $pdf->SetY($chartY + $chartH + 12);
+}
+
+/* ======================================================
+   4D — EXECUTIVE INSIGHTS
+====================================================== */
+
+$pdf->SubTitle("4D. Observations & Insights");
+
+$ins=[];
+
+foreach ($monthly as $cl => $v){
+    $pct = $v['pct'];
+    if ($pct < 60)
+        $ins[] = "- $cl shows low monthly completion ($pct%). Recommend follow-up.";
+    else if ($pct >= 90)
+        $ins[] = "- $cl demonstrates excellent monthly performance ($pct%).";
+}
+
+foreach($hist as $cl=>$v){
+    if($v['backlog'] > 100)
+        $ins[] = "- $cl has a high historical backlog ({$v['backlog']} tests).";
+}
+
+if(empty($ins)) $ins[] = "No significant issues detected in monthly or historical client performance.";
+
+foreach($ins as $t){
+    $pdf->BodyText($t);
+}
+
 /* ======================================================
    SECTION 5 — Workload by ISO Week
 ====================================================== */
