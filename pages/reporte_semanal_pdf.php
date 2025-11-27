@@ -1158,10 +1158,10 @@ if (empty($techSummary)) {
 
 /* ===============================
    SECCIÓN 7 — TEST TYPE × CLIENT × PROCESS
-   TABLA DINÁMICA (MULTI-PÁGINAS)
+   TABLA DINÁMICA IGUAL A SECCIÓN 8 (OPCIÓN D)
 ================================*/
 
-$pdf->section_title("7. Summary of Tests by Type and Client (Dynamic Width)");
+$pdf->section_title("7. Summary of Tests by Type and Client");
 
 /* ===============================
    1. Cargar datos crudos
@@ -1207,6 +1207,7 @@ $clientes7 = [];
 $tipos7 = [];
 
 foreach ($raw7 as $r){
+
     $client = trim($r['Client']) ?: "N/A";
     $test   = trim($r['Test_Type']);
     if ($test === "") continue;
@@ -1228,70 +1229,92 @@ sort($clientes7);
 sort($tipos7);
 
 /* ===============================
-   3. CONFIGURAR ANCHOS DINÁMICOS
+   3. CONFIGURAR ANCHOS DINÁMICOS SIN BLOQUES
 ================================*/
-$wTest = 35;
-$wSub  = 18; // Prep / Real / Del
-$usableWidth = 190 - $wTest;
 
-// cuántos clientes caben por página
-$clientBlockCapacity = floor($usableWidth / ($wSub * 3));
-if ($clientBlockCapacity < 1) $clientBlockCapacity = 1;
+$wTest = 35;     // Ancho columna Test Type
+$wStage = 10;    // Prep / Real / Del (más delgado que antes para optimizar espacio)
 
-// dividir clientes en bloques
-$clientBlocks = array_chunk($clientes7, $clientBlockCapacity);
+$columnsPerClient = 3;
+$totalColumns = count($clientes7) * $columnsPerClient;
+
+$maxWidth = 190 - $wTest;
+// Si no hay clientes → evitar división por 0
+if (count($clientes7) == 0) {
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(245,245,245);
+    $pdf->Cell(0,10,"No test activity found for this week.",1,1,'C',true);
+    $pdf->Ln(8);
+    goto skip_section_7;   // salir de la sección 7
+}
+
+$wClientBlock = $maxWidth / count($clientes7);
+$wStage = $wClientBlock / 3;
 
 /* ===============================
-   4. PINTAR TABLAS POR BLOQUES
+   4. FUNCIÓN: ENCABEZADO DOBLE (como sección 8)
 ================================*/
-foreach ($clientBlocks as $blockIndex => $blockClients){
 
-    if ($blockIndex > 0){
-        $pdf->AddPage();
-        $pdf->section_title("7. Summary of Tests by Type and Client (cont.)");
-    }
+function drawHeader7($pdf, $wTest, $clientes7, $wStage){
 
-    // ENCABEZADO LÍNEA 1
-    $pdf->SetFont('Arial','B',10);
-    $pdf->Cell($wTest, 10, "Test Type", 1, 0, 'C');
+    // Línea 1: Cliente
+    $pdf->SetFont('Arial','B',9);
+    $pdf->SetFillColor(220,220,220);
+    $pdf->Cell($wTest,7,"Test Type",1,0,'C',true);
 
-    foreach ($blockClients as $c){
-        $pdf->Cell($wSub*3, 10, utf8_decode($c), 1, 0, 'C');
+    foreach ($clientes7 as $c){
+        $pdf->Cell($wStage*3,7,utf8_decode($c),1,0,'C',true);
     }
     $pdf->Ln();
 
-    // ENCABEZADO LÍNEA 2
-    $pdf->Cell($wTest, 7, "", 1, 0, 'C');
-    foreach ($blockClients as $c){
-        $pdf->SetFont('Arial','',9);
-        $pdf->Cell($wSub,7,"Prep",1,0,'C');
-        $pdf->Cell($wSub,7,"Real",1,0,'C');
-        $pdf->Cell($wSub,7,"Comp",1,0,'C');
+    // Línea 2: Prep / Real / Del
+    $pdf->Cell($wTest,7,"",1,0);
+    $pdf->SetFont('Arial','',9);
+
+    foreach ($clientes7 as $c){
+        $pdf->Cell($wStage,7,"Prep",1,0,'C');
+        $pdf->Cell($wStage,7,"Real",1,0,'C');
+        $pdf->Cell($wStage,7,"Del",1,0,'C');
     }
     $pdf->Ln();
-
-    // FILAS
-    $pdf->SetFont('Arial','',10);
-    foreach ($tipos7 as $tp){
-
-        $pdf->Cell($wTest, 7, utf8_decode($tp), 1, 0, 'L');
-
-        foreach ($blockClients as $cl){
-
-            $prep = $matrix7[$tp][$cl]['Prep'] ?? 0;
-            $real = $matrix7[$tp][$cl]['Real'] ?? 0;
-            $del  = $matrix7[$tp][$cl]['Del']  ?? 0;
-
-            $pdf->Cell($wSub,7,$prep,1,0,'C');
-            $pdf->Cell($wSub,7,$real,1,0,'C');
-            $pdf->Cell($wSub,7,$del,1,0,'C');
-        }
-
-        $pdf->Ln();
-    }
-
-    $pdf->Ln(8);
 }
+
+/* ===============================
+   5. IMPRIMIR TABLA
+================================*/
+
+drawHeader7($pdf, $wTest, $clientes7, $wStage);
+
+$pdf->SetFont('Arial','',9);
+
+foreach ($tipos7 as $tp){
+
+    // Si se acerca al final de la página → nueva página + reimprimir encabezado
+    if ($pdf->GetY() > 255){
+        $pdf->AddPage();
+        drawHeader7($pdf, $wTest, $clientes7, $wStage);
+    }
+
+    $pdf->Cell($wTest,6,utf8_decode($tp),1,0,'L');
+
+    foreach ($clientes7 as $cl){
+
+        $prep = $matrix7[$tp][$cl]['Prep'] ?? 0;
+        $real = $matrix7[$tp][$cl]['Real'] ?? 0;
+        $del  = $matrix7[$tp][$cl]['Del']  ?? 0;
+
+        $pdf->Cell($wStage,6,$prep,1,0,'C');
+        $pdf->Cell($wStage,6,$real,1,0,'C');
+        $pdf->Cell($wStage,6,$del,1,1,'C');
+    }
+
+    $pdf->Ln(0);
+}
+
+$pdf->Ln(8);
+
+skip_section_7:
+
 
 /* ===============================
    SECCIÓN 8 — PENDING TESTS
