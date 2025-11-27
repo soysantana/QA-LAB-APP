@@ -898,27 +898,40 @@ while ($cursor <= $last) {
        COMPLETED (total output)
        backlog delivered + same-week completed
     =================================*/
-    $cmpTotalRows = $db->query("
-        SELECT r.Test_Type
-        FROM lab_test_requisition_form r
-        WHERE
-           (SELECT 1 FROM test_delivery d
-             WHERE d.Sample_ID=r.Sample_ID
-               AND d.Sample_Number=r.Sample_Number
-               AND DATE(d.Start_Date)='$date') IS NOT NULL
-        OR (SELECT 1 FROM test_review rv
-             WHERE rv.Sample_ID=r.Sample_ID
-               AND rv.Sample_Number=r.Sample_Number
-               AND DATE(rv.Start_Date)='$date') IS NOT NULL
-        OR (SELECT 1 FROM test_reviewed rd
-             WHERE rd.Sample_ID=r.Sample_ID
-               AND rd.Sample_Number=r.Sample_Number
-               AND DATE(rd.Start_Date)='$date') IS NOT NULL
-        OR (SELECT 1 FROM doc_files df
-             WHERE df.Sample_ID=r.Sample_ID
-               AND df.Sample_Number=r.Sample_Number
-               AND DATE(df.created_at)='$date') IS NOT NULL
-    ")->fetch_all(MYSQLI_ASSOC);
+   $cmpTotalRows = $db->query("
+    SELECT r.Test_Type
+    FROM lab_test_requisition_form r
+    WHERE 
+        EXISTS (
+            SELECT 1 
+            FROM test_delivery d
+            WHERE d.Sample_ID = r.Sample_ID
+              AND d.Sample_Number = r.Sample_Number
+              AND DATE(d.Start_Date) = '$date'
+        )
+     OR EXISTS (
+            SELECT 1
+            FROM test_review rv
+            WHERE rv.Sample_ID = r.Sample_ID
+              AND rv.Sample_Number = r.Sample_Number
+              AND DATE(rv.Start_Date) = '$date'
+        )
+     OR EXISTS (
+            SELECT 1
+            FROM test_reviewed rd
+            WHERE rd.Sample_ID = r.Sample_ID
+              AND rd.Sample_Number = r.Sample_Number
+              AND DATE(rd.Start_Date) = '$date'
+        )
+     OR EXISTS (
+            SELECT 1
+            FROM doc_files df
+            WHERE df.Sample_ID = r.Sample_ID
+              AND df.Sample_Number = r.Sample_Number
+              AND DATE(df.created_at) = '$date'
+        )
+")->fetch_all(MYSQLI_ASSOC);
+
 
     foreach ($cmpTotalRows as $r) {
         $types = explode(",", $r["Test_Type"]);
