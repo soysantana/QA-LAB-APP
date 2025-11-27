@@ -817,44 +817,87 @@ foreach($ins as $t){
 }
 
 /* ======================================================
-   SECTION 5 — Workload by ISO Week
+   SECTION 5 — Workload by ISO Week (with Unified Completed)
 ====================================================== */
 
 $pdf->SectionTitle("5. Workload by ISO Week");
 
+/* ------------------------------------------
+   1. BUILD ISO WEEK MATRIX
+------------------------------------------ */
+
 $weekly = [];
 
 $cursor = strtotime($start);
-$last = strtotime($end);
+$last   = strtotime($end);
 
-while($cursor <= $last){
-    $date = date("Y-m-d",$cursor);
-    $week = date("W",$cursor);
+while ($cursor <= $last) {
 
-    if(!isset($weekly[$week])){
-        $weekly[$week] = ["reg"=>0, "prep"=>0, "exec"=>0, "del"=>0];
+    $date = date("Y-m-d", $cursor);
+    $week = date("W", $cursor);
+
+    if (!isset($weekly[$week])) {
+        $weekly[$week] = [
+            "reg" => 0,
+            "prep" => 0,
+            "exec" => 0,
+            "completed" => 0
+        ];
     }
 
-    $weekly[$week]["reg"] += getCount($db,"
-        SELECT COUNT(*) c FROM lab_test_requisition_form WHERE Registed_Date = '$date'
+    /* REGISTERED */
+    $weekly[$week]["reg"] += getCount($db, "
+        SELECT COUNT(*) c
+        FROM lab_test_requisition_form
+        WHERE DATE(Registed_Date) = '$date'
     ");
 
-    $weekly[$week]["prep"] += getCount($db,"
-        SELECT COUNT(*) c FROM test_preparation WHERE DATE(Start_Date) = '$date'
+    /* PREPARATION */
+    $weekly[$week]["prep"] += getCount($db, "
+        SELECT COUNT(*) c
+        FROM test_preparation
+        WHERE DATE(Start_Date) = '$date'
     ");
 
-    $weekly[$week]["exec"] += getCount($db,"
-        SELECT COUNT(*) c FROM test_realization WHERE DATE(Start_Date) = '$date'
+    /* EXECUTION */
+    $weekly[$week]["exec"] += getCount($db, "
+        SELECT COUNT(*) c
+        FROM test_realization
+        WHERE DATE(Start_Date) = '$date'
     ");
 
-    $weekly[$week]["del"]  += getCount($db,"
-        SELECT COUNT(*) c FROM test_delivery WHERE DATE(Start_Date) = '$date'
+    /* COMPLETED = delivery OR review OR reviewed OR doc_files */
+    $weekly[$week]["completed"] += getCount($db, "
+        SELECT COUNT(*) c
+        FROM lab_test_requisition_form r
+        WHERE DATE(Registed_Date) <= '$date'
+          AND (
+                EXISTS(SELECT 1 FROM test_delivery d
+                       WHERE d.Sample_ID = r.Sample_ID
+                         AND d.Sample_Number = r.Sample_Number
+                         AND DATE(d.Start_Date) = '$date')
+             OR EXISTS(SELECT 1 FROM test_review v
+                       WHERE v.Sample_ID = r.Sample_ID
+                         AND v.Sample_Number = r.Sample_Number
+                         AND DATE(v.Start_Date) = '$date')
+             OR EXISTS(SELECT 1 FROM test_reviewed rv
+                       WHERE rv.Sample_ID = r.Sample_ID
+                         AND rv.Sample_Number = r.Sample_Number
+                         AND DATE(rv.Start_Date) = '$date')
+             OR EXISTS(SELECT 1 FROM doc_files f
+                       WHERE f.Sample_ID = r.Sample_ID
+                         AND f.Sample_Number = r.Sample_Number
+                         AND DATE(f.created_at) = '$date')
+          )
     ");
 
-    $cursor = strtotime("+1 day",$cursor);
+    $cursor = strtotime("+1 day", $cursor);
 }
 
-/* ---------- TABLE ---------- */
+/* ------------------------------------------
+   2. TABLE
+------------------------------------------ */
+
 $pdf->SubTitle("ISO Week Load Table");
 
 $pdf->TableHeader([
@@ -862,20 +905,69 @@ $pdf->TableHeader([
     30=>"Registered",
     30=>"Prep",
     30=>"Exec",
-    30=>"Del"
+    30=>"Completed"
 ]);
 
-foreach($weekly as $w=>$v){
+foreach ($weekly as $week => $v) {
     $pdf->TableRow([
-        30=>"W$w",
+        30=>"W$week",
         30=>$v["reg"],
         30=>$v["prep"],
         30=>$v["exec"],
-        30=>$v["del"]
+        30=>$v["completed"]
     ]);
 }
 
-$pdf->Ln(4);
+$pdf->Ln(6);
+
+/* ------------------------------------------
+   3. GRAPH — VERTICAL BAR CHART
+------------------------------------------ */
+
+$pdf->SubTitle("ISO Week Load Chart");
+
+$labels = array_map(fn($k)=>"W$k", array_keys($weekly));
+$values = array_column($weekly, "completed");  // Completed metric only
+
+$chartX = 25;
+$chartY = $pdf->GetY() + 6;
+$chartW = 150;
+$chartH = 45;
+
+drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
+
+$maxVal = max($values);
+if ($maxVal == 0) $maxVal = 1;
+
+$barW = (int)(($chartW - 10) / count($labels));
+
+foreach ($labels as $i => $lbl) {
+
+    $v = $values[$i];
+    $barH = ($v / $maxVal) * ($chartH - 5);
+
+    $x = $chartX + 5 + $i * $barW;
+    $y = $chartY + $chartH - $barH;
+
+    list($r,$g,$b) = pickColor($i);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $pdf->Rect($x, $y, $barW-2, $barH, "F");
+
+    // value label
+    $pdf->SetFont("Arial","B",7);
+    $pdf->SetXY($x, $y - 4);
+    $pdf->Cell($barW-2,3,$v,0,0,'C');
+
+    // week label
+    $pdf->SetFont("Arial","",6);
+    $pdf->SetXY($x, $chartY + $chartH + 2);
+    $pdf->Cell($barW-2,3,utf8_decode($lbl),0,0,'C');
+}
+
+$pdf->SetY($chartY + $chartH + 10);
+
+
 
 /* ======================================================
    SECTION 6 — Test Type Mix (Production Mix)
