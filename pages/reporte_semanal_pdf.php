@@ -603,11 +603,6 @@ draw_client_bar_chart($pdf, $clientesChart);
 
 $pdf->Ln(8);
 
-
-
-
-
-
 /* ===============================
    SECCIÓN 4 — WEEKLY SUMMARY
 ================================*/
@@ -703,7 +698,8 @@ foreach($labels as $i=>$lbl){
     $pdf->Cell(20,4,$lbl);
 }
 
-$pdf->Ln(50);
+$pdf->Ln(20);
+
 /* ===============================
    SECCIÓN 4 — DAILY BREAKDOWN BY CLIENT
 ================================*/
@@ -713,7 +709,7 @@ $pdf->section_title("4. Daily Breakdown by Client");
 
 // 1) Lista de clientes de la semana
 $clientesRes = find_by_sql("
-    SELECT DISTINCT Client
+    SELECT DISTINCT TRIM(Client) AS Client
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
       AND TRIM(IFNULL(Client,'')) <> ''
@@ -722,7 +718,48 @@ $clientesRes = find_by_sql("
 
 $clientNames = array_column($clientesRes, 'Client');
 
-// 2) Matriz inicial (días de la semana ISO)
+/* -------------------------------------------
+   CALCULAR ANCHO DINÁMICO POR CLIENTE
+------------------------------------------- */
+
+if (!empty($clientNames)) {
+
+    $totalWidth = 190;      // ancho útil página
+    $dateCol    = 40;       // ancho columna DATE
+    $usable     = $totalWidth - $dateCol;
+
+    // medir ancho teórico de cada nombre
+    $tempPDF = new FPDF();
+    $tempPDF->AddPage();
+    $tempPDF->SetFont('Arial','',9);
+
+    $nameWidths = [];
+    foreach ($clientNames as $cl) {
+        $txtW = $tempPDF->GetStringWidth($cl) + 10; // margen
+        if ($txtW < 20)  $txtW = 20;  // ancho mínimo
+        if ($txtW > 45)  $txtW = 45;  // ancho máximo por cliente
+        $nameWidths[$cl] = $txtW;
+    }
+
+    // normalizar para que todos juntos quepan
+    $sum = array_sum($nameWidths);
+    if ($sum > $usable) {
+        // factor de reducción
+        $factor = $usable / $sum;
+        foreach ($nameWidths as $cl => $w) {
+            $nameWidths[$cl] = max(18, $w * $factor); // ancho mínimo 18
+        }
+    }
+
+    // construir array final de anchos
+    $colWidths = [$dateCol];
+    foreach ($clientNames as $cl) {
+        $colWidths[] = $nameWidths[$cl];
+    }
+}
+
+/* ---------- Matriz día × cliente ---------- */
+
 $matriz = [];
 $dayCursor = new DateTime($start_str);
 $endCursor = new DateTime($end_str);
@@ -730,9 +767,11 @@ $endCursor = new DateTime($end_str);
 while ($dayCursor <= $endCursor) {
     $fecha = $dayCursor->format("Y-m-d");
     $matriz[$fecha] = [];
+
     foreach ($clientNames as $cl) {
         $matriz[$fecha][$cl] = 0;
     }
+
     $dayCursor->modify("+1 day");
 }
 
@@ -742,8 +781,10 @@ $raw = resumen_diario_cliente($start_str,$end_str);
 foreach ($raw as $r) {
     $dia = $r['dia'];
     $cl  = $r['Client'];
+
     if (!isset($matriz[$dia])) continue;
-    if (!in_array($cl,$clientNames,true)) continue;
+    if (!array_key_exists($cl, $matriz[$dia])) continue;
+
     $matriz[$dia][$cl] = (int)$r['total'];
 }
 
@@ -756,11 +797,8 @@ if (empty($clientNames)) {
     $pdf->SetFillColor(245,245,245);
     $pdf->Cell(0,10,"No registered samples for this week.",1,1,'C',true);
     $pdf->Ln(5);
-} else {
 
-    // ancho columnas: fecha + 18 mm por cliente
-    $colWidths = [45];  // fecha
-    foreach ($clientNames as $cl) $colWidths[] = 22;
+} else {
 
     // encabezado
     $header = ["Date"];
@@ -773,17 +811,19 @@ if (empty($clientNames)) {
     // filas
     foreach ($matriz as $dia => $row) {
         $cells = [ date("D d-M", strtotime($dia)) ];
+
         foreach ($clientNames as $cl) {
             $cells[] = $row[$cl];
         }
+
         $pdf->table_row($cells, $colWidths);
     }
 
     $pdf->Ln(8);
 
-    /* ---------- GRÁFICO MULTI-SERIE (CLIENTE × DÍA) ---------- */
+    /* ---------- GRAFICO  DAILY SAMPLES ---------- */
 
-    // Verificamos si hay datos > 0
+    // Solo si hay valores > 0
     $hasData = false;
     foreach ($matriz as $row) {
         foreach ($row as $v) {
@@ -791,10 +831,15 @@ if (empty($clientNames)) {
         }
     }
 
-    if ($hasData) {
+    if (!$hasData) {
+        $pdf->SetFont("Arial","B",10);
+        $pdf->SetFillColor(245,245,245);
+        $pdf->Cell(0,10,"No daily client activity to display in graph.",1,1,'C',true);
+        $pdf->Ln(5);
+
+    } else {
 
         $pdf->SubTitle("Graph: Daily Samples by Client");
-
         ensure_space($pdf, 95);
 
         $chartX = 20;
@@ -804,19 +849,18 @@ if (empty($clientNames)) {
 
         // Dibujar ejes
         $pdf->SetDrawColor(0,0,0);
-        $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);                 // Eje Y
-        $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);  // Eje X
+        $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);
+        $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);
 
-        // Calcular máximo
-        $maxVal = 0;
+        // max
+        $maxVal = 1;
         foreach ($matriz as $row) {
             foreach ($row as $v) {
                 if ($v > $maxVal) $maxVal = $v;
             }
         }
-        if ($maxVal <= 0) $maxVal = 1;
 
-        // Escala eje Y
+        // escala
         $pdf->SetFont("Arial", "", 7);
         $steps = 4;
         for ($i = 0; $i <= $steps; $i++) {
@@ -826,29 +870,24 @@ if (empty($clientNames)) {
             $pdf->Cell(7, 4, $val, 0, 0, 'R');
         }
 
-        // Dibujar barras
+        // barras
         $days        = array_keys($matriz);
         $barsPerDay  = count($clientNames);
-        $totalBars   = $barsPerDay * count($days);
-        if ($totalBars <= 0) $totalBars = 1;
-
-        $bw = ($chartW - 20) / $totalBars;
-        if ($bw <= 0) $bw = 1;
+        $totalBars   = max(1, $barsPerDay * count($days));
+        $bw          = max(1, ($chartW - 20) / $totalBars);
 
         $x = $chartX + 10;
 
         foreach ($days as $d) {
             $row = $matriz[$d];
             foreach ($clientNames as $idx => $cl) {
-
                 $v = $row[$cl];
-                $h = ($v / $maxVal) * ($chartH - 4);
-                $y = $chartY + ($chartH - $h);
+                $barH = ($v / $maxVal) * ($chartH - 4);
+                $y = $chartY + ($chartH - $barH);
 
                 list($r,$g,$b) = pickColor($idx);
                 $pdf->SetFillColor($r,$g,$b);
-
-                $pdf->Rect($x, $y, $bw, $h, "F");
+                $pdf->Rect($x, $y, $bw, $barH, "F");
 
                 if ($v > 0) {
                     $pdf->SetFont('Arial','B',7);
@@ -860,7 +899,7 @@ if (empty($clientNames)) {
             }
         }
 
-        // EJE X: días
+        // etiquetas días
         $pdf->SetFont("Arial", "", 7);
         $x = $chartX + 10;
         $groupW = $bw * $barsPerDay;
@@ -871,11 +910,11 @@ if (empty($clientNames)) {
             $x += $groupW;
         }
 
-        // LEYENDA VERTICAL DERECHA (COLORES POR CLIENTE)
-        $pdf->SetFont("Arial","B",8);
+        // leyenda
         $legendX = $chartX + $chartW + 6;
         $legendY = $chartY + 2;
 
+        $pdf->SetFont("Arial","B",8);
         $pdf->SetXY($legendX, $legendY);
         $pdf->Cell(20,5,"Legend",0,1);
 
@@ -891,112 +930,10 @@ if (empty($clientNames)) {
             $pdf->Cell(22,5,$cl);
         }
 
-        $pdf->SetY($chartY + $chartH + 14);
-    } else {
-        $pdf->SetFont("Arial","B",10);
-        $pdf->SetFillColor(245,245,245);
-        $pdf->Cell(0,10,"No daily client activity to display in graph.",1,1,'C',true);
-        $pdf->Ln(5);
+        $pdf->SetY($chartY + $chartH + 16);
     }
 }
-// Datos desde tu función existente
-$clientes_res = resumen_cliente($start_str,$end_str);
 
-if (!empty($clientes_res)) {
-
-    $pdf->SubTitle("Graph: Client Completion Percentage");
-
-    ensure_space($pdf, 85);
-
-    // Preparar puntos (% completado)
-    $points = [];
-    foreach ($clientes_res as $c){
-        $sol = (int)$c['solicitados'];
-        $ent = (int)$c['entregados'];
-        $pct = ($sol > 0) ? round(($ent * 100) / $sol) : 0;
-
-        $points[] = [
-            "label" => $c['Client'],
-            "pct"   => $pct
-        ];
-    }
-
-    // Área del gráfico
-    $chartX = 20;
-    $chartY = $pdf->GetY() + 5;
-    $chartW = 150;
-    $chartH = 55;
-
-    // Ejes
-    $pdf->SetDrawColor(0,0,0);
-    $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);              // Y
-    $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);  // X
-
-    // Y-axis labels 0-100%
-    $pdf->SetFont('Arial','',7);
-    $steps = 4;
-    for ($i=0; $i <= $steps; $i++){
-        $yPos = $chartY + $chartH - ($chartH / $steps * $i);
-        $val  = round(100 / $steps * $i);
-        $pdf->SetXY($chartX - 10, $yPos - 2);
-        $pdf->Cell(8,4,$val,0,0,'R');
-    }
-
-    // Barras
-    $bars = count($points);
-    $bw   = ($chartW - 20) / max($bars,1);
-    if ($bw < 10) $bw = 10;  // ancho mínimo
-
-    $x = $chartX + 10;
-
-    foreach ($points as $i => $p){
-
-        $pct = $p['pct'];
-        $h   = ($pct / 100) * ($chartH - 4);
-        $y   = $chartY + ($chartH - $h);
-
-        // Color consistente
-        list($r,$g,$b) = pickColor($i);
-        $pdf->SetFillColor($r,$g,$b);
-
-        // Barra
-        $pdf->Rect($x, $y, $bw, $h, "F");
-
-        // Valor porcentaje encima
-        $pdf->SetFont('Arial','B',7);
-        $pdf->SetXY($x, $y - 4);
-        $pdf->Cell($bw,4,$pct."%",0,0,'C');
-
-        // Label cliente en X
-        $pdf->SetFont('Arial','',7);
-        $pdf->SetXY($x, $chartY + $chartH + 2);
-        $pdf->MultiCell($bw,4,$p["label"],0,'C');
-
-        $x += $bw;
-    }
-
-    // Leyenda vertical derecha
-    $legendX = $chartX + $chartW + 6;
-    $legendY = $chartY;
-
-    $pdf->SetFont('Arial','B',8);
-    $pdf->SetXY($legendX, $legendY);
-    $pdf->Cell(20,4,"Legend",0,1);
-
-    foreach ($points as $i => $p){
-        list($r,$g,$b) = pickColor($i);
-        $pdf->SetFillColor($r,$g,$b);
-
-        $pdf->SetXY($legendX, $legendY + 6 + ($i * 6));
-        $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
-
-        $pdf->SetXY($legendX + 6, $legendY + 5 + ($i * 6));
-        $pdf->SetFont("Arial","",7);
-        $pdf->Cell(30,5, $p['label'],0,1,'L');
-    }
-
-    $pdf->SetY($chartY + $chartH + 16);
-}
 
 /* ===============================
    SECCIÓN 5 — TEST DISTRIBUTION BY TYPE AND CLIENT
