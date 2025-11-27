@@ -314,23 +314,30 @@ function table_row_multiline($pdf, $data, $w){
     $pdf->Ln($maxHeight);
 }
 
-/* ===============================
+/* ==========================================================
    SECCIÓN 2 — WEEKLY CLIENT COMPLETION SUMMARY (LAST 30 DAYS)
-   Igual a la lógica del Diario, pero aplicado al cierre de la semana
-================================*/
+   (Reemplaza completamente la sección 2 actual)
+========================================================== */
 
 $pdf->section_title("2. Weekly Client Completion Summary (Last 30 Days)");
 
-/* ===============================
-   1. Calcular rango (último mes)
-================================*/
-$endMonth = $end_str;
+/* ==========================================================
+   1. Fechas — Último mes desde el fin de la semana
+========================================================== */
+$endMonth   = $end_str;
 $startMonth = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($endMonth)));
 
-/* ===============================
-   2. Cargar solicitudes (requested)
-   Excluyendo 'envio / envío'
-================================*/
+/* ==========================================================
+   2. Función para detectar "envío / envio / envíos"
+========================================================== */
+function es_envio_tt($tt){
+    $t = mb_strtolower(trim($tt), 'UTF-8');
+    return preg_match('/\benv[ií]os?\b/u', $t);
+}
+
+/* ==========================================================
+   3. Solicitudes del último mes
+========================================================== */
 $solicitudes = find_by_sql("
     SELECT 
         UPPER(TRIM(Client)) AS Client,
@@ -341,73 +348,60 @@ $solicitudes = find_by_sql("
     WHERE Sample_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
 ");
 
-/* Función para detectar "envio/envío" */
-function es_envio_tt($tt){
-    $t = mb_strtolower(trim($tt), 'UTF-8');
-    return preg_match('/\benv[ií]os?\b/u', $t);
-}
+/* ==========================================================
+   4. Cargar completados (Delivery + Review + Reviewed + DOC_FILES)
+========================================================== */
 
-/* ===============================
-   3. Cargar ENTREGADOS de 4 tablas
-================================*/
 $rawCompleted = [];
 
-// Delivery
-$del = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type
-    FROM test_delivery
-    WHERE Register_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
-");
-foreach ($del as $e) $rawCompleted[] = $e;
+$tablas = [
+    ["test_delivery", "Register_Date"],
+    ["test_review",   "Start_Date"],
+    ["test_reviewed", "Start_Date"],
+    ["doc_files",     "created_at"]
+];
 
-// Review
-$rev = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type
-    FROM test_review
-    WHERE Start_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
-");
-foreach ($rev as $e) $rawCompleted[] = $e;
+foreach ($tablas as $t){
 
-// Reviewed
-$revd = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type
-    FROM test_reviewed
-    WHERE Start_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
-");
-foreach ($revd as $e) $rawCompleted[] = $e;
+    list($table, $fecha) = $t;
 
-// DOC FILES
-$docs = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type
-    FROM doc_files
-    WHERE created_at BETWEEN '{$startMonth}' AND '{$endMonth}'
-");
-foreach ($docs as $e) $rawCompleted[] = $e;
+    $rows = find_by_sql("
+        SELECT Sample_ID, Sample_Number, Test_Type
+        FROM {$table}
+        WHERE {$fecha} BETWEEN '{$startMonth}' AND '{$endMonth}'
+    ");
 
-/* ===============================
-   4. Crear mapa de ENTREGADOS
-================================*/
+    foreach ($rows as $r){
+        $rawCompleted[] = $r;
+    }
+}
+
+/* ==========================================================
+   5. Mapa de COMPLETADOS (SampleID|Number|Type)
+========================================================== */
+
 $entregado_map = [];
 
-foreach ($rawCompleted as $e) {
+foreach ($rawCompleted as $e){
 
-    $sid = strtoupper(trim($e['Sample_ID'] ?? ''));
+    $sid = strtoupper(trim($e['Sample_ID']   ?? ''));
     $sno = strtoupper(trim($e['Sample_Number'] ?? ''));
     $tts = (string)($e['Test_Type'] ?? '');
 
-    foreach (preg_split('/[;,]+/', $tts) as $tt) {
+    foreach (preg_split('/[;,]+/', $tts) as $tt){
 
         $tt = trim($tt);
         if ($tt === '' || es_envio_tt($tt)) continue;
 
-        $key = $sid . '|' . $sno . '|' . strtoupper($tt);
+        $key = "{$sid}|{$sno}|" . strtoupper($tt);
         $entregado_map[$key] = true;
     }
 }
 
-/* ===============================
-   5. Recorrer SOLICITUDES por cliente
-================================*/
+/* ==========================================================
+   6. Procesar solicitudes por cliente
+========================================================== */
+
 $stats = [];
 
 foreach ($solicitudes as $s){
@@ -417,49 +411,55 @@ foreach ($solicitudes as $s){
     $sno      = strtoupper(trim($s['Sample_Number'] ?? ''));
     $tts      = (string)($s['Test_Type'] ?? '');
 
-    if (!isset($stats[$client])) {
-        $stats[$client] = [
-            'requested' => 0,
-            'completed' => 0,
-            'percent'   => 0
-        ];
-    }
-
-    $tokens = preg_split('/[;,]+/', $tts);
-
-    foreach ($tokens as $tt){
+    foreach (preg_split('/[;,]+/', $tts) as $tt){
 
         $tt = trim($tt);
         if ($tt === '' || es_envio_tt($tt)) continue;
 
+        // crear si no existe
+        if (!isset($stats[$client])) {
+            $stats[$client] = [
+                'cliente'   => $client,
+                'requested' => 0,
+                'completed' => 0,
+                'percent'   => 0
+            ];
+        }
+
         $stats[$client]['requested']++;
 
-        $key = $sid . '|' . $sno . '|' . strtoupper($tt);
-
+        $key = "{$sid}|{$sno}|" . strtoupper($tt);
         if (isset($entregado_map[$key])) {
             $stats[$client]['completed']++;
         }
     }
 }
 
-/* ===============================
-   6. Calcular porcentajes
-================================*/
-foreach ($stats as $cliente => &$row){
+/* ==========================================================
+   7. Calcular porcentaje
+========================================================== */
+foreach ($stats as &$row){
     $r = (int)$row['requested'];
     $c = (int)$row['completed'];
-    $row['percent'] = $r > 0 ? round(($c / $r) * 100, 1) : 0;
+    $row['percent'] = $r > 0 ? round(($c/$r)*100, 1) : 0;
 }
 unset($row);
 
-/* Ordenar por mayor backlog */
-usort($stats, function($a, $b){
-    return ($b['requested'] - $b['completed']) <=> ($a['requested'] - $a['completed']);
+/* ==========================================================
+   8. Convertir a array numérico para usar usort()
+========================================================== */
+$stats = array_values($stats);
+
+/* ==========================================================
+   9. Ordenar por Backlog DESC
+========================================================== */
+usort($stats, function($a,$b){
+    return ($b['requested']-$b['completed']) <=> ($a['requested']-$a['completed']);
 });
 
-/* ===============================
-   7. Pintar TABLA en PDF
-================================*/
+/* ==========================================================
+   10. TABLA PDF
+========================================================== */
 $pdf->SetFont('Arial','B',10);
 $pdf->table_header(
     ["Client","Requested","Completed","Backlog","%"],
@@ -467,7 +467,7 @@ $pdf->table_header(
 );
 
 $pdf->SetFont('Arial','',10);
-foreach ($stats as $cliente => $row){
+foreach ($stats as $row){
 
     $req = $row['requested'];
     $com = $row['completed'];
@@ -475,7 +475,7 @@ foreach ($stats as $cliente => $row){
     if ($back < 0) $back = 0;
 
     $pdf->table_row([
-        $cliente,
+        $row['cliente'],
         $req,
         $com,
         $back,
@@ -484,6 +484,126 @@ foreach ($stats as $cliente => $row){
 }
 
 $pdf->Ln(8);
+
+/* ==========================================================
+   11. Transformar $stats → $clientesChart (para el gráfico)
+========================================================== */
+
+$clientesChart = [];
+
+foreach ($stats as $row){
+
+    $cli = $row['cliente'];
+    $clientesChart[$cli] = [
+        'solicitados' => (int)$row['requested'],
+        'entregados'  => (int)$row['completed']
+    ];
+}
+
+/* ==========================================================
+   12. FUNCIÓN — GRÁFICO DE BARRAS VERTICAL
+========================================================== */
+
+function draw_client_bar_chart($pdf, array $clientes) {
+  if (empty($clientes)) return;
+
+  // Construir data: cliente + porcentaje
+  $data = [];
+  foreach ($clientes as $cli => $d) {
+    $sol = (int)($d['solicitados'] ?? 0);
+    $ent = (int)($d['entregados'] ?? 0);
+    $pct = $sol > 0 ? round(($ent * 100) / $sol) : 0;
+
+    $label = strtoupper(trim($cli));
+    if (mb_strlen($label, 'UTF-8') > 20) {
+      $label = mb_substr($label, 0, 10, 'UTF-8') . '...';
+    }
+
+    $data[] = [
+      'label' => $label,
+      'pct'   => $pct,
+    ];
+  }
+
+  $maxPct = 0;
+  foreach ($data as $d) {
+    if ($d['pct'] > $maxPct) $maxPct = $d['pct'];
+  }
+  if ($maxPct <= 0) return;
+
+  // espacio
+  $chartHeight = 45;
+  $chartBottomMargin = 18;
+  $needed = $chartHeight + $chartBottomMargin + 10;
+  if ($pdf->GetY() + $needed > 260) {
+    $pdf->AddPage();
+  }
+
+  // ejes y dimensiones
+  $x0 = $pdf->GetX();
+  $y0 = $pdf->GetY() + 4;
+  $chartWidth  = 180;
+  $numBars     = count($data);
+  $gap = 4;
+
+  $barWidth = ($chartWidth - ($numBars + 1) * $gap) / max($numBars, 1);
+  if ($barWidth < 8) $barWidth = 8;
+
+  $pdf->SetDrawColor(0);
+  $pdf->Line($x0, $y0, $x0, $y0 + $chartHeight);
+  $pdf->Line($x0, $y0 + $chartHeight, $x0 + $chartWidth, $y0 + $chartHeight);
+
+  // escala del 0% al 100%
+  $pdf->SetFont('Arial','',7);
+  $steps = [0,25,50,75,100];
+  foreach ($steps as $pctRef){
+      if ($pctRef > $maxPct) continue;
+      $yLine = $y0 + $chartHeight - ($pctRef * $chartHeight / $maxPct);
+      $pdf->SetDrawColor(220);
+      $pdf->Line($x0, $yLine, $x0 + $chartWidth, $yLine);
+      $pdf->SetDrawColor(0);
+      $pdf->SetXY($x0 - 8, $yLine - 2);
+      $pdf->Cell(8,4,$pctRef.'%',0,0,'R');
+  }
+
+  // barras
+  $pdf->SetFont('Arial','',8);
+  $i = 0;
+  foreach ($data as $d){
+      $pct  = $d['pct'];
+      $lbl  = $d['label'];
+
+      $barHeight = ($pct * $chartHeight) / $maxPct;
+      $x = $x0 + $gap + $i * ($barWidth + $gap);
+      $y = $y0 + $chartHeight - $barHeight;
+
+      $pdf->SetFillColor(100,149,237);
+      $pdf->Rect($x, $y, $barWidth, $barHeight, 'F');
+
+      $pdf->SetXY($x, $y - 4);
+      $pdf->Cell($barWidth,4,$pct.'%',0,0,'C');
+
+      $pdf->SetXY($x, $y0 + $chartHeight + 2);
+      $pdf->MultiCell($barWidth,3,$lbl,0,'C');
+
+      $i++;
+  }
+
+  $pdf->SetY($y0 + $chartHeight + $chartBottomMargin);
+}
+
+/* ==========================================================
+   13. Dibujar el gráfico
+========================================================== */
+
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,8,"2.1 Client Completion Chart",0,1);
+
+draw_client_bar_chart($pdf, $clientesChart);
+
+$pdf->Ln(8);
+
+
 
 
 
