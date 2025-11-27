@@ -898,7 +898,7 @@ while ($cursor <= $last) {
        COMPLETED (total output)
        backlog delivered + same-week completed
     =================================*/
-   $cmpTotalRows = $db->query("
+  $cmpTotalRows = $db->query("
     SELECT r.Test_Type
     FROM lab_test_requisition_form r
     WHERE 
@@ -931,6 +931,7 @@ while ($cursor <= $last) {
               AND DATE(df.created_at) = '$date'
         )
 ")->fetch_all(MYSQLI_ASSOC);
+
 
 
     foreach ($cmpTotalRows as $r) {
