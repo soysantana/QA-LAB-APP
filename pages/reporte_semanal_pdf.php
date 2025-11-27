@@ -320,8 +320,9 @@ function table_row_multiline($pdf, $data, $w){
 
 $pdf->section_title("2. Weekly Client Summary of Completed Tests");
 
+
 /* =====================================================
-   1. Obtener “REQUESTED” por cliente
+   1. REQUESTED (HISTÓRICO COMPLETO)
 ===================================================== */
 
 $requested = find_by_sql("
@@ -329,21 +330,18 @@ $requested = find_by_sql("
         UPPER(TRIM(Client)) AS Client,
         COUNT(*) AS total_requested
     FROM lab_test_requisition_form
-    WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
-      AND TRIM(IFNULL(Client,'')) <> ''
+    WHERE TRIM(IFNULL(Client,'')) <> ''
     GROUP BY Client
 ");
 
-/* Convertir a mapa */
 $reqMap = [];
 foreach ($requested as $r){
-    $client = $r['Client'];
-    $reqMap[$client] = (int)$r['total_requested'];
+    $reqMap[$r['Client']] = (int)$r['total_requested'];
 }
 
 
 /* =====================================================
-   2. Obtener “COMPLETED” por cliente
+   2. COMPLETED (ACUMULADO HASTA end_str)
 ===================================================== */
 
 $completed = find_by_sql("
@@ -355,21 +353,20 @@ $completed = find_by_sql("
       ON d.Sample_ID = r.Sample_ID
      AND d.Sample_Number = r.Sample_Number
      AND d.Test_Type = r.Test_Type
-    WHERE d.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+    WHERE 
+        d.Register_Date <= '{$end_str}'
       AND TRIM(IFNULL(r.Client,'')) <> ''
     GROUP BY r.Client
 ");
 
-/* Convertir a mapa */
 $compMap = [];
 foreach ($completed as $c){
-    $client = $c['Client'];
-    $compMap[$client] = (int)$c['total_completed'];
+    $compMap[$c['Client']] = (int)$c['total_completed'];
 }
 
 
 /* =====================================================
-   3. Unir datos Requested + Completed
+   3. UNIR REQUESTED + COMPLETED + BACKLOG + %
 ===================================================== */
 
 $clients = array_unique(array_merge(array_keys($reqMap), array_keys($compMap)));
@@ -379,58 +376,62 @@ $rows2 = [];
 
 foreach ($clients as $cl){
 
-    $req = $reqMap[$cl] ?? 0;
+    $req  = $reqMap[$cl]  ?? 0;
     $comp = $compMap[$cl] ?? 0;
 
-    $pct = ($req > 0)
-        ? round(($comp / $req) * 100)
-        : 0;
+    // backlog con regla B (si negativo, 0)
+    $backlog = max($req - $comp, 0);
+
+    $pct = ($req > 0) ? round(($comp / $req) * 100) : 0;
 
     $rows2[] = [
         "Client"     => $cl,
         "Requested"  => $req,
         "Completed"  => $comp,
+        "Backlog"    => $backlog,
         "Percent"    => $pct
     ];
 }
 
 
 /* =====================================================
-   4. ORDENAR POR “Completed” DESC (Opción C)
+   4. ORDENAR POR “Completed” DESC (OPCIÓN C)
 ===================================================== */
+
 usort($rows2, function($a, $b){
     return $b['Completed'] <=> $a['Completed'];
 });
 
 
 /* =====================================================
-   5. TABLA
+   5. TABLA SEMANAL
 ===================================================== */
 
 if (empty($rows2)){
 
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(245,245,245);
-    $pdf->Cell(0,10,"No data for this week.",1,1,'C',true);
+    $pdf->Cell(0,10,"No data available.",1,1,'C',true);
     $pdf->Ln(5);
 
 } else {
 
     $pdf->SetFont('Arial','B',10);
-
     $pdf->Cell(60,8,"Client",1,0,'C');
-    $pdf->Cell(35,8,"Requested",1,0,'C');
-    $pdf->Cell(35,8,"Completed",1,0,'C');
-    $pdf->Cell(25,8,"%",1,1,'C');
+    $pdf->Cell(30,8,"Requested",1,0,'C');
+    $pdf->Cell(30,8,"Completed",1,0,'C');
+    $pdf->Cell(30,8,"Backlog",1,0,'C');
+    $pdf->Cell(20,8,"%",1,1,'C');
 
     $pdf->SetFont('Arial','',10);
 
     foreach ($rows2 as $r){
 
         $pdf->Cell(60,8,utf8_decode($r['Client']),1,0,'L');
-        $pdf->Cell(35,8,$r['Requested'],1,0,'C');
-        $pdf->Cell(35,8,$r['Completed'],1,0,'C');
-        $pdf->Cell(25,8,$r['Percent']."%",1,1,'C');
+        $pdf->Cell(30,8,$r['Requested'],1,0,'C');
+        $pdf->Cell(30,8,$r['Completed'],1,0,'C');
+        $pdf->Cell(30,8,$r['Backlog'],1,0,'C');
+        $pdf->Cell(20,8,$r['Percent']."%",1,1,'C');
     }
 
     $pdf->Ln(8);
@@ -438,25 +439,24 @@ if (empty($rows2)){
 
 
 /* =====================================================
-   6. GRÁFICO: Weekly Client Completion %
+   6. GRÁFICO — WEEKLY CLIENT COMPLETION %
 ===================================================== */
 
 if (!empty($rows2)){
 
-    $pdf->SubTitle("Client Completion % (Weekly)");
+    $pdf->SubTitle("Weekly Client Completion %");
 
     ensure_space($pdf, 80);
 
     $chartX = 20;
     $chartY = $pdf->GetY() + 5;
-    $chartW = 160;
-    $chartH = 55;
+    $chartW = 170;
+    $chartH = 60;
 
     // Ejes
     $pdf->SetDrawColor(0,0,0);
     $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);
     $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);
-
 
     /* ---------- Escala % ---------- */
     $pdf->SetFont('Arial','',7);
@@ -467,7 +467,6 @@ if (!empty($rows2)){
         $pdf->SetXY($chartX - 12, $yPos - 2);
         $pdf->Cell(10,4,$val."%",0,0,'R');
     }
-
 
     /* ---------- Barras ---------- */
 
@@ -488,7 +487,7 @@ if (!empty($rows2)){
         $pdf->Rect($x, $y, $barWidth, $h, "F");
 
         // valor %
-        $pdf->SetFont('Arial','B',8);
+        $pdf->SetFont('Arial','B',7);
         $pdf->SetXY($x, $y - 5);
         $pdf->Cell($barWidth,5,$pct."%",0,0,'C');
 
@@ -500,7 +499,7 @@ if (!empty($rows2)){
         $x += $barWidth + 5;
     }
 
-    $pdf->Ln(10);
+    $pdf->Ln(8);
 }
 
 
