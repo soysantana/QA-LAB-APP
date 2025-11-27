@@ -825,204 +825,241 @@ foreach($ins as $t){
 
 
 
-
 /* ======================================================
-   SECTION 5 — Workload by ISO Week
+   SECTION 5 — Workload by ISO Week (Client-Based)
 ====================================================== */
 
 $pdf->SectionTitle("5. Workload by ISO Week");
 
-/* ----------------------------------------------
-   1) CALCULAR SEMANAS DEL RANGO DEL MES
----------------------------------------------- */
+/* ======================================================
+   1) GET DISTINCT CLIENTS (Alphabetically)
+====================================================== */
+$clientList = $db->query("
+    SELECT DISTINCT Client
+    FROM lab_test_requisition_form
+    WHERE TRIM(Client) <> ''
+")->fetch_all(MYSQLI_ASSOC);
 
-$weekly = [];   // week => ["reg"=>0, "cmp"=>0]
+$clients = array_map(fn($x) => trim($x["Client"]), $clientList);
+sort($clients);
 
+/* Limitar a 15 caracteres */
+function shortClient($c){
+    $c = trim($c);
+    return (mb_strlen($c) > 15)
+        ? mb_substr($c,0,15) . "."
+        : $c;
+}
+
+$shortClients = array_map("shortClient", $clients);
+
+/* ======================================================
+   2) BUILD WEEK MATRIX
+====================================================== */
+
+$weekly = [];           // week → client → [req, cmp]
 $cursor = strtotime($start);
 $last   = strtotime($end);
 
-while ($cursor <= $last) {
+while ($cursor <= $last){
 
-    $date = date("Y-m-d",$cursor);
-    $week = date("o-W",$cursor);  // Año-Semana ISO correcto
+    $date = date("Y-m-d", $cursor);
+    $week = (int) date("W", $cursor);
 
-    if (!isset($weekly[$week])) {
-        $weekly[$week] = ["reg"=>0, "cmp"=>0];
+    if (!isset($weekly[$week])){
+        $weekly[$week] = [];
+        foreach ($clients as $cl){
+            $weekly[$week][$cl] = ["req"=>0, "cmp"=>0];
+        }
     }
 
-    /* --- Registered --- */
-    $weekly[$week]["reg"] += getCount($db, "
-        SELECT COUNT(*) c 
-        FROM lab_test_requisition_form 
-        WHERE DATE(Registed_Date) = '$date'
-    ");
+    /* ---------- Requested ---------- */
+    $reqRows = $db->query("
+        SELECT Client, Test_Type
+        FROM lab_test_requisition_form
+        WHERE Registed_Date = '$date'
+    ")->fetch_all(MYSQLI_ASSOC);
 
-    /* --- Completed (Delivery + Review + Reviewed + Docs) --- */
-    $weekly[$week]["cmp"] += getCount($db, "
-        SELECT COUNT(*) c
+    foreach ($reqRows as $r){
+        foreach (explode(",", $r["Test_Type"]) as $tt){
+            $tt = trim($tt);
+            if ($tt === "") continue;
+            $weekly[$week][$r["Client"]]["req"]++;
+        }
+    }
+
+    /* ---------- Completed (Delivery + Review + Reviewed + Docs) ---------- */
+    $cmpRows = $db->query("
+        SELECT DISTINCT r.Client
         FROM lab_test_requisition_form r
         WHERE 
-            (SELECT 1 FROM test_delivery d
-                WHERE d.Sample_ID=r.Sample_ID 
-                  AND d.Sample_Number=r.Sample_Number
-                  AND DATE(d.Start_Date)='$date') IS NOT NULL
-        OR  (SELECT 1 FROM test_review rv
-                WHERE rv.Sample_ID=r.Sample_ID 
-                  AND rv.Sample_Number=r.Sample_Number
-                  AND DATE(rv.Start_Date)='$date') IS NOT NULL
-        OR  (SELECT 1 FROM test_reviewed rd
-                WHERE rd.Sample_ID=r.Sample_ID 
-                  AND rd.Sample_Number=r.Sample_Number
-                  AND DATE(rd.Start_Date)='$date') IS NOT NULL
-        OR  (SELECT 1 FROM doc_files df
-                WHERE df.Sample_ID=r.Sample_ID 
-                  AND df.Sample_Number=r.Sample_Number
-                  AND DATE(df.created_at)='$date') IS NOT NULL
-    ");
+           r.Registed_Date <= '$date'
+           AND (
+                EXISTS(SELECT 1 FROM test_delivery d
+                       WHERE d.Sample_ID=r.Sample_ID 
+                       AND d.Sample_Number=r.Sample_Number
+                       AND DATE(d.Start_Date)='$date')
+            OR  EXISTS(SELECT 1 FROM test_review rv
+                       WHERE rv.Sample_ID=r.Sample_ID
+                       AND rv.Sample_Number=r.Sample_Number
+                       AND DATE(rv.Start_Date)='$date')
+            OR  EXISTS(SELECT 1 FROM test_reviewed rd
+                       WHERE rd.Sample_ID=r.Sample_ID
+                       AND rd.Sample_Number=r.Sample_Number
+                       AND DATE(rd.Start_Date)='$date')
+            OR  EXISTS(SELECT 1 FROM doc_files df
+                       WHERE df.Sample_ID=r.Sample_ID
+                       AND df.Sample_Number=r.Sample_Number
+                       AND DATE(df.created_at)='$date')
+           )
+    ")->fetch_all(MYSQLI_ASSOC);
 
-    $cursor = strtotime("+1 day",$cursor);
-}
-
-/* ----------------------------------------------
-   2) TABLA — ISO WEEK LOAD TABLE
----------------------------------------------- */
-
-$pdf->SubTitle("ISO Week Load Table");
-
-$pdf->TableHeader([
-    45=>"ISO Week",
-    45=>"Registered",
-    45=>"Completed"
-]);
-
-foreach ($weekly as $week => $v) {
-    $pdf->TableRow([
-        45=>$week,
-        45=>$v["reg"],
-        45=>$v["cmp"]
-    ]);
-}
-
-$pdf->Ln(5);
-
-/* ----------------------------------------------
-   3) GRÁFICO — REGISTERED vs COMPLETED
----------------------------------------------- */
-
-$pdf->SubTitle("Workload Chart (Registered vs Completed)");
-
-if (!empty($weekly)) {
-
-    ensure_space($pdf, 85);
-
-    $labels = array_keys($weekly);
-    $regArr = array_column($weekly, "reg");
-    $cmpArr = array_column($weekly, "cmp");
-
-    $allValues = array_merge($regArr, $cmpArr);
-    $allValues = array_filter($allValues, fn($x)=>$x>=0);
-    if (empty($allValues)) $allValues = [1];
-    $maxVal = max($allValues);
-    if ($maxVal == 0) $maxVal = 1;
-
-    /* --- Gráfico --- */
-    $chartX = 20;
-    $chartY = $pdf->GetY() + 5;
-    $chartW = 150;
-    $chartH = 50;
-
-    drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
-
-    $barW = ($chartW - 20) / count($labels);
-    if ($barW < 6)  $barW = 6;
-    if ($barW > 22) $barW = 22;
-
-    $x = $chartX + 10;
-
-    foreach ($labels as $i => $week) {
-
-        $reg = $regArr[$i];
-        $cmp = $cmpArr[$i];
-
-        $regH = ($reg / $maxVal) * ($chartH - 5);
-        $cmpH = ($cmp / $maxVal) * ($chartH - 5);
-
-        /* --- Registered (azul) --- */
-        $pdf->SetFillColor(66,133,244);
-        $pdf->Rect($x, $chartY + $chartH - $regH, $barW, $regH, "F");
-
-        /* --- Completed (verde) --- */
-        $pdf->SetFillColor(52,168,83);
-        $pdf->Rect($x, $chartY + $chartH - ($cmpH/1.8), $barW, $cmpH/1.8, "F");
-
-        /* --- Label semana --- */
-        $pdf->SetFont("Arial","",7);
-        $short = strlen($week) > 8 ? substr($week,0,8)."…" : $week;
-        $pdf->SetXY($x, $chartY + $chartH + 2);
-        $pdf->Cell($barW, 3, $short, 0, 0, 'C');
-
-        $x += ($barW + 4);
+    foreach ($cmpRows as $r){
+        $weekly[$week][$r["Client"]]["cmp"]++;
     }
 
-    /* --- Leyenda --- */
-    $legendX = $chartX + $chartW + 5;
-    $legendY = $chartY + 5;
+    $cursor = strtotime("+1 day", $cursor);
+}
 
-    $pdf->SetFont("Arial","B",8);
-    $pdf->SetXY($legendX, $legendY);
-    $pdf->Cell(25, 5, "Legend");
+/* ======================================================
+   3) TABLE — Week × Client
+====================================================== */
 
+$pdf->SubTitle("Weekly Workload Table (Requested vs Completed)");
+
+$header = [25=>"Week"];
+foreach ($shortClients as $cl){
+    $header[20] = $cl;   // cada cliente 20mm
+}
+$pdf->TableHeader($header);
+
+foreach ($weekly as $week => $row){
+
+    $cells = [25=>"W$week"];
+
+    foreach ($clients as $cl){
+        $req = $row[$cl]["req"];
+        $cmp = $row[$cl]["cmp"];
+        $cells[20] = "$req/$cmp";     // formato: requested / completed
+    }
+
+    $pdf->TableRow($cells);
+}
+
+$pdf->Ln(6);
+
+/* ======================================================
+   4) STACKED BAR CHART
+====================================================== */
+
+$pdf->SubTitle("Stacked Workload Chart (All Clients per Week)");
+
+ensure_space($pdf, 80);
+
+$chartX = 20;
+$chartY = $pdf->GetY() + 5;
+$chartW = 150;
+$chartH = 50;
+
+/* ----- Determine max total ----- */
+$weekTotals = [];
+foreach ($weekly as $week => $r){
+    $sum = 0;
+    foreach ($clients as $cl){
+        $sum += $r[$cl]["req"];   // only requests define max bar height
+    }
+    $weekTotals[$week] = $sum;
+}
+
+$maxVal = max($weekTotals);
+if ($maxVal <= 0) $maxVal = 1;
+
+/* ----- Draw Axis ----- */
+drawAxis($pdf,$chartX,$chartY,$chartW,$chartH);
+
+/* ----- Draw Stacked Bars ----- */
+$barW = (int)(($chartW - 10) / count($weekly));
+
+$weekKeys = array_keys($weekly);
+sort($weekKeys);
+
+$colorIndex = 0;
+
+foreach ($weekKeys as $wi => $week){
+
+    $x = $chartX + 5 + $wi * $barW;
+    $y = $chartY + $chartH;
+
+    foreach ($clients as $cliIndex => $cl){
+
+        $value = $weekly[$week][$cl]["req"];  // stack requested per client
+
+        if ($value > 0){
+            $h = ($value / $maxVal) * ($chartH - 5);
+
+            list($r,$g,$b) = pickColor($cliIndex);
+            $pdf->SetFillColor($r,$g,$b);
+
+            $y2 = $y - $h;
+            $pdf->Rect($x, $y2, $barW-2, $h, "F");
+            $y = $y2;
+        }
+    }
+
+    // Week label
     $pdf->SetFont("Arial","",7);
-
-    // Registered
-    $pdf->SetFillColor(66,133,244);
-    $pdf->Rect($legendX, $legendY + 8, 4, 4, "F");
-    $pdf->SetXY($legendX + 6, $legendY + 6);
-    $pdf->Cell(25, 6, "Registered");
-
-    // Completed
-    $pdf->SetFillColor(52,168,83);
-    $pdf->Rect($legendX, $legendY + 15, 4, 4, "F");
-    $pdf->SetXY($legendX + 6, $legendY + 13);
-    $pdf->Cell(25, 6, "Completed");
-
-    $pdf->SetY($chartY + $chartH + 14);
+    $pdf->SetXY($x, $chartY + $chartH + 2);
+    $pdf->Cell($barW-2,4,"W$week",0,0,'C');
 }
 
-/* ----------------------------------------------
-   4) INSIGHTS AUTOMÁTICOS
----------------------------------------------- */
+/* ----- Legend ----- */
+$legendX = $chartX + $chartW + 5;
+$legendY = $chartY;
 
-$pdf->Ln(5);
-$pdf->SubTitle("Insights");
+$pdf->SetXY($legendX, $legendY);
+$pdf->SetFont("Arial","B",8);
+$pdf->Cell(25,5,"Legend",0,1);
 
-$insights = [];
+foreach ($shortClients as $i=>$cl){
+    list($r,$g,$b) = pickColor($i);
+    $pdf->SetFillColor($r,$g,$b);
 
-foreach ($weekly as $week => $v) {
+    $pdf->Rect($legendX, $legendY + 6 + ($i*6), 4, 4, "F");
 
-    if ($v["reg"] == 0 && $v["cmp"] == 0) continue;
+    $pdf->SetXY($legendX + 6, $legendY + 5 + ($i*6));
+    $pdf->SetFont("Arial","",7);
+    $pdf->Cell(25,4,$cl);
+}
 
-    if ($v["cmp"] == 0) {
-        $insights[] = "- Week $week: No completed tests despite {$v["reg"]} registrations.";
-        continue;
+$pdf->SetY($chartY + $chartH + 20);
+
+/* ======================================================
+   5) INSIGHTS
+====================================================== */
+
+$pdf->SubTitle("Insights & Interpretation");
+
+$ins = [];
+
+foreach ($weekly as $week => $clientsData){
+    $total = 0;
+    foreach ($clientsData as $cl=>$d){
+        $total += $d["req"];
     }
-
-    if ($v["cmp"] > $v["reg"]) {
-        $insights[] = "- Week $week: Completion exceeded registrations ({$v["cmp"]} vs {$v["reg"]}).";
-    } elseif ($v["reg"] > $v["cmp"]) {
-        $insights[] = "- Week $week: Higher load registered ({$v["reg"]}) than completed ({$v["cmp"]}).";
-    } else {
-        $insights[] = "- Week $week: Balanced workload (Reg = Comp = {$v["reg"]}).";
+    if ($total > 0){
+        $ins[] = "- Week W$week recorded a total workload of $total tests requested.";
     }
 }
 
-if (empty($insights)) {
-    $insights[] = "No significant weekly trends detected.";
+if (empty($ins)) $ins[] = "No significant weekly workload trends detected.";
+
+foreach ($ins as $line){
+    $pdf->BodyText($line);
 }
 
-foreach ($insights as $txt) {
-    $pdf->BodyText($txt);
-}
+
+
+
 
 
 
