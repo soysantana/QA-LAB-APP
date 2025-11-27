@@ -315,9 +315,199 @@ function table_row_multiline($pdf, $data, $w){
 }
 
 /* ===============================
-   SECCIÓN 2 — WEEKLY SUMMARY
+   SECCIÓN 2 — WEEKLY CLIENT SUMMARY OF COMPLETED TESTS
 ================================*/
-$pdf->section_title("2. Weekly Summary of Activities");
+
+$pdf->section_title("2. Weekly Client Summary of Completed Tests");
+
+/* =====================================================
+   1. Obtener “REQUESTED” por cliente
+===================================================== */
+
+$requested = find_by_sql("
+    SELECT 
+        UPPER(TRIM(Client)) AS Client,
+        COUNT(*) AS total_requested
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '{$start_str}' AND '{$end_str}'
+      AND TRIM(IFNULL(Client,'')) <> ''
+    GROUP BY Client
+");
+
+/* Convertir a mapa */
+$reqMap = [];
+foreach ($requested as $r){
+    $client = $r['Client'];
+    $reqMap[$client] = (int)$r['total_requested'];
+}
+
+
+/* =====================================================
+   2. Obtener “COMPLETED” por cliente
+===================================================== */
+
+$completed = find_by_sql("
+    SELECT 
+        UPPER(TRIM(r.Client)) AS Client,
+        COUNT(*) AS total_completed
+    FROM test_delivery d
+    LEFT JOIN lab_test_requisition_form r
+      ON d.Sample_ID = r.Sample_ID
+     AND d.Sample_Number = r.Sample_Number
+     AND d.Test_Type = r.Test_Type
+    WHERE d.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
+      AND TRIM(IFNULL(r.Client,'')) <> ''
+    GROUP BY r.Client
+");
+
+/* Convertir a mapa */
+$compMap = [];
+foreach ($completed as $c){
+    $client = $c['Client'];
+    $compMap[$client] = (int)$c['total_completed'];
+}
+
+
+/* =====================================================
+   3. Unir datos Requested + Completed
+===================================================== */
+
+$clients = array_unique(array_merge(array_keys($reqMap), array_keys($compMap)));
+sort($clients);
+
+$rows2 = [];
+
+foreach ($clients as $cl){
+
+    $req = $reqMap[$cl] ?? 0;
+    $comp = $compMap[$cl] ?? 0;
+
+    $pct = ($req > 0)
+        ? round(($comp / $req) * 100)
+        : 0;
+
+    $rows2[] = [
+        "Client"     => $cl,
+        "Requested"  => $req,
+        "Completed"  => $comp,
+        "Percent"    => $pct
+    ];
+}
+
+
+/* =====================================================
+   4. ORDENAR POR “Completed” DESC (Opción C)
+===================================================== */
+usort($rows2, function($a, $b){
+    return $b['Completed'] <=> $a['Completed'];
+});
+
+
+/* =====================================================
+   5. TABLA
+===================================================== */
+
+if (empty($rows2)){
+
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(245,245,245);
+    $pdf->Cell(0,10,"No data for this week.",1,1,'C',true);
+    $pdf->Ln(5);
+
+} else {
+
+    $pdf->SetFont('Arial','B',10);
+
+    $pdf->Cell(60,8,"Client",1,0,'C');
+    $pdf->Cell(35,8,"Requested",1,0,'C');
+    $pdf->Cell(35,8,"Completed",1,0,'C');
+    $pdf->Cell(25,8,"%",1,1,'C');
+
+    $pdf->SetFont('Arial','',10);
+
+    foreach ($rows2 as $r){
+
+        $pdf->Cell(60,8,utf8_decode($r['Client']),1,0,'L');
+        $pdf->Cell(35,8,$r['Requested'],1,0,'C');
+        $pdf->Cell(35,8,$r['Completed'],1,0,'C');
+        $pdf->Cell(25,8,$r['Percent']."%",1,1,'C');
+    }
+
+    $pdf->Ln(8);
+}
+
+
+/* =====================================================
+   6. GRÁFICO: Weekly Client Completion %
+===================================================== */
+
+if (!empty($rows2)){
+
+    $pdf->SubTitle("Client Completion % (Weekly)");
+
+    ensure_space($pdf, 80);
+
+    $chartX = 20;
+    $chartY = $pdf->GetY() + 5;
+    $chartW = 160;
+    $chartH = 55;
+
+    // Ejes
+    $pdf->SetDrawColor(0,0,0);
+    $pdf->Line($chartX, $chartY, $chartX, $chartY + $chartH);
+    $pdf->Line($chartX, $chartY + $chartH, $chartX + $chartW, $chartY + $chartH);
+
+
+    /* ---------- Escala % ---------- */
+    $pdf->SetFont('Arial','',7);
+    $steps = 4;
+    for ($i=0; $i <= $steps; $i++){
+        $val = round(100 / $steps * $i);
+        $yPos = $chartY + $chartH - ($chartH/$steps * $i);
+        $pdf->SetXY($chartX - 12, $yPos - 2);
+        $pdf->Cell(10,4,$val."%",0,0,'R');
+    }
+
+
+    /* ---------- Barras ---------- */
+
+    $n = count($rows2);
+    $barWidth = max(15, floor(($chartW - 20) / $n));
+
+    $x = $chartX + 10;
+
+    foreach ($rows2 as $i => $r){
+
+        list($rr,$gg,$bb) = pickColor($i);
+        $pdf->SetFillColor($rr,$gg,$bb);
+
+        $pct = $r['Percent'];
+        $h   = ($pct / 100) * ($chartH - 4);
+        $y   = $chartY + ($chartH - $h);
+
+        $pdf->Rect($x, $y, $barWidth, $h, "F");
+
+        // valor %
+        $pdf->SetFont('Arial','B',8);
+        $pdf->SetXY($x, $y - 5);
+        $pdf->Cell($barWidth,5,$pct."%",0,0,'C');
+
+        // label
+        $pdf->SetFont('Arial','',7);
+        $pdf->SetXY($x, $chartY + $chartH + 2);
+        $pdf->MultiCell($barWidth,4,utf8_decode($r['Client']),0,'C');
+
+        $x += $barWidth + 5;
+    }
+
+    $pdf->Ln(10);
+}
+
+
+/* ===============================
+   SECCIÓN 4 — WEEKLY SUMMARY
+================================*/
+$pdf->section_title("3. Weekly Summary of Activities");
 
 $req  = get_count("lab_test_requisition_form","Registed_Date",$start_str,$end_str);
 $prep = get_count("test_preparation","Register_Date",$start_str,$end_str);
@@ -411,9 +601,9 @@ foreach($labels as $i=>$lbl){
 
 $pdf->Ln(50);
 /* ===============================
-   SECCIÓN 3 — DAILY BREAKDOWN BY CLIENT
+   SECCIÓN 4 — DAILY BREAKDOWN BY CLIENT
 ================================*/
-$pdf->section_title("3. Daily Breakdown by Client");
+$pdf->section_title("4. Daily Breakdown by Client");
 
 /* ---------- Construir matriz día × cliente ---------- */
 
@@ -705,9 +895,9 @@ if (!empty($clientes_res)) {
 }
 
 /* ===============================
-   SECCIÓN 4 — TEST DISTRIBUTION BY TYPE AND CLIENT
+   SECCIÓN 5 — TEST DISTRIBUTION BY TYPE AND CLIENT
 ================================*/
-$pdf->section_title("4. Test Distribution by Type and Client");
+$pdf->section_title("5. Test Distribution by Type and Client");
 
 /* ---------- Construir matriz Tipo × Cliente ---------- */
 
@@ -894,9 +1084,9 @@ if (empty($matrix4)) {
 }
 
 /* ===============================
-   5. Newly Registered Samples (Weekly)
+   6. Newly Registered Samples (Weekly)
 ================================*/
-$pdf->section_title("5. Newly Registered Samples (Weekly)");
+$pdf->section_title("6. Newly Registered Samples (Weekly)");
 
 $muestras = find_by_sql("
     SELECT 
@@ -1055,9 +1245,9 @@ if (empty($muestras)) {
 }
 
 /* ===============================
-   SECCIÓN 6 — SUMMARY OF TESTS BY TECHNICIAN
+   SECCIÓN 7 — SUMMARY OF TESTS BY TECHNICIAN
 ================================*/
-$pdf->section_title("6. Summary of Tests by Technician");
+$pdf->section_title("7. Summary of Tests by Technician");
 
 /* Cargar mapa de alias → nombre */
 list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
@@ -1155,144 +1345,6 @@ if (empty($techSummary)) {
 
     $pdf->Ln(8);
 }
-
-/* ===============================
-   SECCIÓN 7 — TEST TYPE × CLIENT × PROCESS (Compact + Dynamic)
-================================*/
-
-$pdf->section_title("7. Summary of Tests by Type and Client (Dynamic Width)");
-
-/* ===============================
-   1. Cargar datos crudos
-================================*/
-$raw7 = find_by_sql("
-    SELECT r.Client, p.Test_Type, 'Prep' etapa, COUNT(*) total
-    FROM test_preparation p
-    LEFT JOIN lab_test_requisition_form r
-      ON p.Sample_ID = r.Sample_ID
-     AND p.Sample_Number = r.Sample_Number
-     AND p.Test_Type = r.Test_Type
-    WHERE p.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY r.Client, p.Test_Type
-
-    UNION ALL
-
-    SELECT r.Client, z.Test_Type, 'Real' etapa, COUNT(*) total
-    FROM test_realization z
-    LEFT JOIN lab_test_requisition_form r
-      ON z.Sample_ID = r.Sample_ID
-     AND z.Sample_Number = r.Sample_Number
-     AND z.Test_Type = r.Test_Type
-    WHERE z.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY r.Client, z.Test_Type
-
-    UNION ALL
-
-    SELECT r.Client, d.Test_Type, 'Del' etapa, COUNT(*) total
-    FROM test_delivery d
-    LEFT JOIN lab_test_requisition_form r
-      ON d.Sample_ID = r.Sample_ID
-     AND d.Sample_Number = r.Sample_Number
-     AND d.Test_Type = r.Test_Type
-    WHERE d.Register_Date BETWEEN '{$start_str}' AND '{$end_str}'
-    GROUP BY r.Client, d.Test_Type
-");
-
-/* ===============================
-   2. Construir matriz
-================================*/
-$matrix7 = [];
-$clientes7 = [];
-$tipos7 = [];
-
-foreach ($raw7 as $r){
-    $client = trim($r['Client']) ?: "N/A";
-    $test   = trim($r['Test_Type']);
-    if ($test === "") continue;
-
-    $etapa  = $r['etapa'];
-    $cnt    = (int)$r['total'];
-
-    if (!isset($matrix7[$test])) $matrix7[$test] = [];
-    if (!isset($matrix7[$test][$client]))
-        $matrix7[$test][$client] = ['Prep'=>0,'Real'=>0,'Del'=>0];
-
-    $matrix7[$test][$client][$etapa] += $cnt;
-
-    if (!in_array($client,$clientes7,true)) $clientes7[] = $client;
-    if (!in_array($test,$tipos7,true))      $tipos7[] = $test;
-}
-
-sort($clientes7);
-sort($tipos7);
-
-/* ===============================
-   3. CONFIGURAR ANCHOS DINÁMICOS
-================================*/
-$wTest = 35;
-$wSub  = 18; // Prep / Real / Del
-$usableWidth = 190 - $wTest;
-
-$clientBlockCapacity = floor($usableWidth / ($wSub * 3));
-if ($clientBlockCapacity < 1) $clientBlockCapacity = 1;
-
-$clientBlocks = array_chunk($clientes7, $clientBlockCapacity);
-
-/* ===============================
-   4. PINTAR TABLAS POR BLOQUES
-================================*/
-foreach ($clientBlocks as $blockIndex => $blockClients){
-
-    if ($blockIndex > 0){
-        $pdf->AddPage();
-        $pdf->section_title("7. Summary of Tests by Type and Client (cont.)");
-    }
-
-    /* ---------- ENCABEZADO 1 ---------- */
-    $pdf->SetFont('Arial','B',10);
-    $pdf->Cell($wTest, 10, "Test Type", 1, 0, 'C');
-
-    foreach ($blockClients as $c){
-        $pdf->Cell($wSub*3, 10, utf8_decode($c), 1, 0, 'C');
-    }
-    $pdf->Ln();
-
-    /* ---------- ENCABEZADO 2 ---------- */
-    $pdf->Cell($wTest, 7, "", 1, 0);
-    foreach ($blockClients as $c){
-        $pdf->SetFont('Arial','',9);
-        $pdf->Cell($wSub,7,"P.",1,0,'C');
-        $pdf->Cell($wSub,7,"R.",1,0,'C');
-        $pdf->Cell($wSub,7,"C.",1,0,'C');
-    }
-    $pdf->Ln();
-
-    /* ---------- FILAS (UNO POR TEST TYPE) ---------- */
-    $pdf->SetFont('Arial','',10);
-
-    foreach ($tipos7 as $tp){
-
-        $pdf->Cell($wTest, 7, utf8_decode($tp), 1, 0, 'L');
-
-        foreach ($blockClients as $cl){
-
-            $prep = $matrix7[$tp][$cl]['Prep'] ?? 0;
-            $real = $matrix7[$tp][$cl]['Real'] ?? 0;
-            $del  = $matrix7[$tp][$cl]['Del']  ?? 0;
-
-            $pdf->Cell($wSub,7,$prep,1,0,'C');
-            $pdf->Cell($wSub,7,$real,1,0,'C');
-            $pdf->Cell($wSub,7,$del,1,0,'C');
-        }
-
-        $pdf->Ln();  // SOLO UNA FILA POR TEST TYPE
-    }
-
-    $pdf->Ln(8);
-}
-
-
-skip_section_7:
 
 
 /* ===============================
