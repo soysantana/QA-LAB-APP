@@ -698,7 +698,7 @@ foreach($labels as $i=>$lbl){
     $pdf->Cell(20,4,$lbl);
 }
 
-$pdf->Ln(20);
+$pdf->Ln(30);
 
 /* ===============================
    SECCIÓN 4 — DAILY BREAKDOWN BY CLIENT
