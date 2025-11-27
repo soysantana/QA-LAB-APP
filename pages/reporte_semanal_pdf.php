@@ -1621,6 +1621,21 @@ foreach ($failKeywords as $k){
     }
 }
 
+
+
+        if (!isset($matrix[$structure])) $matrix[$structure] = [];
+        if (!isset($matrix[$structure][$material])) $matrix[$structure][$material] = [];
+        if (!isset($matrix[$structure][$material][$testType])) {
+            $matrix[$structure][$material][$testType] = [
+                "passed" => 0,
+                "failed" => 0
+            ];
+        }
+
+        if ($isFail) $matrix[$structure][$material][$testType]["failed"]++;
+        else         $matrix[$structure][$material][$testType]["passed"]++;
+    }
+
     /* ============================================================
        3. TABLA EJECUTIVA (DOBLE FILA DE ENCABEZADO)
     ===============================================================*/
