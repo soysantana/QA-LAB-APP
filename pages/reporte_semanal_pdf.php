@@ -315,119 +315,150 @@ function table_row_multiline($pdf, $data, $w){
 }
 
 /* ===============================
-   SECCIÓN 2 — WEEKLY CLIENT COMPLETION SUMMARY
-   Requested (histórico 2025-01-01 → end_str)
-   Completed = delivery ∪ review ∪ reviewed ∪ doc_files
+   SECCIÓN 2 — WEEKLY CLIENT COMPLETION SUMMARY (LAST 30 DAYS)
+   Igual a la lógica del Diario, pero aplicado al cierre de la semana
 ================================*/
 
-$pdf->section_title("2. Weekly Client Completion Summary");
+$pdf->section_title("2. Weekly Client Completion Summary (Last 30 Days)");
 
 /* ===============================
-   1. REQUESTED DESDE 2025-01-01
+   1. Calcular rango (último mes)
 ================================*/
-$req2 = find_by_sql("
+$endMonth = $end_str;
+$startMonth = date('Y-m-d H:i:s', strtotime('-1 month', strtotime($endMonth)));
+
+/* ===============================
+   2. Cargar solicitudes (requested)
+   Excluyendo 'envio / envío'
+================================*/
+$solicitudes = find_by_sql("
     SELECT 
         UPPER(TRIM(Client)) AS Client,
-        COUNT(*) AS requested
+        Sample_ID,
+        Sample_Number,
+        Test_Type
     FROM lab_test_requisition_form
-    WHERE Registed_Date >= '2025-01-01'
-    GROUP BY Client
+    WHERE Sample_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
 ");
 
-/* Convertir a mapa */
-$requestedMap = [];
-foreach ($req2 as $r){
-    $client = $r['Client'] ?: "N/A";
-    $requestedMap[$client] = (int)$r['requested'];
+/* Función para detectar "envio/envío" */
+function es_envio_tt($tt){
+    $t = mb_strtolower(trim($tt), 'UTF-8');
+    return preg_match('/\benv[ií]os?\b/u', $t);
 }
 
 /* ===============================
-   2. COMPLETED — UNION REAL DE TODAS LAS TABLAS FINALES
+   3. Cargar ENTREGADOS de 4 tablas
 ================================*/
-$completedRaw = find_by_sql("
-    SELECT Sample_ID, Sample_Number, Test_Type, 'DEL' AS src, Register_Date AS fecha
+$rawCompleted = [];
+
+// Delivery
+$del = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
     FROM test_delivery
-    WHERE Register_Date <= '{$end_str}'
-
-    UNION
-
-    SELECT Sample_ID, Sample_Number, Test_Type, 'REV', Start_Date AS fecha
-    FROM test_review
-    WHERE Start_Date <= '{$end_str}'
-
-    UNION
-
-    SELECT Sample_ID, Sample_Number, Test_Type, 'REVD', Start_Date AS fecha
-    FROM test_reviewed
-    WHERE Start_Date <= '{$end_str}'
-
-    UNION
-
-    SELECT Sample_ID, Sample_Number, Test_Type, 'DOC', created_at AS fecha
-    FROM doc_files
-    WHERE created_at <= '{$end_str}'
+    WHERE Register_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
 ");
+foreach ($del as $e) $rawCompleted[] = $e;
+
+// Review
+$rev = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
+    FROM test_review
+    WHERE Start_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
+");
+foreach ($rev as $e) $rawCompleted[] = $e;
+
+// Reviewed
+$revd = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
+    FROM test_reviewed
+    WHERE Start_Date BETWEEN '{$startMonth}' AND '{$endMonth}'
+");
+foreach ($revd as $e) $rawCompleted[] = $e;
+
+// DOC FILES
+$docs = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type
+    FROM doc_files
+    WHERE created_at BETWEEN '{$startMonth}' AND '{$endMonth}'
+");
+foreach ($docs as $e) $rawCompleted[] = $e;
 
 /* ===============================
-   3. VINCULAR COMPLETED CON CLIENTES
+   4. Crear mapa de ENTREGADOS
 ================================*/
-$completedMap = []; // client => total completed
+$entregado_map = [];
 
-foreach ($completedRaw as $row){
+foreach ($rawCompleted as $e) {
 
-    $sid  = $db->escape($row['Sample_ID']);
-    $num  = $db->escape($row['Sample_Number']);
-    $test = $db->escape($row['Test_Type']);
+    $sid = strtoupper(trim($e['Sample_ID'] ?? ''));
+    $sno = strtoupper(trim($e['Sample_Number'] ?? ''));
+    $tts = (string)($e['Test_Type'] ?? '');
 
-    // Buscar cliente exacto para esta muestra
-    $cliRes = find_by_sql("
-        SELECT UPPER(TRIM(Client)) AS Client
-        FROM lab_test_requisition_form
-        WHERE Sample_ID = '{$sid}'
-          AND Sample_Number = '{$num}'
-          AND Test_Type = '{$test}'
-        LIMIT 1
-    ");
+    foreach (preg_split('/[;,]+/', $tts) as $tt) {
 
-    if (empty($cliRes)) continue;
+        $tt = trim($tt);
+        if ($tt === '' || es_envio_tt($tt)) continue;
 
-    $client = $cliRes[0]['Client'] ?: "N/A";
-
-    if (!isset($completedMap[$client])) $completedMap[$client] = 0;
-    $completedMap[$client]++;
+        $key = $sid . '|' . $sno . '|' . strtoupper($tt);
+        $entregado_map[$key] = true;
+    }
 }
 
 /* ===============================
-   4. ARMAR LISTA FINAL POR CLIENTE
+   5. Recorrer SOLICITUDES por cliente
 ================================*/
-$finalRows = [];
+$stats = [];
 
-foreach ($requestedMap as $client => $reqTotal){
+foreach ($solicitudes as $s){
 
-    $compTotal = $completedMap[$client] ?? 0;
-    $backlog   = $reqTotal - $compTotal;
-    if ($backlog < 0) $backlog = 0;
+    $client   = $s['Client'] ?: "PENDING INFO";
+    $sid      = strtoupper(trim($s['Sample_ID'] ?? ''));
+    $sno      = strtoupper(trim($s['Sample_Number'] ?? ''));
+    $tts      = (string)($s['Test_Type'] ?? '');
 
-    $pct = ($reqTotal > 0)
-        ? round(($compTotal * 100) / $reqTotal, 1)
-        : 0;
+    if (!isset($stats[$client])) {
+        $stats[$client] = [
+            'requested' => 0,
+            'completed' => 0,
+            'percent'   => 0
+        ];
+    }
 
-    $finalRows[] = [
-        "Client"    => $client,
-        "Requested" => $reqTotal,
-        "Completed" => $compTotal,
-        "Backlog"   => $backlog,
-        "Percent"   => $pct
-    ];
+    $tokens = preg_split('/[;,]+/', $tts);
+
+    foreach ($tokens as $tt){
+
+        $tt = trim($tt);
+        if ($tt === '' || es_envio_tt($tt)) continue;
+
+        $stats[$client]['requested']++;
+
+        $key = $sid . '|' . $sno . '|' . strtoupper($tt);
+
+        if (isset($entregado_map[$key])) {
+            $stats[$client]['completed']++;
+        }
+    }
 }
 
-/* Orden: backlog DESC para más útil */
-usort($finalRows, function($a,$b){
-    return $b['Backlog'] <=> $a['Backlog'];
+/* ===============================
+   6. Calcular porcentajes
+================================*/
+foreach ($stats as $cliente => &$row){
+    $r = (int)$row['requested'];
+    $c = (int)$row['completed'];
+    $row['percent'] = $r > 0 ? round(($c / $r) * 100, 1) : 0;
+}
+unset($row);
+
+/* Ordenar por mayor backlog */
+usort($stats, function($a, $b){
+    return ($b['requested'] - $b['completed']) <=> ($a['requested'] - $a['completed']);
 });
 
 /* ===============================
-   5. TABLA FINAL EN PDF
+   7. Pintar TABLA en PDF
 ================================*/
 $pdf->SetFont('Arial','B',10);
 $pdf->table_header(
@@ -436,17 +467,24 @@ $pdf->table_header(
 );
 
 $pdf->SetFont('Arial','',10);
-foreach ($finalRows as $r){
+foreach ($stats as $cliente => $row){
+
+    $req = $row['requested'];
+    $com = $row['completed'];
+    $back= $req - $com;
+    if ($back < 0) $back = 0;
+
     $pdf->table_row([
-        $r['Client'],
-        $r['Requested'],
-        $r['Completed'],
-        $r['Backlog'],
-        $r['Percent']."%"
+        $cliente,
+        $req,
+        $com,
+        $back,
+        $row['percent']."%"
     ], [60,30,30,30,20]);
 }
 
 $pdf->Ln(8);
+
 
 
 
