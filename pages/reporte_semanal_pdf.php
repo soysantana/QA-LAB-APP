@@ -1589,32 +1589,37 @@ if (empty($rows)) {
         $ncr     = strtoupper((string)$r['Noconformidad']);
 
         // Función segura para buscar texto en PHP 5/7/8
+// Función universal de búsqueda (compatible PHP 5/7/8)
 $contains = function($text, $needle){
     return strpos($text, $needle) !== false;
 };
 
-// Reglas para determinar FAIL
-$isFail =
-    $contains($comment, "FAIL") ||
-    $contains($comment, "NO CUMPLE") ||
-    $contains($comment, "RECHAZ") ||
-    $contains($comment, "NCR") ||
-    $contains($ncr, "NCR") ||
-    $contains($cond, "NOT OK");
+// Convertir todo a mayúsculas para evitar problemas
+$c = strtoupper($comment);
+$cnd = strtoupper($cond);
+$nc = strtoupper($ncr);
 
+// Lista de palabras clave para FAIL
+$failKeywords = [
+    "FAIL",
+    "FAILED",
+    "FAILURE",
+    "NO CUMPLE",
+    "RECHAZ",
+    "REJECT",
+    "REJECTED",
+    "NCR",
+    "NOT OK",
+];
 
-        if (!isset($matrix[$structure])) $matrix[$structure] = [];
-        if (!isset($matrix[$structure][$material])) $matrix[$structure][$material] = [];
-        if (!isset($matrix[$structure][$material][$testType])) {
-            $matrix[$structure][$material][$testType] = [
-                "passed" => 0,
-                "failed" => 0
-            ];
-        }
-
-        if ($isFail) $matrix[$structure][$material][$testType]["failed"]++;
-        else         $matrix[$structure][$material][$testType]["passed"]++;
+// Detectar FAIL
+$isFail = false;
+foreach ($failKeywords as $k){
+    if ($contains($c, $k) || $contains($cnd, $k) || $contains($nc, $k)) {
+        $isFail = true;
+        break;
     }
+}
 
     /* ============================================================
        3. TABLA EJECUTIVA (DOBLE FILA DE ENCABEZADO)
