@@ -243,7 +243,7 @@ $ncr=$db->query("
 
 
 $summaryText = "
-During this month, the laboratory maintained stable and consistent operational performance across all workflow phases — sample registration, preparation, execution, and delivery.
+During this month, the laboratory maintained stable and consistent operational performance across all workflow phases - sample registration, preparation, execution, and delivery.
 
 A total of {$registered_count} tests were registered, {$prep_count} entered preparation, {$real_count} were executed, and {$del_count} were fully completed and delivered.
 
@@ -269,13 +269,14 @@ $pdf->SectionTitle("2. Monthly KPIs");
 $pending_total = $registered_count - $del_count; 
 if ($pending_total < 0) $pending_total = 0;
 
-// Completion KPI usando ENTREGADOS + REVIEWED + DOCS (más realista)
+// Effective Completion (entregado + revisado + reportado)
 $effective_completed = $del_count + $reviewed_count + $docs_count;
+
 $completion_rate = ($registered_count > 0)
-    ? round(($effective_completed / $registered_count) * 100, 2)
+    ? round(($del_count / $registered_count) * 100, 2)
     : 0;
 
-// Efficiency Ratio (output real del laboratorio)
+// Efficiency Ratio (entregados vs registrados)
 $efficiency_ratio = ($registered_count > 0)
     ? round($del_count / $registered_count, 2)
     : 0;
@@ -285,13 +286,23 @@ $pending_ratio = ($registered_count > 0)
     ? round(($pending_total / $registered_count) * 100, 2)
     : 0;
 
-// Aging
+// Aging of pending
 $aging = $db->query("
     SELECT AVG(DATEDIFF(NOW(), Registed_Date)) AS avg_age
     FROM lab_test_requisition_form
     WHERE Registed_Date BETWEEN '$start' AND '$end'
 ")->fetch_assoc();
 $avgAging = isset($aging['avg_age']) ? round($aging['avg_age'],1) : 0;
+
+// ------------------------
+// NEW KPI: Process Consistency
+// ------------------------
+$maxLayer = max($del_count, $reviewed_count, $docs_count);
+$minLayer = min($del_count, $reviewed_count, $docs_count);
+
+$process_consistency = ($maxLayer > 0)
+    ? round(($minLayer / $maxLayer) * 100, 2)
+    : 0;
 
 
 // ---------- TABLE ----------
@@ -302,18 +313,20 @@ $pdf->TableHeader([
     35=>"Value"
 ]);
 
-$pdf->TableRow([55=>"Tests Registered",            35=>$registered_count]);
-$pdf->TableRow([55=>"Tests in Preparation",        35=>$prep_count]);
-$pdf->TableRow([55=>"Tests in Execution",          35=>$real_count]);
-$pdf->TableRow([55=>"Tests Delivered",             35=>$del_count]);
-$pdf->TableRow([55=>"Reviewed Tests",              35=>$reviewed_count]);
-$pdf->TableRow([55=>"Final Reports Issued",        35=>$docs_count]);
+$pdf->TableRow([55=>"Tests Registered",             35=>$registered_count]);
+$pdf->TableRow([55=>"Delivered Tests",              35=>$del_count]);
+$pdf->TableRow([55=>"Reviewed Tests",               35=>$reviewed_count]);
+$pdf->TableRow([55=>"Final Reports Issued",         35=>$docs_count]);
 
-$pdf->TableRow([55=>"Pending Tests",               35=>$pending_total]);
-$pdf->TableRow([55=>"Pending Load (%)",            35=>$pending_ratio."%"]);
-$pdf->TableRow([55=>"Completion Rate",             35=>$completion_rate."%"]);
-$pdf->TableRow([55=>"Efficiency Ratio (Del/Reg)",  35=>$efficiency_ratio]);
-$pdf->TableRow([55=>"Average Pending Age (days)",  35=>$avgAging]);
+$pdf->TableRow([55=>"Pending Tests",                35=>$pending_total]);
+$pdf->TableRow([55=>"Pending Load (%)",             35=>$pending_ratio."%"]);
+
+$pdf->TableRow([55=>"Completion Rate (Delivered)",  35=>$completion_rate."%"]);
+$pdf->TableRow([55=>"Efficiency Ratio (Del/Reg)",   35=>$efficiency_ratio]);
+
+$pdf->TableRow([55=>"Process Consistency (%)",      35=>$process_consistency."%"]);
+
+$pdf->TableRow([55=>"Average Pending Age (days)",   35=>$avgAging]);
 
 $pdf->Ln(5);
 
@@ -323,15 +336,14 @@ $pdf->Ln(5);
 
 $pdf->SubTitle("Executive Interpretation");
 $pdf->BodyText("
-• The laboratory processed a total of $registered_count test requests this month.
-• The operational workflow shows $prep_count tests entering preparation and $real_count entering execution.
-• A total of $del_count tests were successfully delivered, with an extended completion of
-  $reviewed_count reviewed cases and $docs_count final reports issued.
-• Current pending load is $pending_total tests ($pending_ratio% of the monthly intake).
-• The average aging of pending requests is $avgAging days, indicating the typical waiting time before closure.
-• Overall completion efficiency stands at $completion_rate%, supported by a delivery-to-registration ratio of $efficiency_ratio.
+- The laboratory processed $registered_count test requests this month.
+- A total of $del_count tests were delivered, $reviewed_count reviewed, 
+  and $docs_count final reports were issued.
+- These values indicate a process consistency of $process_consistency%.
+- Pending load stands at $pending_total tests ($pending_ratio% of intake).
+- The average aging of pending samples is $avgAging days.
+- Completion efficiency is $completion_rate%, with an output ratio of $efficiency_ratio compared to registered tests.
 ");
-
 
 
 /* ======================================================
