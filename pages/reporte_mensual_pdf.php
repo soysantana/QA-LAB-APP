@@ -159,6 +159,13 @@ function drawAxis($p,$x,$y,$w,$h){
     $p->Line($x,$y,$x,$y+$h);        // Y-axis
 }
 
+function ensure_space($pdf, $needed){
+    if ($pdf->GetY() + $needed > 260) {   // 260 = safe limit for A4 portrait
+        $pdf->AddPage();
+        $pdf->Ln(5);
+    }
+}
+
 /* ======================================================
    3. INPUT DATE RANGE
 ====================================================== */
@@ -817,7 +824,7 @@ foreach($ins as $t){
 }
 
 /* ======================================================
-   SECTION 5 — Workload by ISO Week (with Unified Completed)
+   SECTION 5 — Workload by ISO Week (Unified Completed)
 ====================================================== */
 
 $pdf->SectionTitle("5. Workload by ISO Week");
@@ -845,50 +852,46 @@ while ($cursor <= $last) {
         ];
     }
 
-    /* REGISTERED */
-    $weekly[$week]["reg"] += getCount($db, "
+    $weekly[$week]["reg"] += getCount($db,"
         SELECT COUNT(*) c
         FROM lab_test_requisition_form
         WHERE DATE(Registed_Date) = '$date'
     ");
 
-    /* PREPARATION */
-    $weekly[$week]["prep"] += getCount($db, "
+    $weekly[$week]["prep"] += getCount($db,"
         SELECT COUNT(*) c
         FROM test_preparation
         WHERE DATE(Start_Date) = '$date'
     ");
 
-    /* EXECUTION */
-    $weekly[$week]["exec"] += getCount($db, "
+    $weekly[$week]["exec"] += getCount($db,"
         SELECT COUNT(*) c
         FROM test_realization
         WHERE DATE(Start_Date) = '$date'
     ");
 
-    /* COMPLETED = delivery OR review OR reviewed OR doc_files */
-    $weekly[$week]["completed"] += getCount($db, "
+    $weekly[$week]["completed"] += getCount($db,"
         SELECT COUNT(*) c
         FROM lab_test_requisition_form r
         WHERE DATE(Registed_Date) <= '$date'
-          AND (
-                EXISTS(SELECT 1 FROM test_delivery d
-                       WHERE d.Sample_ID = r.Sample_ID
-                         AND d.Sample_Number = r.Sample_Number
-                         AND DATE(d.Start_Date) = '$date')
-             OR EXISTS(SELECT 1 FROM test_review v
-                       WHERE v.Sample_ID = r.Sample_ID
-                         AND v.Sample_Number = r.Sample_Number
-                         AND DATE(v.Start_Date) = '$date')
-             OR EXISTS(SELECT 1 FROM test_reviewed rv
-                       WHERE rv.Sample_ID = r.Sample_ID
-                         AND rv.Sample_Number = r.Sample_Number
-                         AND DATE(rv.Start_Date) = '$date')
-             OR EXISTS(SELECT 1 FROM doc_files f
-                       WHERE f.Sample_ID = r.Sample_ID
-                         AND f.Sample_Number = r.Sample_Number
-                         AND DATE(f.created_at) = '$date')
-          )
+        AND (
+             EXISTS (SELECT 1 FROM test_delivery d
+                     WHERE d.Sample_ID=r.Sample_ID
+                     AND d.Sample_Number=r.Sample_Number
+                     AND DATE(d.Start_Date)='$date')
+          OR EXISTS (SELECT 1 FROM test_review v
+                     WHERE v.Sample_ID=r.Sample_ID
+                     AND v.Sample_Number=r.Sample_Number
+                     AND DATE(v.Start_Date)='$date')
+          OR EXISTS (SELECT 1 FROM test_reviewed rv
+                     WHERE rv.Sample_ID=r.Sample_ID
+                     AND rv.Sample_Number=r.Sample_Number
+                     AND DATE(rv.Start_Date)='$date')
+          OR EXISTS (SELECT 1 FROM doc_files f
+                     WHERE f.Sample_ID=r.Sample_ID
+                     AND f.Sample_Number=r.Sample_Number
+                     AND DATE(f.created_at)='$date')
+        )
     ");
 
     $cursor = strtotime("+1 day", $cursor);
@@ -918,7 +921,7 @@ foreach ($weekly as $week => $v) {
     ]);
 }
 
-$pdf->Ln(6);
+$pdf->Ln(4);
 
 /* ------------------------------------------
    3. GRAPH — VERTICAL BAR CHART
@@ -926,20 +929,23 @@ $pdf->Ln(6);
 
 $pdf->SubTitle("ISO Week Load Chart");
 
+// === PREVENIR QUE EL GRÁFICO SALTE A OTRA PÁGINA ===
+ensure_space($pdf, 70); // <-- altura del gráfico + labels
+
 $labels = array_map(fn($k)=>"W$k", array_keys($weekly));
-$values = array_column($weekly, "completed");  // Completed metric only
+$values = array_column($weekly, "completed");
 
 $chartX = 25;
 $chartY = $pdf->GetY() + 6;
 $chartW = 150;
 $chartH = 45;
 
-drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
+drawAxis($pdf,$chartX,$chartY,$chartW,$chartH);
 
 $maxVal = max($values);
 if ($maxVal == 0) $maxVal = 1;
 
-$barW = (int)(($chartW - 10) / count($labels));
+$barW = max(8, (int)(($chartW - 10) / count($labels)));
 
 foreach ($labels as $i => $lbl) {
 
@@ -957,15 +963,16 @@ foreach ($labels as $i => $lbl) {
     // value label
     $pdf->SetFont("Arial","B",7);
     $pdf->SetXY($x, $y - 4);
-    $pdf->Cell($barW-2,3,$v,0,0,'C');
+    $pdf->Cell($barW-2, 4, $v, 0, 0, 'C');
 
     // week label
-    $pdf->SetFont("Arial","",6);
+    $pdf->SetFont("Arial","",7);
     $pdf->SetXY($x, $chartY + $chartH + 2);
-    $pdf->Cell($barW-2,3,utf8_decode($lbl),0,0,'C');
+    $pdf->MultiCell($barW-2, 4, utf8_decode($lbl), 0, 'C');
 }
 
-$pdf->SetY($chartY + $chartH + 10);
+$pdf->SetY($chartY + $chartH + 12);
+
 
 
 
