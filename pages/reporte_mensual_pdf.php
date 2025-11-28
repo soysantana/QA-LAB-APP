@@ -1367,7 +1367,7 @@ foreach ($expanded as $t) {
 
 if (empty($pending)) {
     $pdf->BodyText("No pending tests for this period.");
-    return;
+    $pdf->Ln(10);
 }
 
 /* ======================================================
@@ -1505,7 +1505,6 @@ foreach ($ins as $t) {
     $pdf->BodyText("- " . utf8_decode($t));
 }
 
-
 /* ======================================================
    SECTION 8 — NCR Summary (Grouped by Test Type)
    Only Test_Condition = FAIL / REJECTED
@@ -1526,38 +1525,58 @@ $ncr = $db->query("
 
 if (empty($ncr)) {
     $pdf->BodyText("No NCR (Fail/Rejected) recorded for this period.");
-    return;
-}
+    $pdf->Ln(10);
+} 
+
 
 /* ======================================================
-   2. SUMMARY CARDS
+   2. PREPARE COUNT ARRAYS SAFELY
 ====================================================== */
 
-$totalNCR = count($ncr);
-
-/* Count NCR by Test Type */
 $counts = [];
 $clientNCR = [];
 
 foreach ($ncr as $n) {
-    $tp = trim($n["Test_Type"]);
+
+    /* ----- SANITIZAR NOMBRE DE ENSAYO ----- */
+    $tp = strtoupper(trim($n["Test_Type"]));
+    if ($tp === "" || $tp === "-" || $tp === "N/A" || $tp === null) {
+        $tp = "UNKNOWN";
+    }
+
+    /* Count by test */
     if (!isset($counts[$tp])) $counts[$tp] = 0;
     $counts[$tp]++;
 
-    /* Detect client from Sample_ID prefix */
-    $client = explode("-", $n["Sample_ID"])[0] ?? "UNKNOWN";
+    /* Count by client prefix */
+    $client = strtoupper(trim(explode("-", $n["Sample_ID"])[0] ?? "UNKNOWN"));
+    if ($client === "") $client = "UNKNOWN";
+
     if (!isset($clientNCR[$client])) $clientNCR[$client] = 0;
     $clientNCR[$client]++;
 }
 
-/* Most frequent test */
+/* Backup if counts ended empty */
+if (empty($counts)) {
+    $counts = ["NO DATA" => 1];
+}
+
+/* ======================================================
+   3. TOP TEST + TOP CLIENT
+====================================================== */
+
 arsort($counts);
 $topTest = array_key_first($counts);
 $topTestCount = $counts[$topTest];
 
-/* Most affected client */
 arsort($clientNCR);
 $topClient = array_key_first($clientNCR);
+
+/* ======================================================
+   4. SUMMARY CARDS
+====================================================== */
+
+$totalNCR = array_sum($counts);
 
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(45,8,"NCR (Fail/Rejected): $totalNCR",1,0,'C');
@@ -1568,21 +1587,25 @@ $pdf->Cell(45,8,"Top Client: $topClient",1,1,'C');
 $pdf->Ln(4);
 
 /* ======================================================
-   3. GROUP NCR BY TEST TYPE
+   5. GROUP NCR BY TEST TYPE
 ====================================================== */
 
 $grouped = [];
 foreach ($ncr as $n) {
-    $tp = trim($n["Test_Type"]);
+
+    $tp = strtoupper(trim($n["Test_Type"]));
+    if ($tp === "" || $tp === "-" || $tp === "N/A" || $tp === null) {
+        $tp = "UNKNOWN";
+    }
+
     if (!isset($grouped[$tp])) $grouped[$tp] = [];
     $grouped[$tp][] = $n;
 }
 
-/* Sort by total NCR desc */
 uasort($grouped, fn($a,$b)=> count($b) <=> count($a));
 
 /* ======================================================
-   4. PRINT GROUPED NCR TABLES
+   6. PRINT TABLES PER TEST TYPE
 ====================================================== */
 
 foreach ($grouped as $tp => $items) {
@@ -1596,7 +1619,6 @@ foreach ($grouped as $tp => $items) {
     ]);
 
     foreach ($items as $n) {
-
         $pdf->TableRow([
             30  => substr($n["Report_Date"],0,10),
             40  => $n["Sample_ID"]."-".$n["Sample_Number"],
@@ -1608,7 +1630,7 @@ foreach ($grouped as $tp => $items) {
 }
 
 /* ======================================================
-   5. PAGE BREAK SAFETY FOR GRAPH
+   7. SAFE PAGE BREAK CHECK
 ====================================================== */
 if ($pdf->GetY() > 210) {
     $pdf->AddPage();
@@ -1616,13 +1638,19 @@ if ($pdf->GetY() > 210) {
 }
 
 /* ======================================================
-   6. NCR FREQUENCY CHART (Top 5 Horizontal)
+   8. NCR FREQUENCY CHART (Top 5 Horizontal)
 ====================================================== */
 
 $pdf->SubTitle("NCR Frequency by Test Type (Top 5)");
 
 $top5 = array_slice($counts, 0, 5, true);
 
+/* PROTECCIÓN: si top5 está vacío */
+if (empty($top5)) {
+    $top5 = ["NO DATA" => 1];
+}
+
+/* PROTECCIÓN: max() siempre con datos */
 $maxVal = max($top5);
 if ($maxVal == 0) $maxVal = 1;
 
@@ -1638,10 +1666,10 @@ foreach ($top5 as $tp => $ct) {
 
     list($r,$g,$b) = pickColor($i);
 
-    // Label left
+    // Label
     $pdf->SetFont("Arial","",8);
     $pdf->SetXY($chartX - 35, $chartY + ($i * 12));
-    $pdf->Cell(35, 6, utf8_decode($tp), 0, 0, "R");
+    $pdf->Cell(35,6,utf8_decode($tp),0,0,"R");
 
     // Bar
     $pdf->SetFillColor($r,$g,$b);
@@ -1649,7 +1677,7 @@ foreach ($top5 as $tp => $ct) {
 
     // Value
     $pdf->SetXY($chartX + $barW + 3, $chartY + ($i * 12));
-    $pdf->Cell(18, 6, $ct, 0, 0);
+    $pdf->Cell(18,6,$ct,0,0);
 
     $i++;
 }
@@ -1657,7 +1685,7 @@ foreach ($top5 as $tp => $ct) {
 $pdf->Ln(15);
 
 /* ======================================================
-   7. INSIGHTS
+   9. INSIGHTS
 ====================================================== */
 
 $pdf->SubTitle("Insights");
@@ -1669,11 +1697,13 @@ $ins[] = count($counts)." different test types showed Fail/Rejected conditions."
 $ins[] = "$topClient is the most affected client.";
 
 if ($topTestCount / $totalNCR > 0.3)
-    $ins[] = "$topTest represents more than 30% of all NCR failures (critical trend).";
+    $ins[] = "$topTest represents more than 30% of all NCR failures — trend is significant.";
 
 foreach ($ins as $t) {
     $pdf->BodyText("- " . utf8_decode($t));
 }
+
+$pdf->Ln(5);
 
 
 /* ======================================================
