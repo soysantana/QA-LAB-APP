@@ -1098,169 +1098,195 @@ foreach ($weeks as $w) {
 $pdf->AddPage();   // Página 6
 
 /* ======================================================
-   SECTION 6 — Test Type Mix (Analytical Version C)
+   SECTION 6 — Test Type Mix (Top 10)
 ====================================================== */
 
-$pdf->SectionTitle("6. Test Type Mix — Analytical Distribution");
+$pdf->SectionTitle("6. Test Type Mix (Top 10)");
 
 /* ======================================================
-   1) BUILD COUNT OF ALL TEST TYPES
+   1. Diccionario de nombres completos
 ====================================================== */
+$testNames = [
+    "BTS" => "Brazilian (BTS)",
+    "PLT" => "Point Load Test",
+    "GS"  => "Grain Size",
+    "UCS" => "Unconfined Compressive Strength",
+    "MC"  => "Moisture Content",
+    "AR"  => "Acid Reactivity",
+    "AL"  => "Atterberg Limit",
+    "SG"  => "Specific Gravity",
+    "DHY" => "Double Hydrometer",
+    "HY"  => "Hydrometer",
+    "SP"  => "Standard Proctor",
+    "MP"  => "Modified Proctor",
+    "PH"  => "Pinhole Test",
+    "SND" => "Soundness Test",
+    "LAA" => "Los Angeles Abrasion",
+    "SCT" => "Sand Castle Test",
+    "SHAPE" => "Particle Shape Test",
+    "DENSIDAD-VIBRATORIO" => "Vibrating Density",
+    "ENVIO" => "For Shipment",
+    "K" => "Hydraulic Conductivity",
+    "PERM" => "Permeability Test",
+];
 
+/* ======================================================
+   2. Contar todos los ensayos del mes
+====================================================== */
 $allTests = [];
 
 foreach ($rows as $r) {
     $types = preg_split('/[,;]+/', $r["Test_Type"]);
     foreach ($types as $tp) {
-
         $tp = trim($tp);
         if ($tp === "") continue;
-
         if (!isset($allTests[$tp])) $allTests[$tp] = 0;
         $allTests[$tp]++;
     }
 }
 
-arsort($allTests); // sort descending
-
-$totalTests = array_sum($allTests);
-if ($totalTests == 0) $totalTests = 1;
+if (empty($allTests)) {
+    $pdf->BodyText("No test data available for this month.");
+    return;
+}
 
 /* ======================================================
-   2) TABLE — Test Type Counts & Percentages
+   3. TOP 10 ordenados
 ====================================================== */
+arsort($allTests);
+$topTests = array_slice($allTests, 0, 10, true);
 
-$pdf->SubTitle("Weighted Workload Contribution");
+$totalAll = array_sum($allTests);
+$totalTop = array_sum($topTests);
+if ($totalTop == 0) $totalTop = 1;
+
+/* ======================================================
+   4. TABLA TOP 10
+====================================================== */
+$pdf->SubTitle("Top 10 Most Performed Tests");
 
 $pdf->TableHeader([
-    40 => "Test Type",
+    70 => "Test Type",
     20 => "Count",
-    45 => "Percentage"
+    30 => "%"
 ]);
 
-foreach ($allTests as $tp => $count) {
-    $pct = round(($count / $totalTests) * 100, 1) . "%";
+foreach ($topTests as $code => $count) {
+    $name = $testNames[$code] ?? $code;
+    $pct  = round(($count / $totalAll) * 100, 1) . "%";
 
     $pdf->TableRow([
-        40 => $tp,
+        70 => utf8_decode($name),
         20 => $count,
-        45 => $pct
+        30 => $pct
     ]);
 }
 
-$pdf->Ln(5);
+/* TOTAL */
+$pdf->TableRow([
+    70 => "TOTAL",
+    20 => $totalAll,
+    30 => "100%"
+]);
+
+$pdf->Ln(4);
 
 /* ======================================================
-   3) ANALYTICAL HORIZONTAL BAR CHART
+   5. GRÁFICO TOP 5 — COMPACTO y CENTRADO
 ====================================================== */
 
-$pdf->SubTitle("Analytical Horizontal Mix Chart");
+$pdf->SubTitle("Horizontal Bar Chart (Top 5 in %)");
 
-/* CHART POSITION */
-$chartX = 30;
-$chartY = $pdf->GetY() + 4;
-$chartW = 120;
-$barH  = 6;
-$gap   = 3;
+$top5 = array_slice($topTests, 0, 5, true);
 
-/* FIND MAX FOR SCALE */
-$maxVal = max($allTests);
-if ($maxVal == 0) $maxVal = 1;
+$chartX = 25;
+$chartY = $pdf->GetY() + 6;
 
-/* DRAW X AXIS SCALE LABELS */
-$pdf->SetFont("Arial", "", 7);
-$pdf->SetTextColor(80,80,80);
+$barAreaW = 70;      // más compacto
+$barH = 6;
+
+/* --- EJE X (0–25–50–75–100%) --- */
+$pdf->SetFont("Arial","",7);
 
 for ($i = 0; $i <= 4; $i++) {
+    $pct = $i * 25;
+    $xPos = $chartX + 40 + ($barAreaW * ($pct / 100));
 
-    $val = round(($maxVal / 4) * $i);
-    $xPos = $chartX + ($chartW / 4) * $i;
+    $pdf->SetXY($xPos - 5, $chartY - 4);
+    $pdf->Cell(10, 4, $pct."%", 0, 0, "C");
 
-    $pdf->SetXY($xPos - 4, $chartY - 4);
-    $pdf->Cell(8, 4, $val, 0, 0, "C");
+    $pdf->Line($xPos, $chartY - 1, $xPos, $chartY + (count($top5) * 9) + 3);
 }
 
-/* DRAW HORIZONTAL BARS */
+/* --- BARRAS --- */
+$pdf->SetXY($chartX, $chartY);
 $i = 0;
-foreach ($allTests as $tp => $count) {
 
-    $pct  = round(($count / $totalTests) * 100, 1);
-    $barW = ($count / $maxVal) * $chartW;
+foreach ($top5 as $tp => $count) {
 
-    list($r, $g, $b) = pickColor($i);
-    $pdf->SetFillColor($r, $g, $b);
+    $label = $testNames[$tp] ?? $tp;
+    $pct   = round(($count / $totalAll) * 100, 1);
+    $barW  = ($pct / 100) * $barAreaW;
 
-    $yPos = $chartY + ($i * ($barH + $gap));
+    list($r,$g,$b) = pickColor($i);
 
-    // BAR
-    $pdf->Rect($chartX, $yPos, $barW, $barH, "F");
+    // label
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(38, 6, utf8_decode($label), 0, 0);
 
-    // LABEL (Test Type)
-    $pdf->SetXY(10, $yPos);
-    $pdf->SetFont("Arial", "", 8);
-    $pdf->Cell(18, $barH, utf8_decode($tp));
+    // bar
+    $pdf->SetFillColor($r,$g,$b);
+    $pdf->Rect($chartX + 40, $pdf->GetY() + 1, $barW, $barH, "F");
 
-    // VALUE (percentage at right)
-    $pdf->SetXY($chartX + $barW + 4, $yPos);
-    $pdf->SetFont("Arial", "B", 8);
-    $pdf->Cell(20, $barH, $pct . "%");
+    // value
+    $pdf->SetXY($chartX + 42 + $barW, $pdf->GetY());
+    $pdf->Cell(20, 6, $pct . "%", 0, 1);
 
     $i++;
 }
 
-$pdf->Ln($i * ($barH + $gap) + 2);
+$pdf->Ln(3);
 
 /* ======================================================
-   4) INSIGHTS — Automatic Interpretation
+   6. OBSERVATIONS & INSIGHTS (DINÁMICOS)
 ====================================================== */
 
-$pdf->SubTitle("Executive Interpretation");
+$pdf->SubTitle("Observations & Insights");
 
-$insights = [];
+$ins = [];
 
-$topTest = array_key_first($allTests);
-$topPct  = round(($allTests[$topTest] / $totalTests) * 100, 1);
+$topCode = array_key_first($topTests);
+$topName = $testNames[$topCode] ?? $topCode;
+$topPct  = round(($topTests[$topCode] / $totalAll) * 100, 1);
 
-$insights[] = "- $topTest is the dominant workload this month ($topPct%).";
+/* Insight 1 */
+$ins[] = "The laboratory workload is dominated by {$topName} ({$topPct}%).";
 
-$mechanical = 0;
-foreach (["CBR","UCS","PLT","CD","UU","CU"] as $mech) {
-    if (isset($allTests[$mech])) $mechanical += $allTests[$mech];
+/* Insight 2: ensayos con menos de 5% */
+$low = [];
+foreach ($topTests as $tp => $cnt) {
+    $pp = ($cnt / $totalAll) * 100;
+    if ($pp < 5) $low[] = ($testNames[$tp] ?? $tp);
 }
-if ($mechanical > 0) {
-    $mechPct = round(($mechanical / $totalTests) * 100, 1);
-    $insights[] = "- Mechanical index tests contribute $mechPct%, aligned with structural fill verification.";
-}
-
-$indexTests = 0;
-foreach (["LL","PL","PI"] as $idx) {
-    if (isset($allTests[$idx])) $indexTests += $allTests[$idx];
-}
-if ($indexTests > 0) {
-    $idxPct = round(($indexTests / $totalTests) * 100, 1);
-    $insights[] = "- Index tests (LL/PL) represent $idxPct%, indicating soil classification activity.";
+if (!empty($low)) {
+    $ins[] = "Very low demand detected for: " . implode(", ", $low) . ".";
 }
 
-$agg = 0;
-foreach(["AR","SND","SG","C131","C535"] as $aggTest){
-    if(isset($allTests[$aggTest])) $agg += $allTests[$aggTest];
-}
-if($agg>0){
-    $aggPct = round(($agg/$totalTests)*100,1);
-    $insights[] = "- Durability & aggregate quality tests represent $aggPct% of the workload.";
+/* Insight 3 granulometría */
+if (isset($topTests["GS"]) && (($topTests["GS"] / $totalAll) * 100) > 20) {
+    $ins[] = "High GS usage suggests active classification, borrow material selection or excavation phases.";
 }
 
-/* DEFAULT MESSAGE */
-if (empty($insights)) {
-    $insights[] = "No significant test type trends detected this month.";
+/* Insight 4 UCS bajo */
+if (!isset($topTests["UCS"]) || (($topTests["UCS"] / $totalAll) * 100) < 5) {
+    $ins[] = "Low UCS demand indicates minimal geomechanical testing activity this month.";
 }
 
-/* PRINT INSIGHTS */
-foreach ($insights as $txt) {
-    $pdf->BodyText($txt);
+foreach ($ins as $t) {
+    $pdf->BodyText("- " . utf8_decode($t));
 }
 
-$pdf->Ln(4);
+
 $pdf->AddPage();   // Página 7
 
 /* ======================================================
