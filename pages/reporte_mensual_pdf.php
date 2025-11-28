@@ -80,7 +80,7 @@ class PDF_Monthly extends FPDF {
     function TableRow($cols){
         $this->SetFont('Arial','',10);
         foreach($cols as $w=>$t){
-            $this->Cell($w,8,utf8_decode(safeVal($t)),1,0,'C');
+            $this->Cell($w,7,utf8_decode(safeVal($t)),1,0,'C');
         }
         $this->Ln();
     }
