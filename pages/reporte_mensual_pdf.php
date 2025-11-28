@@ -1043,6 +1043,32 @@ foreach ($weeks as $i => $w) {
     $pdf->SetFillColor(244,180,0);
     $pdf->Rect($x0 + 2*($singleBarW+1), $chartY + $chartH - $h3, $singleBarW, $h3, "F");
 }
+/* === Y-AXIS LABELS === */
+$pdf->SetFont("Arial","",7);
+$steps = 4; // 0%, 25%, 50%, 75%, 100%
+
+for ($i=0; $i <= $steps; $i++) {
+    $val = round(($maxVal / $steps) * $i);
+    $yPos = $chartY + $chartH - ($chartH / $steps * $i);
+
+    // Linea gris horizontal
+    $pdf->SetDrawColor(220,220,220);
+    $pdf->Line($chartX, $yPos, $chartX + $chartW, $yPos);
+
+    // Valor
+    $pdf->SetTextColor(0,0,0);
+    $pdf->SetXY($chartX - 12, $yPos - 2);
+    $pdf->Cell(10, 4, $val, 0, 0, "R");
+}
+/* === X-AXIS LABELS === */
+$pdf->SetFont("Arial","",7);
+
+foreach ($weeks as $i => $w) {
+    $xLabel = $chartX + 6 + $i * $barGroupW + ($barGroupW / 2);
+    $pdf->SetXY($xLabel - 6, $chartY + $chartH + 1);
+    $pdf->Cell(12, 4, "W$w", 0, 0, "C");
+}
+
 
 /* LEYENDA VERTICAL DERECHA */
 $legX = $chartX + $chartW + 3;
