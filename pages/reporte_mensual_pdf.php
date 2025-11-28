@@ -1273,78 +1273,70 @@ foreach ($ins as $text) {
 $pdf->AddPage();   // Página 7
 
 /* ======================================================
-   SECTION 7 — Pending Workload & Aging Analysis (Monthly)
+   SECTION 7 — Pending Workload & Aging Analysis
 ====================================================== */
-
 $pdf->SectionTitle("7. Pending Workload & Aging Analysis");
 
-/* ======================================================
-   NORMALIZATION FUNCTION (avoids false pending)
-====================================================== */
+/* NORMALIZATION */
 function normalizeStr($str){
     if ($str === null) return "";
     $str = trim($str);
-
-    // Remove NBSP
     $str = preg_replace('/\x{00A0}/u', ' ', $str);
-
-    // Replace multiple spaces with normal space
     $str = preg_replace('/\s+/', ' ', $str);
-
-    // Normalize weird hyphens
     $str = str_replace(["–","—","−"], "-", $str);
-
-    // Uppercase final
     return strtoupper(trim($str));
 }
 
 /* ======================================================
-   1. EXPAND TESTS INDIVIDUALLY
+   1. Expand and normalize tests individually
 ====================================================== */
 $expanded = [];
 
 foreach ($rows as $r) {
+
     $types = preg_split('/[,;]+/', $r["Test_Type"]);
 
     foreach ($types as $tp) {
+
+        $tp = normalizeStr($tp);
+
+        /* IGNORE TESTS MARKED AS ENVIO */
+        if ($tp === "ENVIO") continue;
 
         $expanded[] = [
             "Sample_ID"     => normalizeStr($r["Sample_ID"]),
             "Sample_Number" => normalizeStr($r["Sample_Number"]),
             "Client"        => normalizeStr($r["Client"]),
-            "Test_Type"     => normalizeStr($tp),
+            "Test_Type"     => $tp,
             "RegDate"       => $r["Registed_Date"]
         ];
     }
 }
 
 /* ======================================================
-   2. DETECT REAL PENDING TESTS (YOUR LOGIC)
+   2. Detect pending tests
 ====================================================== */
-
 $pending = [];
 $today = strtotime("now");
 
 foreach ($expanded as $t) {
 
-    /* Normalized values for SQL */
     $sid = $db->escape($t["Sample_ID"]);
     $num = $db->escape($t["Sample_Number"]);
     $tp  = $db->escape($t["Test_Type"]);
 
-    /* Queries with normalize logic in SQL (UPPER + TRIM) */
-    $sqlBase = "UPPER(TRIM(Sample_ID))='$sid'
-                AND UPPER(TRIM(Sample_Number))='$num'
-                AND UPPER(TRIM(Test_Type))='$tp'";
+    $sql = "UPPER(TRIM(Sample_ID))='$sid'
+            AND UPPER(TRIM(Sample_Number))='$num'
+            AND UPPER(TRIM(Test_Type))='$tp'";
 
-    $prep = $db->query("SELECT 1 FROM test_preparation WHERE $sqlBase")->num_rows;
-    $real = $db->query("SELECT 1 FROM test_realization WHERE $sqlBase")->num_rows;
-    $del  = $db->query("SELECT 1 FROM test_delivery   WHERE $sqlBase")->num_rows;
-    $rev  = $db->query("SELECT 1 FROM test_review     WHERE $sqlBase")->num_rows;
-    $rev2 = $db->query("SELECT 1 FROM test_reviewed   WHERE $sqlBase")->num_rows;
-    $doc  = $db->query("SELECT 1 FROM doc_files       WHERE $sqlBase")->num_rows;
+    $prep = $db->query("SELECT 1 FROM test_preparation WHERE $sql")->num_rows;
+    $real = $db->query("SELECT 1 FROM test_realization WHERE $sql")->num_rows;
+    $del  = $db->query("SELECT 1 FROM test_delivery   WHERE $sql")->num_rows;
+    $rev  = $db->query("SELECT 1 FROM test_review     WHERE $sql")->num_rows;
+    $rev2 = $db->query("SELECT 1 FROM test_reviewed   WHERE $sql")->num_rows;
+    $doc  = $db->query("SELECT 1 FROM doc_files       WHERE $sql")->num_rows;
 
-    /* YOUR LOGIC → Pending ONLY if NOT present in ANY table */
+    /* YOUR LOGIC → pending only if NOT in ANY table */
     if ($prep==0 && $real==0 && $del==0 && $rev==0 && $rev2==0 && $doc==0) {
 
         $days = round(($today - strtotime($t["RegDate"])) / 86400, 1);
@@ -1359,14 +1351,13 @@ foreach ($expanded as $t) {
     }
 }
 
-/* If no pending tests */
 if (empty($pending)) {
     $pdf->BodyText("No pending tests for this period.");
     return;
 }
 
 /* ======================================================
-   3. SUMMARY CARDS
+   3. Summary Cards
 ====================================================== */
 $totalPending = count($pending);
 $avgAging     = round(array_sum(array_column($pending,"Days")) / $totalPending, 1);
@@ -1382,9 +1373,11 @@ $pdf->Cell(45,8,"Max: {$maxAging}d",1,1,'C');
 $pdf->Ln(4);
 
 /* ======================================================
-   4. PENDING TABLE (GROUP BY CLIENT)
+   4. Adaptive Pending Table (Grouped by Client)
 ====================================================== */
+
 usort($pending, fn($a,$b)=> $b["Days"] <=> $a["Days"]);
+
 $grouped = [];
 
 foreach ($pending as $p) {
@@ -1396,30 +1389,28 @@ foreach ($grouped as $client => $list) {
     $pdf->SubTitle("Client: $client (" . count($list) . " pending)");
 
     $pdf->TableHeader([
-        25 => "Sample",
+        32 => "Sample",
         22 => "Number",
         28 => "Test",
         18 => "Days",
-        47 => "Status"
+        40 => "Status"
     ]);
 
     foreach ($list as $row) {
 
-        /* Determine status (reason for pending) */
         $status = "Not Started";
 
-        /* Color based on risk */
         if ($row["Days"] > 14)      $pdf->SetTextColor(220,0,0);
         elseif ($row["Days"] > 7)  $pdf->SetTextColor(255,140,0);
         elseif ($row["Days"] > 3)  $pdf->SetTextColor(200,150,0);
         else                       $pdf->SetTextColor(0,120,0);
 
         $pdf->TableRow([
-            25 => $row["Sample_ID"],
+            32 => $row["Sample_ID"],
             22 => $row["Sample_Number"],
             28 => $row["Test_Type"],
             18 => $row["Days"],
-            47 => $status
+            40 => $status
         ]);
 
         $pdf->SetTextColor(0,0,0);
@@ -1429,7 +1420,7 @@ foreach ($grouped as $client => $list) {
 }
 
 /* ======================================================
-   5. AGING CHART (TOP 10 HORIZONTAL)
+   5. Aging Chart — Top 10
 ====================================================== */
 
 $pdf->SubTitle("Aging Chart (Top 10 Delays)");
@@ -1469,26 +1460,22 @@ foreach ($topAging as $row) {
 $pdf->Ln(15);
 
 /* ======================================================
-   6. OBSERVATIONS & INSIGHTS
+   6. Insights
 ====================================================== */
 
-$pdf->SubTitle("Observations & Insights");
+$pdf->SubTitle("Insights");
 
 $ins = [];
 
-/* Main backlog */
 $mainClient = array_key_first($grouped);
-$ins[] = "$mainClient shows the highest accumulation of pending tests.";
+$ins[] = "$mainClient has the highest accumulation of pending tests.";
 
-/* Most delayed test */
 $topItem = $pending[0];
 $ins[] = "{$topItem['Test_Type']} ({$topItem['Sample_ID']}) has the highest delay at {$topItem['Days']} days.";
 
-/* Critical cases */
 if ($critical > 0)
-    $ins[] = "$critical tests exceed 14 days, indicating critical backlog.";
+    $ins[] = "$critical tests exceed 14 days (CRITICAL).";
 
-/* Avg aging */
 $ins[] = "Average pending aging is {$avgAging} days.";
 
 foreach ($ins as $t) {
