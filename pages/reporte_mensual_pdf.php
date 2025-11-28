@@ -1098,10 +1098,9 @@ foreach ($weeks as $w) {
 $pdf->AddPage();   // Página 6
 
 /* ======================================================
-   SECTION 6 — Test Type Mix (Top 10)
+   SECTION 6 — Laboratory Test Demand Distribution
 ====================================================== */
-
-$pdf->SectionTitle("6. Test Type Mix (Top 10)");
+$pdf->SectionTitle("6. Laboratory Test Demand Distribution");
 
 /* ======================================================
    1. Diccionario de nombres completos
@@ -1131,7 +1130,7 @@ $testNames = [
 ];
 
 /* ======================================================
-   2. Contar todos los ensayos del mes
+   2. Contar TODOS los ensayos del mes
 ====================================================== */
 $allTests = [];
 
@@ -1145,25 +1144,27 @@ foreach ($rows as $r) {
     }
 }
 
+/* PROTEGER PDF vacío */
 if (empty($allTests)) {
-    $pdf->BodyText("No test data available for this month.");
-    return;
+    $pdf->BodyText("No test data available for this period.");
+    $allTests = ["NO DATA" => 1];
 }
 
-/* ======================================================
-   3. TOP 10 ordenados
-====================================================== */
+/* Ordenar todos los ensayos */
 arsort($allTests);
-$topTests = array_slice($allTests, 0, 10, true);
 
+/* Total global */
 $totalAll = array_sum($allTests);
-$totalTop = array_sum($topTests);
-if ($totalTop == 0) $totalTop = 1;
+if ($totalAll == 0) $totalAll = 1;
+
+/* Top 5 para gráfico */
+$top5 = array_slice($allTests, 0, 5, true);
 
 /* ======================================================
-   4. TABLA TOP 10
+   3. TABLA — TODOS LOS ENSAYOS
 ====================================================== */
-$pdf->SubTitle("Top 10 Most Performed Tests");
+
+$pdf->SubTitle("Monthly Laboratory Test Demand Distribution");
 
 $pdf->TableHeader([
     70 => "Test Type",
@@ -1171,7 +1172,7 @@ $pdf->TableHeader([
     30 => "%"
 ]);
 
-foreach ($topTests as $code => $count) {
+foreach ($allTests as $code => $count) {
     $name = $testNames[$code] ?? $code;
     $pct  = round(($count / $totalAll) * 100, 1) . "%";
 
@@ -1189,37 +1190,20 @@ $pdf->TableRow([
     30 => "100%"
 ]);
 
-$pdf->Ln(4);
+$pdf->Ln(5);
 
 /* ======================================================
-   5. GRÁFICO TOP 5 — COMPACTO y CENTRADO
+   4. GRÁFICO — TOP 5 (HORIZONTAL, SIN EJE X)
 ====================================================== */
 
-$pdf->SubTitle("Horizontal Bar Chart (Top 5 in %)");
+$pdf->SubTitle("Most Demanded Tests (Top 5 by %)");
 
-$top5 = array_slice($topTests, 0, 5, true);
+$chartX = 35;
+$chartY = $pdf->GetY() + 5;
 
-$chartX = 25;
-$chartY = $pdf->GetY() + 6;
+$barAreaW = 90;
+$barH = 7;
 
-$barAreaW = 70;      // más compacto
-$barH = 6;
-
-/* --- EJE X (0–25–50–75–100%) --- */
-$pdf->SetFont("Arial","",7);
-
-for ($i = 0; $i <= 4; $i++) {
-    $pct = $i * 25;
-    $xPos = $chartX + 40 + ($barAreaW * ($pct / 100));
-
-    $pdf->SetXY($xPos - 5, $chartY - 4);
-    $pdf->Cell(10, 4, $pct."%", 0, 0, "C");
-
-    $pdf->Line($xPos, $chartY - 1, $xPos, $chartY + (count($top5) * 9) + 3);
-}
-
-/* --- BARRAS --- */
-$pdf->SetXY($chartX, $chartY);
 $i = 0;
 
 foreach ($top5 as $tp => $count) {
@@ -1228,62 +1212,62 @@ foreach ($top5 as $tp => $count) {
     $pct   = round(($count / $totalAll) * 100, 1);
     $barW  = ($pct / 100) * $barAreaW;
 
-    list($r,$g,$b) = pickColor($i);
+    list($r, $g, $b) = pickColor($i);
 
-    // label
+    /* Nombre del ensayo (columna izquierda) */
     $pdf->SetFont("Arial","",8);
-    $pdf->Cell(38, 6, utf8_decode($label), 0, 0);
+    $pdf->SetXY($chartX - 30, $chartY + ($i * 12));
+    $pdf->Cell(30, 6, utf8_decode($label), 0, 0, "R");
 
-    // bar
+    /* Barra */
     $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect($chartX + 40, $pdf->GetY() + 1, $barW, $barH, "F");
+    $pdf->Rect($chartX, $chartY + ($i * 12), $barW, $barH, "F");
 
-    // value
-    $pdf->SetXY($chartX + 42 + $barW, $pdf->GetY());
-    $pdf->Cell(20, 6, $pct . "%", 0, 1);
+    /* Porcentaje */
+    $pdf->SetXY($chartX + $barW + 4, $chartY + ($i * 12));
+    $pdf->Cell(18, 6, $pct . "%", 0, 0);
 
     $i++;
 }
 
-$pdf->Ln(3);
+$pdf->Ln(18);
 
 /* ======================================================
-   6. OBSERVATIONS & INSIGHTS (DINÁMICOS)
+   5. OBSERVATIONS & INSIGHTS (DINÁMICOS)
 ====================================================== */
 
 $pdf->SubTitle("Observations & Insights");
 
 $ins = [];
 
-$topCode = array_key_first($topTests);
+/* Insight 1 — ensayo dominante */
+$topCode = array_key_first($allTests);
 $topName = $testNames[$topCode] ?? $topCode;
-$topPct  = round(($topTests[$topCode] / $totalAll) * 100, 1);
+$topPct  = round(($allTests[$topCode] / $totalAll) * 100, 1);
+$ins[] = "{$topName} dominates the laboratory workload ({$topPct}%).";
 
-/* Insight 1 */
-$ins[] = "The laboratory workload is dominated by {$topName} ({$topPct}%).";
-
-/* Insight 2: ensayos con menos de 5% */
+/* Insight 2 — ensayos con menos de 2% */
 $low = [];
-foreach ($topTests as $tp => $cnt) {
+foreach ($allTests as $tp => $cnt) {
     $pp = ($cnt / $totalAll) * 100;
-    if ($pp < 5) $low[] = ($testNames[$tp] ?? $tp);
+    if ($pp < 2) $low[] = ($testNames[$tp] ?? $tp);
 }
 if (!empty($low)) {
-    $ins[] = "Very low demand detected for: " . implode(", ", $low) . ".";
+    $ins[] = "Limited demand detected for: " . implode(", ", $low) . ".";
 }
 
-/* Insight 3 granulometría */
-if (isset($topTests["GS"]) && (($topTests["GS"] / $totalAll) * 100) > 20) {
-    $ins[] = "High GS usage suggests active classification, borrow material selection or excavation phases.";
+/* Insight 3 — granulometría alta */
+if (isset($allTests["GS"]) && (($allTests["GS"] / $totalAll) * 100) > 20) {
+    $ins[] = "High GS usage indicates active classification or excavation activities.";
 }
 
-/* Insight 4 UCS bajo */
-if (!isset($topTests["UCS"]) || (($topTests["UCS"] / $totalAll) * 100) < 5) {
-    $ins[] = "Low UCS demand indicates minimal geomechanical testing activity this month.";
+/* Insight 4 — UCS bajo */
+if (!isset($allTests["UCS"]) || (($allTests["UCS"] / $totalAll) * 100) < 5) {
+    $ins[] = "Low UCS demand suggests minimal geomechanical testing during this period.";
 }
 
-foreach ($ins as $t) {
-    $pdf->BodyText("- " . utf8_decode($t));
+foreach ($ins as $text) {
+    $pdf->BodyText("- " . utf8_decode($text));
 }
 
 
