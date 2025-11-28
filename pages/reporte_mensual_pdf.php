@@ -1129,9 +1129,9 @@ foreach($rows as $r){
 asort($allTests);
 
 $pdf->TableHeader([
-    60=>"Test Type",
-    40=>"Count",
-    40=>"Percentage"
+    40=>"Test Type",
+    20=>"Count",
+    45=>"Percentage"
 ]);
 
 $totalTests = array_sum($allTests);
@@ -1139,7 +1139,7 @@ if($totalTests==0) $totalTests=1;
 
 foreach($allTests as $tp=>$q){
     $pct = round(($q/$totalTests)*100,1)."%";
-    $pdf->TableRow([60=>$tp,40=>$q,40=>$pct]);
+    $pdf->TableRow([40=>$tp,20=>$q,45=>$pct]);
 }
 
 $pdf->Ln(4);
