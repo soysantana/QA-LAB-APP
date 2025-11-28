@@ -759,7 +759,6 @@ foreach ($hist as $cl=>$v){
 
 $pdf->Ln(6);
 
-
 /* ======================================================
    4C — HISTORICAL COMPLETION GRAPH (Vertical Bars)
 ====================================================== */
@@ -806,7 +805,6 @@ if (!empty($labels)) {
 
     $pdf->SetY($chartY + $chartH + 12);
 }
-
 
 /* ======================================================
    4D — EXECUTIVE INSIGHTS
@@ -1012,7 +1010,7 @@ if ($pdf->GetY() > 190) $pdf->AddPage();
 /* CHART SIZE — REDUCIDO */
 $chartX = 18;
 $chartY = $pdf->GetY() + 4;
-$chartW = 135;
+$chartW = 120;
 $chartH = 50;
 
 /* EJE */
@@ -1062,14 +1060,6 @@ for ($i=0; $i <= $steps; $i++) {
     $pdf->SetXY($chartX - 12, $yPos - 2);
     $pdf->Cell(10, 4, $val, 0, 0, "R");
 }
-/* === X-AXIS LABELS === */
-$pdf->SetFont("Arial","",7);
-
-foreach ($weeks as $i => $w) {
-    $xLabel = $chartX + 6 + $i * $barGroupW + ($barGroupW / 2);
-    $pdf->SetXY($xLabel - 6, $chartY + $chartH + 1);
-    $pdf->Cell(12, 4, "W$w", 0, 0, "C");
-}
 
 
 /* LEYENDA VERTICAL DERECHA */
@@ -1108,60 +1098,170 @@ foreach ($weeks as $w) {
 $pdf->AddPage();   // Página 6
 
 /* ======================================================
-   SECTION 6 — Test Type Mix (Production Mix)
+   SECTION 6 — Test Type Mix (Analytical Version C)
 ====================================================== */
 
-$pdf->SectionTitle("6. Test Type Mix");
+$pdf->SectionTitle("6. Test Type Mix — Analytical Distribution");
+
+/* ======================================================
+   1) BUILD COUNT OF ALL TEST TYPES
+====================================================== */
 
 $allTests = [];
 
-foreach($rows as $r){
+foreach ($rows as $r) {
     $types = preg_split('/[,;]+/', $r["Test_Type"]);
-    foreach($types as $tp){
+    foreach ($types as $tp) {
+
         $tp = trim($tp);
-        if($tp!=""){
-            if(!isset($allTests[$tp])) $allTests[$tp]=0;
-            $allTests[$tp]++;
-        }
+        if ($tp === "") continue;
+
+        if (!isset($allTests[$tp])) $allTests[$tp] = 0;
+        $allTests[$tp]++;
     }
 }
 
-asort($allTests);
-
-$pdf->TableHeader([
-    40=>"Test Type",
-    20=>"Count",
-    45=>"Percentage"
-]);
+arsort($allTests); // sort descending
 
 $totalTests = array_sum($allTests);
-if($totalTests==0) $totalTests=1;
+if ($totalTests == 0) $totalTests = 1;
 
-foreach($allTests as $tp=>$q){
-    $pct = round(($q/$totalTests)*100,1)."%";
-    $pdf->TableRow([40=>$tp,20=>$q,45=>$pct]);
+/* ======================================================
+   2) TABLE — Test Type Counts & Percentages
+====================================================== */
+
+$pdf->SubTitle("Weighted Workload Contribution");
+
+$pdf->TableHeader([
+    40 => "Test Type",
+    20 => "Count",
+    45 => "Percentage"
+]);
+
+foreach ($allTests as $tp => $count) {
+    $pct = round(($count / $totalTests) * 100, 1) . "%";
+
+    $pdf->TableRow([
+        40 => $tp,
+        20 => $count,
+        45 => $pct
+    ]);
 }
 
-$pdf->Ln(4);
+$pdf->Ln(5);
 
-/* ---------- GRAPH ---------- */
-$pdf->SubTitle("Test Type Mix - Horizontal Chart");
+/* ======================================================
+   3) ANALYTICAL HORIZONTAL BAR CHART
+====================================================== */
 
-$i=0;
-foreach($allTests as $tp=>$q){
-    list($r,$g,$b)=pickColor($i);
+$pdf->SubTitle("Analytical Horizontal Mix Chart");
 
-    $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect(30,$pdf->GetY(),$q*1.2,6,"F");
+/* CHART POSITION */
+$chartX = 30;
+$chartY = $pdf->GetY() + 4;
+$chartW = 120;
+$barH  = 6;
+$gap   = 3;
 
-    $pdf->SetXY(10,$pdf->GetY());
-    $pdf->Cell(20,6,$tp);
+/* FIND MAX FOR SCALE */
+$maxVal = max($allTests);
+if ($maxVal == 0) $maxVal = 1;
 
-    $pdf->Ln(7);
+/* DRAW X AXIS SCALE LABELS */
+$pdf->SetFont("Arial", "", 7);
+$pdf->SetTextColor(80,80,80);
+
+for ($i = 0; $i <= 4; $i++) {
+
+    $val = round(($maxVal / 4) * $i);
+    $xPos = $chartX + ($chartW / 4) * $i;
+
+    $pdf->SetXY($xPos - 4, $chartY - 4);
+    $pdf->Cell(8, 4, $val, 0, 0, "C");
+}
+
+/* DRAW HORIZONTAL BARS */
+$i = 0;
+foreach ($allTests as $tp => $count) {
+
+    $pct  = round(($count / $totalTests) * 100, 1);
+    $barW = ($count / $maxVal) * $chartW;
+
+    list($r, $g, $b) = pickColor($i);
+    $pdf->SetFillColor($r, $g, $b);
+
+    $yPos = $chartY + ($i * ($barH + $gap));
+
+    // BAR
+    $pdf->Rect($chartX, $yPos, $barW, $barH, "F");
+
+    // LABEL (Test Type)
+    $pdf->SetXY(10, $yPos);
+    $pdf->SetFont("Arial", "", 8);
+    $pdf->Cell(18, $barH, utf8_decode($tp));
+
+    // VALUE (percentage at right)
+    $pdf->SetXY($chartX + $barW + 4, $yPos);
+    $pdf->SetFont("Arial", "B", 8);
+    $pdf->Cell(20, $barH, $pct . "%");
+
     $i++;
 }
 
+$pdf->Ln($i * ($barH + $gap) + 2);
+
+/* ======================================================
+   4) INSIGHTS — Automatic Interpretation
+====================================================== */
+
+$pdf->SubTitle("Executive Interpretation");
+
+$insights = [];
+
+$topTest = array_key_first($allTests);
+$topPct  = round(($allTests[$topTest] / $totalTests) * 100, 1);
+
+$insights[] = "- $topTest is the dominant workload this month ($topPct%).";
+
+$mechanical = 0;
+foreach (["CBR","UCS","PLT","CD","UU","CU"] as $mech) {
+    if (isset($allTests[$mech])) $mechanical += $allTests[$mech];
+}
+if ($mechanical > 0) {
+    $mechPct = round(($mechanical / $totalTests) * 100, 1);
+    $insights[] = "- Mechanical index tests contribute $mechPct%, aligned with structural fill verification.";
+}
+
+$indexTests = 0;
+foreach (["LL","PL","PI"] as $idx) {
+    if (isset($allTests[$idx])) $indexTests += $allTests[$idx];
+}
+if ($indexTests > 0) {
+    $idxPct = round(($indexTests / $totalTests) * 100, 1);
+    $insights[] = "- Index tests (LL/PL) represent $idxPct%, indicating soil classification activity.";
+}
+
+$agg = 0;
+foreach(["AR","SND","SG","C131","C535"] as $aggTest){
+    if(isset($allTests[$aggTest])) $agg += $allTests[$aggTest];
+}
+if($agg>0){
+    $aggPct = round(($agg/$totalTests)*100,1);
+    $insights[] = "- Durability & aggregate quality tests represent $aggPct% of the workload.";
+}
+
+/* DEFAULT MESSAGE */
+if (empty($insights)) {
+    $insights[] = "No significant test type trends detected this month.";
+}
+
+/* PRINT INSIGHTS */
+foreach ($insights as $txt) {
+    $pdf->BodyText($txt);
+}
+
 $pdf->Ln(4);
+$pdf->AddPage();   // Página 7
 
 /* ======================================================
    SECTION 7 — Pending Tests + Aging
