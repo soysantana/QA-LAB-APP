@@ -1677,18 +1677,141 @@ foreach ($ins as $t) {
 
 
 /* ======================================================
-   SECTION 9 — Final Remarks & Recommendations
+   SECTION 9 — Dynamic Managerial Remarks & Recommendations
+   Based on Sections 2 to 8 (Activity, Demand, Pending, NCR, Docs)
 ====================================================== */
 
 $pdf->SectionTitle("9. Managerial Remarks & Recommendations");
 
-$pdf->BodyText("
-• Workflow remained stable throughout the month.  
-• No major operational disruptions were detected.  
-• Pending tests should be monitored closely, especially those with aging > 10 days.  
-• Recommend reinforcing documentation cycle to reduce backlog between Delivery and doc_files.  
-• Increasing internal review efficiency could reduce turnaround time.  
-");
+/* ======================================================
+   1. BUILD METRICS FROM PREVIOUS SECTIONS
+====================================================== */
+
+/* ---------- Tests of the Month (from Section 6) ---------- */
+$totalTests = $totalAll ?? count($rows);
+
+arsort($allTests);
+$mainTest = array_key_first($allTests);
+$mainTestCount = $allTests[$mainTest];
+$mainTestPct = round(($mainTestCount / $totalTests) * 100, 1);
+
+/* ---------- Distribution by Client (Section 4) ---------- */
+$clientCounts = [];
+foreach ($rows as $r) {
+    $c = strtoupper(trim($r["Client"]));
+    if (!isset($clientCounts[$c])) $clientCounts[$c] = 0;
+    $clientCounts[$c]++;
+}
+arsort($clientCounts);
+$topClient = array_key_first($clientCounts);
+$topClientCount = $clientCounts[$topClient];
+$topClientPct = round(($topClientCount / $totalTests) * 100, 1);
+
+/* ---------- Pending + Aging (Section 7) ---------- */
+$totalPending = count($pending);
+
+$agingVals = array_column($pending, "Days");
+$avgAging = $totalPending > 0 ? round(array_sum($agingVals) / $totalPending, 1) : 0;
+$maxAging = $totalPending > 0 ? max($agingVals) : 0;
+
+$criticalPending = array_filter($pending, fn($p)=>$p["Days"] >= 14);
+$totalCritical = count($criticalPending);
+
+$pendingByClient = [];
+foreach ($pending as $p) {
+    $c = strtoupper(trim($p["Client"]));
+    if (!isset($pendingByClient[$c])) $pendingByClient[$c] = 0;
+    $pendingByClient[$c]++;
+}
+arsort($pendingByClient);
+$topPendingClient = empty($pendingByClient) ? "N/A" : array_key_first($pendingByClient);
+
+/* ---------- NCR (Section 8) ---------- */
+$totalNCR = $totalNCR ?? count($ncr);
+$topNCRtestName = $topTest ?? "N/A";
+$topNCRtestCount = $topTestCount ?? 0;
+
+/* ---------- Documentation Performance (Section 5) ---------- */
+$docPendingCount = $docPendingCount ?? 0;
+
+/* ======================================================
+   2. DYNAMIC TEXT GENERATION
+====================================================== */
+
+$remarks = [];
+
+/* ---------- (A) GENERAL LABORATORY PERFORMANCE ---------- */
+$remarks[] = "The laboratory processed $totalTests tests during the month, with {$mainTest} being the most demanded test ({$mainTestPct}%). Client {$topClient} contributed {$topClientPct}% of the total workload.";
+
+/* ---------- (B) PENDING & AGING ANALYSIS ---------- */
+if ($totalPending == 0) {
+    $remarks[] = "No pending tests were detected, indicating excellent operational turnaround.";
+} else {
+    $remarks[] =
+        "A total of {$totalPending} pending tests were recorded, with an average aging of {$avgAging} days and a maximum of {$maxAging} days. "
+        ."Client {$topPendingClient} accumulated the highest backlog. "
+        .($totalCritical > 0 ? "{$totalCritical} tests exceeded 14 days, requiring priority attention." : "No critical delays above 14 days were detected.");
+}
+
+/* ---------- (C) NCR INTERPRETATION ---------- */
+if ($totalNCR == 0) {
+    $remarks[] = "No Fail/Rejected NCRs were issued this month, reflecting strong technical consistency.";
+} else {
+    $ncrPct = round(($topNCRtestCount / $totalNCR) * 100, 1);
+    $remarks[] =
+        "{$totalNCR} NCRs (Fail/Rejected) were issued this month. "
+        ."{$topNCRtestName} was the most recurrent test with {$topNCRtestCount} NCRs ({$ncrPct}%). "
+        .($ncrPct > 40 ? "This suggests a systemic trend requiring deeper procedural review." : "Distribution of NCRs remains within expected ranges.");
+}
+
+/* ---------- (D) DOCUMENTATION WORKFLOW ---------- */
+if ($docPendingCount == 0) {
+    $remarks[] = "Documentation compliance remained strong with no pending doc_files uploads.";
+} elseif ($docPendingCount <= 5) {
+    $remarks[] = "Documentation backlog is low, with {$docPendingCount} pending uploads, indicating generally efficient document control.";
+} else {
+    $remarks[] = "Documentation backlog increased, with {$docPendingCount} pending uploads. This represents a key operational bottleneck requiring corrective action.";
+}
+
+/* ---------- (E) STRATEGIC RECOMMENDATIONS ---------- */
+$reco = [];
+
+if ($avgAging > 7 || $totalCritical > 0) {
+    $reco[] = "Prioritize processing of pending tests older than 10–14 days to stabilize workflow aging.";
+}
+
+if ($mainTestPct > 25) {
+    $reco[] = "Assign additional resources to {$mainTest} due to its high monthly demand ({$mainTestPct}%).";
+}
+
+if ($totalNCR >= 5) {
+    $reco[] = "Reinforce QC procedures for {$topNCRtestName} due to recurrent NCR patterns.";
+}
+
+if ($docPendingCount > 8) {
+    $reco[] = "Strengthen the documentation cycle and enforce end-of-day document uploads to reduce backlog.";
+}
+
+if (empty($reco)) {
+    $reco[] = "Maintain current operational structure as performance indicators remain stable and positive.";
+}
+
+/* ======================================================
+   3. PRINT SECTION 9 IN PDF
+====================================================== */
+
+$pdf->SubTitle("Overall Performance Summary");
+foreach ($remarks as $r) {
+    $pdf->BodyText("• " . utf8_decode($r));
+}
+
+$pdf->Ln(2);
+
+$pdf->SubTitle("Strategic Recommendations");
+foreach ($reco as $r) {
+    $pdf->BodyText("• " . utf8_decode($r));
+}
+
 
 /* ======================================================
    SECTION 10 — Personnel
