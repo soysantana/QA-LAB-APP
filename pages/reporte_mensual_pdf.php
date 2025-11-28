@@ -1034,9 +1034,7 @@ foreach ($weeks as $i => $w) {
     $pdf->Rect($x0 + 2*($singleBarW+1), $chartY + $chartH - $h3, $singleBarW, $h3, "F");
 }
 
-/* LINEA COMPLETION */
-$pdf->SetDrawColor(0,0,0);
-$pdf->SetLineWidth(0.4);
+
 
 $prevX = null;
 $prevY = null;
@@ -1077,10 +1075,9 @@ $pdf->SetXY($legX,$legY+12);
 $pdf->SetFillColor(244,180,0);  $pdf->Rect($legX,$legY+12,4,4,"F");
 $pdf->SetXY($legX+6,$legY+12);  $pdf->Cell(25,4,"Backlog");
 
-$pdf->SetXY($legX,$legY+18);
-$pdf->Cell(25,4,"—— Completion %");
 
-$pdf->SetY($chartY + $chartH + 12);
+
+$pdf->SetY($chartY + $chartH +6);
 
 /* ======================================================
    5) INSIGHTS
