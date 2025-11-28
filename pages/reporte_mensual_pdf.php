@@ -823,18 +823,20 @@ foreach($ins as $t){
     $pdf->BodyText($t);
 }
 
+
+
+
 /* ======================================================
-   SECTION 5 — Workload by ISO Week (Final v5C)
+   SECTION 5 — Workload by ISO Week (Final Clean Version)
 ====================================================== */
 
 $pdf->SectionTitle("5. Workload by ISO Week");
 
 /* ======================================================
-   1) Build Weekly Structure
+   1) BUILD WEEKLY DATA (REGISTERED / SAME-WEEK COMPLETED / BACKLOG)
 ====================================================== */
 
-$weekly = [];   // W => ["reg"=>0,"cmp"=>0,"backlog"=>0]
-
+$weekly = [];  
 $cursor = strtotime($start);
 $last   = strtotime($end);
 
@@ -846,57 +848,48 @@ while ($cursor <= $last) {
     if (!isset($weekly[$week])) {
         $weekly[$week] = [
             "reg"     => 0,
-            "cmp"     => 0,     // completed same week
-            "backlog" => 0      // completed but registered in older week
+            "cmp"     => 0,
+            "backlog" => 0
         ];
     }
 
-    /* ---------- REGISTERED TODAY ---------- */
+    /* REGISTERED TODAY */
     $weekly[$week]["reg"] += getCount($db, "
-        SELECT COUNT(*) c 
-        FROM lab_test_requisition_form 
+        SELECT COUNT(*) c FROM lab_test_requisition_form 
         WHERE DATE(Registed_Date) = '$date'
     ");
 
-    /* ---------- COMPLETED TODAY (Delivery / Review / Docs) ---------- */
-    $completedToday = $db->query("
+    /* COMPLETED TODAY */
+    $completed = $db->query("
         SELECT r.Registed_Date
         FROM lab_test_requisition_form r
         WHERE 
-            EXISTS (
-                SELECT 1 FROM test_delivery d
-                WHERE d.Sample_ID = r.Sample_ID
-                AND   d.Sample_Number = r.Sample_Number
-                AND   DATE(d.Start_Date) = '$date'
-            )
-        OR EXISTS(
-                SELECT 1 FROM test_review rv
-                WHERE rv.Sample_ID = r.Sample_ID
-                AND   rv.Sample_Number = r.Sample_Number
-                AND   DATE(rv.Start_Date) = '$date'
-            )
-        OR EXISTS(
-                SELECT 1 FROM test_reviewed rd
-                WHERE rd.Sample_ID = r.Sample_ID
-                AND   rd.Sample_Number = r.Sample_Number
-                AND   DATE(rd.Start_Date) = '$date'
-            )
-        OR EXISTS(
-                SELECT 1 FROM doc_files df
-                WHERE df.Sample_ID = r.Sample_ID
-                AND   df.Sample_Number = r.Sample_Number
-                AND   DATE(df.created_at) = '$date'
-            )
+            EXISTS (SELECT 1 FROM test_delivery d  
+                    WHERE d.Sample_ID=r.Sample_ID 
+                      AND d.Sample_Number=r.Sample_Number
+                      AND DATE(d.Start_Date)='$date')
+         OR EXISTS(SELECT 1 FROM test_review rv  
+                    WHERE rv.Sample_ID=r.Sample_ID 
+                      AND rv.Sample_Number=r.Sample_Number
+                      AND DATE(rv.Start_Date)='$date')
+         OR EXISTS(SELECT 1 FROM test_reviewed rd  
+                    WHERE rd.Sample_ID=r.Sample_ID 
+                      AND rd.Sample_Number=r.Sample_Number
+                      AND DATE(rd.Start_Date)='$date')
+         OR EXISTS(SELECT 1 FROM doc_files df  
+                    WHERE df.Sample_ID=r.Sample_ID 
+                      AND df.Sample_Number=r.Sample_Number
+                      AND DATE(df.created_at)='$date')
     ")->fetch_all(MYSQLI_ASSOC);
 
-    foreach ($completedToday as $row) {
+    foreach ($completed as $row) {
 
         $regWeek = date("W", strtotime($row["Registed_Date"]));
 
         if ($regWeek == $week) {
-            $weekly[$week]["cmp"]++;        // Completed same week
+            $weekly[$week]["cmp"]++;
         } else {
-            $weekly[$week]["backlog"]++;    // Completed from backlog
+            $weekly[$week]["backlog"]++;
         }
     }
 
@@ -904,34 +897,34 @@ while ($cursor <= $last) {
 }
 
 /* ======================================================
-   2) TABLE 5A — Weekly Performance (Clean KPI)
+   2) TABLE 5A — Weekly Performance (Same-Week Completion)
 ====================================================== */
 
 $pdf->SubTitle("Table 5A — Weekly Performance (Same-Week Completion)");
 
 $pdf->TableHeader([
     30=>"Week",
-    35=>"Registered",
-    40=>"Completed (Same Week)",
+    40=>"Registered",
+    45=>"Completed (Same Week)",
     35=>"Completion %"
 ]);
 
-foreach ($weekly as $w => $v) {
+$cleanPctArr = [];
+$weeks = array_keys($weekly);
 
-    $reg = $v["reg"];
-    $cmp = $v["cmp"];
+foreach ($weeks as $w) {
+
+    $reg = $weekly[$w]["reg"];
+    $cmp = $weekly[$w]["cmp"];
     $pct = ($reg > 0) ? round(($cmp * 100) / $reg, 1) : 0;
 
     $pdf->TableRow([
         30=>"W$w",
-        35=>$reg,
-        40=>$cmp,
-        35=>$pct . "%"
+        40=>$reg,
+        45=>$cmp,
+        35=>$pct."%"
     ]);
 
-    // store for chart
-    $cleanRegArr[$w] = $reg;
-    $cleanCmpArr[$w] = $cmp;
     $cleanPctArr[$w] = $pct;
 }
 
@@ -947,77 +940,82 @@ $pdf->TableHeader([
     30=>"Week",
     35=>"Registered",
     35=>"Completed",
-    35=>"Backlog Completed",
+    40=>"Backlog Completed",
     35=>"Total Output"
 ]);
 
-foreach ($weekly as $w => $v) {
+$regArr = [];
+$cmpArr = [];
+$backArr = [];
+$outputArr = [];
 
-    $reg  = $v["reg"];
-    $cmp  = $v["cmp"];
-    $back = $v["backlog"];
+foreach ($weeks as $w) {
+
+    $reg  = $weekly[$w]["reg"];
+    $cmp  = $weekly[$w]["cmp"];
+    $back = $weekly[$w]["backlog"];
     $out  = $cmp + $back;
 
     $pdf->TableRow([
         30=>"W$w",
         35=>$reg,
         35=>$cmp,
-        35=>$back,
+        40=>$back,
         35=>$out
     ]);
 
-    // store for chart
-    $regArr[$w]     = $reg;
-    $cmpArr[$w]     = $cmp;
-    $backArr[$w]    = $back;
-    $outputArr[$w]  = $out;
+    $regArr[$w]    = $reg;
+    $cmpArr[$w]    = $cmp;
+    $backArr[$w]   = $back;
+    $outputArr[$w] = $out;
 }
 
+$pdf->Ln(5);
+
 /* ======================================================
-   4) GRAPH — Weekly Comparison Chart (Barras + Línea)
+   4) WEEKLY COMPARISON CHART (Bars + Line)
 ====================================================== */
 
-$pdf->Ln(5);
 $pdf->SubTitle("Weekly Comparison Chart");
 
-$weeks  = array_keys($weekly);
-$maxVal = max(array_merge($regArr, $cmpArr, $backArr, $outputArr));
+$maxVal = max(array_merge($regArr, $cmpArr, $backArr));
 if ($maxVal == 0) $maxVal = 1;
 
+ensure_space($pdf, 85);
+
 $chartX = 18;
-$chartY = $pdf->GetY() + 5;
-$chartW = 160;
+$chartY = $pdf->GetY() + 4;
+$chartW = 150;
 $chartH = 60;
 
-/* ---------- AXIS ---------- */
 drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
 
 /* BAR WIDTH */
 $barGroupW = floor(($chartW - 10) / count($weeks));
-$singleBarW = floor($barGroupW / 3);
+$barW      = floor($barGroupW / 3);
 
-/* ---------- DRAW BARS ---------- */
+/* DRAW BARS */
 foreach ($weeks as $i => $w) {
 
     $x0 = $chartX + 5 + $i * $barGroupW;
 
-    // Registered (blue)
+    /* Registered */
     $h1 = ($regArr[$w] / $maxVal) * ($chartH - 5);
-    $pdf->SetFillColor(66, 133, 244);
-    $pdf->Rect($x0, $chartY + $chartH - $h1, $singleBarW, $h1, "F");
+    $pdf->SetFillColor(66,133,244);
+    $pdf->Rect($x0, $chartY + $chartH - $h1, $barW, $h1, "F");
 
-    // Completed (green)
+    /* Completed */
     $h2 = ($cmpArr[$w] / $maxVal) * ($chartH - 5);
-    $pdf->SetFillColor(15, 157, 88);
-    $pdf->Rect($x0 + $singleBarW + 1, $chartY + $chartH - $h2, $singleBarW, $h2, "F");
+    $pdf->SetFillColor(15,157,88);
+    $pdf->Rect($x0 + $barW + 1, $chartY + $chartH - $h2, $barW, $h2, "F");
 
-    // Backlog (yellow)
+    /* Backlog */
     $h3 = ($backArr[$w] / $maxVal) * ($chartH - 5);
-    $pdf->SetFillColor(244, 180, 0);
-    $pdf->Rect($x0 + 2 * ($singleBarW + 1), $chartY + $chartH - $h3, $singleBarW, $h3, "F");
+    $pdf->SetFillColor(244,180,0);
+    $pdf->Rect($x0 + 2*($barW+1), $chartY + $chartH - $h3, $barW, $h3, "F");
 }
 
-/* ---------- COMPLETION LINE ---------- */
+/* LINE — COMPLETION % */
 $pdf->SetDrawColor(0,0,0);
 $pdf->SetLineWidth(0.4);
 
@@ -1027,52 +1025,58 @@ $prevY = null;
 foreach ($weeks as $i => $w) {
 
     $pct = $cleanPctArr[$w];
-    $yPos = $chartY + $chartH - (($pct/100) * ($chartH - 5));
-    $xPos = $chartX + 5 + $i * $barGroupW + ($barGroupW/2);
+    $x   = $chartX + 5 + $i * $barGroupW + ($barGroupW/2);
+    $y   = $chartY + $chartH - (($pct/100) * ($chartH - 5));
 
     if ($prevX !== null) {
-        $pdf->Line($prevX, $prevY, $xPos, $yPos);
+        $pdf->Line($prevX, $prevY, $x, $y);
     }
 
-    $prevX = $xPos;
-    $prevY = $yPos;
+    $prevX = $x;
+    $prevY = $y;
 
-    $pdf->SetXY($xPos - 4, $yPos - 4);
-    $pdf->SetFont("Arial", "", 7);
-    $pdf->Cell(8, 4, $pct."%", 0, 0, "C");
+    $pdf->SetFont("Arial","",7);
+    $pdf->SetXY($x-4,$y-5);
+    $pdf->Cell(8,4,$pct."%",0,0,"C");
 }
 
-/* ---------- LEGEND ---------- */
-$pdf->SetXY($chartX + $chartW + 2, $chartY);
+/* LEGEND — RIGHT SIDE VERTICAL */
+$legendX = $chartX + $chartW + 6;
+$legendY = $chartY;
+
 $pdf->SetFont("Arial","",8);
 
-$pdf->SetFillColor(66,133,244);  $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
-$pdf->Cell(30,4," Registered");      $pdf->Ln(5);
+$pdf->SetXY($legendX,$legendY);
+$pdf->SetFillColor(66,133,244); $pdf->Rect($legendX,$legendY,4,4,"F");
+$pdf->Cell(28,4," Registered");   $pdf->Ln(6);
 
-$pdf->SetFillColor(15,157,88);   $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
-$pdf->Cell(30,4," Completed");       $pdf->Ln(5);
+$pdf->SetXY($legendX,$legendY+8);
+$pdf->SetFillColor(15,157,88);  $pdf->Rect($legendX,$legendY+8,4,4,"F");
+$pdf->Cell(28,4," Completed");    $pdf->Ln(6);
 
-$pdf->SetFillColor(244,180,0);  $pdf->Rect($pdf->GetX(), $pdf->GetY(), 4, 4, "F");
-$pdf->Cell(30,4," Backlog");         $pdf->Ln(5);
+$pdf->SetXY($legendX,$legendY+16);
+$pdf->SetFillColor(244,180,0); $pdf->Rect($legendX,$legendY+16,4,4,"F");
+$pdf->Cell(28,4," Backlog");       $pdf->Ln(6);
 
-$pdf->Cell(30,4,"—— Completion %");  
+$pdf->SetXY($legendX,$legendY+24);
+$pdf->Cell(28,4,"—— Completion %");
 
 $pdf->SetY($chartY + $chartH + 12);
 
 /* ======================================================
    5) INSIGHTS (Automatic)
 ====================================================== */
+
 $pdf->SubTitle("Insights & Interpretation");
 
-$ins = [];
-
 foreach ($weeks as $w){
-    $ins[] = "- W$w: Output ".$outputArr[$w]." tests | Completion ".$cleanPctArr[$w]."% | Backlog ".$backArr[$w].".";
+    $pdf->BodyText(
+        "- W$w: Output {$outputArr[$w]} tests | ".
+        "Completion {$cleanPctArr[$w]}% | ".
+        "Backlog {$backArr[$w]}."
+    );
 }
 
-foreach ($ins as $txt){
-    $pdf->BodyText($txt);
-}
 
 
 
