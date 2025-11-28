@@ -183,6 +183,8 @@ $pdf->AliasNbPages();
 
 $monthName = date("F", strtotime($start));
 $pdf->Cover($monthName, $anio);
+
+
 /* ======================================================
    SECTION 1 — EXECUTIVE SUMMARY
 ====================================================== */
@@ -335,7 +337,7 @@ $pdf->TableRow([55=>"Process Consistency (%)",      35=>$process_consistency."%"
 
 $pdf->TableRow([55=>"Average Pending Age (days)",   35=>$avgAging]);
 
-$pdf->Ln(5);
+$pdf->Ln(4);
 
 /* ============================
    2B — KPI SHORT SUMMARY TEXT
@@ -344,14 +346,14 @@ $pdf->Ln(5);
 $pdf->SubTitle("Executive Interpretation");
 $pdf->BodyText("
 - The laboratory processed $registered_count test requests this month.
-- A total of $del_count tests were delivered, $reviewed_count reviewed, 
-  and $docs_count final reports were issued.
+- A total of $del_count tests were delivered, $reviewed_count reviewed, and $docs_count final reports were issued.
 - These values indicate a process consistency of $process_consistency%.
 - Pending load stands at $pending_total tests ($pending_ratio% of intake).
 - The average aging of pending samples is $avgAging days.
 - Completion efficiency is $completion_rate%, with an output ratio of $efficiency_ratio compared to registered tests.
 ");
 
+$pdf->AddPage();   // Página 3
 
 /* ======================================================
    SECTION 3 — MONTHLY REGISTERED SAMPLES (Client-Based)
@@ -571,6 +573,7 @@ if (empty($insights)) $insights[] = "No significant client trends detected.";
 foreach ($insights as $txt){
     $pdf->BodyText($txt);
 }
+$pdf->AddPage();   // Página 4
 
 
 /* ======================================================
@@ -822,6 +825,7 @@ if(empty($ins)) $ins[] = "No significant issues detected in monthly or historica
 foreach($ins as $t){
     $pdf->BodyText($t);
 }
+$pdf->AddPage();   // Página 5
 
 
 
