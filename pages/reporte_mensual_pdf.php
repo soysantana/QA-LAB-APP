@@ -1013,7 +1013,7 @@ $singleBarW  = floor($barGroupW / 3);
 $maxVal = max(array_merge($regArr, $cmpArr, $backArr));
 if ($maxVal == 0) $maxVal = 1;
 
-/* DRAW */
+/* DRAW BARS ONLY (NO LINE, NO LABELS) */
 foreach ($weeks as $i => $w) {
 
     $x0 = $chartX + 10 + $i * $barGroupW;
@@ -1034,28 +1034,11 @@ foreach ($weeks as $i => $w) {
     $pdf->Rect($x0 + 2*($singleBarW+1), $chartY + $chartH - $h3, $singleBarW, $h3, "F");
 }
 
-
-
-$prevX = null;
-$prevY = null;
-
-foreach ($weeks as $i => $w) {
-
-    $pct  = $pctArr[$w];
-    $yPos = $chartY + $chartH - (($pct/100) * ($chartH - 5));
-    $xPos = $chartX + 10 + $i * $barGroupW + ($barGroupW/2);
-
-    if ($prevX !== null) {
-        $pdf->Line($prevX, $prevY, $xPos, $yPos);
-    }
-
-    $prevX = $xPos;
-    $prevY = $yPos;
-
-    $pdf->SetXY($xPos - 4, $yPos - 4);
-    $pdf->SetFont("Arial","",7);
-    $pdf->Cell(8,4,$pct."%",0,0,"C");
-}
+/* ====== ELIMINADO ======
+   ❌ Líneas de Completion %
+   ❌ Labels de %
+   (No agregar nada aquí)
+=========================== */
 
 /* LEGEND — RIGHT VERTICAL */
 $legX = $chartX + $chartW + 5;
@@ -1075,9 +1058,8 @@ $pdf->SetXY($legX,$legY+12);
 $pdf->SetFillColor(244,180,0);  $pdf->Rect($legX,$legY+12,4,4,"F");
 $pdf->SetXY($legX+6,$legY+12);  $pdf->Cell(25,4,"Backlog");
 
+$pdf->SetY($chartY + $chartH + 6);
 
-
-$pdf->SetY($chartY + $chartH +6);
 
 /* ======================================================
    5) INSIGHTS
