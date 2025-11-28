@@ -78,12 +78,19 @@ class PDF_Monthly extends FPDF {
     }
 
     function TableRow($cols){
-        $this->SetFont('Arial','',10);
-        foreach($cols as $w=>$t){
-            $this->Cell($w,7,utf8_decode(safeVal($t)),1,0,'C');
-        }
-        $this->Ln();
+    // AUTO PAGE BREAK FOR TABLE ROW
+    if ($this->GetY() > 260) {   // Límite seguro
+        $this->AddPage();
+        // Reimprimir encabezados si quieres
+        // Pero solo si estás dentro de una tabla con header
     }
+
+    $this->SetFont('Arial','',10);
+    foreach($cols as $w=>$t){
+        $this->Cell($w,6,utf8_decode(safeVal($t)),1,0,'C');
+    }
+    $this->Ln();
+}
 
     /* ---------- PAGE BREAK FOR GRAPHS ---------- */
     function FixPageForGraph(){
