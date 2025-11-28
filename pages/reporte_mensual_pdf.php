@@ -759,6 +759,7 @@ foreach ($hist as $cl=>$v){
 
 $pdf->Ln(6);
 
+
 /* ======================================================
    4C — HISTORICAL COMPLETION GRAPH (Vertical Bars)
 ====================================================== */
@@ -805,6 +806,7 @@ if (!empty($labels)) {
 
     $pdf->SetY($chartY + $chartH + 12);
 }
+
 
 /* ======================================================
    4D — EXECUTIVE INSIGHTS
