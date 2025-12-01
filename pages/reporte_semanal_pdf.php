@@ -1464,20 +1464,23 @@ $testNames = [
     "GS"  => "Grain Size",
     "UCS" => "UCS",
     "MC"  => "Moisture Content",
+    "Densidad-Vibrataorio"  => "Weight Vibrating-Hammer",
     "AR"  => "Acid Reactivity",
     "AL"  => "Atterberg Limit",
     "SG"  => "Specific Gravity",
     "DHY" => "Double Hydrometer",
     "HY"  => "Hydrometer",
+    "SCT"  => "Sand Castle Test",
     "SP"  => "Standard Proctor",
     "MP"  => "Modified Proctor",
     "PH"  => "Pinhole Test",
     "SND" => "Soundness",
     "LAA" => "Los Angeles Abrasion",
-    "PS"  => "Particle Shape",
-    "DEN" => "Density (Field/Lab)",
-    "CBR" => "CBR Test",
+    "SHAPE"  => "Particle Shape",
+    "PERM" => "Permeability",
+    "Envio" => "For Shipment",
 ];
+
 
 
 $pendRaw = find_by_sql("
