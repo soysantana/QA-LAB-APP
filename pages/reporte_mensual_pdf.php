@@ -656,17 +656,17 @@ unset($v);
 /* ---------- TABLE 4A ---------- */
 
 $pdf->TableHeader([
-    50=>"Client",
-    30=>"Requested",
-    30=>"Completed",
+   35=>"Client",
+    25=>"Requested",
+    20=>"Completed",
     30=>"Completion (%)"
 ]);
 
 foreach ($monthly as $cl => $v) {
     $pdf->TableRow([
-        50=>$cl,
-        30=>$v['requested'] ?? 0,
-        30=>$v['completed'] ?? 0,
+        35=>$cl,
+        25=>$v['requested'] ?? 0,
+        20=>$v['completed'] ?? 0,
         30=>$v['pct']
     ]);
 }
@@ -740,20 +740,20 @@ unset($v);
 /* ---------- TABLE 4B ---------- */
 
 $pdf->TableHeader([
-    45=>"Client",
-    30=>"Hist. Requested",
-    30=>"Hist. Completed",
+    40=>"Client",
+    30=>"Hist. Req",
+    35=>"Hist. Comp",
     25=>"Backlog",
-    30=>"Completion (%)"
+    20=>"Completion (%)"
 ]);
 
 foreach ($hist as $cl=>$v){
     $pdf->TableRow([
-        45=>$cl,
+        40=>$cl,
         30=>$v['requested'] ?? 0,
-        30=>$v['completed'] ?? 0,
+        35=>$v['completed'] ?? 0,
         25=>$v['backlog'],
-        30=>$v['pct']
+        20=>$v['pct']
     ]);
 }
 
@@ -1537,52 +1537,47 @@ end_pending_section:
 $pdf->SectionTitle("8. Non-Conformities (NCR)");
 
 /* ======================================================
-   1. FETCH NCR DATA (SUPER FLEXIBLE FILTER)
+   1. FETCH NCR DATA (FLEXIBLE FILTER)
 ====================================================== */
-
 $ncr = $db->query("
-    SELECT Report_Date, Sample_ID, Sample_Number, Test_Type, Noconformidad, Test_Condition
+    SELECT Report_Date, Sample_ID, Sample_Number, Material_Type, Test_Type, Noconformidad, Test_Condition
     FROM ensayos_reporte
     WHERE Report_Date BETWEEN '$start' AND '$end'
       AND (
-            LOWER(COALESCE(Test_Condition,'')) LIKE '%fail%'
-         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%failed%'
-         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%reject%'
-         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%rechaz%'
-         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%no pasa%'
-         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%not pass%'
-         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%failure%'
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%fail%' OR
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%failed%' OR
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%reject%' OR
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%rechaz%' OR
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%no pasa%' OR
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%not pass%' OR
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%failure%'
       )
 ")->fetch_all(MYSQLI_ASSOC);
 
 /* ======================================================
-   SI NO HAY NCR → SALIR SIN ERRORES
+   NO NCR — PRINT AND CONTINUE
 ====================================================== */
 if (empty($ncr)) {
     $pdf->BodyText("No NCR (Fail/Rejected) recorded for this period.");
     $pdf->Ln(10);
-    // IMPORTANTE: NO RETURN → PERMITIR QUE SIGA LA SIGUIENTE SECCIÓN
     goto end_ncr;
 }
 
-
 /* ======================================================
-   2. SAFE COUNTS
+   2. SAFE COUNTERS
 ====================================================== */
-
 $counts     = [];
 $clientNCR  = [];
 
 foreach ($ncr as $n) {
 
-    /* TEST TYPE seguro */
+    /* TEST TYPE */
     $tp = strtoupper(trim((string)$n["Test_Type"]));
     if ($tp === "" || $tp === "-" || $tp === "N/A") $tp = "UNKNOWN";
-
     if (!isset($counts[$tp])) $counts[$tp] = 0;
     $counts[$tp]++;
 
-    /* CLIENT seguro desde Sample_ID */
+    /* CLIENT */
     $sid = trim((string)$n["Sample_ID"]);
     if ($sid === "") {
         $client = "UNKNOWN";
@@ -1596,28 +1591,22 @@ foreach ($ncr as $n) {
     $clientNCR[$client]++;
 }
 
-
-/* SAFE DEFAULTS */
-if (empty($counts))     $counts     = ["NO DATA" => 1];
-if (empty($clientNCR))  $clientNCR  = ["UNKNOWN" => 1];
-
+if (empty($counts))    $counts    = ["NO DATA" => 1];
+if (empty($clientNCR)) $clientNCR = ["UNKNOWN" => 1];
 
 /* ======================================================
-   3. TOP TEST + TOP CLIENT
+   3. TOP TEST & CLIENT
 ====================================================== */
-
 arsort($counts);
 $topTest      = array_key_first($counts);
-$topTestCount = $counts[$topTest] ?? 0;
+$topTestCount = $counts[$topTest];
 
 arsort($clientNCR);
 $topClient    = array_key_first($clientNCR);
 
-
 /* ======================================================
    4. SUMMARY CARDS
 ====================================================== */
-
 $totalNCR = array_sum($counts);
 
 $pdf->SetFont("Arial","B",10);
@@ -1627,41 +1616,78 @@ $pdf->Cell(45,8,"Types: ".count($counts),1,0,'C');
 $pdf->Cell(45,8,"Top Client: $topClient",1,1,'C');
 $pdf->Ln(4);
 
-
 /* ======================================================
-   5. GROUP NCR BY TEST TYPE
+   5. GROUP BY TEST TYPE
 ====================================================== */
-
 $grouped = [];
 foreach ($ncr as $n) {
     $tp = strtoupper(trim((string)$n["Test_Type"]));
     if ($tp === "" || $tp === "-" || $tp === "N/A") $tp = "UNKNOWN";
     $grouped[$tp][] = $n;
 }
-
 uasort($grouped, fn($a,$b)=> count($b) <=> count($a));
 
-
 /* ======================================================
-   6. TABLE PER TEST TYPE
+   6. TABLE WITH MULTICELL
 ====================================================== */
 
 foreach ($grouped as $tp => $items) {
 
     $pdf->SubTitle("$tp - ".count($items)." NCR");
 
-    $pdf->TableHeader([
-        30 => "Date",
-        35 => "Sample",
-        125 => "Description"
-    ]);
+    // Header
+    $pdf->SetFont("Arial","B",9);
+    $pdf->SetFillColor(230,230,230);
+    $pdf->Cell(24,7,"Date",1,0,'C',true);
+    $pdf->Cell(44,7,"Sample",1,0,'C',true);
+    $pdf->Cell(123,7,"Description",1,1,'C',true);
+
+    $pdf->SetFont("Arial","",9);
 
     foreach ($items as $n) {
-        $pdf->TableRow([
-            30  => substr($n["Report_Date"],0,10),
-            35  => $n["Sample_ID"]."-".$n["Sample_Number"],
-            125 => utf8_decode((string)$n["Noconformidad"])
-        ]);
+
+        /* Build sample label */
+        $sample = trim($n["Sample_ID"]) . "-" . trim($n["Sample_Number"]);
+        if (!empty($n["Material_Type"])) {
+            $sample .= " (" . trim($n["Material_Type"]) . ")";
+        }
+
+        $desc = utf8_decode((string)$n["Noconformidad"]);
+
+        /* HEIGHT CALCULATION FOR MULTICELL */
+        $yStart = $pdf->GetY();
+        $xStart = $pdf->GetX();
+
+        // Description height
+        $pdf->SetXY(0, 0); // Temporarily off-page to calculate
+        $tmp = new FPDF();
+        $tmp->AddPage();
+        $tmp->SetFont("Arial","",9);
+        $tmp->MultiCell(123,5,$desc);
+        $descHeight = $tmp->GetY();
+
+        $rowHeight = max(6, $descHeight);
+
+        /* DRAW BORDER CELLS */
+        $pdf->Rect($xStart, $yStart, 24, $rowHeight);
+        $pdf->Rect($xStart+24, $yStart, 44, $rowHeight);
+        $pdf->Rect($xStart+24+44, $yStart, 123, $rowHeight);
+
+        /* FILL DATA WITH ALIGNMENT */
+        // Date
+        $pdf->SetXY($xStart+2, $yStart+2);
+        $pdf->Cell(20,4,substr($n["Report_Date"],0,10),0,0);
+
+        // Sample
+        $pdf->SetXY($xStart+24+2, $yStart+2);
+        $pdf->MultiCell(30,5,utf8_decode($sample),0);
+
+        // Description
+        $pdf->SetXY($xStart+24+44+2, $yStart+2);
+        $pdf->MultiCell(119,4,$desc,0);
+
+        /* MOVE TO NEXT ROW */
+        $pdf->SetY($yStart + $rowHeight);
     }
 
     $pdf->Ln(3);
@@ -1675,11 +1701,9 @@ if ($pdf->GetY() > 210) {
     $pdf->Ln(5);
 }
 
-
 /* ======================================================
    8. FREQUENCY CHART (TOP 5)
 ====================================================== */
-
 $pdf->SubTitle("NCR Frequency by Test Type (Top 5)");
 
 $top5 = array_slice($counts, 0, 5, true);
@@ -1713,15 +1737,12 @@ foreach ($top5 as $tp => $ct) {
 
 $pdf->Ln(15);
 
-
 /* ======================================================
    9. INSIGHTS
 ====================================================== */
-
 $pdf->SubTitle("Insights");
 
 $ins = [];
-
 $ins[] = "$topTest is the test with the most NCR failures this month ($topTestCount).";
 $ins[] = count($counts)." test types showed Fail/Rejected conditions.";
 $ins[] = "$topClient is the most affected client.";
@@ -1736,6 +1757,7 @@ foreach ($ins as $t) {
 $pdf->Ln(5);
 
 end_ncr:
+
 
 
 
