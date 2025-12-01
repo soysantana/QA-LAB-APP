@@ -947,12 +947,14 @@ $testNames = [
     "PLT" => "Point Load Test",
     "GS"  => "Grain Size",
     "UCS" => "UCS",
+    "Densidad-Vibrataorio"  => "Weight Vibrating-Hammer",
     "MC"  => "Moisture Content",
     "AR"  => "Acid Reactivity",
     "AL"  => "Atterberg Limit",
     "SG"  => "Specific Gravity",
     "DHY" => "Double Hydrometer",
     "HY"  => "Hydrometer",
+    "SCT"  => "Sand Castle Test",
     "SP"  => "Standard Proctor",
     "MP"  => "Modified Proctor",
     "PH"  => "Pinhole Test",
@@ -960,7 +962,7 @@ $testNames = [
     "LAA" => "Los Angeles Abrasion",
     "SHAPE"  => "Particle Shape",
     "PERM" => "Permeability",
-    "ENVIO" => "For Shipment",
+    "Envio" => "For Shipment",
 ];
 
 /* ---------- Construir matriz Tipo × Cliente ---------- */
@@ -1171,19 +1173,21 @@ $testNames = [
     "GS"  => "Grain Size",
     "UCS" => "UCS",
     "MC"  => "Moisture Content",
+    "Densidad-Vibrataorio"  => "Weight Vibrating-Hammer",
     "AR"  => "Acid Reactivity",
     "AL"  => "Atterberg Limit",
     "SG"  => "Specific Gravity",
     "DHY" => "Double Hydrometer",
     "HY"  => "Hydrometer",
+    "SCT"  => "Sand Castle Test",
     "SP"  => "Standard Proctor",
     "MP"  => "Modified Proctor",
     "PH"  => "Pinhole Test",
     "SND" => "Soundness",
     "LAA" => "Los Angeles Abrasion",
-    "PS"  => "Particle Shape",
-    "DEN" => "Density (Field/Lab)",
-    "CBR" => "CBR Test",
+    "SHAPE"  => "Particle Shape",
+    "PERM" => "Permeability",
+    "Envio" => "For Shipment",
 ];
 
 $muestras = find_by_sql("
