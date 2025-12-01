@@ -1287,7 +1287,7 @@ $testNames = [
     "GS"  => "Grain Size",
     "UCS" => "UCS",
     "MC"  => "Moisture Content",
-    "Densidad-Vibrataorio"  => "Weight Vibrating-Hammer",
+    "DENSIDAD-VIBRATAORIO"  => "Weight Vibrating-Hammer",
     "AR"  => "Acid Reactivity",
     "AL"  => "Atterberg Limit",
     "SG"  => "Specific Gravity",
@@ -1301,25 +1301,23 @@ $testNames = [
     "LAA" => "Los Angeles Abrasion",
     "SHAPE"  => "Particle Shape",
     "PERM" => "Permeability",
-    "Envio" => "For Shipment",
+    "ENVIO" => "For Shipment"
 ];
 
 /* ======================================================
-   NORMALIZATION FUNCTION (SAFE)
+   NORMALIZATION FUNCTION
 ====================================================== */
 function normalizeStr($str){
     if ($str === null) return "";
     $str = trim($str);
-
-    $str = preg_replace('/\x{00A0}/u', ' ', $str);     // NBSP → space
-    $str = str_replace(["–","—","−"], "-", $str);      // Weird hyphens → normal hyphen
-    $str = preg_replace('/\s+/', ' ', $str);           // multiple spaces → one
-
+    $str = preg_replace('/\x{00A0}/u', ' ', $str);
+    $str = str_replace(["–","—","−"], "-", $str);
+    $str = preg_replace('/\s+/', ' ', $str);
     return strtoupper(trim($str));
 }
 
 /* ======================================================
-   1. EXPAND TESTS (individual, normalized)
+   1. EXPAND TESTS
 ====================================================== */
 $expanded = [];
 
@@ -1331,8 +1329,7 @@ foreach ($rows as $r) {
 
         $tp = normalizeStr($tp);
 
-        /* IGNORAR ENVIO COMPLETO */
-        if ($tp === "ENVIO") continue;
+        if ($tp === "ENVIO") continue; // IGNORAR ENVIO
 
         $expanded[] = [
             "Sample_ID"     => normalizeStr($r["Sample_ID"]),
@@ -1357,7 +1354,6 @@ foreach ($expanded as $t) {
     $num = $db->escape($t["Sample_Number"]);
     $tp  = $db->escape($t["Test_Type"]);
 
-    /* SALTAR ENVIO de nuevo por seguridad */
     if ($tp === "ENVIO") continue;
 
     $sql = "
@@ -1387,19 +1383,25 @@ foreach ($expanded as $t) {
     }
 }
 
+/* ======================================================
+   NO PENDING → STOP SECTION
+====================================================== */
+
 if (empty($pending)) {
+
     $pdf->BodyText("No pending tests for this period.");
     $pdf->Ln(10);
+    goto end_pending_section; // TERMINA TODA LA SECCIÓN 7
 }
 
 /* ======================================================
-   3. SUMMARY CARDS
+   3. SUMMARY CARDS (NO DIV 0)
 ====================================================== */
 
 $totalPending = count($pending);
-$avgAging     = round(array_sum(array_column($pending,"Days")) / $totalPending, 1);
-$maxAging     = max(array_column($pending,"Days"));
-$critical     = count(array_filter($pending, fn($x)=>$x["Days"] > 14));
+$avgAging     = ($totalPending > 0) ? round(array_sum(array_column($pending,"Days")) / $totalPending, 1) : 0;
+$maxAging     = ($totalPending > 0) ? max(array_column($pending,"Days")) : 1;
+$critical     = ($totalPending > 0) ? count(array_filter($pending, fn($x)=>$x["Days"] > 14)) : 0;
 
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(45,8,"Pending: $totalPending",1,0,'C');
@@ -1410,7 +1412,7 @@ $pdf->Cell(45,8,"Max: {$maxAging} d",1,1,'C');
 $pdf->Ln(4);
 
 /* ======================================================
-   4. PENDING TABLE (Grouped by Client)
+   4. TABLE BY CLIENT
 ====================================================== */
 
 usort($pending, fn($a,$b)=> $b["Days"] <=> $a["Days"]);
@@ -1427,7 +1429,7 @@ foreach ($grouped as $client => $list) {
     $pdf->TableHeader([
         30 => "Sample",
         22 => "Number",
-        40 => "Test",  // ANCHO MAYOR PARA NOMBRE COMPLETO
+        40 => "Test",
         18 => "Days",
         40 => "Status"
     ]);
@@ -1456,7 +1458,7 @@ foreach ($grouped as $client => $list) {
 }
 
 /* ======================================================
-   5. FIX PAGE BREAK FOR CHART
+   5. PAGE BREAK
 ====================================================== */
 
 if ($pdf->GetY() > 210) {
@@ -1465,12 +1467,12 @@ if ($pdf->GetY() > 210) {
 }
 
 /* ======================================================
-   6. AGING CHART (Top 10 Horizontal)
+   6. AGING CHART
 ====================================================== */
 
 $pdf->SubTitle("Aging Chart (Top 10 Delays)");
 
-$topAging = array_slice($pending, 0, 5);
+$topAging = array_slice($pending, 0, 10);
 
 $chartX = 35;
 $chartY = $pdf->GetY() + 5;
@@ -1482,7 +1484,7 @@ foreach ($topAging as $row) {
 
     $label = $row["Test_Type"] . " - " . $row["Sample_ID"];
     $days  = $row["Days"];
-    $barW  = ($days / $maxAging) * $barAreaW;
+    $barW  = ($maxAging > 0) ? (($days / $maxAging) * $barAreaW) : 0;
 
     list($r,$g,$b) = pickColor($i);
 
@@ -1510,7 +1512,8 @@ $pdf->SubTitle("Insights");
 $ins = [];
 
 $mainClient = array_key_first($grouped);
-$ins[] = "$mainClient has the highest accumulation of pending tests.";
+if ($mainClient !== null)
+    $ins[] = "$mainClient has the highest accumulation of pending tests.";
 
 $topItem = $pending[0];
 $ins[] = "{$topItem['Test_Type']} ({$topItem['Sample_ID']}) shows the highest delay: {$topItem['Days']} days.";
@@ -1523,6 +1526,8 @@ $ins[] = "Average pending aging is {$avgAging} days.";
 foreach ($ins as $t) {
     $pdf->BodyText("- " . utf8_decode($t));
 }
+
+end_pending_section:
 
 /* ======================================================
    SECTION 8 — NCR Summary (Grouped by Test Type)
@@ -1545,7 +1550,7 @@ $ncr = $db->query("
 if (empty($ncr)) {
     $pdf->BodyText("No NCR (Fail/Rejected) recorded for this period.");
     $pdf->Ln(10);
-} 
+}
 
 
 /* ======================================================
@@ -1557,28 +1562,37 @@ $clientNCR = [];
 
 foreach ($ncr as $n) {
 
-    /* ----- SANITIZAR NOMBRE DE ENSAYO ----- */
-    $tp = strtoupper(trim($n["Test_Type"]));
+    /* ----- SAFE TEST TYPE NAME ----- */
+    $tp = strtoupper(trim((string)$n["Test_Type"]));
     if ($tp === "" || $tp === "-" || $tp === "N/A" || $tp === null) {
         $tp = "UNKNOWN";
     }
 
-    /* Count by test */
+    /* Count by test type */
     if (!isset($counts[$tp])) $counts[$tp] = 0;
     $counts[$tp]++;
 
-    /* Count by client prefix */
-    $client = strtoupper(trim(explode("-", $n["Sample_ID"])[0] ?? "UNKNOWN"));
-    if ($client === "") $client = "UNKNOWN";
+    /* ----- SAFE CLIENT PREFIX EXTRACTION ----- */
+    $rawID = trim((string)$n["Sample_ID"]);
 
+    if ($rawID === "" || $rawID === null) {
+        $client = "UNKNOWN";
+    } else {
+        $parts = explode("-", $rawID);
+        $client = strtoupper(trim($parts[0] ?? "UNKNOWN"));
+        if ($client === "" || $client === null) $client = "UNKNOWN";
+    }
+
+    /* Count by client */
     if (!isset($clientNCR[$client])) $clientNCR[$client] = 0;
     $clientNCR[$client]++;
 }
 
-/* Backup if counts ended empty */
+/* Backup if no data */
 if (empty($counts)) {
     $counts = ["NO DATA" => 1];
 }
+
 
 /* ======================================================
    3. TOP TEST + TOP CLIENT
@@ -1590,6 +1604,7 @@ $topTestCount = $counts[$topTest];
 
 arsort($clientNCR);
 $topClient = array_key_first($clientNCR);
+
 
 /* ======================================================
    4. SUMMARY CARDS
@@ -1605,6 +1620,7 @@ $pdf->Cell(45,8,"Top Client: $topClient",1,1,'C');
 
 $pdf->Ln(4);
 
+
 /* ======================================================
    5. GROUP NCR BY TEST TYPE
 ====================================================== */
@@ -1612,7 +1628,7 @@ $pdf->Ln(4);
 $grouped = [];
 foreach ($ncr as $n) {
 
-    $tp = strtoupper(trim($n["Test_Type"]));
+    $tp = strtoupper(trim((string)$n["Test_Type"]));
     if ($tp === "" || $tp === "-" || $tp === "N/A" || $tp === null) {
         $tp = "UNKNOWN";
     }
@@ -1622,6 +1638,7 @@ foreach ($ncr as $n) {
 }
 
 uasort($grouped, fn($a,$b)=> count($b) <=> count($a));
+
 
 /* ======================================================
    6. PRINT TABLES PER TEST TYPE
@@ -1641,20 +1658,23 @@ foreach ($grouped as $tp => $items) {
         $pdf->TableRow([
             30  => substr($n["Report_Date"],0,10),
             40  => $n["Sample_ID"]."-".$n["Sample_Number"],
-            115 => utf8_decode($n["Noconformidad"])
+            115 => utf8_decode((string)$n["Noconformidad"])
         ]);
     }
 
     $pdf->Ln(3);
 }
 
+
 /* ======================================================
    7. SAFE PAGE BREAK CHECK
 ====================================================== */
+
 if ($pdf->GetY() > 210) {
     $pdf->AddPage();
     $pdf->Ln(5);
 }
+
 
 /* ======================================================
    8. NCR FREQUENCY CHART (Top 5 Horizontal)
@@ -1671,7 +1691,7 @@ if (empty($top5)) {
 
 /* PROTECCIÓN: max() siempre con datos */
 $maxVal = max($top5);
-if ($maxVal == 0) $maxVal = 1;
+if ($maxVal <= 0) $maxVal = 1;
 
 $chartX = 35;
 $chartY = $pdf->GetY() + 5;
@@ -1703,6 +1723,7 @@ foreach ($top5 as $tp => $ct) {
 
 $pdf->Ln(15);
 
+
 /* ======================================================
    9. INSIGHTS
 ====================================================== */
@@ -1715,7 +1736,7 @@ $ins[] = "$topTest is the test with the most NCR failures this month ($topTestCo
 $ins[] = count($counts)." different test types showed Fail/Rejected conditions.";
 $ins[] = "$topClient is the most affected client.";
 
-if ($topTestCount / $totalNCR > 0.3)
+if ($totalNCR > 0 && ($topTestCount / $totalNCR) > 0.3)
     $ins[] = "$topTest represents more than 30% of all NCR failures — trend is significant.";
 
 foreach ($ins as $t) {
@@ -1741,20 +1762,24 @@ $totalTests = $totalAll ?? count($rows);
 
 arsort($allTests);
 $mainTest = array_key_first($allTests);
-$mainTestCount = $allTests[$mainTest];
-$mainTestPct = round(($mainTestCount / $totalTests) * 100, 1);
+$mainTestCount = $allTests[$mainTest] ?? 0;
+$mainTestPct = $totalTests > 0 ? round(($mainTestCount / $totalTests) * 100, 1) : 0;
 
 /* ---------- Distribution by Client (Section 4) ---------- */
 $clientCounts = [];
 foreach ($rows as $r) {
-    $c = strtoupper(trim($r["Client"]));
+
+    $c = strtoupper(trim((string)$r["Client"]));
+    if ($c === "" || $c === "-" || $c === null) $c = "UNKNOWN";
+
     if (!isset($clientCounts[$c])) $clientCounts[$c] = 0;
     $clientCounts[$c]++;
 }
+
 arsort($clientCounts);
 $topClient = array_key_first($clientCounts);
-$topClientCount = $clientCounts[$topClient];
-$topClientPct = round(($topClientCount / $totalTests) * 100, 1);
+$topClientCount = $clientCounts[$topClient] ?? 0;
+$topClientPct = $totalTests > 0 ? round(($topClientCount / $totalTests) * 100, 1) : 0;
 
 /* ---------- Pending + Aging (Section 7) ---------- */
 $totalPending = count($pending);
@@ -1768,10 +1793,14 @@ $totalCritical = count($criticalPending);
 
 $pendingByClient = [];
 foreach ($pending as $p) {
-    $c = strtoupper(trim($p["Client"]));
+
+    $c = strtoupper(trim((string)$p["Client"]));
+    if ($c === "" || $c === "-" || $c === null) $c = "UNKNOWN";
+
     if (!isset($pendingByClient[$c])) $pendingByClient[$c] = 0;
     $pendingByClient[$c]++;
 }
+
 arsort($pendingByClient);
 $topPendingClient = empty($pendingByClient) ? "N/A" : array_key_first($pendingByClient);
 
@@ -1790,7 +1819,9 @@ $docPendingCount = $docPendingCount ?? 0;
 $remarks = [];
 
 /* ---------- (A) GENERAL LABORATORY PERFORMANCE ---------- */
-$remarks[] = "The laboratory processed $totalTests tests during the month, with {$mainTest} being the most demanded test ({$mainTestPct}%). Client {$topClient} contributed {$topClientPct}% of the total workload.";
+$remarks[] = 
+"The laboratory processed $totalTests tests during the month, with {$mainTest} being the most demanded test ({$mainTestPct}%). "
+."Client {$topClient} contributed {$topClientPct}% of the total workload.";
 
 /* ---------- (B) PENDING & AGING ANALYSIS ---------- */
 if ($totalPending == 0) {
@@ -1799,7 +1830,9 @@ if ($totalPending == 0) {
     $remarks[] =
         "A total of {$totalPending} pending tests were recorded, with an average aging of {$avgAging} days and a maximum of {$maxAging} days. "
         ."Client {$topPendingClient} accumulated the highest backlog. "
-        .($totalCritical > 0 ? "{$totalCritical} tests exceeded 14 days, requiring priority attention." : "No critical delays above 14 days were detected.");
+        .($totalCritical > 0 
+            ? "{$totalCritical} tests exceeded 14 days, requiring priority attention." 
+            : "No critical delays above 14 days were detected.");
 }
 
 /* ---------- (C) NCR INTERPRETATION ---------- */
@@ -1810,7 +1843,9 @@ if ($totalNCR == 0) {
     $remarks[] =
         "{$totalNCR} NCRs (Fail/Rejected) were issued this month. "
         ."{$topNCRtestName} was the most recurrent test with {$topNCRtestCount} NCRs ({$ncrPct}%). "
-        .($ncrPct > 40 ? "This suggests a systemic trend requiring deeper procedural review." : "Distribution of NCRs remains within expected ranges.");
+        .($ncrPct > 40 
+            ? "This suggests a systemic trend requiring deeper procedural review." 
+            : "Distribution of NCRs remains within expected ranges.");
 }
 
 /* ---------- (D) DOCUMENTATION WORKFLOW ---------- */
@@ -1860,6 +1895,7 @@ $pdf->SubTitle("Strategic Recommendations");
 foreach ($reco as $r) {
     $pdf->BodyText("• " . utf8_decode($r));
 }
+
 
 
 /* ======================================================
