@@ -1469,39 +1469,41 @@ if ($pdf->GetY() > 210) {
 /* ======================================================
    6. AGING CHART
 ====================================================== */
-
 $pdf->SubTitle("Aging Chart (Top 10 Delays)");
 
 $topAging = array_slice($pending, 0, 10);
 
-$chartX = 35;
+$chartX = 75;     // MOVEMOS GRAFICO A LA DERECHA
 $chartY = $pdf->GetY() + 5;
 $barAreaW = 95;
 $barH = 5;
 
-$i = 0;
-foreach ($topAging as $row) {
+foreach ($topAging as $i => $row) {
 
-    $label = $row["Test_Type"] . " - " . $row["Sample_ID"];
+    $label = "{$row['Test_Type']} - {$row['Sample_ID']}-{$row['Sample_Number']}";
     $days  = $row["Days"];
-    $barW  = ($maxAging > 0) ? (($days / $maxAging) * $barAreaW) : 0;
+    $barW  = ($maxAging > 0) ? ($days / $maxAging) * $barAreaW : 0;
 
     list($r,$g,$b) = pickColor($i);
 
+    // Label corregido
+    $posY = $chartY + ($i * 8);
+
     $pdf->SetFont("Arial","",8);
-    $pdf->SetXY($chartX - 40, $chartY + ($i * 12));
-    $pdf->Cell(40, 6, utf8_decode($label), 0, 0, "R");
+    $pdf->SetXY(10, $posY);            // SIEMPRE VISIBLE
+    $pdf->Cell(60, 6, utf8_decode($label), 0, 0, "L");
 
+    // Bar
     $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect($chartX, $chartY + ($i * 12), $barW, $barH, "F");
+    $pdf->Rect($chartX, $posY, $barW, $barH, "F");
 
-    $pdf->SetXY($chartX + $barW + 3, $chartY + ($i * 12));
-    $pdf->Cell(18, 6, $days . " d", 0, 0);
-
-    $i++;
+    // Value
+    $pdf->SetXY($chartX + $barW + 3, $posY);
+    $pdf->Cell(18, 6, "{$days} d", 0, 0);
 }
 
 $pdf->Ln(15);
+
 
 /* ======================================================
    7. INSIGHTS
