@@ -1532,68 +1532,74 @@ foreach ($ins as $t) {
 end_pending_section:
 
 /* ======================================================
-   SECTION 8 — NCR Summary (Grouped by Test Type)
-   Only Test_Condition = FAIL / REJECTED
+   SECTION 8 — NCR Summary (Fail/Rejected)
 ====================================================== */
-
 $pdf->SectionTitle("8. Non-Conformities (NCR)");
 
 /* ======================================================
-   1. FETCH NCR DATA (ONLY FAIL/REJECTED)
+   1. FETCH NCR DATA (SUPER FLEXIBLE FILTER)
 ====================================================== */
 
 $ncr = $db->query("
     SELECT Report_Date, Sample_ID, Sample_Number, Test_Type, Noconformidad, Test_Condition
     FROM ensayos_reporte
     WHERE Report_Date BETWEEN '$start' AND '$end'
-      AND LOWER(TRIM(Test_Condition)) IN ('fail','rejected')
+      AND (
+            LOWER(COALESCE(Test_Condition,'')) LIKE '%fail%'
+         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%failed%'
+         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%reject%'
+         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%rechaz%'
+         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%no pasa%'
+         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%not pass%'
+         OR LOWER(COALESCE(Test_Condition,'')) LIKE '%failure%'
+      )
 ")->fetch_all(MYSQLI_ASSOC);
 
+/* ======================================================
+   SI NO HAY NCR → SALIR SIN ERRORES
+====================================================== */
 if (empty($ncr)) {
     $pdf->BodyText("No NCR (Fail/Rejected) recorded for this period.");
     $pdf->Ln(10);
+    // IMPORTANTE: NO RETURN → PERMITIR QUE SIGA LA SIGUIENTE SECCIÓN
+    goto end_ncr;
 }
 
 
 /* ======================================================
-   2. PREPARE COUNT ARRAYS SAFELY
+   2. SAFE COUNTS
 ====================================================== */
 
-$counts = [];
-$clientNCR = [];
+$counts     = [];
+$clientNCR  = [];
 
 foreach ($ncr as $n) {
 
-    /* ----- SAFE TEST TYPE NAME ----- */
+    /* TEST TYPE seguro */
     $tp = strtoupper(trim((string)$n["Test_Type"]));
-    if ($tp === "" || $tp === "-" || $tp === "N/A" || $tp === null) {
-        $tp = "UNKNOWN";
-    }
+    if ($tp === "" || $tp === "-" || $tp === "N/A") $tp = "UNKNOWN";
 
-    /* Count by test type */
     if (!isset($counts[$tp])) $counts[$tp] = 0;
     $counts[$tp]++;
 
-    /* ----- SAFE CLIENT PREFIX EXTRACTION ----- */
-    $rawID = trim((string)$n["Sample_ID"]);
-
-    if ($rawID === "" || $rawID === null) {
+    /* CLIENT seguro desde Sample_ID */
+    $sid = trim((string)$n["Sample_ID"]);
+    if ($sid === "") {
         $client = "UNKNOWN";
     } else {
-        $parts = explode("-", $rawID);
+        $parts  = explode("-", $sid);
         $client = strtoupper(trim($parts[0] ?? "UNKNOWN"));
-        if ($client === "" || $client === null) $client = "UNKNOWN";
+        if ($client === "") $client = "UNKNOWN";
     }
 
-    /* Count by client */
     if (!isset($clientNCR[$client])) $clientNCR[$client] = 0;
     $clientNCR[$client]++;
 }
 
-/* Backup if no data */
-if (empty($counts)) {
-    $counts = ["NO DATA" => 1];
-}
+
+/* SAFE DEFAULTS */
+if (empty($counts))     $counts     = ["NO DATA" => 1];
+if (empty($clientNCR))  $clientNCR  = ["UNKNOWN" => 1];
 
 
 /* ======================================================
@@ -1601,11 +1607,11 @@ if (empty($counts)) {
 ====================================================== */
 
 arsort($counts);
-$topTest = array_key_first($counts);
-$topTestCount = $counts[$topTest];
+$topTest      = array_key_first($counts);
+$topTestCount = $counts[$topTest] ?? 0;
 
 arsort($clientNCR);
-$topClient = array_key_first($clientNCR);
+$topClient    = array_key_first($clientNCR);
 
 
 /* ======================================================
@@ -1615,11 +1621,10 @@ $topClient = array_key_first($clientNCR);
 $totalNCR = array_sum($counts);
 
 $pdf->SetFont("Arial","B",10);
-$pdf->Cell(45,8,"NCR (Fail/Rejected): $totalNCR",1,0,'C');
+$pdf->Cell(45,8,"NCR: $totalNCR",1,0,'C');
 $pdf->Cell(45,8,"Top Test: $topTest ($topTestCount)",1,0,'C');
-$pdf->Cell(45,8,"Test Types: ".count($counts),1,0,'C');
+$pdf->Cell(45,8,"Types: ".count($counts),1,0,'C');
 $pdf->Cell(45,8,"Top Client: $topClient",1,1,'C');
-
 $pdf->Ln(4);
 
 
@@ -1629,13 +1634,8 @@ $pdf->Ln(4);
 
 $grouped = [];
 foreach ($ncr as $n) {
-
     $tp = strtoupper(trim((string)$n["Test_Type"]));
-    if ($tp === "" || $tp === "-" || $tp === "N/A" || $tp === null) {
-        $tp = "UNKNOWN";
-    }
-
-    if (!isset($grouped[$tp])) $grouped[$tp] = [];
+    if ($tp === "" || $tp === "-" || $tp === "N/A") $tp = "UNKNOWN";
     $grouped[$tp][] = $n;
 }
 
@@ -1643,35 +1643,33 @@ uasort($grouped, fn($a,$b)=> count($b) <=> count($a));
 
 
 /* ======================================================
-   6. PRINT TABLES PER TEST TYPE
+   6. TABLE PER TEST TYPE
 ====================================================== */
 
 foreach ($grouped as $tp => $items) {
 
-    $pdf->SubTitle("$tp — ".count($items)." NCR");
+    $pdf->SubTitle("$tp - ".count($items)." NCR");
 
     $pdf->TableHeader([
         30 => "Date",
-        40 => "Sample",
-        115 => "Description"
+        35 => "Sample",
+        125 => "Description"
     ]);
 
     foreach ($items as $n) {
         $pdf->TableRow([
             30  => substr($n["Report_Date"],0,10),
-            40  => $n["Sample_ID"]."-".$n["Sample_Number"],
-            115 => utf8_decode((string)$n["Noconformidad"])
+            35  => $n["Sample_ID"]."-".$n["Sample_Number"],
+            125 => utf8_decode((string)$n["Noconformidad"])
         ]);
     }
 
     $pdf->Ln(3);
 }
 
-
 /* ======================================================
-   7. SAFE PAGE BREAK CHECK
+   7. PAGE BREAK PROTECT
 ====================================================== */
-
 if ($pdf->GetY() > 210) {
     $pdf->AddPage();
     $pdf->Ln(5);
@@ -1679,19 +1677,13 @@ if ($pdf->GetY() > 210) {
 
 
 /* ======================================================
-   8. NCR FREQUENCY CHART (Top 5 Horizontal)
+   8. FREQUENCY CHART (TOP 5)
 ====================================================== */
 
 $pdf->SubTitle("NCR Frequency by Test Type (Top 5)");
 
 $top5 = array_slice($counts, 0, 5, true);
 
-/* PROTECCIÓN: si top5 está vacío */
-if (empty($top5)) {
-    $top5 = ["NO DATA" => 1];
-}
-
-/* PROTECCIÓN: max() siempre con datos */
 $maxVal = max($top5);
 if ($maxVal <= 0) $maxVal = 1;
 
@@ -1704,20 +1696,16 @@ $i = 0;
 foreach ($top5 as $tp => $ct) {
 
     $barW = ($ct / $maxVal) * $barAreaW;
-
     list($r,$g,$b) = pickColor($i);
 
-    // Label
     $pdf->SetFont("Arial","",8);
-    $pdf->SetXY($chartX - 35, $chartY + ($i * 12));
+    $pdf->SetXY($chartX - 35, $chartY + ($i * 8));
     $pdf->Cell(35,6,utf8_decode($tp),0,0,"R");
 
-    // Bar
     $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect($chartX, $chartY + ($i * 12), $barW, $barH, "F");
+    $pdf->Rect($chartX, $chartY + ($i * 8), $barW, $barH, "F");
 
-    // Value
-    $pdf->SetXY($chartX + $barW + 3, $chartY + ($i * 12));
+    $pdf->SetXY($chartX + $barW + 3, $chartY + ($i * 8));
     $pdf->Cell(18,6,$ct,0,0);
 
     $i++;
@@ -1735,17 +1723,21 @@ $pdf->SubTitle("Insights");
 $ins = [];
 
 $ins[] = "$topTest is the test with the most NCR failures this month ($topTestCount).";
-$ins[] = count($counts)." different test types showed Fail/Rejected conditions.";
+$ins[] = count($counts)." test types showed Fail/Rejected conditions.";
 $ins[] = "$topClient is the most affected client.";
 
 if ($totalNCR > 0 && ($topTestCount / $totalNCR) > 0.3)
-    $ins[] = "$topTest represents more than 30% of all NCR failures — trend is significant.";
+    $ins[] = "$topTest accounts for over 30% of NCR failures — significant trend.";
 
 foreach ($ins as $t) {
     $pdf->BodyText("- " . utf8_decode($t));
 }
 
 $pdf->Ln(5);
+
+end_ncr:
+
+
 
 
 /* ======================================================
@@ -1852,7 +1844,7 @@ if ($totalNCR == 0) {
 
 /* ---------- (D) DOCUMENTATION WORKFLOW ---------- */
 if ($docPendingCount == 0) {
-    $remarks[] = "Documentation compliance remained strong with no pending doc_files uploads.";
+    $remarks[] = "Documentation compliance remained strong with no pending document file to review.";
 } elseif ($docPendingCount <= 5) {
     $remarks[] = "Documentation backlog is low, with {$docPendingCount} pending uploads, indicating generally efficient document control.";
 } else {
@@ -1863,7 +1855,7 @@ if ($docPendingCount == 0) {
 $reco = [];
 
 if ($avgAging > 7 || $totalCritical > 0) {
-    $reco[] = "Prioritize processing of pending tests older than 10–14 days to stabilize workflow aging.";
+    $reco[] = "Prioritize processing of pending tests older than 10 - 14 days to stabilize workflow aging.";
 }
 
 if ($mainTestPct > 25) {
@@ -1888,14 +1880,14 @@ if (empty($reco)) {
 
 $pdf->SubTitle("Overall Performance Summary");
 foreach ($remarks as $r) {
-    $pdf->BodyText("• " . utf8_decode($r));
+    $pdf->BodyText("- " . utf8_decode($r));
 }
 
 $pdf->Ln(2);
 
 $pdf->SubTitle("Strategic Recommendations");
 foreach ($reco as $r) {
-    $pdf->BodyText("• " . utf8_decode($r));
+    $pdf->BodyText("- " . utf8_decode($r));
 }
 
 
@@ -1903,36 +1895,62 @@ foreach ($reco as $r) {
 /* ======================================================
    SECTION 10 — Personnel
 ====================================================== */
-
 $pdf->SectionTitle("10. Laboratory Personnel");
 
-$pdf->SubTitle("Chief Laboratory");
-$pdf->BodyText("• Wendin De Jesús");
+/* ===== TABLE CONFIG ===== */
+$pdf->SetFont("Arial","B",10);
+$pdf->SetFillColor(230,230,230);
+$pdf->Cell(60,8,utf8_decode("Role"),1,0,'C',true);
+$pdf->Cell(130,8,utf8_decode("Name"),1,1,'C',true);
 
-$pdf->SubTitle("Document Control");
-$pdf->BodyText("
-• Yamilexi Mejía
-• Arturo Santana – Support
-• Frandy Espinal – Support
-");
+$pdf->SetFont("Arial","",10);
 
-$pdf->SubTitle("Supervisors");
-$pdf->BodyText("
-• Diana Vázquez – PV Supervisor
-• Víctor Mercedes – PV Supervisor
-");
+/* Chief */
+$pdf->Cell(60,7,utf8_decode("Chief Laboratory"),1,0);
+$pdf->Cell(130,7,utf8_decode("Wendin De Jesús"),1,1);
 
-$pdf->SubTitle("Contractor Technicians");
-$pdf->BodyText("
-• Wilson Martínez
-• Rafy Leocadio
-• Rony Vargas
-• Jonathan Vargas
-• Rafael Reyes
-• Darielvy Félix
-• Jordany Almonte
-• Melvin Castillo
-");
+/* Supervisors */
+$pdf->Cell(60,7,utf8_decode(" PV Supervisors"),1,0);
+$pdf->Cell(130,7,utf8_decode("Diana Vázquez, Víctor Mercedes"),1,1);
+
+/* Document Control */
+$pdf->Cell(60,7,utf8_decode(" Contractor Document Control"),1,0);
+$pdf->Cell(130,7,utf8_decode("Yamilexi Mejía, Arturo Santana, Frandy Espinal"),1,1);
+
+/* =====================================================
+   CONTRACTOR TECHNICIANS — GROUPED IN TWO GROUPS
+===================================================== */
+
+$groupA = [
+    "Wilson Martínez",
+    "Rafy Leocadio",
+    "Rony Vargas",
+    "Jonathan Vargas"
+];
+
+$groupB = [
+    "Rafael Reyes",
+    "Darielvy Félix",
+    "Jordany Almonte",
+    "Melvin Castillo"
+];
+
+/* Group A */
+$pdf->SetFont("Arial","B",10);
+$pdf->SetFillColor(245,245,245);
+$pdf->Cell(60,7,utf8_decode("Contractor Technicians - Group A"),1,0,'L',true);
+
+$pdf->SetFont("Arial","",10);
+$pdf->Cell(130,7,utf8_decode(implode(", ", $groupA)),1,1);
+
+/* Group B */
+$pdf->SetFont("Arial","B",10);
+$pdf->SetFillColor(245,245,245);
+$pdf->Cell(60,7,utf8_decode("Contractor Technicians - Group B"),1,0,'L',true);
+
+$pdf->SetFont("Arial","",10);
+$pdf->Cell(130,7,utf8_decode(implode(", ", $groupB)),1,1);
+
 
 /* ======================================================
    OUTPUT PDF
