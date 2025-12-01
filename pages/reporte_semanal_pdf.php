@@ -1455,6 +1455,31 @@ if (empty($techSummary)) {
 ================================*/
 $pdf->section_title("8. Pending Tests");
 
+/* ======================================================
+   DICCIONARIO DE NOMBRES COMPLETOS
+====================================================== */
+$testNames = [
+    "BTS" => "Brazilian (BTS)",
+    "PLT" => "Point Load Test",
+    "GS"  => "Grain Size",
+    "UCS" => "UCS",
+    "MC"  => "Moisture Content",
+    "AR"  => "Acid Reactivity",
+    "AL"  => "Atterberg Limit",
+    "SG"  => "Specific Gravity",
+    "DHY" => "Double Hydrometer",
+    "HY"  => "Hydrometer",
+    "SP"  => "Standard Proctor",
+    "MP"  => "Modified Proctor",
+    "PH"  => "Pinhole Test",
+    "SND" => "Soundness",
+    "LAA" => "Los Angeles Abrasion",
+    "PS"  => "Particle Shape",
+    "DEN" => "Density (Field/Lab)",
+    "CBR" => "CBR Test",
+];
+
+
 $pendRaw = find_by_sql("
     SELECT 
         r.Sample_ID,
@@ -1502,10 +1527,10 @@ if (empty($pendRaw)) {
 /* =====================================================
    2) Procesar Test Types individuales
 ===================================================== */
-$pending = [];     // pending[testType][client] = qty
-$clients = [];     // lista única de clientes
-$typeTotals = [];  // total qty por test type
-$totalPending = 0; // total general
+$pending = [];     
+$clients = [];     
+$typeTotals = [];  
+$totalPending = 0; 
 
 foreach ($pendRaw as $r) {
 
@@ -1516,7 +1541,6 @@ foreach ($pendRaw as $r) {
         $clients[] = $client;
     }
 
-    /* Separar test types individuales */
     $tests = array_filter(array_map('trim', explode(',', (string)$r['Test_Type'])));
 
     foreach ($tests as $t) {
@@ -1537,9 +1561,26 @@ sort($clients);
 ksort($pending);
 
 /* =====================================================
+   Convertir test types a nombres completos
+===================================================== */
+$pendingPretty = [];
+$typeTotalsPretty = [];
+
+foreach ($pending as $abbr => $row) {
+    $pretty = $testNames[$abbr] ?? $abbr;
+    $pendingPretty[$pretty] = $row;
+    $typeTotalsPretty[$pretty] = $typeTotals[$abbr] ?? 0;
+}
+
+/* reemplazamos estructura principal */
+$pending = $pendingPretty;
+$typeTotals = $typeTotalsPretty;
+
+
+/* =====================================================
    3) Determinar cantidad de clientes por bloque
 ===================================================== */
-$maxColsPerBlock = 4; // igual que sección 7
+$maxColsPerBlock = 4;
 $totalClients    = count($clients);
 $blocks = ceil($totalClients / $maxColsPerBlock);
 
@@ -1549,20 +1590,17 @@ for ($b = 0; $b < $blocks; $b++) {
     $slice = array_slice($clients, $start, $maxColsPerBlock);
     $end   = $start + count($slice);
 
-    /* Subtítulo por bloque */
-    $pdf->SubTitle("Pending Tests (Clients ".($start+1)."to".$end.")");
+    $pdf->SubTitle("Pending Tests (Clients ".($start+1)." to ".$end.")");
 
     /* =====================================================
-       4) Construir encabezado doble
+       4) Encabezado
     ====================================================== */
 
-    /* Anchos dinámicos */
-    $wType  = 35;
+    $wType  = 50;  // más ancho para nombres completos
     $wQty   = 12;
     $wPct   = 14;
     $wTotal = 20;
 
-    /* Primera fila del encabezado */
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell($wType, 10, "Test Type", 1, 0, 'C');
 
@@ -1570,10 +1608,8 @@ for ($b = 0; $b < $blocks; $b++) {
         $pdf->Cell($wQty + $wPct, 10, utf8_decode($c), 1, 0, 'C');
     }
 
-    /* TOTAL al final */
     $pdf->Cell($wTotal + $wPct, 10, "TOTAL", 1, 1, 'C');
 
-    /* Segunda fila: subcolumnas */
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell($wType, 6, "", 1, 0, 'C');
 
@@ -1586,18 +1622,17 @@ for ($b = 0; $b < $blocks; $b++) {
     $pdf->Cell($wPct,   6, "%Pend", 1, 1, 'C');
 
     /* =====================================================
-       5)   Filas por Test Type
+       5) Filas por Test Type
     ====================================================== */
     $pdf->SetFont('Arial','',9);
 
     foreach ($pending as $type => $row) {
 
-        /* Control de salto de página */
         if ($pdf->GetY() > 255) {
             $pdf->AddPage();
         }
 
-        $pdf->Cell($wType, 6, $type, 1, 0, 'L');
+        $pdf->Cell($wType, 6, utf8_decode($type), 1, 0, 'L');
 
         $sumType = $typeTotals[$type];
 
@@ -1610,7 +1645,6 @@ for ($b = 0; $b < $blocks; $b++) {
             $pdf->Cell($wPct, 6, $pct."%", 1, 0, 'C');
         }
 
-        /* TOTAL de la fila (Qty + %) */
         $totalQty = $sumType;
         $totalPct = ($totalPending > 0) ? round(($totalQty * 100) / $totalPending) : 0;
 
@@ -1627,7 +1661,6 @@ for ($b = 0; $b < $blocks; $b++) {
 
     foreach ($slice as $cl) {
 
-        /* total de ese cliente */
         $qtyCl = 0;
         foreach ($pending as $tp => $rw) {
             $qtyCl += ($rw[$cl] ?? 0);
@@ -1639,7 +1672,6 @@ for ($b = 0; $b < $blocks; $b++) {
         $pdf->Cell($wPct, 7, $pctCl."%", 1, 0, 'C');
     }
 
-    /* TOTAL global */
     $pdf->Cell($wTotal, 7, $totalPending, 1, 0, 'C');
     $pdf->Cell($wPct,   7, "100%", 1, 1, 'C');
 
@@ -1647,6 +1679,7 @@ for ($b = 0; $b < $blocks; $b++) {
 }
 
 skip_pending:
+
 
 /* ===============================
    SECCIÓN 9 — SUMMARY OF DAM CONSTRUCTION TESTS
