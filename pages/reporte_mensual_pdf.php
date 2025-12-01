@@ -1487,7 +1487,7 @@ foreach ($topAging as $i => $row) {
     list($r,$g,$b) = pickColor($i);
 
     // Label corregido
-    $posY = $chartY + ($i * 8);
+    $posY = $chartY + ($i * 6);
 
     $pdf->SetFont("Arial","",8);
     $pdf->SetXY(10, $posY);            // SIEMPRE VISIBLE
