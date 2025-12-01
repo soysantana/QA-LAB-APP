@@ -934,11 +934,34 @@ if (empty($clientNames)) {
     }
 }
 
-
 /* ===============================
    SECCIÓN 5 — TEST DISTRIBUTION BY TYPE AND CLIENT
 ================================*/
 $pdf->section_title("5. Test Distribution by Type and Client");
+
+/* ======================================================
+   DICCIONARIO DE NOMBRES COMPLETOS
+====================================================== */
+$testNames = [
+    "BTS" => "Brazilian (BTS)",
+    "PLT" => "Point Load Test",
+    "GS"  => "Grain Size",
+    "UCS" => "UCS",
+    "MC"  => "Moisture Content",
+    "AR"  => "Acid Reactivity",
+    "AL"  => "Atterberg Limit",
+    "SG"  => "Specific Gravity",
+    "DHY" => "Double Hydrometer",
+    "HY"  => "Hydrometer",
+    "SP"  => "Standard Proctor",
+    "MP"  => "Modified Proctor",
+    "PH"  => "Pinhole Test",
+    "SND" => "Soundness",
+    "LAA" => "Los Angeles Abrasion",
+    "SHAPE"  => "Particle Shape",
+    "PERM" => "Permeability",
+    "ENVIO" => "For Shipment",
+];
 
 /* ---------- Construir matriz Tipo × Cliente ---------- */
 
@@ -978,15 +1001,23 @@ if (empty($matrix4)) {
 } else {
 
     sort($clients4);
+
     $testTypes = array_keys($matrix4);
     sort($testTypes);
 
-    // ---------- TABLA TIPO × CLIENTE (B + D MIX) ----------
+    /* Convertir abreviaturas → nombres completos */
+    $testTypesPretty = [];
+    foreach ($testTypes as $tp){
+        $testTypesPretty[$tp] = $testNames[$tp] ?? $tp;
+    }
+
+    // ---------- TABLA TIPO × CLIENTE ----------
+
     $pdf->SubTitle("Completed Tests by Type and Client");
 
     $colWidths = [40];
     $numClients4 = count($clients4);
-    $restWidth = 190 - 40; // ancho útil aprox
+    $restWidth = 190 - 40;
     $wClient = $numClients4 > 0 ? max(20, floor($restWidth / $numClients4)) : 20;
 
     foreach ($clients4 as $cl) {
@@ -1001,22 +1032,21 @@ if (empty($matrix4)) {
     $pdf->table_header($header, $colWidths);
 
     foreach ($testTypes as $tp){
-        $row = [$tp];
+        $row = [$testTypesPretty[$tp]];
         foreach ($clients4 as $cl){
             $row[] = $matrix4[$tp][$cl] ?? 0;
         }
         $pdf->table_row($row, $colWidths);
     }
- 
 
     $pdf->Ln(6);
 
     /* ---------- GRÁFICO: TYPE × CLIENT ---------- */
     $pdf->SubTitle("Graph: Tests by Type and Client");
 
-    // Verificamos datos
     $hasData4 = false;
     $maxVal4  = 0;
+
     foreach ($testTypes as $tp){
         foreach ($clients4 as $cl){
             $v = $matrix4[$tp][$cl] ?? 0;
@@ -1084,14 +1114,15 @@ if (empty($matrix4)) {
             }
         }
 
-        // Labels eje X (test types)
+        // Labels eje X (test types con nombres completos)
         $pdf->SetFont("Arial","",7);
         $x = $chartX + 10;
         $groupW = $bw * $barsPerType;
 
         foreach ($testTypes as $tp){
+            $label = $testNames[$tp] ?? $tp;
             $pdf->SetXY($x, $chartY + $chartH + 2);
-            $pdf->MultiCell($groupW, 4, $tp, 0, 'C');
+            $pdf->MultiCell($groupW, 4, $label, 0, 'C');
             $x += $groupW;
         }
 
@@ -1125,10 +1156,35 @@ if (empty($matrix4)) {
     }
 }
 
+
 /* ===============================
    6. Newly Registered Samples (Weekly)
 ================================*/
 $pdf->section_title("6. Newly Registered Samples (Weekly)");
+
+/* ======================================================
+   DICCIONARIO DE NOMBRES COMPLETOS
+====================================================== */
+$testNames = [
+    "BTS" => "Brazilian (BTS)",
+    "PLT" => "Point Load Test",
+    "GS"  => "Grain Size",
+    "UCS" => "UCS",
+    "MC"  => "Moisture Content",
+    "AR"  => "Acid Reactivity",
+    "AL"  => "Atterberg Limit",
+    "SG"  => "Specific Gravity",
+    "DHY" => "Double Hydrometer",
+    "HY"  => "Hydrometer",
+    "SP"  => "Standard Proctor",
+    "MP"  => "Modified Proctor",
+    "PH"  => "Pinhole Test",
+    "SND" => "Soundness",
+    "LAA" => "Los Angeles Abrasion",
+    "PS"  => "Particle Shape",
+    "DEN" => "Density (Field/Lab)",
+    "CBR" => "CBR Test",
+];
 
 $muestras = find_by_sql("
     SELECT 
@@ -1154,20 +1210,18 @@ if (empty($muestras)) {
     // ===========================
     $totalSamplesWeek = count($muestras);
 
-    $clientsMap     = []; // muestras por cliente
-    $testTypeTotals = []; // total de ensayos por tipo
-    $matrix5        = []; // matriz tipo × cliente
+    $clientsMap     = [];
+    $testTypeTotals = [];
+    $matrix5        = [];
 
     foreach ($muestras as $row) {
 
         $client = trim((string)$row['Client']);
         if ($client === '') $client = 'N/A';
 
-        // Contar muestras por cliente
         if (!isset($clientsMap[$client])) $clientsMap[$client] = 0;
         $clientsMap[$client]++;
 
-        // Separar test types si vienen "GS, SP, LAA"
         $testsRaw = (string)$row['Test_Type'];
         $testsArr = array_filter(array_map('trim', explode(',', $testsRaw)));
 
@@ -1187,7 +1241,6 @@ if (empty($muestras)) {
     // ===========================
     // 2) SUMMARY CARDS
     // ===========================
-    // Top client
     $topClientName  = "-";
     $topClientCount = 0;
     foreach ($clientsMap as $c => $cnt) {
@@ -1197,13 +1250,13 @@ if (empty($muestras)) {
         }
     }
 
-    // Top test type
+    // === Convertir top test a nombre completo ===
     $topTestName  = "-";
     $topTestCount = 0;
     foreach ($testTypeTotals as $t => $cnt) {
         if ($cnt > $topTestCount) {
             $topTestCount = $cnt;
-            $topTestName  = $t;
+            $topTestName  = $testNames[$t] ?? $t;
         }
     }
 
@@ -1213,7 +1266,6 @@ if (empty($muestras)) {
     $pdf->SetFont('Arial','B',10);
     $pdf->SetFillColor(230,230,230);
 
-    // Primera fila: total samples + top client
     $pdf->Cell($boxW,6,"Total Samples this Week",1,0,'L',true);
     $pdf->Cell($boxW,6,"Top Client this Week",1,1,'L',true);
 
@@ -1223,9 +1275,10 @@ if (empty($muestras)) {
     $txtTopClient = ($topClientName === "-")
         ? "-"
         : ($topClientName." - ".$topClientCount." samples");
+
     $pdf->Cell($boxW,8,utf8_decode($txtTopClient),1,1,'C');
 
-    // Segunda fila — full width
+    // === Top Test Type ===
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell($boxW*2,6,"Top Test Type this Week",1,1,'L',true);
 
@@ -1233,12 +1286,13 @@ if (empty($muestras)) {
     $txtTopTest = ($topTestName === "-")
         ? "-"
         : ($topTestName." - ".$topTestCount." tests");
+
     $pdf->Cell($boxW*2,8,utf8_decode($txtTopTest),1,1,'C');
 
     $pdf->Ln(10);
 
     // ===========================
-    // 3) TABLA TIPO × CLIENTE (OPCIÓN B + D)
+    // 3) TABLA TIPO × CLIENTE (CON NOMBRES COMPLETOS)
     // ===========================
     $pdf->SubTitle("Test Type vs Client (Registered This Week)");
 
@@ -1257,8 +1311,7 @@ if (empty($muestras)) {
 
     } else {
 
-        // anchos de columnas
-        $colWidths = [40]; // columna de Test Type
+        $colWidths = [40];
         $numClients = count($clients5);
         $restWidth = 190 - 40;
         $wClient = max(22, floor($restWidth / $numClients));
@@ -1267,18 +1320,22 @@ if (empty($muestras)) {
             $colWidths[] = $wClient;
         }
 
-        // encabezado
         $header = ["Test Type"];
         foreach ($clients5 as $c) $header[] = $c;
 
         $pdf->table_header($header,$colWidths);
 
-        // filas
+        // filas con nombre completo
         foreach ($types5 as $tp) {
-            $row = [$tp];
+
+            $prettyName = $testNames[$tp] ?? $tp;
+
+            $row = [$prettyName];
+
             foreach ($clients5 as $cl) {
                 $row[] = $matrix5[$tp][$cl] ?? 0;
             }
+
             $pdf->table_row($row,$colWidths);
         }
 
