@@ -1279,20 +1279,41 @@ $pdf->AddPage();   // Página 7
 $pdf->SectionTitle("7. Pending Workload & Aging Analysis");
 
 /* ======================================================
+   DICCIONARIO DE NOMBRES COMPLETOS
+====================================================== */
+$testNames = [
+    "BTS" => "Brazilian (BTS)",
+    "PLT" => "Point Load Test",
+    "GS"  => "Grain Size",
+    "UCS" => "UCS",
+    "MC"  => "Moisture Content",
+    "Densidad-Vibrataorio"  => "Weight Vibrating-Hammer",
+    "AR"  => "Acid Reactivity",
+    "AL"  => "Atterberg Limit",
+    "SG"  => "Specific Gravity",
+    "DHY" => "Double Hydrometer",
+    "HY"  => "Hydrometer",
+    "SCT"  => "Sand Castle Test",
+    "SP"  => "Standard Proctor",
+    "MP"  => "Modified Proctor",
+    "PH"  => "Pinhole Test",
+    "SND" => "Soundness",
+    "LAA" => "Los Angeles Abrasion",
+    "SHAPE"  => "Particle Shape",
+    "PERM" => "Permeability",
+    "Envio" => "For Shipment",
+];
+
+/* ======================================================
    NORMALIZATION FUNCTION (SAFE)
 ====================================================== */
 function normalizeStr($str){
     if ($str === null) return "";
     $str = trim($str);
 
-    // Convert NBSP to space
-    $str = preg_replace('/\x{00A0}/u', ' ', $str);
-
-    // Replace weird hyphens with normal hyphen
-    $str = str_replace(["–","—","−"], "-", $str);
-
-    // Compress multiple spaces
-    $str = preg_replace('/\s+/', ' ', $str);
+    $str = preg_replace('/\x{00A0}/u', ' ', $str);     // NBSP → space
+    $str = str_replace(["–","—","−"], "-", $str);      // Weird hyphens → normal hyphen
+    $str = preg_replace('/\s+/', ' ', $str);           // multiple spaces → one
 
     return strtoupper(trim($str));
 }
@@ -1310,7 +1331,7 @@ foreach ($rows as $r) {
 
         $tp = normalizeStr($tp);
 
-        /* IGNORE ENVIO TESTS (not pending) */
+        /* IGNORAR ENVIO COMPLETO */
         if ($tp === "ENVIO") continue;
 
         $expanded[] = [
@@ -1325,7 +1346,6 @@ foreach ($rows as $r) {
 
 /* ======================================================
    2. DETECT REAL PENDING TESTS
-   (your exact logic: if NOT in ANY table → PENDING)
 ====================================================== */
 
 $pending = [];
@@ -1336,6 +1356,9 @@ foreach ($expanded as $t) {
     $sid = $db->escape($t["Sample_ID"]);
     $num = $db->escape($t["Sample_Number"]);
     $tp  = $db->escape($t["Test_Type"]);
+
+    /* SALTAR ENVIO de nuevo por seguridad */
+    if ($tp === "ENVIO") continue;
 
     $sql = "
         UPPER(TRIM(Sample_ID))     ='$sid' AND
@@ -1350,7 +1373,6 @@ foreach ($expanded as $t) {
     $rev2 = $db->query("SELECT 1 FROM test_reviewed   WHERE $sql")->num_rows;
     $doc  = $db->query("SELECT 1 FROM doc_files       WHERE $sql")->num_rows;
 
-    /* EXACT LOGIC: Pending only if NOT in ANY table */
     if ($prep==0 && $real==0 && $del==0 && $rev==0 && $rev2==0 && $doc==0) {
 
         $days = round(($today - strtotime($t["RegDate"])) / 86400, 1);
@@ -1359,7 +1381,7 @@ foreach ($expanded as $t) {
             "Client"        => $t["Client"],
             "Sample_ID"     => $t["Sample_ID"],
             "Sample_Number" => $t["Sample_Number"],
-            "Test_Type"     => $t["Test_Type"],
+            "Test_Type"     => $testNames[$t["Test_Type"]] ?? $t["Test_Type"],
             "Days"          => $days
         ];
     }
@@ -1388,7 +1410,7 @@ $pdf->Cell(45,8,"Max: {$maxAging} d",1,1,'C');
 $pdf->Ln(4);
 
 /* ======================================================
-   4. PENDING TABLE (Adaptive width + Grouped by Client)
+   4. PENDING TABLE (Grouped by Client)
 ====================================================== */
 
 usort($pending, fn($a,$b)=> $b["Days"] <=> $a["Days"]);
@@ -1405,7 +1427,7 @@ foreach ($grouped as $client => $list) {
     $pdf->TableHeader([
         30 => "Sample",
         22 => "Number",
-        30 => "Test",
+        40 => "Test",  // ANCHO MAYOR PARA NOMBRE COMPLETO
         18 => "Days",
         40 => "Status"
     ]);
@@ -1422,7 +1444,7 @@ foreach ($grouped as $client => $list) {
         $pdf->TableRow([
             30 => $row["Sample_ID"],
             22 => $row["Sample_Number"],
-            30 => $row["Test_Type"],
+            40 => utf8_decode($row["Test_Type"]),
             18 => $row["Days"],
             40 => $status
         ]);
@@ -1434,7 +1456,7 @@ foreach ($grouped as $client => $list) {
 }
 
 /* ======================================================
-   5. FIX: PAGE BREAK CONTROL FOR GRAPH
+   5. FIX PAGE BREAK FOR CHART
 ====================================================== */
 
 if ($pdf->GetY() > 210) {
@@ -1443,12 +1465,12 @@ if ($pdf->GetY() > 210) {
 }
 
 /* ======================================================
-   6. AGING CHART (Top 10 Horizontal) — Now SAFE
+   6. AGING CHART (Top 10 Horizontal)
 ====================================================== */
 
 $pdf->SubTitle("Aging Chart (Top 10 Delays)");
 
-$topAging = array_slice($pending, 0, 5);
+$topAging = array_slice($pending, 0, 10);
 
 $chartX = 35;
 $chartY = $pdf->GetY() + 5;
@@ -1458,22 +1480,19 @@ $barH = 5;
 $i = 0;
 foreach ($topAging as $row) {
 
-    $label = $row["Test_Type"] . "-" . $row["Sample_ID"];
+    $label = $row["Test_Type"] . " - " . $row["Sample_ID"];
     $days  = $row["Days"];
     $barW  = ($days / $maxAging) * $barAreaW;
 
     list($r,$g,$b) = pickColor($i);
 
-    // Label
     $pdf->SetFont("Arial","",8);
-    $pdf->SetXY($chartX - 35, $chartY + ($i * 12));
-    $pdf->Cell(35, 6, utf8_decode($label), 0, 0, "R");
+    $pdf->SetXY($chartX - 40, $chartY + ($i * 12));
+    $pdf->Cell(40, 6, utf8_decode($label), 0, 0, "R");
 
-    // Bar
     $pdf->SetFillColor($r,$g,$b);
     $pdf->Rect($chartX, $chartY + ($i * 12), $barW, $barH, "F");
 
-    // Value
     $pdf->SetXY($chartX + $barW + 3, $chartY + ($i * 12));
     $pdf->Cell(18, 6, $days . " d", 0, 0);
 
