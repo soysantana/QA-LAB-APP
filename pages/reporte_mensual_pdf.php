@@ -1427,11 +1427,11 @@ foreach ($grouped as $client => $list) {
     $pdf->SubTitle("Client: $client (" . count($list) . " pending)");
 
     $pdf->TableHeader([
-        30 => "Sample",
-        22 => "Number",
-        40 => "Test",
-        18 => "Days",
-        40 => "Status"
+       35 => "Sample",
+        20 => "Number",
+        30 => "Test",
+        15 => "Days",
+        25 => "Status"
     ]);
 
     foreach ($list as $row) {
@@ -1444,11 +1444,11 @@ foreach ($grouped as $client => $list) {
         else                      $pdf->SetTextColor(0,120,0);
 
         $pdf->TableRow([
-            30 => $row["Sample_ID"],
-            22 => $row["Sample_Number"],
-            40 => utf8_decode($row["Test_Type"]),
-            18 => $row["Days"],
-            40 => $status
+            35 => $row["Sample_ID"],
+            20 => $row["Sample_Number"],
+            30 => utf8_decode($row["Test_Type"]),
+            15 => $row["Days"],
+            25 => $status
         ]);
 
         $pdf->SetTextColor(0,0,0);
