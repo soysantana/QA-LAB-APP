@@ -368,9 +368,10 @@ $pdf->AddPage();   // Página 3
 
 $pdf->SectionTitle("3. Monthly Registered Samples");
 
-// ------------------------------------------------------
-// 1) Build EXPANDED test list (each Test_Type separately)
-// ------------------------------------------------------
+/* ------------------------------------------------------
+   1) Load Monthly Records
+------------------------------------------------------ */
+
 $rows = $db->query("
     SELECT 
         Registed_Date,
@@ -383,107 +384,118 @@ $rows = $db->query("
     ORDER BY Registed_Date ASC
 ")->fetch_all(MYSQLI_ASSOC);
 
-$expanded_full = [];        // fully expanded tests
-$clientTotals = [];         // tests per client
-$clientSamples = [];        // unique samples per client
-$dailyClient = [];          // trend per day per client
-$testTypePerClient = [];    // for top3 test types per client
+/* ------------------------------------------------------
+   PREPARE DATA STRUCTURES
+------------------------------------------------------ */
 
-// Build date map for the month
+$testsPerClient     = [];    // total tests per client
+$samplesPerClient   = [];    // unique samples per client
+$testTypePerClient  = [];    // top test types per client
+$dailyClient        = [];    // trend by date per client
+$expanded_full      = [];    // fully expanded test list
+
+// prepare full month date map for daily trend
 $trendDates = [];
 $c = strtotime($start);
 $last = strtotime($end);
-while($c <= $last){
+while ($c <= $last) {
     $trendDates[] = date("Y-m-d", $c);
     $c = strtotime("+1 day", $c);
 }
 
-// expand Test_Type
-foreach ($rows as $r){
-    $types = explode(",", $r["Test_Type"]);
+/* ------------------------------------------------------
+   2) EXPAND TEST TYPES AND BUILD COUNTERS
+------------------------------------------------------ */
 
-    foreach ($types as $t){
-        $t = trim($t);
-        if ($t === "") continue;
+foreach ($rows as $r) {
 
-        // store expanded record
+    $client = trim($r["Client"]);
+    $sampleID = trim($r["Sample_ID"]);
+    $sampleNum = trim($r["Sample_Number"]);
+    $regDate = substr($r["Registed_Date"], 0, 10);
+
+    // register unique sample
+    $sampleKey = $sampleID . "-" . $sampleNum;
+    $samplesPerClient[$client][$sampleKey] = true;
+
+    // split tests
+    $types = array_filter(array_map('trim', explode(",", $r["Test_Type"])));
+
+    foreach ($types as $t) {
+
+        // Expand full list
         $expanded_full[] = [
-            "Date"   => substr($r["Registed_Date"], 0, 10),
-            "Client" => trim($r["Client"]),
-            "SID"    => trim($r["Sample_ID"]),
-            "NUM"    => trim($r["Sample_Number"]),
+            "Date"   => $regDate,
+            "Client" => $client,
+            "SID"    => $sampleID,
+            "NUM"    => $sampleNum,
             "Test"   => $t
         ];
 
-        $cl = trim($r["Client"]);
-        $dt = substr($r["Registed_Date"], 0, 10);
+        // Count tests
+        if (!isset($testsPerClient[$client])) $testsPerClient[$client] = 0;
+        $testsPerClient[$client]++;
 
-        // Count total tests per client
-        if (!isset($clientTotals[$cl])) $clientTotals[$cl] = 0;
-        $clientTotals[$cl]++;
-
-        // Track unique samples per client
-        $uniqueKey = $r["Sample_ID"] . "-" . $r["Sample_Number"];
-        $clientSamples[$cl][$uniqueKey] = true;
-
-        // Trend count per day per client
-        if (!isset($dailyClient[$cl])) {
-            $dailyClient[$cl] = array_fill_keys($trendDates, 0);
+        // Track daily trend
+        if (!isset($dailyClient[$client])) {
+            $dailyClient[$client] = array_fill_keys($trendDates, 0);
         }
-        if (isset($dailyClient[$cl][$dt])) {
-            $dailyClient[$cl][$dt]++;
+        if (isset($dailyClient[$client][$regDate])) {
+            $dailyClient[$client][$regDate]++;
         }
 
-        // Test types per client
-        if (!isset($testTypePerClient[$cl])) $testTypePerClient[$cl] = [];
-        if (!isset($testTypePerClient[$cl][$t])) $testTypePerClient[$cl][$t] = 0;
-        $testTypePerClient[$cl][$t]++;
+        // Count test types per client
+        if (!isset($testTypePerClient[$client])) $testTypePerClient[$client] = [];
+        if (!isset($testTypePerClient[$client][$t])) $testTypePerClient[$client][$t] = 0;
+        $testTypePerClient[$client][$t]++;
     }
 }
+
 /* ------------------------------------------------------
-   2) TABLE — Overview by Client
+   3) TABLE — Overview by Client
 ------------------------------------------------------ */
+
 $pdf->SubTitle("Client Summary Table");
 
 $pdf->TableHeader([
-    40=>"Client",
-    25=>"Samples",
-    25=>"Tests",
-    50=>"Top Test Types"
+    35 => "Client",
+    25 => "Samples",
+    20 => "Tests",
+    40 => "Top Test Types"
 ]);
 
-foreach ($clientTotals as $cl => $totalTests){
+foreach ($testsPerClient as $cl => $totalTests) {
 
-    // Unique samples count
-    $sampleCount = isset($clientSamples[$cl])
-        ? count($clientSamples[$cl])
+    // count unique samples
+    $sampleCount = isset($samplesPerClient[$cl])
+        ? count($samplesPerClient[$cl])
         : 0;
 
-    // Top 3 test types
+    // top 3 test types
     $top = $testTypePerClient[$cl];
     arsort($top);
     $topList = implode(", ", array_slice(array_keys($top), 0, 3));
 
     $pdf->TableRow([
-        40=>$cl,
-        25=>$sampleCount,
-        25=>$totalTests,
-        50=>$topList
+        35 => $cl,
+        25 => $sampleCount,
+        20 => $totalTests,
+        40 => $topList
     ]);
 }
 
 $pdf->Ln(4);
+
 /* ------------------------------------------------------
-   3) GRAPH — Tests per Client (Vertical Bar)
-   Improved with axis labels & bar values
+   4) GRAPH — Tests per Client (Vertical Bar)
 ------------------------------------------------------ */
 
 $pdf->SubTitle("Tests per Client Chart");
 
-if (!empty($clientTotals)){
+if (!empty($testsPerClient)) {
 
-    $labels = array_keys($clientTotals);
-    $values = array_values($clientTotals);
+    $labels = array_keys($testsPerClient);
+    $values = array_values($testsPerClient);
 
     // chart area
     $chartX = 20;
@@ -494,13 +506,12 @@ if (!empty($clientTotals)){
     /* ---------- DRAW AXIS ---------- */
     drawAxis($pdf, $chartX, $chartY, $chartW, $chartH);
 
-    /* ---------- Y-AXIS SCALE ---------- */
+    /* ---------- Y-SCALE ---------- */
     $maxVal = max($values);
     if ($maxVal == 0) $maxVal = 1;
 
-    // define 4 major steps (0, 25%, 50%, 75%, 100% of max)
     $steps = 4;
-    $pdf->SetFont("Arial","",7);
+    $pdf->SetFont("Arial", "", 7);
 
     for ($i=0; $i <= $steps; $i++) {
 
@@ -511,17 +522,17 @@ if (!empty($clientTotals)){
         $pdf->SetDrawColor(220,220,220);
         $pdf->Line($chartX, $yPos, $chartX + $chartW, $yPos);
 
-        // label
+        // value
         $pdf->SetDrawColor(0,0,0);
         $pdf->SetXY($chartX - 10, $yPos - 2);
         $pdf->Cell(8, 4, $val, 0, 0, "R");
     }
 
-    /* ---------- DRAW BARS ---------- */
+    /* ---------- BARS ---------- */
     $barW = (int)( ($chartW - 10) / count($labels) );
-    if ($barW < 10) $barW = 10; // minimum width
+    if ($barW < 10) $barW = 10;
 
-    foreach ($labels as $i => $lbl){
+    foreach ($labels as $i => $lbl) {
 
         $v = $values[$i];
         $barH = ($v / $maxVal) * ($chartH - 5);
@@ -535,14 +546,14 @@ if (!empty($clientTotals)){
         // bar
         $pdf->Rect($x, $y, $barW - 2, $barH, "F");
 
-        // value above bar
-        if ($v > 0){
+        // label value
+        if ($v > 0) {
             $pdf->SetFont("Arial","B",7);
             $pdf->SetXY($x, $y - 4);
             $pdf->Cell($barW - 2, 4, $v, 0, 0, "C");
         }
 
-        // label below bar
+        // bottom label
         $pdf->SetFont("Arial","",7);
         $pdf->SetXY($x, $chartY + $chartH + 2);
         $pdf->MultiCell($barW - 2, 3, utf8_decode($lbl), 0, "C");
@@ -551,9 +562,8 @@ if (!empty($clientTotals)){
     $pdf->SetY($chartY + $chartH + 14);
 }
 
-
 /* ------------------------------------------------------
-   5) Insights
+   5) INSIGHTS
 ------------------------------------------------------ */
 
 $pdf->Ln(5);
@@ -561,10 +571,9 @@ $pdf->SubTitle("Observations & Insights");
 
 $insights = [];
 
-foreach ($dailyClient as $cl => $trend){
+foreach ($dailyClient as $cl => $trend) {
     $vals = array_values($trend);
     $maxVal = max($vals);
-    $minVal = min($vals);
     $sum = array_sum($vals);
 
     if ($sum == 0) continue;
@@ -575,11 +584,14 @@ foreach ($dailyClient as $cl => $trend){
     $insights[] = "- $cl reached its activity peak on $peakDay with $maxVal tests registered.";
 }
 
-if (empty($insights)) $insights[] = "No significant client trends detected.";
+if (empty($insights)) {
+    $insights[] = "No significant client trends detected.";
+}
 
-foreach ($insights as $txt){
+foreach ($insights as $txt) {
     $pdf->BodyText($txt);
 }
+
 $pdf->AddPage();   // Página 4
 
 
