@@ -1470,7 +1470,7 @@ if ($pdf->GetY() > 210) {
 
 $pdf->SubTitle("Aging Chart (Top 10 Delays)");
 
-$topAging = array_slice($pending, 0, 10);
+$topAging = array_slice($pending, 0, 5);
 
 $chartX = 35;
 $chartY = $pdf->GetY() + 5;
