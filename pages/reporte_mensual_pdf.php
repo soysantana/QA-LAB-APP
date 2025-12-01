@@ -1652,15 +1652,15 @@ foreach ($grouped as $tp => $items) {
 
     $pdf->TableHeader([
         
-        35 => "Sample",
-        160 => "Description"
+        40 => "Sample",
+        155 => "Description"
     ]);
 
     foreach ($items as $n) {
         $pdf->TableRow([
            
-            35  => $n["Sample_ID"]."-".$n["Sample_Number"]."-".$n["Material_Type"],
-            160 => utf8_decode((string)$n["Noconformidad"])
+            40  => $n["Sample_ID"]."-".$n["Sample_Number"]."-".$n["Material_Type"],
+            155 => " " . utf8_decode((string)$n["Noconformidad"])   // ⬅ LEFT ALIGN
         ]);
     }
 
