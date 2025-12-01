@@ -84,12 +84,12 @@ include_once('../components/header.php');
 
       <!-- Reporte Trimestral -->
       <div class="col-12 col-md-6 col-lg-4">
-        <a href="/pages/reporteTrimestral.php" class="text-decoration-none">
+        <a href="/pages/lista_reporte_anual.php" class="text-decoration-none">
           <div class="card h-100 shadow-sm border-0 hover-elevate">
             <div class="card-body text-center">
               <i class="bi bi-calendar2-quarter" style="font-size:2rem;"></i>
-              <h5 class="card-title mt-2">Reporte Trimestral</h5>
-              <p class="card-text small text-muted">Análisis y tendencias por trimestre.</p>
+              <h5 class="card-title mt-2">Reporte Anual</h5>
+              <p class="card-text small text-muted">Análisis y tendencias por trimestre durante el año.</p>
             </div>
           </div>
         </a>

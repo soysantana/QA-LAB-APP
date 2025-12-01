@@ -332,7 +332,7 @@ $pdf->TableHeader([
 $pdf->TableRow([55=>"Tests Registered",             35=>$registered_count]);
 $pdf->TableRow([55=>"Delivered Tests",              35=>$del_count]);
 $pdf->TableRow([55=>"Reviewed Tests",               35=>$reviewed_count]);
-$pdf->TableRow([55=>"Final Reports Issued",         35=>$docs_count]);
+$pdf->TableRow([55=>"Final Results Issued",         35=>$docs_count]);
 
 $pdf->TableRow([55=>"Pending Tests",                35=>$pending_total]);
 $pdf->TableRow([55=>"Pending Load (%)",             35=>$pending_ratio."%"]);
@@ -755,8 +755,8 @@ $pdf->TableHeader([
     40=>"Client",
     30=>"Hist. Req",
     35=>"Hist. Comp",
-    25=>"Backlog",
-    20=>"Completion (%)"
+    20=>"Backlog",
+    25=>"Comp (%)"
 ]);
 
 foreach ($hist as $cl=>$v){
@@ -764,8 +764,8 @@ foreach ($hist as $cl=>$v){
         40=>$cl,
         30=>$v['requested'] ?? 0,
         35=>$v['completed'] ?? 0,
-        25=>$v['backlog'],
-        20=>$v['pct']
+        20=>$v['backlog'],
+        25=>$v['pct']
     ]);
 }
 
