@@ -1007,6 +1007,7 @@ if (empty($matrix4)) {
         }
         $pdf->table_row($row, $colWidths);
     }
+ 
 
     $pdf->Ln(6);
 
