@@ -2477,6 +2477,14 @@ $ins = "
 $pdf->BodyText($ins);
 $pdf->Ln(8);
 
+// Polyfill para servidores PHP 7
+if (!function_exists("str_contains")) {
+    function str_contains($haystack, $needle) {
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+    }
+}
+
+
 /* ============================================================
    SECTION 7 — REPEAT TEST ANALYSIS
 ============================================================ */
@@ -2544,7 +2552,8 @@ foreach ($repeatRaw as $r){
     }
 
     /* Root Cause */
-    $cause = strtolower(trim($r["Comment"] . " " . $r["Comments"]));
+   $cause = strtolower(trim( ($r["Comment"] ?? "") . " " . ($r["Comments"] ?? "") ));
+
 
     if ($cause !== ""){
 
