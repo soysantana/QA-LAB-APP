@@ -2174,6 +2174,38 @@ $pdf->BodyText("
    SECTION 6 — Document Control & Traceability
 ============================================================ */
 /* ============================================================
+   6. LOAD DATASETS FOR DOCUMENT CONTROL SECTION
+============================================================ */
+
+/* Delivered */
+$delivered = $db->query("
+    SELECT Sample_ID, Sample_Number, Test_Type, Register_Date
+    FROM test_delivery
+    WHERE YEAR(Register_Date) = '$year'
+")->fetch_all(MYSQLI_ASSOC);
+
+/* Reviewed */
+$reviewed = $db->query("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_review
+    WHERE YEAR(Start_Date) = '$year'
+")->fetch_all(MYSQLI_ASSOC);
+
+/* Approved (Reviewed + Closed) */
+$approved = $db->query("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_reviewed
+    WHERE YEAR(Start_Date) = '$year'
+")->fetch_all(MYSQLI_ASSOC);
+
+/* Uploaded documents (doc_files) */
+$fileRows = $db->query("
+    SELECT id, Sample_ID, Sample_Number, File_Name, created_at
+    FROM doc_files
+    WHERE YEAR(created_at) = '$year'
+")->fetch_all(MYSQLI_ASSOC);
+
+/* ============================================================
    SAFE COUNTERS (NO find_value)
 ============================================================ */
 
@@ -2439,6 +2471,307 @@ $ins = "
 $pdf->BodyText($ins);
 $pdf->Ln(8);
 
+/* ============================================================
+   SECTION 7 — REPEAT TEST ANALYSIS
+============================================================ */
+
+$pdf->AddPage();
+$pdf->SectionTitle("7. Repeat Test Analysis");
+
+/* ============================================================
+   7.1 LOAD RAW REPEAT DATA
+============================================================ */
+
+$repeatRaw = $db->query("
+    SELECT 
+        r.Sample_ID,
+        r.Sample_Number,
+        r.Test_Type,
+        r.Comment,
+        rr.Client,
+        rr.Registed_Date
+    FROM test_repeat r
+    LEFT JOIN lab_test_requisition_form rr
+      ON rr.Sample_ID = r.Sample_ID
+     AND rr.Sample_Number = r.Sample_Number
+    WHERE rr.Registed_Date BETWEEN '$start' AND '$end'
+")->fetch_all(MYSQLI_ASSOC);
+
+$totalRepeat = count($repeatRaw);
+
+/* If no repeat tests */
+if ($totalRepeat == 0) {
+    $pdf->BodyText("No repeat tests were registered during the year.");
+    $pdf->Ln(8);
+    goto SkipRepeatSection;
+}
+
+/* ============================================================
+   7.2 BUILD COUNTERS
+============================================================ */
+
+$repeatByType   = [];
+$repeatByClient = [];
+$repeatByMonth  = array_fill(1,12,0);
+$repeatReasons  = [];
+
+foreach ($repeatRaw as $r){
+
+    $test  = trim($r["Test_Type"]);
+    $client = trim($r["Client"]);
+    $date   = $r["Registed_Date"];
+
+    if ($test !== "") {
+        if (!isset($repeatByType[$test])) $repeatByType[$test] = 0;
+        $repeatByType[$test]++;
+    }
+
+    if ($client !== "") {
+        if (!isset($repeatByClient[$client])) $repeatByClient[$client] = 0;
+        $repeatByClient[$client]++;
+    }
+
+    /* Monthly trend */
+    if ($date) {
+        $m = (int)substr($date,5,2);
+        if ($m>=1 && $m<=12) $repeatByMonth[$m]++;
+    }
+
+    /* Root Cause */
+    $cause = strtolower(trim($r["Reason"] . " " . $r["Comments"]));
+
+    if ($cause !== ""){
+
+        if (str_contains($cause,"sample") || str_contains($cause,"insufficient"))
+            $root = "Sample Issue";
+
+        elseif (str_contains($cause,"tech") || str_contains($cause,"human"))
+            $root = "Technician Error";
+
+        elseif (str_contains($cause,"equip") || str_contains($cause,"machine"))
+            $root = "Equipment Issue";
+
+        elseif (str_contains($cause,"fail") || str_contains($cause,"outlier"))
+            $root = "Outlier / Fail";
+
+        else
+            $root = "Other";
+
+        if (!isset($repeatReasons[$root])) $repeatReasons[$root] = 0;
+        $repeatReasons[$root]++;
+    }
+}
+
+/* ============================================================
+   7.3 SUMMARY KPI CARDS
+============================================================ */
+
+$repeatPct = ($totalTests > 0) ? round(($totalRepeat / $totalTests) * 100, 2) : 0;
+
+$pdf->SetFillColor(240,240,240);
+$pdf->SetFont("Arial","B",10);
+
+$kW = 60; $kH = 10;
+
+$pdf->Cell($kW,$kH,"Total Repeat Tests: $totalRepeat",1,0,'C',true);
+$pdf->Cell($kW,$kH,"Repeat Rate: $repeatPct%",1,0,'C',true);
+$pdf->Ln(12);
+
+/* ============================================================
+   7.4 REPEAT TESTS PER TYPE — TABLE
+============================================================ */
+
+$pdf->SubTitle("7.1 Repeat per Test Type");
+
+arsort($repeatByType);
+
+$pdf->TableHeader([
+    60=>"Test Type",
+    30=>"Repeats",
+    30=>"% of Its Type"
+]);
+
+foreach ($repeatByType as $t=>$cnt){
+
+    $typeTotal = $testCountByType[$t] ?? 1;
+    $pctType   = round(($cnt/$typeTotal)*100,1);
+
+    $name = $testNames[$t] ?? $t;
+
+    $pdf->TableRow([
+        60=>utf8_decode($name),
+        30=>$cnt,
+        30=>$pctType."%"
+    ]);
+}
+
+$pdf->Ln(8);
+
+/* ============================================================
+   7.5 CHART — REPEAT BY TEST TYPE (Horizontal Bars)
+============================================================ */
+
+$pdf->SubTitle("7.2 Repeat by Test Type (Chart)");
+
+$chartX = 40;
+$chartY = $pdf->GetY() + 4;
+$barW   = 120;
+$barH   = 6;
+
+$maxR = max($repeatByType);
+if ($maxR<=0) $maxR = 1;
+
+$i = 0;
+foreach ($repeatByType as $t=>$cnt){
+
+    $y = $chartY + ($i * 7.5);
+    list($r,$g,$b) = pickColor($i);
+
+    $bw = ($cnt / $maxR) * $barW;
+
+    $label = $testNames[$t] ?? $t;
+
+    $pdf->SetXY($chartX - 38, $y);
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(35,6,utf8_decode($label),0,0,"R");
+
+    $pdf->SetFillColor($r,$g,$b);
+    $pdf->Rect($chartX, $y, $bw, $barH, "F");
+
+    $pdf->SetXY($chartX + $bw + 5, $y);
+    $pdf->Cell(15,6,$cnt);
+
+    $i++;
+}
+
+$pdf->Ln(($i*8)+5);
+
+/* ============================================================
+   7.6 REPEAT PER CLIENT — TABLE
+============================================================ */
+
+$pdf->SubTitle("7.3 Repeat per Client");
+
+arsort($repeatByClient);
+
+$pdf->TableHeader([
+    60=>"Client",
+    30=>"Repeats",
+    30=>"% of Annual"
+]);
+
+foreach ($repeatByClient as $cl=>$cnt){
+
+    $pct = round(($cnt / $totalRepeat)*100,1)."%";
+
+    $pdf->TableRow([
+        60=>utf8_decode($cl ?: "UNKNOWN"),
+        30=>$cnt,
+        30=>$pct
+    ]);
+}
+
+$pdf->Ln(8);
+
+/* ============================================================
+   7.7 MONTHLY TREND — LINE CHART
+============================================================ */
+
+$pdf->SubTitle("7.4 Monthly Repeat Trend");
+
+$cx = 25;
+$cy = $pdf->GetY() + 15;
+$w  = 160;
+$h  = 40;
+
+drawAxis($pdf,$cx,$cy,$w,$h);
+
+$maxM = max($repeatByMonth);
+if ($maxM<=0) $maxM = 1;
+
+$prevX = null;
+$prevY = null;
+
+foreach ($repeatByMonth as $m=>$v){
+
+    $x = $cx + ($w/12)*($m-0.5);
+    $y = $cy + $h - ($v/$maxM)*($h-4);
+
+    if ($prevX !== null){
+        $pdf->Line($prevX,$prevY,$x,$y);
+    }
+
+    $pdf->Rect($x-1.5,$y-1.5,3,3,"F");
+
+    $prevX = $x;
+    $prevY = $y;
+}
+
+$pdf->Ln(55);
+
+/* ============================================================
+   7.8 ROOT CAUSE ANALYSIS — PIE CHART
+============================================================ */
+
+$pdf->SubTitle("7.5 Root Cause Distribution");
+
+$totalRoot = array_sum($repeatReasons);
+if ($totalRoot <= 0) $totalRoot = 1;
+
+$cx = 110;
+$cy = $pdf->GetY() + 35;
+$r  = 30;
+
+$startAngle=0;
+$i=0;
+
+foreach ($repeatReasons as $cause=>$cnt){
+
+    $pct = $cnt / $totalRoot;
+    $endAngle = $startAngle + ($pct*360);
+
+    list($rC,$gC,$bC)=pickColor($i);
+    $pdf->SetDrawColor($rC,$gC,$bC);
+
+    for ($a=$startAngle; $a<$endAngle; $a+=0.8){
+        $x = $cx + $r*cos(deg2rad($a));
+        $y = $cy + $r*sin(deg2rad($a));
+        $pdf->Line($cx,$cy,$x,$y);
+    }
+
+    $pdf->SetFillColor($rC,$gC,$bC);
+    $pdf->Rect(20, $cy - 30 + ($i*6), 4, 4, "F");
+    $pdf->SetXY(26, $cy - 30 + ($i*6));
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(60,4, utf8_decode("$cause ($cnt)"));
+
+    $startAngle = $endAngle;
+    $i++;
+}
+
+$pdf->Ln(60);
+
+/* ============================================================
+   7.9 INSIGHTS
+============================================================ */
+
+$pdf->SubTitle("7.6 Insights & Recommendations");
+
+$topType = array_key_first($repeatByType);
+$topClient = array_key_first($repeatByClient);
+
+$ins = "
+• The highest repeat volume came from test type '$topType'.
+• Client '$topClient' contributed the majority of repeat cases.
+• Repeat rate of {$repeatPct}% indicates ".($repeatPct>5?"a need for targeted improvement.":"good general performance.")."
+• Peak months for repeat activity align with workload seasonality.
+• Root causes suggest priority areas for corrective action.
+";
+
+$pdf->BodyText($ins);
+
+SkipRepeatSection:
+$pdf->Ln(5);
 
 
 
