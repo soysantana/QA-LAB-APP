@@ -35,21 +35,34 @@ class PDF extends FPDF {
     }
 
     function TableHeader($cols){
-        $this->SetFont('Arial','B',9);
-        $this->SetFillColor(230,230,230);
-        foreach ($cols as $w=>$t){
-            $this->Cell($w,7,utf8_decode($t),1,0,'C',true);
-        }
-        $this->Ln();
-        $this->SetFont('Arial','',9);
-    }
+    $this->SetFont('Arial','B',9);
+    $this->SetFillColor(230,230,230);
 
-    function TableRow($cols){
-        foreach ($cols as $w=>$t){
-            $this->Cell($w,6,utf8_decode($t),1,0,'L');
-        }
-        $this->Ln();
+    foreach ($cols as $w => $t){
+        $text = ($t === null) ? '' : utf8_decode((string)$t);
+        $this->Cell($w,7,$text,1,0,'C',true);
     }
+    $this->Ln();
+    $this->SetFont('Arial','',9);
+}
+
+function TableRow($cols){
+    foreach ($cols as $w => $t){
+
+        // Limpieza total del valor
+        if ($t === null || $t === '') {
+            $text = '';
+        } elseif (is_numeric($t)) {
+            $text = $t;  // números se imprimen sin utf8_decode
+        } else {
+            $text = utf8_decode((string)$t);
+        }
+
+        $this->Cell($w,6,$text,1,0,'L');
+    }
+    $this->Ln();
+}
+
 }
 
 /* ============================================================
@@ -124,6 +137,97 @@ $clientList = array_map(fn($c)=>$c['Client'], $clients);
 $clientStr = implode(" • ", $clientList);
 
 
+/* ============================================================
+   ALIAS MAP — Technician Name Resolver
+============================================================ */
+
+/* 1) LOAD ALIAS MAP */
+function loadTechnicianAliasMap() {
+
+    $rows = find_by_sql("
+        SELECT name, alias
+        FROM users
+        WHERE TRIM(name) <> ''
+    ");
+
+    $aliasMap = [];
+    $firstLetterCount = [];
+    $firstLetterName  = [];
+
+    foreach ($rows as $r){
+
+        $name = trim((string)$r['name']);
+        if ($name === "") continue;
+
+        $aliasRaw = trim((string)$r['alias']);
+
+        // MAPEAR ALIAS SEPARADOS POR / - , SPACE
+        if ($aliasRaw !== "") {
+            $tokens = preg_split('/[\/\-\s,\\\\]+/', strtolower($aliasRaw));
+            foreach ($tokens as $t) {
+                $t = trim($t);
+                if ($t !== "") {
+                    $aliasMap[$t] = $name;
+                }
+            }
+        }
+
+        // CONTAR INICIALES
+        $first = strtolower(substr($name,0,1));
+        if (!isset($firstLetterCount[$first])) $firstLetterCount[$first] = 0;
+        $firstLetterCount[$first]++;
+    }
+
+    // SI SOLO HAY UNA PERSONA POR ESA INICIAL → ASIGNAR DIRECTO
+    foreach ($rows as $r){
+        $name = trim((string)$r['name']);
+        if ($name === "") continue;
+
+        $first = strtolower(substr($name,0,1));
+
+        if ($firstLetterCount[$first] === 1){
+            $firstLetterName[$first] = $name;
+        }
+    }
+
+    return [$aliasMap, $firstLetterName];
+}
+
+/* 2) RESOLVE TECH BASED ON ALIAS + INITIALS */
+function resolveTechnician($aliasMap, $firstLetterName, $rawTech){
+
+    if ($rawTech === null) return null;
+
+    $clean = strtolower(trim((string)$rawTech));
+    if ($clean === "") return null;
+
+    // Soporta A, B, C | A/B | A-B | A B | A,B | A-B-C etc.
+    $parts = preg_split('/[\/\-\s,\\\\]+/', $clean);
+    $names = [];
+
+    foreach ($parts as $p){
+
+        if ($p === "") continue;
+
+        // Si coincide exactamente con alias conocido
+        if (isset($aliasMap[$p])) {
+            $names[] = $aliasMap[$p];
+            continue;
+        }
+
+        // Intentar con la inicial
+        $first = strtolower(substr($p,0,1));
+
+        if (isset($firstLetterName[$first])) {
+            $names[] = $firstLetterName[$first];
+        }
+    }
+
+    $names = array_unique($names);
+    if (empty($names)) return null;
+
+    return implode(", ", $names);
+}
 
 
 /* ============================================================
@@ -412,6 +516,7 @@ $rows = $db->query("
         Registed_Date,
         Client,
         Sample_ID,
+        Material_Type,
         Sample_Number,
         Test_Type
     FROM lab_test_requisition_form
@@ -1668,6 +1773,205 @@ $summary .= ($cv < 20 ? "a highly stable demand." : ($cv < 40 ? "a moderately co
 
 $pdf->BodyText($summary);
 $pdf->Ln(3);
+
+/* ============================================================
+   SECTION 5 — Technician Performance Overview
+============================================================ */
+
+$pdf->AddPage();
+$pdf->SectionTitle("5. Technician Performance Overview");
+
+/* ============================================================
+   LOAD TECHNICIAN ALIAS MAP
+============================================================ */
+
+list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
+
+/* ============================================================
+   RAW TECHNICIAN DATA
+============================================================ */
+
+$tecRaw = find_by_sql("
+    SELECT Technician, COUNT(*) total, 'Preparation' etapa
+    FROM test_preparation
+    WHERE YEAR(Register_Date) = '{$year}'
+      AND TRIM(IFNULL(Technician,'')) <> ''
+    GROUP BY Technician
+
+    UNION ALL
+
+    SELECT Technician, COUNT(*) total, 'Realization' etapa
+    FROM test_realization
+    WHERE YEAR(Register_Date) = '{$year}'
+      AND TRIM(IFNULL(Technician,'')) <> ''
+    GROUP BY Technician
+
+    UNION ALL
+
+    SELECT Technician, COUNT(*) total, 'Delivery' etapa
+    FROM test_delivery
+    WHERE YEAR(Register_Date) = '{$year}'
+      AND TRIM(IFNULL(Technician,'')) <> ''
+    GROUP BY Technician
+");
+
+/* ============================================================
+   NORMALIZATION → techSummary[name][stage]
+============================================================ */
+
+$techSummary = [];
+
+foreach ($tecRaw as $row){
+
+    $rawTech = trim((string)$row["Technician"]);
+    $stage   = $row["etapa"];
+    $count   = (int)$row["total"];
+
+    $resolved = resolveTechnician($aliasMap, $firstLetterName, $rawTech);
+    if ($resolved === null) continue;
+
+    $names = array_filter(array_map('trim', explode(',', $resolved)));
+
+    foreach ($names as $name){
+
+        if (!isset($techSummary[$name])) {
+            $techSummary[$name] = [
+                "Preparation" => 0,
+                "Realization" => 0,
+                "Delivery"    => 0
+            ];
+        }
+
+        $techSummary[$name][$stage] += $count;
+    }
+}
+
+/* ============================================================
+   TABLE — Technician Summary
+============================================================ */
+
+$pdf->SubTitle("5.1 Technician Activity Summary");
+
+if (empty($techSummary)) {
+
+    $pdf->BodyText("No technician activity recorded for this year.");
+    $pdf->Ln(5);
+
+} else {
+
+    ksort($techSummary);
+
+    /* ----------------------------
+       COLUMN WIDTHS — TOTAL 130 mm
+       (fits in standard layout)
+       ---------------------------- */
+
+    $wTech  = 50;   // Technician
+    $wPrep  = 20;   // Prep
+    $wReal  = 30;   // Real
+    $wDel   = 25;   // Del
+    $wTotal = 15;   // Total
+
+    /* ----------------------------
+       TABLE HEADER
+       ---------------------------- */
+    $pdf->TableHeader([
+        $wTech  => "Technician",
+        $wPrep  => "Prep",
+        $wReal  => "Real",
+        $wDel   => "Del",
+        $wTotal => "Total"
+    ]);
+
+    /* ----------------------------
+       TABLE BODY
+       ---------------------------- */
+    foreach ($techSummary as $name => $stages){
+
+        $prep = (int)$stages["Preparation"];
+        $real = (int)$stages["Realization"];
+        $del  = (int)$stages["Delivery"];
+        $tot  = $prep + $real + $del;
+
+        $pdf->TableRow([
+            $wTech  => $name,
+            $wPrep  => $prep,
+            $wReal  => $real,
+            $wDel   => $del,
+            $wTotal => $tot
+        ]);
+    }
+
+    $pdf->Ln(8);
+}
+
+
+/* ============================================================
+   BUILD TOTALS FOR PIE CHART
+============================================================ */
+
+$techTotals = [];
+
+foreach ($techSummary as $name => $stages){
+    $techTotals[$name] = $stages["Preparation"]
+                       + $stages["Realization"]
+                       + $stages["Delivery"];
+}
+
+/* Si no hay datos, evita crash */
+if (empty($techTotals)) {
+    $pdf->BodyText("No data to generate chart.");
+    $pdf->Ln(10);
+    return;
+}
+
+/* ============================================================
+   PIE CHART — Technician Contribution
+============================================================ */
+
+$pdf->SubTitle("5.2 Technician Contribution (Pie Chart)");
+
+$totalWork = array_sum($techTotals);
+if ($totalWork <= 0) $totalWork = 1;
+
+$cx = 110; 
+$cy = $pdf->GetY() + 40;
+$r  = 30;
+
+$startAngle = 0;
+$i = 0;
+
+/* Draw pie slices (approx. with lines) */
+foreach ($techTotals as $name => $val){
+
+    $pct = $val / $totalWork;
+    $endAngle = $startAngle + ($pct * 360);
+
+    list($rC,$gC,$bC) = pickColor($i);
+    $pdf->SetDrawColor($rC,$gC,$bC);
+
+    // Draw slice
+    for ($a = $startAngle; $a < $endAngle; $a += 0.8) {
+        $x = $cx + $r * cos(deg2rad($a));
+        $y = $cy + $r * sin(deg2rad($a));
+        $pdf->Line($cx, $cy, $x, $y);
+    }
+
+    // Legend
+    $pdf->SetFillColor($rC,$gC,$bC);
+    $pdf->Rect(20, $cy - 30 + ($i*6), 4, 4, "F");
+
+    $pdf->SetXY(26, $cy - 30 + ($i*6));
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(60, 4, utf8_decode("$name ($val)"));
+
+    $startAngle = $endAngle;
+    $i++;
+}
+
+$pdf->Ln(60);
+
+
 
 
 
