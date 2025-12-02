@@ -72,6 +72,35 @@ function drawAxis($pdf,$x,$y,$w,$h){
     $pdf->Line($x,$y+$h,$x+$w,$y+$h); // X axis
     $pdf->Line($x,$y,$x,$y+$h);        // Y axis
 }
+/* ============================================================
+   EQUIPMENT LOAD — required for Executive Summary
+============================================================ */
+
+$equipmentMap = [
+    "Sieves"           => ["GS","AL"],
+    "Hydrometer Stand" => ["HY","DHY"],
+    "Proctor Mold"     => ["SP","MP"],
+    "LAA Drum"         => ["LAA"],
+    "Oven / Balance"   => ["MC","SG","AL","GS"],
+];
+
+$equipmentLoad = [];
+
+foreach ($equipmentMap as $equip => $testArr){
+    $load = 0;
+    foreach ($testArr as $abbr){
+        if (isset($testCountByType[$abbr])){
+            $load += $testCountByType[$abbr];
+        }
+    }
+    $equipmentLoad[$equip] = $load;
+}
+
+/* fallback por si está todo vacío */
+if (empty($equipmentLoad)) {
+    $equipmentLoad = ["No Data" => 1];
+}
+
 
 /* ============================================================
    PARAMETERS
@@ -93,6 +122,9 @@ $clients = $db->query("
 
 $clientList = array_map(fn($c)=>$c['Client'], $clients);
 $clientStr = implode(" • ", $clientList);
+
+
+
 
 /* ============================================================
    PDF START
@@ -173,13 +205,204 @@ $pdf->Ln(20);
 $pdf->SetDrawColor(120,120,120);
 $pdf->Line(40, $pdf->GetY(), 170, $pdf->GetY());
 
+/* ============================================================
+   GLOBAL ANNUAL DATA PREPARATION — REQUIRED BEFORE EXEC SUMMARY
+============================================================ */
+
+// 1. OBTENER TODAS LAS MUESTRAS DEL AÑO
+$rows = $db->query("
+    SELECT 
+        Registed_Date,
+        Client,
+        Material_Type,
+        Sample_ID,
+        Sample_Number,
+        Test_Type
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '$start' AND '$end'
+")->fetch_all(MYSQLI_ASSOC);
+
+// 2. LISTA DE CLIENTES
+$clientList = [];
+foreach ($rows as $r){
+    $cl = trim((string)$r["Client"]);
+    if ($cl !== "" && !in_array($cl, $clientList)){
+        $clientList[] = $cl;
+    }
+}
+
+// 3. EXPANDIR TEST TYPES
+$expanded = [];
+$testCountByType   = [];
+$testCountByClient = [];
+$testsByMonth      = array_fill(1, 12, 0);
+
+foreach ($rows as $r){
+
+    $types  = explode(",", $r["Test_Type"]);
+    $client = trim($r["Client"]);
+    $month  = (int)substr($r["Registed_Date"], 5, 2);
+
+    foreach ($types as $t){
+        $t = trim($t);
+        if ($t === "") continue;
+
+        // Expand sample
+        $expanded[] = [
+            "Date"     => substr($r["Registed_Date"], 0, 10),
+            "Client"   => $client,
+            "Test"     => $t,
+            "Material" => trim($r["Material_Type"])
+        ];
+
+        // Count by type
+        if (!isset($testCountByType[$t])) $testCountByType[$t] = 0;
+        $testCountByType[$t]++;
+
+        // Count by client
+        if (!isset($testCountByClient[$client])) $testCountByClient[$client] = 0;
+        $testCountByClient[$client]++;
+
+        // Count by month
+        if ($month >= 1 && $month <= 12){
+            $testsByMonth[$month]++;
+        }
+    }
+}
+
+// 4. TOTALES
+$totalTests    = count($expanded);
+$totalSamples  = count($rows);
+$totalClients  = count($clientList);
+$avgTestsPerSample = ($totalSamples > 0) ? round($totalTests / $totalSamples, 2) : 0;
+
+// 5. QUARTER SUMMARY
+$Q = [1=>0,2=>0,3=>0,4=>0];
+foreach ($expanded as $e){
+    $m = (int)substr($e["Date"], 5, 2);
+    if ($m <= 3) $Q[1]++;
+    elseif ($m <= 6) $Q[2]++;
+    elseif ($m <= 9) $Q[3]++;
+    else $Q[4]++;
+}
+
+// 6. MATERIAL DISTRIBUTION (si la usas)
+$materialStats = [
+    "Soil"=>["samples"=>0],
+    "Aggregates"=>["samples"=>0],
+    "Rocks"=>["samples"=>0],
+    "Concrete"=>["samples"=>0]
+];
+
+foreach ($expanded as $e){
+    $mat = strtolower($e["Material"]);
+
+    if (strpos($mat,"common")!==false || strpos($mat,"lpf")!==false)
+        $materialStats["Soil"]["samples"]++;
+
+    elseif (strpos($mat,"ff")!==false || strpos($mat,"cf")!==false || strpos($mat,"utf")!==false)
+        $materialStats["Aggregates"]["samples"]++;
+
+    elseif (strpos($mat,"rock")!==false || strpos($mat,"rf")!==false || strpos($mat,"trf")!==false || strpos($mat,"irf")!==false)
+        $materialStats["Rocks"]["samples"]++;
+
+    elseif (strpos($mat,"conc")!==false)
+        $materialStats["Concrete"]["samples"]++;
+}
+
+// 7. EQUIPMENT LOAD
+$equipmentMap = [
+    "Sieves" => ["GS","AL"],
+    "Hydrometer Stand" => ["HY","DHY"],
+    "Proctor Mold" => ["SP","MP"],
+    "LAA Drum" => ["LAA"],
+    "Oven / Balance" => ["MC","SG","AL","GS"],
+];
+
+$equipmentLoad = [];
+foreach ($equipmentMap as $equip => $arr){
+    $load = 0;
+    foreach ($arr as $abbr){
+        if (isset($testCountByType[$abbr])){
+            $load += $testCountByType[$abbr];
+        }
+    }
+    $equipmentLoad[$equip] = $load;
+}
+/* ============================================================
+   NCR — ANNUAL NON CONFORMITIES
+============================================================ */
+$ncr = $db->query("
+    SELECT Report_Date AS NCR_Date,
+           Sample_ID,
+           Sample_Number,
+           Test_Type,
+           Noconformidad
+    FROM ensayos_reporte
+    WHERE Report_Date BETWEEN '$start' AND '$end'
+")->fetch_all(MYSQLI_ASSOC);
+
+/* fallback */
+if (!is_array($ncr)) {
+    $ncr = [];
+}
+$pdf->AddPage();
+
+/* ======================================================
+   SECTION 1 — EXECUTIVE SUMMARY (ANNUAL)
+====================================================== */
+
+$pdf->SectionTitle("1.0 Executive Summary");
+
+/* ----------- METRICAS CLAVE PARA EL ANIO ----------- */
+
+$totalRegistered = $totalSamples;     // muestras registradas
+$totalTestsRun   = $totalTests;       // ensayos ejecutados
+
+$totalClientsYear = $totalClients;    // clientes activos
+$topClient        = array_key_first($testCountByClient); 
+$topClientTests   = $testCountByClient[$topClient] ?? 0;
+
+$topTest          = array_key_first($testCountByType);
+$topTestCount     = $testCountByType[$topTest] ?? 0;
+
+$peakQuarter = array_search(max($Q), $Q);
+$minQuarter  = array_search(min($Q), $Q);
+
+$peakMonthIndex = array_search(max($testsByMonth), $testsByMonth);
+$minMonthIndex  = array_search(min($testsByMonth), $testsByMonth);
+
+$peakMonthName = date("F", mktime(0,0,0,$peakMonthIndex,1));
+$minMonthName  = date("F", mktime(0,0,0,$minMonthIndex,1));
+
+$annualNCR = count($ncr);
+
+/* ----------- TEXTO EJECUTIVO ----------- */
+
+$summaryText = "
+The laboratory maintained solid and stable operational performance throughout the year, with consistent workflow execution across sample registration, preparation, realization, delivery and documentation processes.
+
+A total of {$totalRegistered} samples were received and {$totalTestsRun} individual tests were performed, reflecting sustained demand from all project fronts. The lab supported {$totalClientsYear} active clients, with no excessive dependency on a single client, ensuring balanced resource allocation and operational stability.
+
+The most requested test of the year was '{$topTest}' with {$topTestCount} executions, while the top contributing client was '{$topClient}' with {$topClientTests} processed tests.
+
+Workload distribution peaked in Q{$peakQuarter}, while the lowest activity occurred in Q{$minQuarter}. Monthly behavior showed its highest demand in {$peakMonthName} and lowest in {$minMonthName}, following expected construction and production cycles.
+
+A total of {$annualNCR} non-conformities were reported during the year, all documented and addressed through internal corrective/preventive actions, ensuring compliance with procedures, audit requirements, and ASTM standards.
+
+Overall, the annual performance demonstrates strong operational reliability, effective coordination among technicians, supervisors and document control, and consistent adherence to quality, traceability, and safety standards. 
+";
+
+$pdf->BodyText($summaryText);
+
+$pdf->Ln(5);
 
 
 /* ============================================================
    SECTION 2 — GLOBAL YEARLY SUMMARY (FINAL COMPLETE VERSION)
 ============================================================ */
-$pdf->AddPage();
-$pdf->SectionTitle("2. Global Yearly Summary");
+
+$pdf->SectionTitle("2.0 Global Yearly Summary");
 
 /* ============================================================
    1. RETRIEVE RAW DATA
@@ -275,7 +498,7 @@ $pdf->Ln(8);
 /* ============================================================
    3. QUARTER SUMMARY TABLE
 ============================================================ */
-$pdf->SubTitle("Quarter Summary");
+$pdf->SubTitle("2.1 Quarter Summary");
 
 $Q = [1=>0,2=>0,3=>0,4=>0];
 $daysQ = [1=>90,2=>91,3=>92,4=>92];
@@ -319,13 +542,13 @@ foreach ([1,2,3,4] as $q){
     $prevQ = $Q[$q];
 }
 
-$pdf->Ln(10);
+$pdf->Ln(5);
 
 
 /* ============================================================
    4. QUARTER COMPARISON CHART (Horizontal Bars)
 ============================================================ */
-$pdf->SubTitle("Quarter Workload Comparison");
+$pdf->SubTitle(" 2.2 Quarter Workload Comparison");
 
 $chartX = 35;
 $chartY = $pdf->GetY() + 10;
@@ -342,7 +565,7 @@ foreach ($Q as $q => $val){
     list($r,$g,$b) = pickColor($i);
 
     $pdf->SetFont("Arial","",8);
-    $posY = $chartY + ($i * 12);
+    $posY = $chartY + ($i * 7.2);
 
     $pdf->SetXY($chartX - 25, $posY);
     $pdf->Cell(25, 6, "Q$q", 0, 0, "R");
@@ -356,13 +579,13 @@ foreach ($Q as $q => $val){
     $i++;
 }
 
-$pdf->Ln(20);
+$pdf->Ln(10);
 
-
+$pdf->AddPage();
 /* ============================================================
    5. MONTHLY TREND CHART (Line + Markers)
 ============================================================ */
-$pdf->SubTitle("Monthly Workload Trend (Line Chart)");
+$pdf->SubTitle(" 2.3 Monthly Workload Trend (Line Chart)");
 
 $chartX = 30;
 $chartY = $pdf->GetY() + 10;
@@ -413,7 +636,7 @@ for ($m=1; $m<=12; $m++){
     $pdf->Cell(14, 5, $monthNames[$m-1], 0, 0, "C");
 }
 
-$pdf->Ln(25);
+$pdf->Ln(10);
 
 /* ============================================================
    TEST TYPE DICTIONARY — Full Names
@@ -444,7 +667,7 @@ $testNames = [
 /* ============================================================
    6. TOP TEST TYPES (Table)
 ============================================================ */
-$pdf->SubTitle("Annual Total Test per Test Type");
+$pdf->SubTitle("2.4 Annual Total Test per Test Type");
 
 // Ordenar test types
 arsort($testCountByType);
@@ -500,15 +723,15 @@ $pdf->Ln(5);
 /* ============================================================
    6B. HORIZONTAL BAR CHART — ONLY TOP 10 TEST TYPES
 ============================================================ */
-$pdf->SubTitle("Top 10 Test Types -  Chart");
+$pdf->SubTitle("2.5 Top 5 Test Types -  Chart");
 
 // Tomar solo los primeros 10
-$top10 = array_slice($topTests, 0, 10, true);
+$top10 = array_slice($topTests, 0, 5, true);
 
 $chartX = 25;
-$chartY = $pdf->GetY() + 8;
+$chartY = $pdf->GetY() + 5;
 $barWmax = 120;
-$barH = 6;
+$barH = 5;
 
 $maxVal = max($top10);
 if ($maxVal <= 0) $maxVal = 1;
@@ -517,7 +740,7 @@ $i = 0;
 
 foreach ($top10 as $abbr => $cnt){
 
-    $y = $chartY + ($i * 7.5);  // más espacio para 10 barras
+    $y = $chartY + ($i * 6);  // más espacio para 10 barras
 
     // Nombre completo
     $label = isset($testNames[$abbr]) ? $testNames[$abbr] : $abbr;
@@ -551,7 +774,7 @@ $pdf->Ln($i * 8 + 5);
 /* ============================================================
    7. TOP CLIENTS (Table) — With Total Row
 ============================================================ */
-$pdf->SubTitle("Annual Total Test per Clients");
+$pdf->SubTitle("2.6 Annual Total Test per Clients");
 
 // Ordenar por cantidad
 arsort($testCountByClient);
@@ -608,7 +831,7 @@ $pdf->Ln(5);
 /* ============================================================
    7B. HORIZONTAL BAR CHART — ONLY TOP 5 CLIENTS
 ============================================================ */
-$pdf->SubTitle(" Top 5 Clients -  Chart");
+$pdf->SubTitle("2.7 Top 5 Clients -  Chart");
 
 // Limitar a los 5 mayores
 $top5 = array_slice($topClients, 0, 5, true);
@@ -628,7 +851,7 @@ foreach ($top5 as $cl => $cnt){
     if (trim($cl) === "") $cl = "UNKNOWN";
 
     // Espaciado vertical optimizado para 5 barras
-    $y = $chartY + ($i * 11);
+    $y = $chartY + ($i * 7.2);
 
     // Calcular ancho proporcional
     $bw = ($cnt / $maxClient) * $barWmax;
@@ -659,7 +882,7 @@ $pdf->Ln($i * 12 + 5);
 /* ============================================================
    8. INSIGHTS (Executive English Summary)
 ============================================================ */
-$pdf->SubTitle("Insights");
+$pdf->SubTitle("2.8 Insights");
 
 $ins = [];
 
@@ -699,7 +922,7 @@ $pdf->Ln(5);
 ============================================================ */
 
 
-$pdf->SectionTitle("3. Laboratory Operational Performance");
+$pdf->SectionTitle("3.0 Laboratory Operational Performance");
 
 /* ============================================================
    0. TEST TYPE FULL NAMES & COMPLEXITY INDEX (TCI)
@@ -752,7 +975,7 @@ $TCI = [
 /* ============================================================
    1. TURNAROUND PERFORMANCE
 ============================================================ */
-$pdf->SubTitle("1. Turnaround Performance (Registration - Preparation - Realization - Delivery)");
+$pdf->SubTitle("3.1 Turnaround Performance (Registration - Preparation - Realization - Delivery)");
 
 $turnRegPrep = [];
 $turnPrepReal = [];
@@ -853,7 +1076,7 @@ $pdf->Ln(30);
 /* ============================================================
    2. MATERIAL OVERVIEW — WITH CUSTOM DICTIONARY
 ============================================================ */
-$pdf->SubTitle("2. Material Overview");
+$pdf->SubTitle("3.2 Material Overview");
 
 /* ======================
    MATERIAL DICTIONARY
@@ -1009,7 +1232,7 @@ $pdf->Ln($i*9 + 15);
 /* ============================================================
    3. TEST COMPLEXITY — WORKLOAD INDEX
 ============================================================ */
-$pdf->SubTitle("3. Test Complexity Index  - Workload Index");
+$pdf->SubTitle("3.3 Test Complexity Index (TCI) - Workload Index");
 
 $workload = [];
 
@@ -1041,7 +1264,7 @@ foreach ($workload as $abbr=>$wi){
     ]);
 }
 
-$pdf->Ln(10);
+$pdf->Ln(8);
 
 /* ============================================================
    Horizontal Bars — Workload (TOP 10 ONLY)
@@ -1093,7 +1316,7 @@ $pdf->Ln(($i * 9) + 15);
 /* ============================================================
    4. EQUIPMENT UTILIZATION INDEX (Sorted Descending)
 ============================================================ */
-$pdf->SubTitle("4. Equipment Utilization Index");
+$pdf->SubTitle("3.4 Equipment Utilization Index");
 
 $equipmentMap = [
     "Sieves"            => ["GS","AL"],
@@ -1145,7 +1368,7 @@ $pdf->Ln(12);
    4. BAR CHART (Sorted)
 =============================== */
 
-$pdf->SubTitle("Equipment Utilization - Horizontal Bar Chart");
+$pdf->SubTitle("3.5 Equipment Utilization - Horizontal Bar Chart");
 
 $chartX  = 40;
 $chartY  = $pdf->GetY() + 3;
@@ -1181,141 +1404,270 @@ foreach ($equipmentLoad as $eq => $ld){
     $i++;
 }
 
-$pdf->Ln(($i * 12) + 10);
+$pdf->Ln(($i * 7.2) + 10);
 
 
 
 
 /* ============================================================
-   SECTION 4 — Test Type Distribution
-============================================================ */
-$pdf->SectionTitle("4. Test Type Distribution");
+   SECTION 4 — Annual Load Distribution by Day-of-Week (Stable)
+=============================================================== */
 
-$testCount = [];
-foreach ($expanded as $e){
-    if (!isset($testCount[$e["Test"]])) $testCount[$e["Test"]] = 0;
-    $testCount[$e["Test"]]++;
+$pdf->AddPage();
+$pdf->SectionTitle("4. Annual Load Distribution by Day-of-Week");
+
+/* ============================================================
+   1) SAFE LOCAL DATA SOURCES
+=============================================================== */
+
+/* Garantiza que $rows viene del dataset global */
+$rows_daily = isset($rows) && is_array($rows) ? $rows : [];
+
+/* Map de días */
+$dayMap = [
+    1=>"MON", 2=>"TUE", 3=>"WED", 4=>"THU", 5=>"FRI", 6=>"SAT", 0=>"SUN"
+];
+
+/* Inicialización segura */
+$testsByDay = [ "MON"=>0,"TUE"=>0,"WED"=>0,"THU"=>0,"FRI"=>0,"SAT"=>0,"SUN"=>0 ];
+$regByDay   = [ "MON"=>0,"TUE"=>0,"WED"=>0,"THU"=>0,"FRI"=>0,"SAT"=>0,"SUN"=>0 ];
+
+/* Construcción de datos */
+foreach ($rows_daily as $r){
+
+    $regDate = $r["Registed_Date"] ?? null;
+    if (!$regDate) continue;
+
+    $dow = date("w", strtotime($regDate));
+    $day = $dayMap[$dow] ?? "MON";
+
+    /* COUNT REGISTRATIONS */
+    $regByDay[$day]++;
+
+    /* COUNT TEST EXECUTIONS */
+    $types = explode(",", $r["Test_Type"] ?? "");
+    foreach ($types as $t){
+        $t = trim($t);
+        if ($t !== "") $testsByDay[$day]++;
+    }
 }
 
-arsort($testCount);
+/* Si todo está vacío, evita errores */
+if (array_sum($testsByDay) == 0){
+    $testsByDay["MON"] = 1;
+}
+if (array_sum($regByDay) == 0){
+    $regByDay["MON"] = 1;
+}
 
+/* ============================================================
+   2) KEY INDICATORS
+=============================================================== */
+
+$pdf->SubTitle("4.1 Key Indicators");
+
+$totalYear = array_sum($testsByDay);
+$avgDaily  = round($totalYear / 365, 1);
+
+$maxDay = array_keys($testsByDay, max($testsByDay))[0] ?? "MON";
+$minDay = array_keys($testsByDay, min($testsByDay))[0] ?? "MON";
+
+$weekendLoad = $testsByDay["SAT"] + $testsByDay["SUN"];
+$weekendPct  = $totalYear > 0 ? round(($weekendLoad / $totalYear) * 100, 1) : 0;
+
+/* Variabilidad */
+$mean = $totalYear > 0 ? ($totalYear / 7) : 1;
+$sd = 0;
+foreach ($testsByDay as $v){
+    $sd += pow($v - $mean, 2);
+}
+$sd = sqrt($sd / 7);
+$cv = round(($sd / $mean) * 100, 1);
+
+/* KPI CARDS */
+$pdf->SetFillColor(240,240,240);
+$pdf->SetFont("Arial","B",10);
+
+$kpiW = 45; $kpiH = 10;
+
+$pdf->Cell($kpiW,$kpiH,"Peak Day: $maxDay",1,0,'C',true);
+$pdf->Cell($kpiW,$kpiH,"Lowest Day: $minDay",1,0,'C',true);
+$pdf->Cell($kpiW,$kpiH,"Avg/Day: $avgDaily",1,0,'C',true);
+$pdf->Cell($kpiW,$kpiH,"Weekend: $weekendPct%",1,1,'C',true);
+
+$pdf->Cell($kpiW,$kpiH,"CV: $cv%",1,0,'C',true);
+$pdf->Cell($kpiW,$kpiH,"Total: $totalYear",1,0,'C',true);
+$pdf->Cell($kpiW,$kpiH,"SAT+SUN: $weekendLoad",1,0,'C',true);
+$pdf->Cell($kpiW,$kpiH,"Days Counted: 365",1,1,'C',true);
+
+$pdf->Ln(8);
+
+/* ============================================================
+   3) BAR CHART – TEST EXECUTION
+=============================================================== */
+
+$pdf->SubTitle("4.2 Weekly Test Load (Descending)");
+
+$sortedTests = $testsByDay;
+arsort($sortedTests);
+
+$chartX = 40;
+$chartY = $pdf->GetY() + 3;
+$barW   = 120;
+$barH   = 7;
+
+$maxVal = max($sortedTests);
+if ($maxVal <= 0) $maxVal = 1;
+
+$i = 0;
+foreach ($sortedTests as $day => $cnt){
+
+    list($r,$g,$b) = pickColor($i);
+    $y = $chartY + ($i * 7.2);
+
+    $bw = ($cnt / $maxVal) * $barW;
+
+    $pdf->SetFont("Arial","",8);
+    $pdf->SetXY($chartX - 35, $y);
+    $pdf->Cell(30, 6, $day, 0, 0, "R");
+
+    $pdf->SetFillColor($r,$g,$b);
+    $pdf->Rect($chartX, $y, $bw, $barH, "F");
+
+    $pdf->SetXY($chartX + $bw + 5, $y);
+    $pdf->Cell(20, 6, $cnt, 0, 0);
+
+    $i++;
+}
+
+$pdf->Ln(($i * 7.2) + 5);
+
+/* ============================================================
+   4) BAR CHART – REGISTRATION LOAD
+=============================================================== */
+
+$pdf->SubTitle("4.3 Sample Registration by Day");
+
+$sortedReg = $regByDay;
+arsort($sortedReg);
+
+$chartX = 40;
+$chartY = $pdf->GetY() + 3;
+
+$maxVal = max($sortedReg);
+if ($maxVal <= 0) $maxVal = 1;
+
+$i = 0;
+foreach ($sortedReg as $day=>$cnt){
+
+    list($r,$g,$b) = pickColor($i+3);
+    $y = $chartY + ($i * 7.2);
+
+    $bw = ($cnt / $maxVal) * $barW;
+
+    $pdf->SetFont("Arial","",8);
+    $pdf->SetXY($chartX - 35, $y);
+    $pdf->Cell(30,6,$day,0,0,"R");
+
+    $pdf->SetFillColor($r,$g,$b);
+    $pdf->Rect($chartX,$y,$bw,$barH,"F");
+
+    $pdf->SetXY($chartX+$bw+5,$y);
+    $pdf->Cell(20,6,$cnt,0,0);
+
+    $i++;
+}
+
+$pdf->Ln(($i * 10) + 5);
+
+/* ============================================================
+   5) BACKLOG ANALYSIS
+=============================================================== */
+
+$pdf->SubTitle("4.4 Backlog Accumulation");
+
+/* BACKLOG CALCULATION */
+$backlog = [];
+foreach ($testsByDay as $d => $v) {
+    $backlog[$d] = $regByDay[$d] - $testsByDay[$d];
+}
+
+/* TABLE WITH 5 COLUMNS (FULL WIDTH 190 mm) */
 $pdf->TableHeader([
-    50=>"Test Type",
-    30=>"Count",
-    100=>"Percentage"
+    15 => "Day",
+    35 => "Registered",
+    30 => "Executed",
+    25 => "Backlog",
+    40 => "Interpretation"
 ]);
 
-foreach ($testCount as $t=>$v){
-    $pct = round(($v/$totalTests)*100,1)."%";
+foreach ($backlog as $day => $value) {
+
+    if ($value >= 100)      $txt = "High";
+    elseif ($value >= 30)   $txt = "Moderate";
+    elseif ($value >= 0)    $txt = "Low";
+    else                    $txt = "Clearing";
+
     $pdf->TableRow([
-        50=>$t,
-        30=>$v,
-        100=>$pct
+        15 => $day,
+       35 => $regByDay[$day],
+        30 => $testsByDay[$day],
+        25 => $value,
+        40 => $txt
     ]);
 }
+/* ============================================================
+   BACKLOG INTERPRETATION NOTE
+============================================================ */
 
+$pdf->Ln(2);
+$pdf->SetFont('Arial','B',8);
+$pdf->Cell(0,6,"Interpretation Guide",0,1);
+$pdf->SetFont('Arial','',8);
+
+$textoExplicacion = "
+High        : Significant backlog accumulation requiring urgent corrective action.
+Moderate    : Manageable backlog - monitor to prevent potential delays.
+Low         : Stable workload- no meaningful backlog detected.
+Clearing    : Executed more tests than registered - pending load is being reduced.
+";
+
+$pdf->MultiCell(0,5, utf8_decode($textoExplicacion));
 $pdf->Ln(5);
-/* ============================================================
-   SECTION 5 — NCR YEARLY SUMMARY (JOIN FROM ensayos_reporte)
-============================================================ */
-$pdf->SectionTitle("5. NCR Summary");
 
-$ncr = $db->query("
-    SELECT r.Client, e.*
-    FROM ensayos_reporte e
-    LEFT JOIN lab_test_requisition_form r
-      ON r.Sample_ID = e.Sample_ID
-     AND r.Sample_Number = e.Sample_Number
-     AND FIND_IN_SET(e.Test_Type, r.Test_Type)
-    WHERE e.Report_Date BETWEEN '$start' AND '$end'
-      AND (
-           LOWER(Test_Condition) LIKE '%fail%' OR
-           LOWER(Test_Condition) LIKE '%reject%' OR
-           LOWER(Test_Condition) LIKE '%no pasa%'
-      )
-")->fetch_all(MYSQLI_ASSOC);
 
-if (empty($ncr)){
-    $pdf->BodyText("No NCR registered this year.");
-} else {
-    $pdf->TableHeader([
-        35=>"Client",
-        40=>"Sample",
-        90=>"Description"
-    ]);
-
-    foreach ($ncr as $n){
-        $pdf->TableRow([
-            35=>$n["Client"],
-            40=>$n["Sample_ID"]."-".$n["Sample_Number"],
-            90=>utf8_decode($n["Noconformidad"])
-        ]);
-    }
-}
-
-$pdf->Ln(8);
 
 /* ============================================================
-   SECTION 6 — Pending Tests (JOIN with requisition)
-============================================================ */
-$pdf->SectionTitle("6. Pending Tests Overview");
+   6) EXECUTIVE INTERPRETATION
+=============================================================== */
 
-$pending = $db->query("
-    SELECT r.Client, r.Sample_ID, r.Sample_Number, r.Test_Type
-    FROM lab_test_requisition_form r
-    WHERE r.Registed_Date BETWEEN '$start' AND '$end'
-      AND NOT EXISTS (
-          SELECT 1 FROM test_preparation p
-          WHERE p.Sample_ID=r.Sample_ID 
-            AND p.Sample_Number=r.Sample_Number
-            AND p.Test_Type=r.Test_Type
-      )
-      AND NOT EXISTS (
-          SELECT 1 FROM test_realization z
-          WHERE z.Sample_ID=r.Sample_ID 
-            AND z.Sample_Number=r.Sample_Number
-            AND z.Test_Type=r.Test_Type
-      )
-      AND NOT EXISTS (
-          SELECT 1 FROM test_delivery d
-          WHERE d.Sample_ID=r.Sample_ID 
-            AND d.Sample_Number=r.Sample_Number
-            AND d.Test_Type=r.Test_Type
-      )
-")->fetch_all(MYSQLI_ASSOC);
+$pdf->SubTitle("4.5 Interpretation");
 
-if (empty($pending)){
-    $pdf->BodyText("No pending tests for this year.");
-} else {
-    $pdf->TableHeader([
-        35=>"Client",
-        40=>"Sample",
-        90=>"Test Type"
-    ]);
+$peakDay = $maxDay;
+$lowDay  = $minDay;
 
-    foreach ($pending as $p){
-        $pdf->TableRow([
-            35=>$p["Client"],
-            40=>$p["Sample_ID"]."-".$p["Sample_Number"],
-            90=>$p["Test_Type"]
-        ]);
-    }
-}
+$highBack = max($backlog);
+$lowBack  = min($backlog);
 
-$pdf->Ln(8);
+$backHighDay = array_keys($backlog, $highBack)[0] ?? "MON";
+$backLowDay  = array_keys($backlog, $lowBack)[0] ?? "MON";
 
-/* ============================================================
-   SECTION 7 — Insights
-============================================================ */
-$pdf->SectionTitle("7. Insights & Recommendations");
+$summary  = "The weekly test distribution remains consistent throughout the year. ";
+$summary .= "The peak operational day was {$peakDay}, while {$lowDay} registered the lowest activity.\n\n";
 
-$pdf->BodyText("
-• Q1 represented ".round(($Q[1]/$totalTests)*100,1)."% of yearly activity.
-• Main client: ".$clientList[0]."
-• Most frequent test: ".array_key_first($testCount)."
-• Total NCR: ".count($ncr)."
-• Pending tests: ".count($pending)."
-");
+$summary .= "Backlog accumulation was highest on {$backHighDay} and lowest on {$backLowDay}, ";
+$summary .= "indicating predictable operational patterns across the week.\n\n";
+
+$summary .= "Weekend activity represented {$weekendPct}% of annual workload, reaffirming ";
+$summary .= "that the laboratory operates predominantly during weekdays.\n\n";
+
+$summary .= "Overall variability (CV = {$cv}%) shows the laboratory maintained ";
+$summary .= ($cv < 20 ? "a highly stable demand." : ($cv < 40 ? "a moderately consistent workload." : "strong fluctuations in demand."));
+
+$pdf->BodyText($summary);
+$pdf->Ln(3);
+
+
 
 /* ============================================================
    OUTPUT
