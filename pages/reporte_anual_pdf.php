@@ -1981,72 +1981,186 @@ foreach ($techSummaryOrdered as $name => $stages){
 if (empty($techTotals)) {
     $pdf->BodyText("No data available to generate technician contribution chart.");
     $pdf->Ln(10);
-    goto SkipTechChart;
+   
+}
+
+/* ============================================================
+   5.2 PROCESS-SPECIFIC CHARTS
+============================================================ */
+
+$pdf->SubTitle("5.2 Technician Contribution per Process");
+
+/* ----------------------------------------------
+   PREPARATION CHART
+---------------------------------------------- */
+
+$pdf->SetFont("Arial","B",10);
+$pdf->Cell(0,6,"Preparation Workload",0,1);
+
+$prepData = [];
+foreach ($techSummaryOrdered as $name=>$stages){
+    $prepData[$name] = $stages["Preparation"];
+}
+
+arsort($prepData);
+
+if (array_sum($prepData) == 0){
+    $pdf->BodyText("No preparation data recorded.");
+} else {
+
+    $chartX = 45;
+    $chartY = $pdf->GetY() + 4;
+    $barW   = 110;
+    $barH   = 6;
+
+    $maxVal = max($prepData);
+    if ($maxVal <= 0) $maxVal = 1;
+
+    $i = 0;
+    foreach ($prepData as $name => $val){
+
+        list($rC,$gC,$bC) = pickColor($i);
+
+        $y = $chartY + ($i * 8.5);
+        $bw = ($val / $maxVal) * $barW;
+
+        $pdf->SetXY($chartX - 40, $y);
+        $pdf->SetFont("Arial","",8);
+        $pdf->Cell(38, 5, utf8_decode($name), 0, 0, "R");
+
+        $pdf->SetFillColor($rC,$gC,$bC);
+        $pdf->Rect($chartX, $y, $bw, $barH, "F");
+
+        $pdf->SetXY($chartX + $bw + 4, $y);
+        $pdf->Cell(10, 5, round($val,1));
+
+        $i++;
+    }
+
+    $pdf->Ln(($i * 9) + 3);
+}
+
+/* ----------------------------------------------
+   REALIZATION CHART
+---------------------------------------------- */
+
+$pdf->SetFont("Arial","B",10);
+$pdf->Cell(0,6,"Realization Workload",0,1);
+
+$realData = [];
+foreach ($techSummaryOrdered as $name=>$stages){
+    $realData[$name] = $stages["Realization"];
+}
+
+arsort($realData);
+
+if (array_sum($realData) == 0){
+    $pdf->BodyText("No realization data recorded.");
+} else {
+
+    $chartX = 45;
+    $chartY = $pdf->GetY() + 4;
+    $barW   = 110;
+    $barH   = 6;
+
+    $maxVal = max($realData);
+    if ($maxVal <= 0) $maxVal = 1;
+
+    $i = 0;
+    foreach ($realData as $name => $val){
+
+        list($rC,$gC,$bC) = pickColor($i+3);
+
+        $y = $chartY + ($i * 8.5);
+        $bw = ($val / $maxVal) * $barW;
+
+        $pdf->SetXY($chartX - 40, $y);
+        $pdf->SetFont("Arial","",8);
+        $pdf->Cell(38, 5, utf8_decode($name), 0, 0, "R");
+
+        $pdf->SetFillColor($rC,$gC,$bC);
+        $pdf->Rect($chartX, $y, $bw, $barH, "F");
+
+        $pdf->SetXY($chartX + $bw + 4, $y);
+        $pdf->Cell(10, 5, round($val,1));
+
+        $i++;
+    }
+
+    $pdf->Ln(($i * 9) + 3);
+}
+
+/* ----------------------------------------------
+   DELIVERY CHART
+---------------------------------------------- */
+
+$pdf->SetFont("Arial","B",10);
+$pdf->Cell(0,6,"Delivery Workload",0,1);
+
+$delData = [];
+foreach ($techSummaryOrdered as $name=>$stages){
+    $delData[$name] = $stages["Delivery"];
+}
+
+arsort($delData);
+
+if (array_sum($delData) == 0){
+    $pdf->BodyText("No delivery data recorded.");
+} else {
+
+    $chartX = 45;
+    $chartY = $pdf->GetY() + 4;
+    $barW   = 110;
+    $barH   = 6;
+
+    $maxVal = max($delData);
+    if ($maxVal <= 0) $maxVal = 1;
+
+    $i = 0;
+    foreach ($delData as $name => $val){
+
+        list($rC,$gC,$bC) = pickColor($i+5);
+
+        $y = $chartY + ($i * 8.5);
+        $bw = ($val / $maxVal) * $barW;
+
+        $pdf->SetXY($chartX - 40, $y);
+        $pdf->SetFont("Arial","",8);
+        $pdf->Cell(38, 5, utf8_decode($name), 0, 0, "R");
+
+        $pdf->SetFillColor($rC,$gC,$bC);
+        $pdf->Rect($chartX, $y, $bw, $barH, "F");
+
+        $pdf->SetXY($chartX + $bw + 4, $y);
+        $pdf->Cell(10, 5, round($val,1));
+
+        $i++;
+    }
+
+    $pdf->Ln(($i * 9) + 3);
 }
 
 
 /* ============================================================
-   5.7 HORIZONTAL BAR CHART — Technician Contribution
+   5.4 Insights (Based on 3-process analysis)
 ============================================================ */
+$pdf->SubTitle("5.4 Insights");
 
-$pdf->SubTitle("5.2 Technician Contribution (Workload Share)");
+$topPrep = array_key_first($prepData);
+$topReal = array_key_first($realData);
+$topDel  = array_key_first($delData);
 
-$chartX = 40;
-$chartY = $pdf->GetY() + 6;
-$barW   = 110;
-$barH   = 6;
+$pdf->BodyText("
+- In Preparation, the leading contributor was **$topPrep**, indicating stronger participation in sample setup activities.
 
-$maxVal = max($techTotals);
-if ($maxVal <= 0) $maxVal = 1;
+- In Realization, the highest execution workload was handled by **$topReal**, reflecting primary involvement in final test execution.
 
-$i = 0;
-foreach ($techTotals as $name => $val){
+- Delivery activities were dominated by **$topDel**, suggesting strong documentation and reporting performance.
 
-    list($rC,$gC,$bC) = pickColor($i);
+- The distribution shows whether technicians tend to specialize in specific steps or maintain balanced involvement.
 
-    $y = $chartY + ($i * 9);
-    $bw = ($val / $maxVal) * $barW;
-
-    $pdf->SetFillColor($rC,$gC,$bC);
-
-    $pdf->SetFont("Arial","",8);
-    $pdf->SetXY($chartX - 35, $y);
-    $pdf->Cell(32, 5, utf8_decode($name), 0, 0, "R");
-
-    $pdf->Rect($chartX, $y, $bw, $barH, "F");
-
-    $pdf->SetXY($chartX + $bw + 4, $y);
-    $pdf->Cell(15, 5, round($val,1), 0, 0);
-
-    $i++;
-}
-
-$pdf->Ln(($i * 9) + 12);
-
-
-
-/* ============================================================
-   5.8 INSIGHTS
-============================================================ */
-
-SkipTechChart:
-
-if (!empty($techTotals)) {
-
-    $pdf->SubTitle("5.3 Insights");
-
-    $topTech      = array_key_first($techTotals);
-    $topValue     = round($techTotals[$topTech],1);
-
-    $lowestTech   = array_key_last($techTotals);
-    $lowestValue  = round($techTotals[$lowestTech],1);
-
-    $pdf->BodyText("• The technician with the highest workload was **$topTech** with **$topValue** process steps.");
-    $pdf->BodyText("• The lowest workload was recorded by **$lowestTech** (**$lowestValue**).");
-    $pdf->BodyText("• Non-technician names and invalid aliases were automatically redistributed across the validated technician pool.");
-    $pdf->BodyText("• Performance distribution maintains expected behavior across Preparation, Realization and Delivery.");
-    $pdf->Ln(5);
-}
+- These trends can support decisions related to staffing, competency development, and workload balancing within the laboratory.
+");
 
 
 
