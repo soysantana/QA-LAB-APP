@@ -636,7 +636,7 @@ for ($m=1; $m<=12; $m++){
     $pdf->Cell(14, 5, $monthNames[$m-1], 0, 0, "C");
 }
 
-$pdf->Ln(10);
+$pdf->Ln(20);
 
 /* ============================================================
    TEST TYPE DICTIONARY — Full Names
@@ -720,9 +720,11 @@ $pdf->TableRow([
 
 $pdf->SetFont("Arial","",9);
 $pdf->Ln(5);
+$pdf->AddPage();
 /* ============================================================
    6B. HORIZONTAL BAR CHART — ONLY TOP 10 TEST TYPES
 ============================================================ */
+
 $pdf->SubTitle("2.5 Top 5 Test Types -  Chart");
 
 // Tomar solo los primeros 10
@@ -767,7 +769,7 @@ foreach ($top10 as $abbr => $cnt){
     $i++;
 }
 
-$pdf->Ln($i * 8 + 5);
+$pdf->Ln($i * 7.2 + 2);
 
 
 
@@ -827,7 +829,7 @@ $pdf->TableRow([
 
 $pdf->SetFont("Arial","",9);
 $pdf->Ln(5);
-
+$pdf->AddPage();
 /* ============================================================
    7B. HORIZONTAL BAR CHART — ONLY TOP 5 CLIENTS
 ============================================================ */
@@ -876,7 +878,7 @@ foreach ($top5 as $cl => $cnt){
 }
 
 // Espacio después del gráfico
-$pdf->Ln($i * 12 + 5);
+$pdf->Ln($i * 6 + 5);
 
 
 /* ============================================================
@@ -1193,7 +1195,7 @@ foreach ($materialCountTests as $mat=>$cnt){
     ]);
 }
 
-$pdf->Ln(12);
+$pdf->Ln(10);
 
 /* ======================
    MATERIAL HORIZONTAL BAR CHART
@@ -1226,7 +1228,7 @@ foreach ($materialCountTests as $mat=>$cnt){
     $i++;
 }
 
-$pdf->Ln($i*9 + 15);
+$pdf->Ln($i*6 + 15);
 
 
 /* ============================================================
@@ -1271,7 +1273,7 @@ $pdf->Ln(8);
 ============================================================ */
 
 /* Obtener los 10 mayores Workload Index */
-$top10WI = array_slice($workload, 0, 10, true);
+$top10WI = array_slice($workload, 0, 5, true);
 
 $chartX = 40;
 $chartY = $pdf->GetY();
