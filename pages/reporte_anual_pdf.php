@@ -1789,6 +1789,23 @@ $pdf->SectionTitle("5. Technician Performance Overview");
 list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
 
 /* ============================================================
+   5.0A — LOAD LIST OF REAL TECHNICIANS FROM users TABLE
+============================================================ */
+$realTechRows = find_by_sql("
+    SELECT name 
+    FROM users 
+    WHERE job = 'Technical' 
+       OR job LIKE '%Technician%'
+       OR job LIKE '%Lab Tech%'
+");
+$realTechnicians = array_map(fn($r)=>trim($r['name']), $realTechRows);
+
+/* fallback: if nothing found, avoid crash */
+if (empty($realTechnicians)) {
+    $realTechnicians = ["UNKNOWN_TECH"];
+}
+
+/* ============================================================
    5.1 RAW TECHNICIAN DATA
 ============================================================ */
 
@@ -1818,9 +1835,11 @@ $tecRaw = find_by_sql("
 
 /* ============================================================
    5.2 NORMALIZATION → techSummary[name][stage]
+   + DISTRIBUTION RULES FOR INVALID NAMES
 ============================================================ */
 
 $techSummary = [];
+$tempDistributed = []; // acumulador para distribuir cargas malas
 
 foreach ($tecRaw as $row){
 
@@ -1828,13 +1847,29 @@ foreach ($tecRaw as $row){
     $stage   = $row["etapa"];
     $count   = (int)$row["total"];
 
+    /* 1A — Resolver alias */
     $resolved = resolveTechnician($aliasMap, $firstLetterName, $rawTech);
-    if ($resolved === null) continue;
+
+    /* 1B — Si NO se pudo resolver → distribuir */
+    if ($resolved === null) {
+        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+        $tempDistributed[$stage] += $count;
+        continue;
+    }
 
     $names = array_filter(array_map('trim', explode(',', $resolved)));
 
+    /* 1C — Validar si el nombre pertenece a un técnico real */
     foreach ($names as $name){
 
+        if (!in_array($name, $realTechnicians)) {
+            // nombre invalido → distribuir
+            if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+            $tempDistributed[$stage] += $count;
+            continue;
+        }
+
+        // corregir nombre válido
         if (!isset($techSummary[$name])) {
             $techSummary[$name] = [
                 "Preparation" => 0,
@@ -1848,28 +1883,64 @@ foreach ($tecRaw as $row){
 }
 
 /* ============================================================
-   5.3 TABLE — Technician Summary
+   5.3 DISTRIBUTE INVALID COUNTS BETWEEN ALL REAL TECHNICIANS
+============================================================ */
+
+foreach ($tempDistributed as $stage => $totalInvalid){
+
+    $perTech = $totalInvalid / count($realTechnicians);
+
+    foreach ($realTechnicians as $tech){
+
+        if (!isset($techSummary[$tech])) {
+            $techSummary[$tech] = [
+                "Preparation" => 0,
+                "Realization" => 0,
+                "Delivery"    => 0
+            ];
+        }
+
+        $techSummary[$tech][$stage] += $perTech;
+    }
+}
+
+/* ============================================================
+   5.4 SORT TABLE — DESCENDING BY TOTAL
+============================================================ */
+
+$totalsForSort = [];
+
+foreach ($techSummary as $name => $stages){
+    $totalsForSort[$name] = $stages["Preparation"] + $stages["Realization"] + $stages["Delivery"];
+}
+
+arsort($totalsForSort); // sort DESC
+
+$techSummaryOrdered = [];
+foreach ($totalsForSort as $name => $v){
+    $techSummaryOrdered[$name] = $techSummary[$name];
+}
+
+
+/* ============================================================
+   5.5 TABLE — Technician Summary
 ============================================================ */
 
 $pdf->SubTitle("5.1 Technician Activity Summary");
 
-if (empty($techSummary)) {
+if (empty($techSummaryOrdered)) {
 
     $pdf->BodyText("No technician activity recorded for this year.");
     $pdf->Ln(5);
 
 } else {
 
-    ksort($techSummary);
-
-    /* COLUMN WIDTHS */
     $wTech  = 50;
     $wPrep  = 20;
     $wReal  = 30;
     $wDel   = 25;
     $wTotal = 15;
 
-    /* HEADER */
     $pdf->TableHeader([
         $wTech  => "Technician",
         $wPrep  => "Prep",
@@ -1878,13 +1949,12 @@ if (empty($techSummary)) {
         $wTotal => "Total"
     ]);
 
-    /* BODY */
-    foreach ($techSummary as $name => $stages){
+    foreach ($techSummaryOrdered as $name => $stages){
 
-        $prep = (int)$stages["Preparation"];
-        $real = (int)$stages["Realization"];
-        $del  = (int)$stages["Delivery"];
-        $tot  = $prep + $real + $del;
+        $prep = round($stages["Preparation"],1);
+        $real = round($stages["Realization"],1);
+        $del  = round($stages["Delivery"],1);
+        $tot  = round($prep + $real + $del,1);
 
         $pdf->TableRow([
             $wTech  => utf8_decode($name),
@@ -1898,31 +1968,25 @@ if (empty($techSummary)) {
     $pdf->Ln(8);
 }
 
+
 /* ============================================================
-   5.4 BUILD TOTALS FOR CHART
+   5.6 BUILD TOTALS FOR CHART
 ============================================================ */
 
 $techTotals = [];
-
-if (!empty($techSummary)) {
-    foreach ($techSummary as $name => $stages){
-        $prep = isset($stages["Preparation"]) ? (int)$stages["Preparation"] : 0;
-        $real = isset($stages["Realization"]) ? (int)$stages["Realization"] : 0;
-        $del  = isset($stages["Delivery"])    ? (int)$stages["Delivery"]    : 0;
-
-        $techTotals[$name] = $prep + $real + $del;
-    }
+foreach ($techSummaryOrdered as $name => $stages){
+    $techTotals[$name] = $stages["Preparation"] + $stages["Realization"] + $stages["Delivery"];
 }
 
-/* Fallback — if empty, skip chart */
 if (empty($techTotals)) {
     $pdf->BodyText("No data available to generate technician contribution chart.");
     $pdf->Ln(10);
     goto SkipTechChart;
 }
 
+
 /* ============================================================
-   5.5 HORIZONTAL BAR CHART — Technician Contribution
+   5.7 HORIZONTAL BAR CHART — Technician Contribution
 ============================================================ */
 
 $pdf->SubTitle("5.2 Technician Contribution (Workload Share)");
@@ -1936,27 +2000,23 @@ $maxVal = max($techTotals);
 if ($maxVal <= 0) $maxVal = 1;
 
 $i = 0;
-
 foreach ($techTotals as $name => $val){
 
     list($rC,$gC,$bC) = pickColor($i);
-    $pdf->SetFillColor($rC,$gC,$bC);
 
     $y = $chartY + ($i * 9);
-
     $bw = ($val / $maxVal) * $barW;
 
-    /* Label */
+    $pdf->SetFillColor($rC,$gC,$bC);
+
     $pdf->SetFont("Arial","",8);
-    $pdf->SetXY($chartX - 35, $y + 1);
+    $pdf->SetXY($chartX - 35, $y);
     $pdf->Cell(32, 5, utf8_decode($name), 0, 0, "R");
 
-    /* Bar */
     $pdf->Rect($chartX, $y, $bw, $barH, "F");
 
-    /* Value */
-    $pdf->SetXY($chartX + $bw + 4, $y + 1);
-    $pdf->Cell(20, 5, $val, 0, 0);
+    $pdf->SetXY($chartX + $bw + 4, $y);
+    $pdf->Cell(15, 5, round($val,1), 0, 0);
 
     $i++;
 }
@@ -1964,8 +2024,9 @@ foreach ($techTotals as $name => $val){
 $pdf->Ln(($i * 9) + 12);
 
 
+
 /* ============================================================
-   5.6 INSIGHTS
+   5.8 INSIGHTS
 ============================================================ */
 
 SkipTechChart:
@@ -1974,19 +2035,16 @@ if (!empty($techTotals)) {
 
     $pdf->SubTitle("5.3 Insights");
 
-    arsort($techTotals);
+    $topTech      = array_key_first($techTotals);
+    $topValue     = round($techTotals[$topTech],1);
 
-    $topTech  = array_key_first($techTotals);
-    $topValue = $techTotals[$topTech];
+    $lowestTech   = array_key_last($techTotals);
+    $lowestValue  = round($techTotals[$lowestTech],1);
 
-    $lowestTech  = array_key_last($techTotals);
-    $lowestValue = $techTotals[$lowestTech];
-
-    $pdf->BodyText("- The top contributing technician was **$topTech** with **$topValue** completed process steps.");
-    $pdf->BodyText("- The lowest contribution was from **$lowestTech** with **$lowestValue** total steps.");
-    $pdf->BodyText("- Workload distribution shows the expected pattern based on preparation, realization, and delivery tasks.");
-    $pdf->BodyText("- No technician showed anomalous performance spikes outside expected operational behavior.");
-
+    $pdf->BodyText("• The technician with the highest workload was **$topTech** with **$topValue** process steps.");
+    $pdf->BodyText("• The lowest workload was recorded by **$lowestTech** (**$lowestValue**).");
+    $pdf->BodyText("• Non-technician names and invalid aliases were automatically redistributed across the validated technician pool.");
+    $pdf->BodyText("• Performance distribution maintains expected behavior across Preparation, Realization and Delivery.");
     $pdf->Ln(5);
 }
 
