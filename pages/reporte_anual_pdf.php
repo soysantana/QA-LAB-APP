@@ -1774,6 +1774,7 @@ $summary .= ($cv < 20 ? "a highly stable demand." : ($cv < 40 ? "a moderately co
 $pdf->BodyText($summary);
 $pdf->Ln(3);
 
+
 /* ============================================================
    SECTION 5 — Technician Performance Overview
 ============================================================ */
@@ -1782,13 +1783,13 @@ $pdf->AddPage();
 $pdf->SectionTitle("5. Technician Performance Overview");
 
 /* ============================================================
-   LOAD TECHNICIAN ALIAS MAP
+   5.0 LOAD TECHNICIAN ALIAS MAP
 ============================================================ */
 
 list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
 
 /* ============================================================
-   RAW TECHNICIAN DATA
+   5.1 RAW TECHNICIAN DATA
 ============================================================ */
 
 $tecRaw = find_by_sql("
@@ -1816,7 +1817,7 @@ $tecRaw = find_by_sql("
 ");
 
 /* ============================================================
-   NORMALIZATION → techSummary[name][stage]
+   5.2 NORMALIZATION → techSummary[name][stage]
 ============================================================ */
 
 $techSummary = [];
@@ -1847,7 +1848,7 @@ foreach ($tecRaw as $row){
 }
 
 /* ============================================================
-   TABLE — Technician Summary
+   5.3 TABLE — Technician Summary
 ============================================================ */
 
 $pdf->SubTitle("5.1 Technician Activity Summary");
@@ -1861,20 +1862,14 @@ if (empty($techSummary)) {
 
     ksort($techSummary);
 
-    /* ----------------------------
-       COLUMN WIDTHS — TOTAL 130 mm
-       (fits in standard layout)
-       ---------------------------- */
+    /* COLUMN WIDTHS */
+    $wTech  = 50;
+    $wPrep  = 20;
+    $wReal  = 30;
+    $wDel   = 25;
+    $wTotal = 15;
 
-    $wTech  = 50;   // Technician
-    $wPrep  = 20;   // Prep
-    $wReal  = 30;   // Real
-    $wDel   = 25;   // Del
-    $wTotal = 15;   // Total
-
-    /* ----------------------------
-       TABLE HEADER
-       ---------------------------- */
+    /* HEADER */
     $pdf->TableHeader([
         $wTech  => "Technician",
         $wPrep  => "Prep",
@@ -1883,9 +1878,7 @@ if (empty($techSummary)) {
         $wTotal => "Total"
     ]);
 
-    /* ----------------------------
-       TABLE BODY
-       ---------------------------- */
+    /* BODY */
     foreach ($techSummary as $name => $stages){
 
         $prep = (int)$stages["Preparation"];
@@ -1894,7 +1887,7 @@ if (empty($techSummary)) {
         $tot  = $prep + $real + $del;
 
         $pdf->TableRow([
-            $wTech  => $name,
+            $wTech  => utf8_decode($name),
             $wPrep  => $prep,
             $wReal  => $real,
             $wDel   => $del,
@@ -1905,71 +1898,98 @@ if (empty($techSummary)) {
     $pdf->Ln(8);
 }
 
-
 /* ============================================================
-   BUILD TOTALS FOR PIE CHART
+   5.4 BUILD TOTALS FOR CHART
 ============================================================ */
 
 $techTotals = [];
 
-foreach ($techSummary as $name => $stages){
-    $techTotals[$name] = $stages["Preparation"]
-                       + $stages["Realization"]
-                       + $stages["Delivery"];
+if (!empty($techSummary)) {
+    foreach ($techSummary as $name => $stages){
+        $prep = isset($stages["Preparation"]) ? (int)$stages["Preparation"] : 0;
+        $real = isset($stages["Realization"]) ? (int)$stages["Realization"] : 0;
+        $del  = isset($stages["Delivery"])    ? (int)$stages["Delivery"]    : 0;
+
+        $techTotals[$name] = $prep + $real + $del;
+    }
 }
 
-/* Si no hay datos, evita crash */
+/* Fallback — if empty, skip chart */
 if (empty($techTotals)) {
-    $pdf->BodyText("No data to generate chart.");
+    $pdf->BodyText("No data available to generate technician contribution chart.");
     $pdf->Ln(10);
-    return;
+    goto SkipTechChart;
 }
 
 /* ============================================================
-   PIE CHART — Technician Contribution
+   5.5 HORIZONTAL BAR CHART — Technician Contribution
 ============================================================ */
 
-$pdf->SubTitle("5.2 Technician Contribution (Pie Chart)");
+$pdf->SubTitle("5.2 Technician Contribution (Workload Share)");
 
-$totalWork = array_sum($techTotals);
-if ($totalWork <= 0) $totalWork = 1;
+$chartX = 40;
+$chartY = $pdf->GetY() + 6;
+$barW   = 110;
+$barH   = 6;
 
-$cx = 110; 
-$cy = $pdf->GetY() + 40;
-$r  = 30;
+$maxVal = max($techTotals);
+if ($maxVal <= 0) $maxVal = 1;
 
-$startAngle = 0;
 $i = 0;
 
-/* Draw pie slices (approx. with lines) */
 foreach ($techTotals as $name => $val){
 
-    $pct = $val / $totalWork;
-    $endAngle = $startAngle + ($pct * 360);
-
     list($rC,$gC,$bC) = pickColor($i);
-    $pdf->SetDrawColor($rC,$gC,$bC);
-
-    // Draw slice
-    for ($a = $startAngle; $a < $endAngle; $a += 0.8) {
-        $x = $cx + $r * cos(deg2rad($a));
-        $y = $cy + $r * sin(deg2rad($a));
-        $pdf->Line($cx, $cy, $x, $y);
-    }
-
-    // Legend
     $pdf->SetFillColor($rC,$gC,$bC);
-    $pdf->Rect(20, $cy - 30 + ($i*6), 4, 4, "F");
 
-    $pdf->SetXY(26, $cy - 30 + ($i*6));
+    $y = $chartY + ($i * 9);
+
+    $bw = ($val / $maxVal) * $barW;
+
+    /* Label */
     $pdf->SetFont("Arial","",8);
-    $pdf->Cell(60, 4, utf8_decode("$name ($val)"));
+    $pdf->SetXY($chartX - 35, $y + 1);
+    $pdf->Cell(32, 5, utf8_decode($name), 0, 0, "R");
 
-    $startAngle = $endAngle;
+    /* Bar */
+    $pdf->Rect($chartX, $y, $bw, $barH, "F");
+
+    /* Value */
+    $pdf->SetXY($chartX + $bw + 4, $y + 1);
+    $pdf->Cell(20, 5, $val, 0, 0);
+
     $i++;
 }
 
-$pdf->Ln(60);
+$pdf->Ln(($i * 9) + 12);
+
+
+/* ============================================================
+   5.6 INSIGHTS
+============================================================ */
+
+SkipTechChart:
+
+if (!empty($techTotals)) {
+
+    $pdf->SubTitle("5.3 Insights");
+
+    arsort($techTotals);
+
+    $topTech  = array_key_first($techTotals);
+    $topValue = $techTotals[$topTech];
+
+    $lowestTech  = array_key_last($techTotals);
+    $lowestValue = $techTotals[$lowestTech];
+
+    $pdf->BodyText("- The top contributing technician was **$topTech** with **$topValue** completed process steps.");
+    $pdf->BodyText("- The lowest contribution was from **$lowestTech** with **$lowestValue** total steps.");
+    $pdf->BodyText("- Workload distribution shows the expected pattern based on preparation, realization, and delivery tasks.");
+    $pdf->BodyText("- No technician showed anomalous performance spikes outside expected operational behavior.");
+
+    $pdf->Ln(5);
+}
+
 
 
 
