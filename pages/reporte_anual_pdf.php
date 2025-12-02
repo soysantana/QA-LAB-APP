@@ -2792,7 +2792,7 @@ $pdf->SectionTitle("8. NCR (Non-Conformity Reports) Analysis");
 
 $officialNCR = find_by_sql("
     SELECT 
-        r.Client,
+        
         e.Sample_ID,
         e.Sample_Number,
         e.Test_Type,
