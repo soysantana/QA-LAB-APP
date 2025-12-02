@@ -2544,7 +2544,7 @@ foreach ($repeatRaw as $r){
     }
 
     /* Root Cause */
-    $cause = strtolower(trim($r["Reason"] . " " . $r["Comments"]));
+    $cause = strtolower(trim($r["Comments"] . " " . $r["Comments"]));
 
     if ($cause !== ""){
 
