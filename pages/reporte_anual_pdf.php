@@ -229,6 +229,12 @@ function resolveTechnician($aliasMap, $firstLetterName, $rawTech){
     return implode(", ", $names);
 }
 
+function ensureSpace($pdf, $needed = 50){
+    if ($pdf->GetY() + $needed > 250){ 
+        $pdf->AddPage();
+        $pdf->SetY(20);
+    }
+}
 
 /* ============================================================
    PDF START
@@ -2037,7 +2043,7 @@ if (array_sum($prepData) == 0){
         $i++;
     }
 
-    $pdf->Ln(($i * 9) + 3);
+    $pdf->Ln(($i * 2) + 3);
 }
 
 /* ----------------------------------------------
@@ -2061,7 +2067,7 @@ if (array_sum($realData) == 0){
     $chartX = 45;
     $chartY = $pdf->GetY() + 4;
     $barW   = 110;
-    $barH   = 6;
+    $barH   = 4;
 
     $maxVal = max($realData);
     if ($maxVal <= 0) $maxVal = 1;
@@ -2071,7 +2077,7 @@ if (array_sum($realData) == 0){
 
         list($rC,$gC,$bC) = pickColor($i+3);
 
-        $y = $chartY + ($i * 8.5);
+        $y = $chartY + ($i * 6);
         $bw = ($val / $maxVal) * $barW;
 
         $pdf->SetXY($chartX - 40, $y);
@@ -2087,7 +2093,7 @@ if (array_sum($realData) == 0){
         $i++;
     }
 
-    $pdf->Ln(($i * 9) + 3);
+    $pdf->Ln(($i * 1) + 2);
 }
 
 /* ----------------------------------------------
@@ -2111,7 +2117,7 @@ if (array_sum($delData) == 0){
     $chartX = 45;
     $chartY = $pdf->GetY() + 4;
     $barW   = 110;
-    $barH   = 6;
+    $barH   = 4;
 
     $maxVal = max($delData);
     if ($maxVal <= 0) $maxVal = 1;
@@ -2121,7 +2127,7 @@ if (array_sum($delData) == 0){
 
         list($rC,$gC,$bC) = pickColor($i+5);
 
-        $y = $chartY + ($i * 8.5);
+        $y = $chartY + ($i * 6);
         $bw = ($val / $maxVal) * $barW;
 
         $pdf->SetXY($chartX - 40, $y);
@@ -2137,7 +2143,7 @@ if (array_sum($delData) == 0){
         $i++;
     }
 
-    $pdf->Ln(($i * 9) + 3);
+    $pdf->Ln(($i * 1) + 3);
 }
 
 
@@ -2158,11 +2164,279 @@ $pdf->BodyText("
 - Delivery activities were dominated by **$topDel**, suggesting strong documentation and reporting performance.
 
 - The distribution shows whether technicians tend to specialize in specific steps or maintain balanced involvement.
-
-- These trends can support decisions related to staffing, competency development, and workload balancing within the laboratory.
 ");
 
 
+
+
+/* ============================================================
+   SECTION 6 — Document Control & Traceability
+============================================================ */
+/* ============================================================
+   SAFE COUNTERS (NO find_value)
+============================================================ */
+
+$totDelivered = 0;
+foreach ($delivered as $d){
+    $totDelivered += (int)$d["total"];
+}
+
+$totReviewed = 0;
+foreach ($reviewed as $r){
+    $totReviewed += (int)$r["total"];
+}
+
+$totApproved = 0;
+foreach ($approved as $a){
+    $totApproved += (int)$a["total"];
+}
+
+$totFiles = 0;
+foreach ($fileRows as $f){
+    $totFiles += (int)$f["qty"];
+}
+
+
+
+/* ============================================================
+   SECTION 6 — Document Control Performance
+   (Delivery, Review, Approval, Uploaded Docs)
+============================================================ */
+
+$pdf->AddPage();
+$pdf->SectionTitle("6. Document Control Performance Overview");
+
+/* ============================================================
+   1. RAW MONTHLY DATA FROM DATABASE
+============================================================ */
+
+$delivered = find_by_sql("
+    SELECT MONTH(Register_Date) AS m, COUNT(*) AS total
+    FROM test_delivery
+    WHERE YEAR(Register_Date) = '{$year}'
+    GROUP BY MONTH(Register_Date)
+");
+
+$reviewed = find_by_sql("
+    SELECT MONTH(Start_Date) AS m, COUNT(*) AS total
+    FROM test_review
+    WHERE YEAR(Start_Date) = '{$year}'
+    GROUP BY MONTH(Start_Date)
+");
+
+$approved = find_by_sql("
+    SELECT MONTH(Start_Date) AS m, COUNT(*) AS total
+    FROM test_reviewed
+    WHERE YEAR(Start_Date) = '{$year}'
+    GROUP BY MONTH(Start_Date)
+");
+
+/* DOCUMENT FILES */
+$fileRows = find_by_sql("
+    SELECT MONTH(created_at) AS m, COUNT(*) AS qty
+    FROM doc_files
+    WHERE YEAR(created_at) = '{$year}'
+    GROUP BY MONTH(created_at)
+");
+
+/* ============================================================
+   2. SAFELY BUILD ARRAYS FOR CHARTS
+============================================================ */
+
+$months = [1=>"Jan",2=>"Feb",3=>"Mar",4=>"Apr",5=>"May",6=>"Jun",
+           7=>"Jul",8=>"Aug",9=>"Sep",10=>"Oct",11=>"Nov",12=>"Dec"];
+
+$delivM = $revM = $apprM = $filesM = array_fill(1,12,0);
+
+foreach ($delivered as $r) $delivM[(int)$r["m"]] = (int)$r["total"];
+foreach ($reviewed as $r)  $revM[(int)$r["m"]]   = (int)$r["total"];
+foreach ($approved as $r)  $apprM[(int)$r["m"]]  = (int)$r["total"];
+foreach ($fileRows as $r)  $filesM[(int)$r["m"]] = (int)$r["qty"];
+
+/* ============================================================
+   3. KPIs
+============================================================ */
+
+$totalDelivered = array_sum($delivM);
+$totalReviewed  = array_sum($revM);
+$totalApproved  = array_sum($apprM);
+$totalFiles     = array_sum($filesM);
+
+$pdf->SubTitle("6.1 Key Indicators");
+
+$pdf->SetFillColor(240,240,240);
+$pdf->SetFont("Arial","B",10);
+
+$kW = 55; $kH = 10;
+
+$pdf->Cell($kW,$kH,"Delivered: $totalDelivered",1,0,'C',true);
+$pdf->Cell($kW,$kH,"Reviewed: $totalReviewed",1,0,'C',true);
+$pdf->Cell($kW,$kH,"Approved: $totalApproved",1,1,'C',true);
+
+$pdf->Cell($kW,$kH,"Files Uploaded: $totalFiles",1,0,'C',true);
+$pdf->Cell($kW,$kH,"Approval Rate: ". ($totalReviewed>0? round(($totalApproved/$totalReviewed)*100,1) : 0) ."%",1,0,'C',true);
+$pdf->Cell($kW,$kH,"Delivery/Review Ratio: ". ($totalDelivered>0? round(($totalReviewed/$totalDelivered)*100,1) : 0) ."%",1,1,'C',true);
+
+$pdf->Ln(8);
+
+/* ============================================================
+   4. TABLE SUMMARY
+============================================================ */
+
+$pdf->SubTitle("6.2 Monthly Document Control Summary");
+
+$pdf->TableHeader([
+    35=>"Month",
+    15=>"Del",
+    25=>"Rev",
+    40=>"Appro",
+    20=>"Files"
+]);
+
+foreach ($months as $num=>$label){
+    $pdf->TableRow([
+        35=>$label,
+        15=>$delivM[$num],
+        25=>$revM[$num],
+       40=>$apprM[$num],
+        20=>$filesM[$num],
+    ]);
+}
+
+$pdf->Ln(8);
+
+/* ============================================================
+   5. CHART 1 — Delivery by Month
+============================================================ */
+
+$pdf->SubTitle("6.3 Delivered Tests per Month");
+ensureSpace($pdf, 40);
+$chartX = 35; 
+$chartY = $pdf->GetY()+3;
+$barW   = 6;
+$barMax = 15;
+
+$maxVal = max($delivM); 
+if ($maxVal <= 0) $maxVal = 1;
+
+$i = 0;
+foreach ($delivM as $m=>$v){
+    list($r,$g,$b)=pickColor($i);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $h = ($v/$maxVal)*$barMax;
+    $pdf->Rect($chartX + ($i*10), $chartY + ($barMax-$h), $barW, $h, "F");
+
+    $pdf->SetXY($chartX + ($i*10), $chartY + $barMax + 1);
+    $pdf->SetFont("Arial","",7);
+    $pdf->Cell($barW+2,4,substr($months[$m],0,3),0,0,"C");
+
+    $i++;
+}
+
+$pdf->Ln($barMax-2);
+
+/* ============================================================
+   6. CHART 2 — Reviews per Month
+============================================================ */
+
+$pdf->SubTitle("6.4 Reviewed Tests per Month");
+ensureSpace($pdf, 40);
+$chartY = $pdf->GetY()+3;
+$maxVal = max($revM); if ($maxVal <= 0) $maxVal = 1;
+
+$i = 0;
+foreach ($revM as $m=>$v){
+    list($r,$g,$b)=pickColor($i+2);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $h = ($v/$maxVal)*$barMax;
+    $pdf->Rect($chartX + ($i*10), $chartY + ($barMax-$h), $barW, $h, "F");
+
+    $pdf->SetXY($chartX + ($i*10), $chartY + $barMax + 1);
+    $pdf->SetFont("Arial","",7);
+    $pdf->Cell($barW+2,4,substr($months[$m],0,3),0,0,"C");
+
+    $i++;
+}
+
+$pdf->Ln($barMax+15);
+
+/* ============================================================
+   7. CHART 3 — Approved per Month
+============================================================ */
+
+$pdf->SubTitle("6.5 Approved Tests per Month");
+ensureSpace($pdf, 60);
+$chartY = $pdf->GetY()+3;
+$maxVal = max($apprM); if ($maxVal <= 0) $maxVal = 1;
+
+$i = 0;
+foreach ($apprM as $m=>$v){
+    list($r,$g,$b)=pickColor($i+4);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $h = ($v/$maxVal)*$barMax;
+    $pdf->Rect($chartX + ($i*10), $chartY + ($barMax-$h), $barW, $h, "F");
+
+    $pdf->SetXY($chartX + ($i*10), $chartY + $barMax + 1);
+    $pdf->SetFont("Arial","",7);
+    $pdf->Cell($barW+2,4,substr($months[$m],0,3),0,0,"C");
+
+    $i++;
+}
+
+$pdf->Ln($barMax+10);
+
+/* ============================================================
+   8. CHART 4 — Uploaded Docs per Month
+============================================================ */
+
+$pdf->SubTitle("6.6 Uploaded Files per Month");
+ensureSpace($pdf, 60);
+$chartY = $pdf->GetY()+3;
+$maxVal = max($filesM); if ($maxVal <= 0) $maxVal = 1;
+
+$i = 0;
+foreach ($filesM as $m=>$v){
+    list($r,$g,$b)=pickColor($i+6);
+    $pdf->SetFillColor($r,$g,$b);
+
+    $h = ($v/$maxVal)*$barMax;
+    $pdf->Rect($chartX + ($i*7.2), $chartY + ($barMax-$h), $barW, $h, "F");
+
+    $pdf->SetXY($chartX + ($i*7.2), $chartY + $barMax + 1);
+    $pdf->SetFont("Arial","",7);
+    $pdf->Cell($barW+2,4,substr($months[$m],0,3),0,0,"C");
+
+    $i++;
+}
+
+$pdf->Ln($barMax+10);
+
+/* ============================================================
+   9. INSIGHTS
+============================================================ */
+
+$pdf->SubTitle("6.7 Executive Insights");
+
+$approvalRate = $totalReviewed > 0 ? round(($totalApproved/$totalReviewed)*100,1) : 0;
+
+$peak_month_del  = array_keys($delivM, max($delivM))[0];
+$peak_month_rev  = array_keys($revM, max($revM))[0];
+$peak_month_file = array_keys($filesM, max($filesM))[0];
+
+$ins = "
+- Peak delivery month: {$months[$peak_month_del]}
+- Peak review month: {$months[$peak_month_rev]}
+- Peak document upload month: {$months[$peak_month_file]}
+- Approval Rate: {$approvalRate}% 
+- Delivery-to-Review ratio indicates ".($approvalRate>=90?"strong":"moderate")." document quality.
+- Monthly behavior shows ".(max($filesM)>0?"active":"minimal")." document management.
+";
+
+$pdf->BodyText($ins);
+$pdf->Ln(8);
 
 
 
