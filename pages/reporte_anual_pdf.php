@@ -1382,7 +1382,7 @@ $pdf->Ln(8);
 /* ============================================================
    Horizontal Bars — Workload (TOP 10 ONLY)
 ============================================================ */
-
+ensureSpace($pdf, 40);
 /* Obtener los 10 mayores Workload Index */
 $top10WI = array_slice($workload, 0, 5, true);
 
@@ -1482,7 +1482,7 @@ $pdf->Ln(12);
 =============================== */
 
 $pdf->SubTitle("3.5 Equipment Utilization - Horizontal Bar Chart");
-
+ensureSpace($pdf, 40);
 $chartX  = 40;
 $chartY  = $pdf->GetY() + 3;
 $barWmax = 120;
@@ -1620,7 +1620,7 @@ $pdf->Ln(8);
 =============================================================== */
 
 $pdf->SubTitle("4.2 Weekly Test Load (Descending)");
-
+ensureSpace($pdf, 40);
 $sortedTests = $testsByDay;
 arsort($sortedTests);
 
@@ -1660,7 +1660,7 @@ $pdf->Ln(($i * 7.2) + 5);
 =============================================================== */
 
 $pdf->SubTitle("4.3 Sample Registration by Day");
-
+ensureSpace($pdf, 40);
 $sortedReg = $regByDay;
 arsort($sortedReg);
 
@@ -2002,7 +2002,7 @@ $pdf->SubTitle("5.2 Technician Contribution per Process");
 
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(0,6,"Preparation Workload",0,1);
-
+ensureSpace($pdf, 40);
 $prepData = [];
 foreach ($techSummaryOrdered as $name=>$stages){
     $prepData[$name] = $stages["Preparation"];
@@ -2052,6 +2052,7 @@ if (array_sum($prepData) == 0){
 
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(0,6,"Realization Workload",0,1);
+ensureSpace($pdf, 40);
 
 $realData = [];
 foreach ($techSummaryOrdered as $name=>$stages){
