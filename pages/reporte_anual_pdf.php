@@ -2103,7 +2103,7 @@ if (array_sum($realData) == 0){
 
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(0,6,"Delivery Workload",0,1);
-
+ensureSpace($pdf, 40);
 $delData = [];
 foreach ($techSummaryOrdered as $name=>$stages){
     $delData[$name] = $stages["Delivery"];
