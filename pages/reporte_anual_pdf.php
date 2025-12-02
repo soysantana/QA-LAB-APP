@@ -236,6 +236,27 @@ function ensureSpace($pdf, $needed = 50){
     }
 }
 
+function safeTextUtf($v){
+    if (is_array($v)) return utf8_decode(implode(", ", $v));
+    if ($v === null) return "";
+    return utf8_decode((string)$v);
+}
+function cleanVal($v){
+
+    if ($v === null) return "";
+
+    // Si es array, convertir a string seguro
+    if (is_array($v)) {
+        return implode(", ", array_map(fn($x)=> (string)$x, $v));
+    }
+
+    // Convertir todo a string antes de trim
+    $v = (string)$v;
+
+    return utf8_decode(trim($v));
+}
+
+
 /* ============================================================
    PDF START
 ============================================================ */
@@ -304,10 +325,10 @@ $pdf->Ln(15);
 $pdf->SetFont("Arial","",11);
 $pdf->SetTextColor(60,60,60);
 
-$pdf->Cell(210,7, utf8_decode("Prepared by: Wendin De Jesús - Chief Laboratory"), 0, 1, "C");
-$pdf->Cell(210,7, utf8_decode("Location: Pueblo Viejo - Sánchez Ramírez - Dominican Republic"), 0, 1, "C");
-$pdf->Cell(210,7, utf8_decode("Reporting Period: January 1st, $anio - December 31st, $anio"), 0, 1, "C");
-$pdf->Cell(210,7, utf8_decode("Document Type: Annual CQA Laboratory Performance Report"), 0, 1, "C");
+$pdf->Cell(210,7, safeTextUtf("Prepared by: Wendin De Jesús - Chief Laboratory"), 0, 1, "C");
+$pdf->Cell(210,7, safeTextUtf("Location: Pueblo Viejo - Sánchez Ramírez - Dominican Republic"), 0, 1, "C");
+$pdf->Cell(210,7, safeTextUtf("Reporting Period: January 1st, $anio - December 31st, $anio"), 0, 1, "C");
+$pdf->Cell(210,7, safeTextUtf("Document Type: Annual CQA Laboratory Performance Report"), 0, 1, "C");
 
 $pdf->Ln(20);
 
@@ -2206,28 +2227,13 @@ $fileRows = $db->query("
 ")->fetch_all(MYSQLI_ASSOC);
 
 /* ============================================================
-   SAFE COUNTERS (NO find_value)
+   SAFE COUNTERS (NO 'total' / NO 'qty')
 ============================================================ */
 
-$totDelivered = 0;
-foreach ($delivered as $d){
-    $totDelivered += (int)$d["total"];
-}
-
-$totReviewed = 0;
-foreach ($reviewed as $r){
-    $totReviewed += (int)$r["total"];
-}
-
-$totApproved = 0;
-foreach ($approved as $a){
-    $totApproved += (int)$a["total"];
-}
-
-$totFiles = 0;
-foreach ($fileRows as $f){
-    $totFiles += (int)$f["qty"];
-}
+$totDelivered = is_array($delivered) ? count($delivered) : 0;
+$totReviewed  = is_array($reviewed)  ? count($reviewed)  : 0;
+$totApproved  = is_array($approved)  ? count($approved)  : 0;
+$totFiles     = is_array($fileRows)  ? count($fileRows)  : 0;
 
 
 
@@ -2761,17 +2767,266 @@ $topType = array_key_first($repeatByType);
 $topClient = array_key_first($repeatByClient);
 
 $ins = "
-• The highest repeat volume came from test type '$topType'.
-• Client '$topClient' contributed the majority of repeat cases.
-• Repeat rate of {$repeatPct}% indicates ".($repeatPct>5?"a need for targeted improvement.":"good general performance.")."
-• Peak months for repeat activity align with workload seasonality.
-• Root causes suggest priority areas for corrective action.
+- The highest repeat volume came from test type '$topType'.
+- Client '$topClient' contributed the majority of repeat cases.
+- Repeat rate of {$repeatPct}% indicates ".($repeatPct>5?"a need for targeted improvement.":"good general performance.")."
+- Peak months for repeat activity align with workload seasonality.
+- Root causes suggest priority areas for corrective action.
 ";
 
 $pdf->BodyText($ins);
 
 SkipRepeatSection:
 $pdf->Ln(5);
+
+/* ============================================================
+   SECTION 8 — NCR (NON CONFORMITY REPORTS) — FULL ANALYSIS
+============================================================ */
+
+$pdf->AddPage();
+$pdf->SectionTitle("8. NCR (Non-Conformity Reports) Analysis");
+
+/* ============================================================
+   1) OFFICIAL NCR FROM ensayos_reporte
+============================================================ */
+
+$officialNCR = find_by_sql("
+    SELECT 
+        r.Client,
+        e.Sample_ID,
+        e.Sample_Number,
+        e.Test_Type,
+        e.Test_Condition,
+        e.Noconformidad,
+        e.Report_Date
+    FROM ensayos_reporte e
+    LEFT JOIN lab_test_requisition_form r
+        ON r.Sample_ID = e.Sample_ID
+       AND r.Sample_Number = e.Sample_Number
+       AND FIND_IN_SET(e.Test_Type, r.Test_Type)
+    WHERE YEAR(e.Report_Date) = '{$year}'
+      AND (
+            LOWER(e.Test_Condition) LIKE '%fail%' OR
+            LOWER(e.Test_Condition) LIKE '%reject%' OR
+            LOWER(e.Test_Condition) LIKE '%no pasa%'
+      )
+");
+
+/* ============================================================
+   2) HIDDEN NCR — FROM ALL TEST TABLES (COLUMN: Comments)
+============================================================ */
+
+$testTables = [
+    'atterberg_limit',
+    'moisture_oven',
+    'moisture_constant_mass',
+    'moisture_microwave',
+    'moisture_scale',
+    'grain_size_general',
+    'grain_size_coarse',
+    'grain_size_fine',
+    'soundness',
+    'specific_gravity',
+    'specific_gravity_coarse',
+    'specific_gravity_fine',
+    'standard_proctor'
+];
+
+$keywords = [
+    "insufficient", "insuficiente",
+    "no valido", "no válido",
+    "muestra insuficiente",
+    "insufficient material"
+];
+
+$hiddenNCR = [];
+
+foreach ($testTables as $tb){
+
+    $rows = find_by_sql("
+        SELECT 
+            Sample_ID,
+            Sample_Number,
+            Test_Type,
+            Comments
+        FROM {$tb}
+        WHERE YEAR(Registed_Date) = '{$year}' 
+    ");
+
+    foreach ($rows as $r){
+
+        $c = strtolower(trim((string)$r['Comments']));
+        if ($c === "") continue;
+
+        foreach ($keywords as $kw){
+            if (str_contains($c, $kw)){
+                
+                $hiddenNCR[] = [
+                    "Client"        => find_by_sql("
+                                            SELECT Client 
+                                            FROM lab_test_requisition_form 
+                                            WHERE Sample_ID='{$r['Sample_ID']}'
+                                              AND Sample_Number='{$r['Sample_Number']}'
+                                        "),
+                    "Sample_ID"     => $r["Sample_ID"],
+                    "Sample_Number" => $r["Sample_Number"],
+                    "Test_Type"     => $r["Test_Type"],
+                    "Test_Condition"=> "Fail",
+                    "Noconformidad" => $r["Comments"],
+                    "Report_Date"   => ""
+                ];
+                break;
+            }
+        }
+    }
+}
+
+/* ============================================================
+   3) MERGE BOTH SOURCES
+============================================================ */
+
+$allNCR = array_merge($officialNCR, $hiddenNCR);
+
+/* ============================================================
+   TABLE SUMMARY
+============================================================ */
+
+$pdf->SubTitle("8.1 NCR Summary Table");
+
+if (empty($allNCR)){
+
+    $pdf->BodyText("No NCR recorded for this year.");
+    $pdf->Ln(5);
+
+} else {
+
+    /* Table header */
+    $pdf->TableHeader([
+       
+        40 => "Sample",
+        35 => "Test",
+        25 => "Condition",
+        60 => "Description"
+    ]);
+
+    foreach ($allNCR as $n){
+
+        $pdf->TableRow([
+   
+    40 => safeTextUtf($n["Sample_ID"] . "-" . $n["Sample_Number"]),
+    35 => safeTextUtf($n["Test_Type"]),
+    25 => safeTextUtf($n["Test_Condition"]),
+   60 => safeTextUtf($n["Noconformidad"])
+]);
+
+    }
+
+    $pdf->Ln(10);
+}
+
+/* ============================================================
+   4) NCR PER TEST TYPE — BAR CHART
+============================================================ */
+
+$pdf->SubTitle("8.2 NCR per Test Type");
+
+$perTest = [];
+
+foreach ($allNCR as $n){
+    $t = trim($n["Test_Type"]);
+    if ($t === "") continue;
+    if (!isset($perTest[$t])) $perTest[$t] = 0;
+    $perTest[$t]++;
+}
+
+if (!empty($perTest)){
+
+    $maxVal = max($perTest);
+    if ($maxVal <= 0) $maxVal = 1;
+
+    $x0 = 20;
+    $y0 = $pdf->GetY() + 10;
+    $h  = 4;
+
+    foreach ($perTest as $test => $count){
+
+        $bar = ($count / $maxVal) * 100;
+
+        $pdf->SetXY($x0, $y0);
+        $pdf->SetFont("Arial","",8);
+        $pdf->Cell(40, $h, utf8_decode($test), 0, 0);
+
+        $pdf->SetFillColor(200,50,50);
+        $pdf->Rect($x0 + 42, $y0, $bar, $h, "F");
+
+        $pdf->SetXY($x0 + 145, $y0);
+        $pdf->Cell(10, $h, $count, 0, 0);
+
+        $y0 += ($h + 2);
+    }
+
+    $pdf->Ln(12);
+}
+
+/* ============================================================
+   5) NCR PER CLIENT — PIE CHART
+============================================================ */
+
+$pdf->SubTitle("8.3 NCR per Client");
+
+$perClient = [];
+
+foreach ($allNCR as $n){
+
+    // Cliente seguro
+    $c = cleanVal($n["Client"]);  
+    if ($c === "") $c = "UNKNOWN";
+
+    if (!isset($perClient[$c])) {
+        $perClient[$c] = 0;
+    }
+
+    $perClient[$c]++;
+}
+
+
+if (!empty($perClient)){
+
+    $cx = 110;
+    $cy = $pdf->GetY() + 40;
+    $r  = 28;
+
+    $total = array_sum($perClient);
+    $startAngle = 0;
+    $i = 0;
+
+    foreach ($perClient as $client => $val){
+
+        $pct = $val / $total;
+        $end = $startAngle + ($pct * 360);
+
+        list($rC,$gC,$bC) = pickColor($i);
+        $pdf->SetDrawColor($rC,$gC,$bC);
+
+        for ($a = $startAngle; $a < $end; $a += 1){
+            $x = $cx + $r * cos(deg2rad($a));
+            $y = $cy + $r * sin(deg2rad($a));
+            $pdf->Line($cx, $cy, $x, $y);
+        }
+
+        $pdf->SetFillColor($rC,$gC,$bC);
+        $pdf->Rect(20, $cy - 25 + ($i*6), 4, 4, "F");
+
+        $pdf->SetXY(26, $cy - 25 + ($i*6));
+        $pdf->SetFont("Arial","",8);
+        $pdf->Cell(60, 4, utf8_decode("$client ($val)"));
+
+        $startAngle = $end;
+        $i++;
+    }
+}
+
+$pdf->Ln(60);
 
 
 
