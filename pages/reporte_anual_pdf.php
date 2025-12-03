@@ -10,6 +10,31 @@ error_reporting(E_ALL);
 
 $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
 
+/* ============================================================
+   SMALL CACHE to avoid thousands of SQL queries
+============================================================ */
+$clientCache = [];
+
+function findClientCached($id, $num){
+    global $clientCache;
+
+    $key = $id."_".$num;
+
+    if (isset($clientCache[$key])) {
+        return $clientCache[$key];
+    }
+
+    $row = find_by_sql("
+        SELECT Client 
+        FROM lab_test_requisition_form 
+        WHERE Sample_ID='{$id}'
+          AND Sample_Number='{$num}'
+        LIMIT 1
+    ");
+
+    $clientCache[$key] = $row[0]['Client'] ?? "UNKNOWN";
+    return $clientCache[$key];
+}
 
 /* ============================================================
    CUSTOM PDF CLASS — SAME STYLE AS MONTHLY REPORT
@@ -2848,12 +2873,8 @@ foreach ($testTables as $tb){
         foreach ($keywords as $kw){
             if (str_contains($c, $kw)){
                 
-                $clientQ = find_by_sql("
-                    SELECT Client 
-                    FROM lab_test_requisition_form 
-                    WHERE Sample_ID='{$r['Sample_ID']}'
-                      AND Sample_Number='{$r['Sample_Number']}'
-                ");
+              $client = findClientCached($r["Sample_ID"], $r["Sample_Number"]);
+
 
                 $hiddenNCR[] = [
                     "Client"        => $clientQ[0]['Client'] ?? "UNKNOWN",
@@ -3083,6 +3104,32 @@ if (empty($perMaterial)){
 
     $pdf->Ln(15);
 }
+/* ============================================================
+   FIX: Build variables for Insight text
+============================================================ */
+
+/* 1) TOP TEST TYPE */
+$topTest = array_key_first($ncrPerType) ?? "N/A";
+$topTestCount = $ncrPerType[$topTest] ?? 0;
+$topPct = $totalNCR > 0 ? round(($topTestCount / $totalNCR) * 100, 1) : 0;
+
+/* 2) TOP CLIENT */
+$perClient = [];
+foreach ($allNCR as $n){
+    $c = trim($n["Client"] ?? "");
+    if ($c === "") $c = "UNKNOWN";
+    if (!isset($perClient[$c])) $perClient[$c] = 0;
+    $perClient[$c]++;
+}
+
+arsort($perClient);
+$topClient = array_key_first($perClient) ?? "N/A";
+$topClientCount = $perClient[$topClient] ?? 0;
+$topClientPct = $totalNCR > 0 ? round(($topClientCount / $totalNCR) * 100, 1) : 0;
+
+/* 3) LOWEST TEST TYPES */
+$lowestTests = array_slice(array_keys($ncrPerType), -3, 3, true);
+$lowTestsStr = implode(", ", $lowestTests);
 
 $pdf->SubTitle("8.4 NCR Insight");
 
