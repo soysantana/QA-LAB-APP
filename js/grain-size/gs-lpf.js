@@ -129,7 +129,7 @@ document.querySelectorAll('[data-exportar]').forEach((el) => {
   });
 });
 
-document.getElementById("reviewBtn").addEventListener("click", () => {
+document.getElementById("btnReview").addEventListener("click", () => {
   
   const specs = {
     2:  [100,100],   // 3” 
