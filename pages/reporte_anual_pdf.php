@@ -2716,7 +2716,9 @@ foreach ($repeatByMonth as $m=>$v){
         $pdf->Line($prevX,$prevY,$x,$y);
     }
 
-    $pdf->Rect($x-1.5,$y-1.5,3,3,"F");
+     /* marker */
+    $pdf->SetFillColor(0,0,0);
+    $pdf->Rect($x-1.5, $y-1.5, 3, 3, "F");
 
     $prevX = $x;
     $prevY = $y;
@@ -2807,6 +2809,7 @@ $officialNCR = find_by_sql("
         e.Test_Type,
         e.Test_Condition,
         e.Noconformidad,
+        e.Material_Type,
         e.Report_Date
     FROM ensayos_reporte e
     LEFT JOIN lab_test_requisition_form r
@@ -2857,7 +2860,9 @@ foreach ($testTables as $tb){
             Sample_ID,
             Sample_Number,
             Test_Type,
-            Comments
+            Material_Type,
+            Comments,
+            Registed_Date
         FROM {$tb}
         WHERE YEAR(Registed_Date) = '{$year}' 
     ");
@@ -2870,19 +2875,22 @@ foreach ($testTables as $tb){
         foreach ($keywords as $kw){
             if (str_contains($c, $kw)){
                 
+                $clientQ = find_by_sql("
+                    SELECT Client 
+                    FROM lab_test_requisition_form 
+                    WHERE Sample_ID='{$r['Sample_ID']}'
+                      AND Sample_Number='{$r['Sample_Number']}'
+                ");
+
                 $hiddenNCR[] = [
-                    "Client"        => find_by_sql("
-                                            SELECT Client 
-                                            FROM lab_test_requisition_form 
-                                            WHERE Sample_ID='{$r['Sample_ID']}'
-                                              AND Sample_Number='{$r['Sample_Number']}'
-                                        "),
+                    "Client"        => $clientQ[0]['Client'] ?? "UNKNOWN",
                     "Sample_ID"     => $r["Sample_ID"],
                     "Sample_Number" => $r["Sample_Number"],
                     "Test_Type"     => $r["Test_Type"],
                     "Test_Condition"=> "Fail",
                     "Noconformidad" => $r["Comments"],
-                    "Report_Date"   => ""
+                    "Material_Type" => $r["Material_Type"] ?? "UNKNOWN",
+                    "Report_Date"   => $r["Registed_Date"] ?? ""
                 ];
                 break;
             }
@@ -2897,146 +2905,211 @@ foreach ($testTables as $tb){
 $allNCR = array_merge($officialNCR, $hiddenNCR);
 
 /* ============================================================
-   TABLE SUMMARY
+   8.1 — NCR Summary by Test Type
 ============================================================ */
 
-$pdf->SubTitle("8.1 NCR Summary Table");
+$pdf->SubTitle("8.1 NCR Summary by Test Type");
 
-if (empty($allNCR)){
+$ncrPerType = [];
+foreach ($allNCR as $n){
+    $t = trim($n["Test_Type"]);
+    if ($t === "") continue;
+
+    if (!isset($ncrPerType[$t])) $ncrPerType[$t] = 0;
+    $ncrPerType[$t]++;
+}
+
+if (empty($ncrPerType)){
 
     $pdf->BodyText("No NCR recorded for this year.");
     $pdf->Ln(5);
 
 } else {
 
-    /* Table header */
+    arsort($ncrPerType);
+
     $pdf->TableHeader([
-       
-        40 => "Sample",
-        35 => "Test",
-        25 => "Condition",
-        60 => "Description"
+        60 => "Test Type",
+        30 => "NCR Count",
+        30 => "% of Total"
     ]);
 
-    foreach ($allNCR as $n){
+    $totalNCR = array_sum($ncrPerType);
+
+    foreach ($ncrPerType as $test => $cnt){
+
+        $pct = round(($cnt / $totalNCR) * 100, 1);
+        $name = $testNames[$test] ?? $test;
 
         $pdf->TableRow([
-   
-    40 => safeTextUtf($n["Sample_ID"] . "-" . $n["Sample_Number"]),
-    35 => safeTextUtf($n["Test_Type"]),
-    25 => safeTextUtf($n["Test_Condition"]),
-   60 => safeTextUtf($n["Noconformidad"])
-]);
-
+            60 => utf8_decode($name),
+            30 => $cnt,
+            30 => $pct . "%"
+        ]);
     }
+
+    /* TOTAL ROW */
+    $pdf->TableRow([
+        60 => "TOTAL",
+        30 => $totalNCR,
+        30 => "100%"
+    ]);
 
     $pdf->Ln(10);
 }
 
 /* ============================================================
-   4) NCR PER TEST TYPE — BAR CHART
+   8.2 — NCR Trend by Month (Table + Chart)
 ============================================================ */
 
-$pdf->SubTitle("8.2 NCR per Test Type");
+$pdf->SubTitle("8.2 NCR Trend by Month");
 
-$perTest = [];
+$perMonthNCR = array_fill(1,12,0);
 
 foreach ($allNCR as $n){
-    $t = trim($n["Test_Type"]);
-    if ($t === "") continue;
-    if (!isset($perTest[$t])) $perTest[$t] = 0;
-    $perTest[$t]++;
+    if (!empty($n["Report_Date"])) {
+        $m = intval(substr($n["Report_Date"],5,2));
+        if ($m>=1 && $m<=12) $perMonthNCR[$m]++;
+    }
 }
 
-if (!empty($perTest)){
+$pdf->TableHeader([
+    30 => "Month",
+    30 => "NCR Count"
+]);
 
-    $maxVal = max($perTest);
-    if ($maxVal <= 0) $maxVal = 1;
+$monthNames = [
+    1=>"Jan",2=>"Feb",3=>"Mar",4=>"Apr",
+    5=>"May",6=>"Jun",7=>"Jul",8=>"Aug",
+    9=>"Sep",10=>"Oct",11=>"Nov",12=>"Dec"
+];
+
+foreach ($perMonthNCR as $i => $val){
+    $pdf->TableRow([
+        30 => $monthNames[$i],
+        30 => $val
+    ]);
+}
+
+/* TOTAL */
+$pdf->TableRow([
+    30 => "TOTAL",
+    30 => array_sum($perMonthNCR)
+]);
+
+$pdf->Ln(10);
+
+/* ------- BARCHART ------- */
+ensureSpace($pdf, 60);
+$maxMonth = max($perMonthNCR);
+if ($maxMonth < 1) $maxMonth = 1;
+
+$x0 = 20;
+$y0 = $pdf->GetY();
+$barH = 5;
+$gap = 3;
+
+foreach ($perMonthNCR as $i => $val){
+
+    $barW = ($val / $maxMonth) * 100;
+
+    $pdf->SetXY($x0, $y0);
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(20, $barH, $monthNames[$i], 0, 0);
+
+    $pdf->SetFillColor(60,120,200);
+    $pdf->Rect($x0 + 22, $y0, $barW, $barH, "F");
+
+    $pdf->SetXY($x0 + 125, $y0);
+    $pdf->Cell(10, $barH, $val, 0, 0);
+
+    $y0 += ($barH + $gap);
+}
+
+$pdf->Ln(15);
+
+/* ============================================================
+   8.3 — NCR by Material Type (Table + Chart)
+============================================================ */
+
+$pdf->SubTitle("8.3 NCR by Material Type");
+ensureSpace($pdf, 60);
+$perMaterial = [];
+
+foreach ($allNCR as $n){
+
+    $m = trim($n["Material_Type"] ?? "");
+    if ($m === "") $m = "UNKNOWN";
+
+    if (!isset($perMaterial[$m])) $perMaterial[$m] = 0;
+    $perMaterial[$m]++;
+}
+
+if (empty($perMaterial)){
+
+    $pdf->BodyText("No material information available.");
+    $pdf->Ln(10);
+
+} else {
+
+    arsort($perMaterial);
+
+    $pdf->TableHeader([
+        60 => "Material Type",
+        30 => "NCR Count",
+        30 => "% of Total"
+    ]);
+
+    $totalMT = array_sum($perMaterial);
+
+    foreach ($perMaterial as $mat => $cnt){
+
+        $pct = round(($cnt/$totalMT)*100,1);
+
+        $pdf->TableRow([
+            60 => utf8_decode($mat),
+            30 => $cnt,
+            30 => $pct."%"
+        ]);
+    }
+
+    /* TOTAL ROW */
+    $pdf->TableRow([
+        60 => "TOTAL",
+        30 => $totalMT,
+        30 => "100%"
+    ]);
+
+    $pdf->Ln(10);
+
+    /* ------- BARCHART ------- */
+     ensureSpace($pdf, 60);
+    $maxMat = max($perMaterial);
+    if ($maxMat < 1) $maxMat = 1;
 
     $x0 = 20;
-    $y0 = $pdf->GetY() + 10;
-    $h  = 4;
+    $y0 = $pdf->GetY();
+    $h  = 5;
 
-    foreach ($perTest as $test => $count){
+    foreach ($perMaterial as $mat => $cnt){
 
-        $bar = ($count / $maxVal) * 100;
+        $bar = ($cnt / $maxMat) * 100;
 
         $pdf->SetXY($x0, $y0);
         $pdf->SetFont("Arial","",8);
-        $pdf->Cell(40, $h, utf8_decode($test), 0, 0);
+        $pdf->Cell(50, $h, utf8_decode($mat), 0, 0);
 
-        $pdf->SetFillColor(200,50,50);
-        $pdf->Rect($x0 + 42, $y0, $bar, $h, "F");
+        $pdf->SetFillColor(200,80,80);
+        $pdf->Rect($x0 + 52, $y0, $bar, $h, "F");
 
-        $pdf->SetXY($x0 + 145, $y0);
-        $pdf->Cell(10, $h, $count, 0, 0);
+        $pdf->SetXY($x0 + 155, $y0);
+        $pdf->Cell(10, $h, $cnt, 0, 0);
 
         $y0 += ($h + 2);
     }
 
-    $pdf->Ln(12);
+    $pdf->Ln(15);
 }
-
-/* ============================================================
-   5) NCR PER CLIENT — PIE CHART
-============================================================ */
-
-$pdf->SubTitle("8.3 NCR per Client");
-
-$perClient = [];
-
-foreach ($allNCR as $n){
-
-    // Cliente seguro
-    $c = cleanVal($n["Client"]);  
-    if ($c === "") $c = "UNKNOWN";
-
-    if (!isset($perClient[$c])) {
-        $perClient[$c] = 0;
-    }
-
-    $perClient[$c]++;
-}
-
-
-if (!empty($perClient)){
-
-    $cx = 110;
-    $cy = $pdf->GetY() + 40;
-    $r  = 28;
-
-    $total = array_sum($perClient);
-    $startAngle = 0;
-    $i = 0;
-
-    foreach ($perClient as $client => $val){
-
-        $pct = $val / $total;
-        $end = $startAngle + ($pct * 360);
-
-        list($rC,$gC,$bC) = pickColor($i);
-        $pdf->SetDrawColor($rC,$gC,$bC);
-
-        for ($a = $startAngle; $a < $end; $a += 1){
-            $x = $cx + $r * cos(deg2rad($a));
-            $y = $cy + $r * sin(deg2rad($a));
-            $pdf->Line($cx, $cy, $x, $y);
-        }
-
-        $pdf->SetFillColor($rC,$gC,$bC);
-        $pdf->Rect(20, $cy - 25 + ($i*6), 4, 4, "F");
-
-        $pdf->SetXY(26, $cy - 25 + ($i*6));
-        $pdf->SetFont("Arial","",8);
-        $pdf->Cell(60, 4, utf8_decode("$client ($val)"));
-
-        $startAngle = $end;
-        $i++;
-    }
-}
-
-$pdf->Ln(60);
-
 
 
 /* ============================================================
