@@ -2788,6 +2788,7 @@ $pdf->BodyText($ins);
 SkipRepeatSection:
 $pdf->Ln(5);
 
+
 /* ============================================================
    SECTION 8 — NCR (NON CONFORMITY REPORTS) — FULL ANALYSIS
 ============================================================ */
@@ -2823,7 +2824,7 @@ $officialNCR = find_by_sql("
 ");
 
 /* ============================================================
-   2) HIDDEN NCR — FROM ALL TEST TABLES (COLUMN: Comments)
+   2) HIDDEN NCR — ALL TEST TABLES (Comments)
 ============================================================ */
 
 $testTables = [
@@ -2862,7 +2863,7 @@ foreach ($testTables as $tb){
             Comments,
             Registed_Date
         FROM {$tb}
-        WHERE YEAR(Registed_Date) = '{$year}' 
+        WHERE YEAR(Registed_Date) = '{$year}'
     ");
 
     foreach ($rows as $r){
@@ -2872,12 +2873,12 @@ foreach ($testTables as $tb){
 
         foreach ($keywords as $kw){
             if (str_contains($c, $kw)){
-                
-              $client = findClientCached($r["Sample_ID"], $r["Sample_Number"]);
 
+                /* FIXED — CACHED CLIENT LOOKUP */
+                $client = findClientCached($r["Sample_ID"], $r["Sample_Number"]);
 
                 $hiddenNCR[] = [
-                    "Client"        => $clientQ[0]['Client'] ?? "UNKNOWN",
+                    "Client"        => $client ?? "UNKNOWN",
                     "Sample_ID"     => $r["Sample_ID"],
                     "Sample_Number" => $r["Sample_Number"],
                     "Test_Type"     => $r["Test_Type"],
@@ -2893,13 +2894,13 @@ foreach ($testTables as $tb){
 }
 
 /* ============================================================
-   3) MERGE BOTH SOURCES
+   3) MERGE SOURCES
 ============================================================ */
 
 $allNCR = array_merge($officialNCR, $hiddenNCR);
 
 /* ============================================================
-   8.1 — NCR Summary by Test Type
+   8.1 NCR Summary by Test Type
 ============================================================ */
 
 $pdf->SubTitle("8.1 NCR Summary by Test Type");
@@ -2908,19 +2909,17 @@ $ncrPerType = [];
 foreach ($allNCR as $n){
     $t = trim($n["Test_Type"]);
     if ($t === "") continue;
-
     if (!isset($ncrPerType[$t])) $ncrPerType[$t] = 0;
     $ncrPerType[$t]++;
 }
 
 if (empty($ncrPerType)){
-
     $pdf->BodyText("No NCR recorded for this year.");
     $pdf->Ln(5);
-
 } else {
 
     arsort($ncrPerType);
+    $totalNCR = array_sum($ncrPerType);
 
     $pdf->TableHeader([
         50 => "Test Type",
@@ -2928,11 +2927,9 @@ if (empty($ncrPerType)){
         30 => "% of Total"
     ]);
 
-    $totalNCR = array_sum($ncrPerType);
-
     foreach ($ncrPerType as $test => $cnt){
 
-        $pct = round(($cnt / $totalNCR) * 100, 1);
+        $pct = $totalNCR > 0 ? round(($cnt/$totalNCR)*100,1) : 0;
         $name = $testNames[$test] ?? $test;
 
         $pdf->TableRow([
@@ -2942,9 +2939,8 @@ if (empty($ncrPerType)){
         ]);
     }
 
-    /* TOTAL ROW */
     $pdf->TableRow([
-       50=> "TOTAL",
+        50 => "TOTAL",
         35 => $totalNCR,
         30 => "100%"
     ]);
@@ -2953,11 +2949,13 @@ if (empty($ncrPerType)){
 }
 
 /* ============================================================
-   8.2 — NCR Trend by Month (Table + Chart)
+   8.2 NCR Trend by Month
 ============================================================ */
 
 $pdf->SubTitle("8.2 NCR Trend by Month");
+
 ensureSpace($pdf, 60);
+
 $perMonthNCR = array_fill(1,12,0);
 
 foreach ($allNCR as $n){
@@ -2978,14 +2976,13 @@ $monthNames = [
     9=>"Sep",10=>"Oct",11=>"Nov",12=>"Dec"
 ];
 
-foreach ($perMonthNCR as $i => $val){
+foreach ($perMonthNCR as $i=>$val){
     $pdf->TableRow([
         25 => $monthNames[$i],
         30 => $val
     ]);
 }
 
-/* TOTAL */
 $pdf->TableRow([
     25 => "TOTAL",
     30 => array_sum($perMonthNCR)
@@ -2993,91 +2990,84 @@ $pdf->TableRow([
 
 $pdf->Ln(10);
 
-/* ------- BARCHART ------- */
+/* BAR CHART */
 ensureSpace($pdf, 60);
-$maxMonth = max($perMonthNCR);
-if ($maxMonth < 1) $maxMonth = 1;
+
+$maxMonth = max($perMonthNCR);  
+if ($maxMonth < 1) $maxMonth = 1;  
 
 $x0 = 20;
 $y0 = $pdf->GetY();
 $barH = 5;
-$gap = 3;
+$gap  = 3;
 
-foreach ($perMonthNCR as $i => $val){
+foreach ($perMonthNCR as $i=>$val){
 
     $barW = ($val / $maxMonth) * 100;
 
-    $pdf->SetXY($x0, $y0);
-    $pdf->SetFont("Arial","",8);
-    $pdf->Cell(20, $barH, $monthNames[$i], 0, 0);
+    $pdf->SetXY($x0,$y0);
+    $pdf->Cell(20,$barH,$monthNames[$i],0,0);
 
     $pdf->SetFillColor(60,120,200);
-    $pdf->Rect($x0 + 22, $y0, $barW, $barH, "F");
+    $pdf->Rect($x0+22,$y0,$barW,$barH,"F");
 
-    $pdf->SetXY($x0 + 125, $y0);
-    $pdf->Cell(10, $barH, $val, 0, 0);
+    $pdf->SetXY($x0+125,$y0);
+    $pdf->Cell(10,$barH,$val,0,0);
 
-    $y0 += ($barH + $gap);
+    $y0 += $barH + $gap;
 }
 
 $pdf->Ln(15);
 
 /* ============================================================
-   8.3 — NCR by Material Type (Table + Chart)
+   8.3 NCR by Material Type
 ============================================================ */
 
 $pdf->SubTitle("8.3 NCR by Material Type");
+
 ensureSpace($pdf, 60);
+
 $perMaterial = [];
 
 foreach ($allNCR as $n){
-
     $m = trim($n["Material_Type"] ?? "");
     if ($m === "") $m = "UNKNOWN";
-
     if (!isset($perMaterial[$m])) $perMaterial[$m] = 0;
     $perMaterial[$m]++;
 }
 
-if (empty($perMaterial)){
-
-    $pdf->BodyText("No material information available.");
-    $pdf->Ln(10);
-
-} else {
+if (!empty($perMaterial)){
 
     arsort($perMaterial);
-
-    $pdf->TableHeader([
-        50 => "Material Type",
-        35 => "NCR Count",
-        30 => "% of Total"
-    ]);
-
     $totalMT = array_sum($perMaterial);
 
-    foreach ($perMaterial as $mat => $cnt){
+    $pdf->TableHeader([
+        50=>"Material Type",
+        35=>"NCR Count",
+        30=>"% of Total"
+    ]);
 
-        $pct = round(($cnt/$totalMT)*100,1);
+    foreach ($perMaterial as $mat=>$cnt){
+        $pct = $totalMT>0 ? round(($cnt/$totalMT)*100,1):0;
 
         $pdf->TableRow([
-            50 => utf8_decode($mat),
-            35 => $cnt,
-            30 => $pct."%"
+            50=>utf8_decode($mat),
+            35=>$cnt,
+            30=>$pct."%"
         ]);
     }
 
-    /* TOTAL ROW */
     $pdf->TableRow([
-        50 => "TOTAL",
-        35 => $totalMT,
-        30 => "100%"
+        50=>"TOTAL",
+        35=>$totalMT,
+        30=>"100%"
     ]);
 
     $pdf->Ln(10);
 
-    /* ------- BARCHART ------- */
-     ensureSpace($pdf, 60);
+    /* BAR CHART */
+    ensureSpace($pdf,60);
+
     $maxMat = max($perMaterial);
     if ($maxMat < 1) $maxMat = 1;
 
@@ -3085,35 +3075,33 @@ if (empty($perMaterial)){
     $y0 = $pdf->GetY();
     $h  = 5;
 
-    foreach ($perMaterial as $mat => $cnt){
+    foreach ($perMaterial as $mat=>$cnt){
 
         $bar = ($cnt / $maxMat) * 100;
 
-        $pdf->SetXY($x0, $y0);
-        $pdf->SetFont("Arial","",8);
-        $pdf->Cell(50, $h, utf8_decode($mat), 0, 0);
+        $pdf->SetXY($x0,$y0);
+        $pdf->Cell(50,$h,utf8_decode($mat),0,0);
 
         $pdf->SetFillColor(200,80,80);
-        $pdf->Rect($x0 + 52, $y0, $bar, $h, "F");
+        $pdf->Rect($x0+52,$y0,$bar,$h,"F");
 
-        $pdf->SetXY($x0 + 155, $y0);
-        $pdf->Cell(10, $h, $cnt, 0, 0);
+        $pdf->SetXY($x0+155,$y0);
+        $pdf->Cell(10,$h,$cnt,0,0);
 
-        $y0 += ($h + 2);
+        $y0+=$h+2;
     }
 
     $pdf->Ln(15);
 }
+
 /* ============================================================
-   FIX: Build variables for Insight text
+   BUILD VARIABLES FOR INSIGHT (ALWAYS SAFE)
 ============================================================ */
 
-/* 1) TOP TEST TYPE */
-$topTest = array_key_first($ncrPerType) ?? "N/A";
-$topTestCount = $ncrPerType[$topTest] ?? 0;
-$topPct = $totalNCR > 0 ? round(($topTestCount / $totalNCR) * 100, 1) : 0;
+$topTest       = array_key_first($ncrPerType) ?? "N/A";
+$topTestCount  = $ncrPerType[$topTest] ?? 0;
+$topPct        = $totalNCR>0 ? round(($topTestCount/$totalNCR)*100,1) : 0;
 
-/* 2) TOP CLIENT */
 $perClient = [];
 foreach ($allNCR as $n){
     $c = trim($n["Client"] ?? "");
@@ -3121,30 +3109,35 @@ foreach ($allNCR as $n){
     if (!isset($perClient[$c])) $perClient[$c] = 0;
     $perClient[$c]++;
 }
-
 arsort($perClient);
-$topClient = array_key_first($perClient) ?? "N/A";
-$topClientCount = $perClient[$topClient] ?? 0;
-$topClientPct = $totalNCR > 0 ? round(($topClientCount / $totalNCR) * 100, 1) : 0;
 
-/* 3) LOWEST TEST TYPES */
+$topClient      = array_key_first($perClient) ?? "N/A";
+$topClientCount = $perClient[$topClient] ?? 0;
+$topClientPct   = $totalNCR>0 ? round(($topClientCount/$totalNCR)*100,1) : 0;
+
 $lowestTests = array_slice(array_keys($ncrPerType), -3, 3, true);
 $lowTestsStr = implode(", ", $lowestTests);
+
+/* ============================================================
+   8.4 — NCR Insight
+============================================================ */
 
 $pdf->SubTitle("8.4 NCR Insight");
 
 $msg = "
-The NCR analysis for the period {$year} highlights several important quality performance findings:
-- The test type with the greatest number of non-conformities was {$topTest}, accounting for approximately {$topPct}% of all NCRs. This identifies it as the primary source of quality deviations during the year.
-- The client with the highest NCR concentration was {$topClient}, responsible for {$topClientPct}% of all recorded cases. This suggests that specific projects or material sources may require closer monitoring.
-- Test types with the lowest NCR frequency included {$lowTestsStr}, indicating consistent performance and effective process control in these areas.
-- The distribution of NCRs shows clear clustering around certain materials and test categories, rather than being uniformly distributed across operations.
-Overall, the pattern of NCR generation points to specific hotspots where targeted corrective and preventive actions would have the highest impact on laboratory performance and result consistency.
+The NCR analysis for the period {$year} highlights several important quality-performance findings:
+
+- The test type with the greatest number of non-conformities was **{$topTest}**, representing **{$topPct}%** of all NCRs.
+- The client with the highest NCR concentration was **{$topClient}**, accounting for **{$topClientPct}%** of cases.
+- The test types with lowest NCR frequency included: **{$lowTestsStr}**, demonstrating strong process control in those areas.
+- NCRs tend to cluster around specific materials and test categories rather than being evenly distributed.
+
+Overall, the pattern indicates clear quality hotspots where targeted corrective and preventive actions will deliver the strongest improvements in operational reliability.
 ";
 
 $pdf->SetFont("Arial","",8);
 $pdf->WriteFormatted($msg);
-
+$pdf->Ln(5);
 
 
 
