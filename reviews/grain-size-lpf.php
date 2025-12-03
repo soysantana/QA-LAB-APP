@@ -351,9 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </div>
   </section>
-
-</main><!-- End #main -->
-<div class="modal fade" id="reviewModal" tabindex="-1">
+  <div class="modal fade" id="reviewModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
 
@@ -374,11 +372,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tr>
           </thead>
           <tbody id="reviewTableBody"></tbody>
+          <div class="mt-3 p-3 border rounded bg-light" id="reviewInsight" style="font-size: 14px;"></div>
+
         </table>
 
       </div>
 
       <div class="modal-footer">
+        <button type="button" id="btnSaveReview" class="btn btn-primary">Save to Report</button>
         <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
 
@@ -387,5 +388,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 
+</main><!-- End #main -->
+
 <script type="module" src="../js/grain-size/gs-lpf.js"></script>
+<script >
+document.getElementById("btnReview").addEventListener("click", () => {
+  
+  const specs = {
+    2:  [100,100],   // 3” 
+    5:  [80,100],    // 3/4"
+    6:  [70,100],    // 3/8"
+    7:  [60,100],    // No.4
+    8:  [50,100],    // No.10
+    13: [25,94]      // No.200
+  };
+
+  const names = {
+    2: '3"',
+    5: '3/4"',
+    6: '3/8"',
+    7: 'No.4',
+    8: 'No.10',
+    13: 'No.200'
+  };
+
+  let html = "";
+  let fails = [];
+  let passes = 0;
+
+  for (let i in specs) {
+    const passValue = parseFloat(document.getElementById("Pass"+i).value);
+    const [min, max] = specs[i];
+
+    const ok = (!isNaN(passValue) && passValue >= min && passValue <= max);
+
+    const badge = ok
+      ? "<span class='badge bg-success'>PASS</span>"
+      : "<span class='badge bg-danger'>FAIL</span>";
+
+    // tabla
+    html += `
+      <tr>
+        <td>${names[i]}</td>
+        <td>${isNaN(passValue) ? '-' : passValue.toFixed(2)}</td>
+        <td>${min} - ${max}</td>
+        <td>${badge}</td>
+      </tr>
+    `;
+
+    // conteo
+    if (ok) passes++;
+    else fails.push(names[i]);
+  }
+
+  // === INSIGHT AUTOMÁTICO ===
+  let insight = "";
+
+  if (fails.length === 0) {
+    insight = `
+      ✔️ <b>Material meets LPF specification.</b><br>
+      All sieve requirements are within limits.<br>
+      Material is fully compliant and acceptable for placement.<br>
+      Suitable for <b>LLD, SD1, SD2, SD3</b>.
+    `;
+    window.lastReviewStatus = "PASS";
+  } 
+  else {
+    insight = `
+      ❌ <b>Material does NOT meet LPF specification.</b><br>
+      Out-of-spec sieve(s): <b>${fails.join(", ")}</b>.<br><br>
+      Any single sieve outside limits results in <b>automatic rejection</b>.<br><br>
+      Recommended actions:<br>
+      - Verify sampling (segregation, contamination)<br>
+      - Re-check splitting and drying<br>
+      - Consider retest / notify QA
+    `;
+    window.lastReviewStatus = "FAIL";
+  }
+
+  // Guardar insight global
+  window.lastReviewInsight = insight;
+
+  // colocar resumen en modal
+  document.getElementById("reviewInsight").innerHTML = insight;
+  document.getElementById("reviewTableBody").innerHTML = html;
+
+  const modal = new bootstrap.Modal(document.getElementById("reviewModal"));
+  modal.show();
+});
+
+document.getElementById("btnSaveReview").addEventListener("click", () => {
+
+    const payload = {
+        Sample_ID: document.getElementById("SampleName").value,
+        Sample_Number: document.getElementById("SampleNumber").value,
+        Structure: document.getElementById("Structure").value,
+
+        Material_Type: "LPF",
+        Test_Type: "GS-LPF",
+
+        Test_Condition: window.lastReviewStatus,
+        Comments: document.getElementById("Comments").value,
+        Noconformidad: window.lastReviewInsight,
+
+        Report_Date: new Date().toISOString().slice(0,19).replace('T',' ')
+    };
+
+    fetch("../database/insert_review.php", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        alert("Registro guardado en ensayos_reporte correctamente");
+    })
+    .catch(err => console.error(err));
+});
+
+</script>
+
 <?php include_once('../components/footer.php');  ?>
