@@ -336,6 +336,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="repeat_gs_lpf">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="reviewed_gs_lpf">Reviewed</button>
+                  <button type="button" class="btn btn-warning" id="btnReview">General Revision</button>
+
                 <?php endif; ?>
               </div>
 
@@ -351,6 +353,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </section>
 
 </main><!-- End #main -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">LPF Review — Specs vs Results</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <table class="table table-bordered text-center">
+          <thead>
+            <tr>
+              <th>Tamis</th>
+              <th>% Pass</th>
+              <th>Spec</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reviewTableBody"></tbody>
+        </table>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
 <script type="module" src="../js/grain-size/gs-lpf.js"></script>
 <?php include_once('../components/footer.php');  ?>

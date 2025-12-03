@@ -128,3 +128,51 @@ document.querySelectorAll('[data-exportar]').forEach((el) => {
     enviarImagenAlServidor(tipo, ["GrainSizeChart"]);
   });
 });
+
+document.getElementById("reviewBtn").addEventListener("click", () => {
+  
+  const specs = {
+    2:  [100,100],   // 3” 
+    5:  [80,100],    // 3/4"
+    6:  [70,100],    // 3/8"
+    7:  [60,100],    // No.4
+    8:  [50,100],    // No.10
+    13: [25,94]      // No.200
+  };
+
+  const names = {
+    2: '3"',
+    5: '3/4"',
+    6: '3/8"',
+    7: 'No.4',
+    8: 'No.10',
+    13: 'No.200'
+  };
+
+  let html = "";
+
+  for (let i in specs) {
+    const passValue = parseFloat(document.getElementById("Pass"+i).value);
+    const min = specs[i][0];
+    const max = specs[i][1];
+
+    const ok = (!isNaN(passValue) && passValue >= min && passValue <= max);
+    const badge = ok
+      ? "<span class='badge bg-success'>PASS</span>"
+      : "<span class='badge bg-danger'>FAIL</span>";
+
+    html += `
+      <tr>
+        <td>${names[i]}</td>
+        <td>${isNaN(passValue) ? '-' : passValue.toFixed(2)}</td>
+        <td>${min} - ${max}</td>
+        <td>${badge}</td>
+      </tr>
+    `;
+  }
+
+  document.getElementById("reviewTableBody").innerHTML = html;
+
+  const modal = new bootstrap.Modal(document.getElementById("reviewModal"));
+  modal.show();
+});

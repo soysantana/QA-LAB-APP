@@ -89,46 +89,9 @@ function fetchData($tableName, $applyDateFilter = false)
 
 function getTestLink($testType, $id)
 {
-    $links = [
-        'AL' => '../reviews/atterberg-limit.php?id=',
-        'BTS' => '../reviews/brazilian.php?id=',
-        'GS' => '../reviews/grain-size.php?id=',
-        'GS-CoarseThan' => '../reviews/grain-size-coarsethan-agg.php?id=',
-        'LAA_Large' => '../reviews/LAA-Large.php?id=',
-        'LAA_Small' => '../reviews/LAA-Small.php?id=',
-        'MC_Oven' => '../reviews/moisture-oven.php?id=',
-        'MC_Microwave' => '../reviews/moisture-microwave.php?id=',
-        'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php?id=',
-        'MC_Scale' => '../reviews/moisture-scale.php?id=',
-        'PLT' => '../reviews/point-Load.php?id=',
-        'SND' => '../reviews/soundness.php?id=',
-        'SG' => '../reviews/specific-gravity.php?id=',
-        'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php?id=',
-        'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php?id=',
-        'SP' => '../reviews/standard-proctor.php?id=',
-        'SCT' => '../reviews/sand-castle-test.php?id=',
-        'UCS' => '../reviews/unixial-compressive.php?id=',
-        'PH' => '../reviews/pinhole-test.php?id=',
-        'GS_CF' => '../reviews/grain-size-coarse-filter.php?id=',
-        'GS_FF' => '../reviews/grain-size-fine-filter.php?id=',
-        'GS_LPF' => '../reviews/grain-size-lpf.php?id=',
-        'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php?id=',
-        'GS-TRF' => '../reviews/grain-size-full.php?id=',
-        'GS-UFF' => '../reviews/grain-size-full.php?id=',
-        'GS-FRF' => '../reviews/grain-size-full.php?id=',
-        'GS-IRF' => '../reviews/grain-size-full.php?id=',
-        'GS-RF' => '../reviews/grain-size-full.php?id=',
-        'GS-BF' => '../reviews/grain-size-full.php?id=',
-        'GS-Common' => '../reviews/grain-size-full.php?id=',
-        'GS-LQ2' => '../reviews/grain-size-full.php?id=',
-        'HY' => '../reviews/hydrometer.php?id=',
-        'DHY' => '../reviews/double-hydrometer.php?id=',
-        'AR-CF' => '../reviews/reactivity-coarse.php?id=',
-        'AR-FF' => '../reviews/reactivity-fine.php?id=',
-    ];
-
-    return isset($links[$testType]) ? $links[$testType] . $id : '#';
+    return "../pages/review_test.php?type={$testType}&id={$id}";
 }
+
 
 function displayAccordion($tables)
 {
