@@ -63,6 +63,23 @@ function TableRow($cols){
     $this->Ln();
 }
 
+function WriteFormatted($text) {
+    $parts = preg_split('/(\[\[b\]\]|\[\[\/b\]\])/', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    foreach ($parts as $part) {
+        if ($part === '[[b]]') {
+            $this->SetFont('Arial','B',8);
+        } elseif ($part === '[[/b]]') {
+            $this->SetFont('Arial','',8);
+        } else {
+            $this->Write(5, utf8_decode($part));
+        }
+    }
+
+    $this->Ln(6);
+}
+
+
 }
 
 /* ============================================================
@@ -511,22 +528,20 @@ $annualNCR = count($ncr);
 /* ----------- TEXTO EJECUTIVO ----------- */
 
 $summaryText = "
-The laboratory maintained solid and stable operational performance throughout the year, with consistent workflow execution across sample registration, preparation, realization, delivery and documentation processes.
+The PVDJ Laboratory maintained stable and consistent operational performance throughout the year, supported by a well-structured workflow covering sample registration, preparation, testing, delivery, and documentation.
 
-A total of {$totalRegistered} samples were received and {$totalTestsRun} individual tests were performed, reflecting sustained demand from all project fronts. The lab supported {$totalClientsYear} active clients, with no excessive dependency on a single client, ensuring balanced resource allocation and operational stability.
+A total of {$totalRegistered} samples were received and {$totalTestsRun} individual tests were completed. Services were provided to {$totalClientsYear} clients, with demand distributed evenly across projects, ensuring balanced resource allocation and avoiding dependency on any single client.
 
-The most requested test of the year was '{$topTest}' with {$topTestCount} executions, while the top contributing client was '{$topClient}' with {$topClientTests} processed tests.
+The most frequently executed test was '{$topTest}' with {$topTestCount} completions, while '{$topClient}' was the client with the highest testing volume ({$topClientTests} tests). Operational load peaked in Q{$peakQuarter} and reached its lowest point in Q{$minQuarter}. Monthly activity followed expected field and construction cycles, with the highest demand in {$peakMonthName} and the lowest in {$minMonthName}.
 
-Workload distribution peaked in Q{$peakQuarter}, while the lowest activity occurred in Q{$minQuarter}. Monthly behavior showed its highest demand in {$peakMonthName} and lowest in {$minMonthName}, following expected construction and production cycles.
+A total of {$annualNCR} non-conformities were recorded and addressed through corrective and preventive actions, maintaining alignment with internal procedures, audit requirements, and ASTM standards.
 
-A total of {$annualNCR} non-conformities were reported during the year, all documented and addressed through internal corrective/preventive actions, ensuring compliance with procedures, audit requirements, and ASTM standards.
-
-Overall, the annual performance demonstrates strong operational reliability, effective coordination among technicians, supervisors and document control, and consistent adherence to quality, traceability, and safety standards. 
+Overall, laboratory operations demonstrated strong reliability, effective coordination among technicians, supervisors, and document control, and consistent adherence to quality, traceability, and safety standards. These results confirm a solid operational year and provide a strong basis for continued performance improvement.
 ";
-
-$pdf->BodyText($summaryText);
-
+$pdf->SetFont("Arial","",8);
+$pdf->WriteFormatted($summaryText);
 $pdf->Ln(5);
+
 
 
 /* ============================================================
@@ -2602,7 +2617,7 @@ arsort($repeatByType);
 
 $pdf->TableHeader([
     60=>"Test Type",
-    30=>"Repeats",
+    20=>"Repeats",
     30=>"% of Its Type"
 ]);
 
@@ -2615,7 +2630,7 @@ foreach ($repeatByType as $t=>$cnt){
 
     $pdf->TableRow([
         60=>utf8_decode($name),
-        30=>$cnt,
+        20=>$cnt,
         30=>$pctType."%"
     ]);
 }
@@ -2627,7 +2642,7 @@ $pdf->Ln(8);
 ============================================================ */
 
 $pdf->SubTitle("7.2 Repeat by Test Type (Chart)");
-
+ensureSpace($pdf, 60);
 $chartX = 40;
 $chartY = $pdf->GetY() + 4;
 $barW   = 120;
@@ -2671,7 +2686,7 @@ arsort($repeatByClient);
 
 $pdf->TableHeader([
     60=>"Client",
-    30=>"Repeats",
+    20=>"Repeats",
     30=>"% of Annual"
 ]);
 
@@ -2681,7 +2696,7 @@ foreach ($repeatByClient as $cl=>$cnt){
 
     $pdf->TableRow([
         60=>utf8_decode($cl ?: "UNKNOWN"),
-        30=>$cnt,
+        20=>$cnt,
         30=>$pct
     ]);
 }
@@ -2693,7 +2708,7 @@ $pdf->Ln(8);
 ============================================================ */
 
 $pdf->SubTitle("7.4 Monthly Repeat Trend");
-
+ensureSpace($pdf, 60);
 $cx = 25;
 $cy = $pdf->GetY() + 15;
 $w  = 160;
@@ -2726,53 +2741,12 @@ foreach ($repeatByMonth as $m=>$v){
 
 $pdf->Ln(55);
 
-/* ============================================================
-   7.8 ROOT CAUSE ANALYSIS — PIE CHART
-============================================================ */
-
-$pdf->SubTitle("7.5 Root Cause Distribution");
-
-$totalRoot = array_sum($repeatReasons);
-if ($totalRoot <= 0) $totalRoot = 1;
-
-$cx = 110;
-$cy = $pdf->GetY() + 35;
-$r  = 30;
-
-$startAngle=0;
-$i=0;
-
-foreach ($repeatReasons as $cause=>$cnt){
-
-    $pct = $cnt / $totalRoot;
-    $endAngle = $startAngle + ($pct*360);
-
-    list($rC,$gC,$bC)=pickColor($i);
-    $pdf->SetDrawColor($rC,$gC,$bC);
-
-    for ($a=$startAngle; $a<$endAngle; $a+=0.8){
-        $x = $cx + $r*cos(deg2rad($a));
-        $y = $cy + $r*sin(deg2rad($a));
-        $pdf->Line($cx,$cy,$x,$y);
-    }
-
-    $pdf->SetFillColor($rC,$gC,$bC);
-    $pdf->Rect(20, $cy - 30 + ($i*6), 4, 4, "F");
-    $pdf->SetXY(26, $cy - 30 + ($i*6));
-    $pdf->SetFont("Arial","",8);
-    $pdf->Cell(60,4, utf8_decode("$cause ($cnt)"));
-
-    $startAngle = $endAngle;
-    $i++;
-}
-
-$pdf->Ln(60);
 
 /* ============================================================
    7.9 INSIGHTS
 ============================================================ */
 
-$pdf->SubTitle("7.6 Insights & Recommendations");
+$pdf->SubTitle("7.5 Insights & Recommendations");
 
 $topType = array_key_first($repeatByType);
 $topClient = array_key_first($repeatByClient);
@@ -2782,7 +2756,6 @@ $ins = "
 - Client '$topClient' contributed the majority of repeat cases.
 - Repeat rate of {$repeatPct}% indicates ".($repeatPct>5?"a need for targeted improvement.":"good general performance.")."
 - Peak months for repeat activity align with workload seasonality.
-- Root causes suggest priority areas for corrective action.
 ";
 
 $pdf->BodyText($ins);
@@ -2929,8 +2902,8 @@ if (empty($ncrPerType)){
     arsort($ncrPerType);
 
     $pdf->TableHeader([
-        60 => "Test Type",
-        30 => "NCR Count",
+        50 => "Test Type",
+        35 => "NCR Count",
         30 => "% of Total"
     ]);
 
@@ -2942,16 +2915,16 @@ if (empty($ncrPerType)){
         $name = $testNames[$test] ?? $test;
 
         $pdf->TableRow([
-            60 => utf8_decode($name),
-            30 => $cnt,
+            50 => utf8_decode($name),
+            35 => $cnt,
             30 => $pct . "%"
         ]);
     }
 
     /* TOTAL ROW */
     $pdf->TableRow([
-        60 => "TOTAL",
-        30 => $totalNCR,
+       50=> "TOTAL",
+        35 => $totalNCR,
         30 => "100%"
     ]);
 
@@ -2963,7 +2936,7 @@ if (empty($ncrPerType)){
 ============================================================ */
 
 $pdf->SubTitle("8.2 NCR Trend by Month");
-
+ensureSpace($pdf, 60);
 $perMonthNCR = array_fill(1,12,0);
 
 foreach ($allNCR as $n){
@@ -2974,7 +2947,7 @@ foreach ($allNCR as $n){
 }
 
 $pdf->TableHeader([
-    30 => "Month",
+    25 => "Month",
     30 => "NCR Count"
 ]);
 
@@ -2986,14 +2959,14 @@ $monthNames = [
 
 foreach ($perMonthNCR as $i => $val){
     $pdf->TableRow([
-        30 => $monthNames[$i],
+        25 => $monthNames[$i],
         30 => $val
     ]);
 }
 
 /* TOTAL */
 $pdf->TableRow([
-    30 => "TOTAL",
+    25 => "TOTAL",
     30 => array_sum($perMonthNCR)
 ]);
 
@@ -3055,8 +3028,8 @@ if (empty($perMaterial)){
     arsort($perMaterial);
 
     $pdf->TableHeader([
-        60 => "Material Type",
-        30 => "NCR Count",
+        50 => "Material Type",
+        35 => "NCR Count",
         30 => "% of Total"
     ]);
 
@@ -3067,16 +3040,16 @@ if (empty($perMaterial)){
         $pct = round(($cnt/$totalMT)*100,1);
 
         $pdf->TableRow([
-            60 => utf8_decode($mat),
-            30 => $cnt,
+            50 => utf8_decode($mat),
+            35 => $cnt,
             30 => $pct."%"
         ]);
     }
 
     /* TOTAL ROW */
     $pdf->TableRow([
-        60 => "TOTAL",
-        30 => $totalMT,
+        50 => "TOTAL",
+        35 => $totalMT,
         30 => "100%"
     ]);
 
@@ -3110,6 +3083,557 @@ if (empty($perMaterial)){
 
     $pdf->Ln(15);
 }
+
+$pdf->SubTitle("8.4 NCR Insight");
+
+$msg = "
+The NCR analysis for the period {$year} highlights several important quality performance findings:
+- The test type with the greatest number of non-conformities was {$topTest}, accounting for approximately {$topPct}% of all NCRs. This identifies it as the primary source of quality deviations during the year.
+- The client with the highest NCR concentration was {$topClient}, responsible for {$topClientPct}% of all recorded cases. This suggests that specific projects or material sources may require closer monitoring.
+- Test types with the lowest NCR frequency included {$lowTestsStr}, indicating consistent performance and effective process control in these areas.
+- The distribution of NCRs shows clear clustering around certain materials and test categories, rather than being uniformly distributed across operations.
+Overall, the pattern of NCR generation points to specific hotspots where targeted corrective and preventive actions would have the highest impact on laboratory performance and result consistency.
+";
+
+$pdf->SetFont("Arial","",8);
+$pdf->WriteFormatted($msg);
+
+
+
+
+/* ============================================================
+   SECTION 9 — SAMPLE FLOW DIAGNOSTICS (BOTTLENECK FINDER)
+============================================================ */
+
+$pdf->AddPage();
+$pdf->SectionTitle("9. Sample Flow Diagnostics (Bottleneck Finder)");
+
+/* ============================================================
+   9.0 LOAD ALL DATA NEEDED FOR TIME CALCULATIONS
+============================================================ */
+
+$flowData = find_by_sql("
+    SELECT 
+        r.Sample_ID,
+        r.Sample_Number,
+        r.Test_Type,
+        r.Registed_Date AS RegDate,
+
+        /* ===== PREPARATION ===== */
+        p.Start_Date AS PrepStart,
+        tpr.Process_Started AS PrepTS,
+
+        /* ===== REALIZATION ===== */
+        rl.Start_Date AS RealStart,
+        tr.Process_Started AS RealTS,
+
+        /* ===== DELIVERY ===== */
+        d.Start_Date AS DelStart,
+        td.Process_Started AS DelTS,
+        d.Start_Date AS DelivDate
+
+    FROM lab_test_requisition_form r
+
+    /* ===== PREPARATION ===== */
+    LEFT JOIN test_preparation p
+        ON r.Sample_ID = p.Sample_ID
+       AND r.Sample_Number = p.Sample_Number
+       AND FIND_IN_SET(p.Test_Type, r.Test_Type)
+
+    LEFT JOIN test_workflow tpr
+        ON tpr.Sample_ID = r.Sample_ID
+       AND tpr.Sample_Number = r.Sample_Number
+       AND tpr.Test_Type = p.Test_Type
+       AND tpr.Status = 'Preparación'
+
+    /* ===== REALIZATION ===== */
+    LEFT JOIN test_realization rl
+        ON r.Sample_ID = rl.Sample_ID
+       AND r.Sample_Number = rl.Sample_Number
+       AND FIND_IN_SET(rl.Test_Type, r.Test_Type)
+
+    LEFT JOIN test_workflow tr
+        ON tr.Sample_ID = r.Sample_ID
+       AND tr.Sample_Number = r.Sample_Number
+       AND tr.Test_Type = rl.Test_Type
+       AND tr.Status = 'Realización'
+
+    /* ===== DELIVERY ===== */
+    LEFT JOIN test_delivery d
+        ON r.Sample_ID = d.Sample_ID
+       AND r.Sample_Number = d.Sample_Number
+       AND FIND_IN_SET(d.Test_Type, r.Test_Type)
+
+    LEFT JOIN test_workflow td
+        ON td.Sample_ID = r.Sample_ID
+       AND td.Sample_Number = r.Sample_Number
+       AND td.Test_Type = d.Test_Type
+       AND td.Status = 'Entrega'
+
+    WHERE r.Registed_Date BETWEEN '{$start}' AND '{$end}'
+");
+
+/* Helper */
+function daysDiff($a, $b){
+    if (!$a || !$b) return null;
+    return round((strtotime($b) - strtotime($a)) / 86400, 2);
+}
+
+/* ============================================================
+   BUILD METRICS
+============================================================ */
+
+$reg2prep = [];
+$prep2real = [];
+$real2del = [];
+$totalCycle = [];
+
+$perMonthStage = [
+    "RegPrep" => array_fill(1,12,[]),
+    "PrepReal"=> array_fill(1,12,[]),
+    "RealDel" => array_fill(1,12,[])
+];
+
+$testDelay = []; 
+
+foreach ($flowData as $f){
+
+    $reg  = $f["RegDate"];
+    $prep = $f["PrepStart"] ?? $f["PrepTS"];
+    $real = $f["RealStart"] ?? $f["RealTS"];
+    $del  = $f["DelivDate"] ?? $f["DelStart"] ?? $f["DelTS"];
+
+    /* ---- SPLIT TEST TYPES ---- */
+    $tests = array_map('trim', explode(",", $f["Test_Type"]));
+
+    foreach ($tests as $t) {
+
+        if ($t == "") continue;
+
+        $d1 = daysDiff($reg, $prep);
+        $d2 = daysDiff($prep, $real);
+        $d3 = daysDiff($real, $del);
+        $dT = daysDiff($reg, $del);
+
+        if ($d1 !== null) $reg2prep[] = $d1;
+        if ($d2 !== null) $prep2real[] = $d2;
+        if ($d3 !== null) $real2del[] = $d3;
+        if ($dT !== null) $totalCycle[] = $dT;
+
+        if (!isset($testDelay[$t])) $testDelay[$t] = [];
+        if ($dT !== null) $testDelay[$t][] = $dT;
+
+        if ($del) {
+            $m = intval(substr($del,5,2));
+            if ($d1 !== null) $perMonthStage["RegPrep"][$m][] = $d1;
+            if ($d2 !== null) $perMonthStage["PrepReal"][$m][] = $d2;
+            if ($d3 !== null) $perMonthStage["RealDel"][$m][] = $d3;
+        }
+    }
+}
+
+/* Averages */
+$avgD1 = count($reg2prep)? round(array_sum($reg2prep)/count($reg2prep),2):0;
+$avgD2 = count($prep2real)? round(array_sum($prep2real)/count($prep2real),2):0;
+$avgD3 = count($real2del)? round(array_sum($real2del)/count($real2del),2):0;
+$avgDT = count($totalCycle)? round(array_sum($totalCycle)/count($totalCycle),2):0;
+
+$sumX = $avgD1 + $avgD2 + $avgD3;
+
+if ($sumX == 0) $sumX = 1;
+
+$p1 = round(($avgD1/$sumX)*100,1);
+$p2 = round(($avgD2/$sumX)*100,1);
+$p3 = round(($avgD3/$sumX)*100,1);
+
+/* ============================================================
+   9.1 PROCESS FLOW TIMELINE
+============================================================ */
+
+$pdf->SubTitle("9.1 Process Flow Timeline");
+
+$pdf->TableHeader([
+    50=>"Transition",
+    30=>"Avg Days",
+    25=>"% of Cycle"
+]);
+
+$pdf->TableRow([50=>"Registration - Preparation", 30=>$avgD1, 25=>"$p1%"]);
+$pdf->TableRow([50=>"Preparation - Realization",  30=>$avgD2, 25=>"$p2%"]);
+$pdf->TableRow([50=>"Realization - Delivery",     30=>$avgD3, 25=>"$p3%"]);
+$pdf->TableRow([50=>"TOTAL CYCLE TIME",           30=>$avgDT, 25=>"100%"]);
+
+$pdf->Ln(8);
+
+/* timeline bar chart */
+ensureSpace($pdf, 60);
+$x0 = 20;
+$y0 = $pdf->GetY();
+$h  = 6;
+
+$maxBar = max($avgD1,$avgD2,$avgD3,1);
+
+$items = [
+    "Reg - Prep" => $avgD1,
+    "Prep - Real" => $avgD2,
+    "Real - Del" => $avgD3
+];
+
+$colors = [
+    [70,130,180],
+    [220,100,80],
+    [120,180,90]
+];
+
+$i=0;
+foreach ($items as $label=>$v){
+
+    $bar = ($v/$maxBar)*110;
+
+    $pdf->SetXY($x0,$y0);
+    $pdf->Cell(35,$h,$label,0,0);
+    $pdf->SetFillColor($colors[$i][0],$colors[$i][1],$colors[$i][2]);
+    $pdf->Rect($x0+40,$y0,$bar,$h,"F");
+    $pdf->SetXY($x0+155,$y0);
+    $pdf->Cell(10,$h,$v,0,0);
+
+    $y0+=$h+3;
+    $i++;
+}
+
+$pdf->Ln(15);
+
+/* ============================================================
+   9.2 MONTHLY BOTTLENECK HEATMAP
+============================================================ */
+
+$pdf->SubTitle("9.2 Monthly Bottleneck Heatmap");
+
+$pdf->TableHeader([
+    15=>"Month",
+    25=>"Reg-Prep",
+    35=>"Prep-Real",
+    30=>"Real-Del",
+    45=>"Bottleneck"
+]);
+
+$monthNames = [
+    1=>"Jan",2=>"Feb",3=>"Mar",4=>"Apr",5=>"May",6=>"Jun",
+    7=>"Jul",8=>"Aug",9=>"Sep",10=>"Oct",11=>"Nov",12=>"Dec"
+];
+
+foreach ($monthNames as $m=>$mn){
+
+    /* ==== ZERO-PROOF ARRAYS ==== */
+    $list1 = $perMonthStage["RegPrep"][$m] ?? [];
+    $list2 = $perMonthStage["PrepReal"][$m] ?? [];
+    $list3 = $perMonthStage["RealDel"][$m] ?? [];
+
+    /* ==== SAFE COUNTS ==== */
+    $c1 = count($list1); if ($c1 == 0) $c1 = 1;
+    $c2 = count($list2); if ($c2 == 0) $c2 = 1;
+    $c3 = count($list3); if ($c3 == 0) $c3 = 1;
+
+    /* ==== SAFE AVERAGES ==== */
+    $d1 = count($list1) ? round(array_sum($list1)/$c1, 2) : 0;
+    $d2 = count($list2) ? round(array_sum($list2)/$c2, 2) : 0;
+    $d3 = count($list3) ? round(array_sum($list3)/$c3, 2) : 0;
+
+    /* ==== DETERMINE BOTTLENECK ==== */
+    $maxV = max($d1,$d2,$d3);
+    $bottleneck = ($maxV==0)
+        ? "None"
+        : (($maxV==$d1) ? "Reg-Prep"
+        : (($maxV==$d2) ? "Prep-Real" : "Real-Del"));
+
+    /* ==== ROW ==== */
+    $pdf->TableRow([
+        15=>$mn,
+        25=>$d1,
+        35=>$d2,
+        30=>$d3,
+        45=>$bottleneck
+    ]);
+}
+
+$pdf->Ln(10);
+
+
+/* ============================================================
+   9.3 TEST TYPES WITH HIGHEST CYCLE TIME
+============================================================ */
+
+$pdf->SubTitle("9.3 Test Types with Highest Total Cycle Time");
+
+/* ---- Average cycle time per test type ---- */
+$avgTestDelay = [];
+foreach ($testDelay as $t => $vals) {
+    if (!empty($vals)) {
+        $avgTestDelay[$t] = round(array_sum($vals) / max(count($vals), 1), 2);
+    } else {
+        $avgTestDelay[$t] = 0;
+    }
+}
+
+arsort($avgTestDelay);
+
+/* ---- Top 5 test types ---- */
+$top5 = array_slice($avgTestDelay, 0, 5, true);
+
+/* ---- ZERO PROOF ---- */
+$sumTop = array_sum($top5);
+if ($sumTop <= 0) $sumTop = 1;
+
+$pdf->TableHeader([
+    50 => "Test Type",
+    30 => "Avg Days",
+    35 => "% Delay Impact"
+]);
+
+if (!empty($top5)) {
+
+    foreach ($top5 as $t => $v) {
+
+        /* Percent impact safe */
+        $pct = round(($v / $sumTop) * 100, 1);
+
+        $name = $testNames[$t] ?? $t;
+
+        $pdf->TableRow([
+            50 => $name,
+            30 => $v,
+            35 => $pct . "%"
+        ]);
+    }
+
+} else {
+
+    $pdf->TableRow([
+        50=>"No data",
+        30=>"-",
+        35=>"-"
+    ]);
+}
+
+$pdf->TableRow([
+    50 => "TOTAL (Top 5)",
+    30 => "",
+    35 => "100%"
+]);
+
+$pdf->Ln(10);
+
+/* ============================================================
+   BAR CHART FOR TOP 5 DELAYS
+============================================================ */
+ensureSpace($pdf, 40);
+$x0 = 20;
+$y0 = $pdf->GetY();
+$h  = 6;
+
+/* ZERO PROOF for maxD */
+$maxD = !empty($top5) ? max($top5) : 1;
+if ($maxD <= 0) $maxD = 1;
+
+foreach ($top5 as $t => $v) {
+
+    $bar = ($v / $maxD) * 110;  // safe
+
+    $name = $testNames[$t] ?? $t;
+
+    $pdf->SetXY($x0, $y0);
+    $pdf->Cell(45, $h, utf8_decode($name), 0, 0);
+
+    $pdf->SetFillColor(150, 60, 60);
+    $pdf->Rect($x0 + 48, $y0, $bar, $h, "F");
+
+    $pdf->SetXY($x0 + 160, $y0);
+    $pdf->Cell(10, $h, $v, 0, 0);
+
+    $y0 += $h + 3;
+}
+
+$pdf->Ln(15);
+
+
+/* ============================================================
+   9.4 BOTTLENECK PROBABILITY MATRIX
+============================================================ */
+
+$pdf->SubTitle("9.4 Bottleneck Probability Matrix");
+
+$prob = [
+    "Reg-Prep" => ["P"=>2,"S"=>1],
+    "Prep-Real"=>["P"=>3,"S"=>3],
+    "Real-Del" =>["P"=>2,"S"=>2]
+];
+
+$pdf->TableHeader([
+    35=>"Stage",
+    25=>"Prob",
+    20=>"Sev",
+    30=>"Risk Score"
+]);
+
+foreach ($prob as $st=>$r){
+    $score = $r["P"]*$r["S"];
+    $pdf->TableRow([
+        35=>$st,
+        25=>$r["P"],
+        20=>$r["S"],
+        30=>$score
+    ]);
+}
+
+$legend = "
+LEGEND:
+Prob = Probability of delay (1=Low,2=Medium,3=High)
+Sev  = Severity of impact
+Risk Score = Prob x Sev
+";
+
+$pdf->Ln(1);
+$pdf->SetFont('Arial','',7);
+$pdf->MultiCell(0,4,utf8_decode($legend),0,'L');
+$pdf->SetFont('Arial','',8);
+
+$pdf->Ln(10);
+
+ensureSpace($pdf, 40);
+
+/* ---- risk bars ---- */
+$x0=20; $y0=$pdf->GetY(); $h=5;
+$maxR=9;
+
+foreach ($prob as $st=>$r){
+
+    $score = $r["P"]*$r["S"];
+    $bar = ($score/$maxR)*100;
+
+    $pdf->SetXY($x0,$y0);
+    $pdf->Cell(40,$h,$st,0,0);
+
+    $pdf->SetFillColor(255,120,60);
+    $pdf->Rect($x0+42,$y0,$bar,$h,"F");
+
+    $pdf->SetXY($x0+150,$y0);
+    $pdf->Cell(10,$h,$score,0,0);
+
+    $y0 += $h+3;
+}
+
+$pdf->Ln(15);
+
+/* ============================================================
+   9.5 INTERPRETATION (DYNAMIC)
+============================================================ */
+
+$pdf->SubTitle("9.5 Interpretation");
+
+/* ---- Main bottleneck ---- */
+$stageAverages = [
+    "Registration - Preparation"=>$avgD1,
+    "Preparation - Realization"=>$avgD2,
+    "Realization - Delivery"=>$avgD3
+];
+arsort($stageAverages);
+$mainBottle = array_key_first($stageAverages);
+
+/* ---- Top 3 slow tests ---- */
+$avgTestDelaySorted = $avgTestDelay;
+arsort($avgTestDelaySorted);
+$slowTestTypes = array_slice($avgTestDelaySorted,0,3,true);
+
+$slowList=[];
+foreach ($slowTestTypes as $tt=>$v){
+    $slowList[] = ($testNames[$tt] ?? $tt)." ({$v} days)";
+}
+$slowTestStr = implode(", ", $slowList);
+
+/* ---- Slow months (ZERO-PROOF) ---- */
+$monthCycleAvg = [];
+
+foreach ($perMonthStage["RegPrep"] as $m => $_) {
+
+    $list1 = $perMonthStage["RegPrep"][$m] ?? [];
+    $list2 = $perMonthStage["PrepReal"][$m] ?? [];
+    $list3 = $perMonthStage["RealDel"][$m] ?? [];
+
+    $c1 = count($list1);
+    $c2 = count($list2);
+    $c3 = count($list3);
+
+    if ($c1 == 0) $c1 = 1;
+    if ($c2 == 0) $c2 = 1;
+    if ($c3 == 0) $c3 = 1;
+
+    $d1 = count($list1) ? array_sum($list1) / $c1 : 0;
+    $d2 = count($list2) ? array_sum($list2) / $c2 : 0;
+    $d3 = count($list3) ? array_sum($list3) / $c3 : 0;
+
+    $monthCycleAvg[$m] = round($d1 + $d2 + $d3, 2);
+}
+
+arsort($monthCycleAvg);
+
+$slowMonths = array_slice(array_keys($monthCycleAvg), 0, 2);
+
+$monthFull = [
+    1=>"January",2=>"February",3=>"March",4=>"April",5=>"May",6=>"June",
+    7=>"July",8=>"August",9=>"September",10=>"October",11=>"November",12=>"December"
+];
+
+$slowMonthStr = implode(" & ", array_map(function($x) use ($monthFull){
+    return $monthFull[$x];
+}, $slowMonths));
+
+/* ---- Highest risk stage ---- */
+$maxRisk = -1;
+$highestRisk = "";
+
+foreach ($prob as $stage=>$r){
+    $score = $r["P"] * $r["S"];
+    if ($score > $maxRisk){
+        $maxRisk = $score;
+        $highestRisk = $stage . " (Risk Score: " . $score . ")";
+    }
+}
+
+/* ---- TEXT ---- */
+
+/* ---- TEXT ---- */
+
+$msg = "
+During the analysis of the laboratory operational flow for the period {$year}, several dynamic patterns were observed:
+- The primary bottleneck was [[b]]{$mainBottle}[[/b]], representing the largest share of total cycle time.
+- The test types contributing most to delays were: [[b]]{$slowTestStr}[[/b]].
+- The months with the highest congestion were: [[b]]{$slowMonthStr}[[/b]].
+- Based on probability and severity scoring, the most critical stage was [[b]]{$highestRisk}[[/b]].
+- Resource allocation during peak months should prioritize stages with high cycle accumulation.
+Improving efficiency in the bottleneck stage ([[b]]{$mainBottle}[[/b]]) would significantly reduce total cycle time and improve throughput.
+";
+
+
+$pdf->SetFont("Arial","",8);
+$pdf->WriteFormatted($msg);
+
+$pdf->AddPage();
+$pdf->SectionTitle("Closing Statement");
+
+$closingText = "
+The results achieved throughout the year reflect a laboratory that operates with discipline, technical rigor, and full commitment to quality. The consistency observed across workflows, documentation, and test execution confirms the strength of the processes that support project development.
+
+Beyond the metrics, this performance is the result of the dedication of every technician, supervisor, and document control specialist. The laboratory's reliability is built daily through teamwork, responsibility, and adherence to established standards.
+
+Looking forward, the laboratory is positioned to strengthen operational capacity, optimize bottleneck stages identified in this report, and further improve response times. These efforts will reinforce compliance, traceability, and readiness to support the evolving needs of the project.
+
+The year closes with a stable operational base and a clear path for continued improvement. With this foundation, the upcoming cycle begins with renewed direction, technical focus, and confidence in the team's ability to deliver at the highest standard.
+";
+
+$pdf->SetFont("Arial","",8);
+$pdf->MultiCell(0,5,utf8_decode($closingText),0,'L');
+$pdf->Ln(5);
+
 
 
 /* ============================================================
