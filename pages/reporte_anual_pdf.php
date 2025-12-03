@@ -3,9 +3,11 @@
 ob_start();
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_WARNING);
 
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
+
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
-ini_set('display_errors',1);
 error_reporting(E_ALL);
 
 $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
