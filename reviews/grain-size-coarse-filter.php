@@ -619,10 +619,31 @@ document.getElementById("btnReviewCF").addEventListener("click", () => {
 
     const structure = document.getElementById("Structure").value.trim().toUpperCase();
 
-    let specs;
-    if (["LLD","SD1","SD2","SD3"].includes(structure)) specs = specsCF_LLD;
-    else if (structure.includes("PVDJ-AGG-DIO")) specs = specsCF_DIO;
-    else specs = specsCF_AGG;
+let specs;
+let S = structure.toUpperCase();
+
+// 1) LLD / SD1 / SD2 / SD3 con cualquier número (25, 26, 258, 265...)
+if (["LLD-258", "SD1-258", "SD2-258", "SD3-258"]) {
+    specs = specsCF_LLD;
+}
+
+// 2) AGG-DIO — mientras tenga las palabras AGG y DIO y un número
+else if ( S.includes("AGG") && S.includes("DIO") && (S.includes("25") || S.includes("26")) ) {
+    specs = specsCF_DIO;
+}
+
+// 3) AGG — mientras tenga AGG y un número
+else if ( S.includes("AGG") && (S.includes("25") || S.includes("26")) ) {
+    specs = specsCF_AGG;
+}
+
+// 4) Si no encontró nada → error controlado
+if (!specs) {
+    console.error("No se encontraron especificaciones para:", S);
+    return;
+}
+
+
 
     let failsGrad = [];
     let htmlGrad = "";
