@@ -628,7 +628,7 @@ if (["LLD-258", "SD1-258", "SD2-258", "SD3-258"]) {
 }
 
 // 2) AGG-DIO — mientras tenga las palabras AGG y DIO y un número
-else if ( S.includes("PVDJ-AGG") && S.includes("DIO") && (S.includes("25") || S.includes("26")) ) {
+else if ( S.includes("AGG") && S.includes("DIO") && (S.includes("25") || S.includes("26")) ) {
     specs = specsCF_DIO;
 }
 
