@@ -426,6 +426,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="repeat-gs-coarse">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="reviewed-gs-coarse">Reviewed</button>
+                   <button type="button" class="btn btn-warning" id="btnReviewCF">General Revision</button>
+
                 <?php endif; ?>
               </div>
 
@@ -442,6 +444,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </section>
 
 </main><!-- End #main -->
+<!-- ================================
+     MODAL REVIEW GS-CF
+================================ -->
+<div class="modal fade" id="reviewModalCF" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title">General Revision — GS-CF</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <h5><b>Gradation Review</b></h5>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Sieve</th>
+              <th>% Pass</th>
+              <th>Specs</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reviewCFGradBody"></tbody>
+        </table>
+
+        <div id="insightCFGrad" class="mb-3"></div>
+
+        <hr>
+
+        <h5><b>Reactivity Review</b></h5>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Result</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reviewCFReactBody"></tbody>
+        </table>
+
+        <div id="insightCFReact" class="mb-3"></div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary" id="btnSaveReviewCF">Save Review</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 
 
@@ -495,5 +552,223 @@ document.querySelectorAll('[data-exportar]').forEach(btn => {
 });
 </script>
 <script type="module" src="../js/grain-size/gs-cf.js"></script>
+<script>
+/*************************************************
+ * 1. ESPECIFICACIONES GS-CF
+ *************************************************/
+const specsCF_LLD = {
+    1: [100,100],   // 1.5"
+    2: [87,100],    // 1"
+    3: [70,100],    // 3/4"
+    4: [33,100],    // 3/8"
+    5: [7,60],      // No.4
+    6: [0,15],      // No.10
+    7: [0,7],       // No.20
+    8: [0,5.4]      // No.200
+};
+
+const specsCF_AGG = {
+    1: [100,100],
+    2: [87,100],
+    3: [80,100],
+    4: [50,100],
+    5: [15,60],
+    6: [2,15],
+    7: [0,7],
+    8: [0,2.4]
+};
+
+const specsCF_DIO = {
+    1: [100,100],
+    2: [87,100],
+    3: [80,100],
+    4: [50,100],
+    5: [15,60],
+    6: [2,15],
+    7: [0,7],
+    8: [0,2.4]
+};
+
+// Correspondencia exacta de PassX según tu formulario GS-CF
+const sieveMapCF = {
+    1: "Pass1",   // 1.5"
+    2: "Pass2",   // 1"
+    3: "Pass3",   // 3/4"
+    4: "Pass4",   // 3/8"
+    5: "Pass5",   // No.4
+    6: "Pass6",   // No.10
+    7: "Pass15",  // No.20
+    8: "Pass18"   // No.200
+};
+
+const sieveNamesCF = {
+    1: '1.5"',
+    2: '1"',
+    3: '3/4"',
+    4: '3/8"',
+    5: 'No.4',
+    6: 'No.10',
+    7: 'No.20',
+    8: 'No.200'
+};
+
+/*************************************************
+ * 2. CLICK → RUN REVIEW GS-CF
+ *************************************************/
+document.getElementById("btnReviewCF").addEventListener("click", () => {
+
+    const structure = document.getElementById("Structure").value.trim().toUpperCase();
+
+    let specs;
+    if (["LLD","SD1","SD2","SD3"].includes(structure)) specs = specsCF_LLD;
+    else if (structure.includes("PVDJ-AGG-DIO")) specs = specsCF_DIO;
+    else specs = specsCF_AGG;
+
+    let failsGrad = [];
+    let htmlGrad = "";
+
+    /*************************************************
+     * 3. REVISIÓN DE GRADACIÓN
+     *************************************************/
+    for (let i = 1; i <= 8; i++) {
+
+        const passID = sieveMapCF[i];
+        const passValue = parseFloat(document.getElementById(passID).value);
+        const [min, max] = specs[i];
+        const ok = (!isNaN(passValue) && passValue >= min && passValue <= max);
+
+        if (!ok) failsGrad.push(sieveNamesCF[i]);
+
+        htmlGrad += `
+            <tr>
+                <td>${sieveNamesCF[i]}</td>
+                <td>${isNaN(passValue) ? "-" : passValue.toFixed(2)}</td>
+                <td>${min}-${max}</td>
+                <td>${ok ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+            </tr>
+        `;
+    }
+
+    document.getElementById("reviewCFGradBody").innerHTML = htmlGrad;
+
+    // Insight + NC gradación
+    if (failsGrad.length === 0) {
+        window.gradStatusCF = "Passed";
+        window.gradNC_CF = "";
+        document.getElementById("insightCFGrad").innerHTML =
+            `<b>Gradation: Passed</b><br>Material meets all specification limits.`;
+    } else {
+        window.gradStatusCF = "Failed";
+        window.gradNC_CF = `Material does not meets on Sieve: ${failsGrad.join(", ")}.`;
+        document.getElementById("insightCFGrad").innerHTML =
+            `<b>Gradation: Failed</b><br>Out of spec sieves: <b>${failsGrad.join(", ")}</b>.`;
+    }
+
+    /*************************************************
+     * 4. REVISIÓN DE REACTIVIDAD
+     *************************************************/
+    const reaction = document.getElementById("ReactionResult").value;
+    const acid = document.getElementById("AcidResult").value;
+
+    const reactionPass =
+        (reaction === "No Reaction" || reaction === "Weak Reaction" || reaction === "Moderate Reaction");
+
+    const acidPass = (acid === "Accepted");
+
+    let htmlReact = `
+        <tr>
+            <td>Reaction Strength</td>
+            <td>${reaction}</td>
+            <td>${reactionPass ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+        </tr>
+        <tr>
+            <td>Acid Reactivity</td>
+            <td>${acid}</td>
+            <td>${acidPass ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+        </tr>
+    `;
+
+    document.getElementById("reviewCFReactBody").innerHTML = htmlReact;
+
+    if (reactionPass && acidPass) {
+        window.reactStatusCF = "Passed";
+        window.reactNC_CF = "";
+        document.getElementById("insightCFReact").innerHTML =
+            `<b>Reactivity: Passed</b><br>${reaction}<br>${acid}`;
+    } else {
+        window.reactStatusCF = "Failed";
+        window.reactNC_CF = "Reactivity does not meet requirements.";
+        document.getElementById("insightCFReact").innerHTML =
+            `<b>Reactivity: Failed</b><br>${reaction}<br>${acid}`;
+    }
+
+    /*************************************************
+     * 5. MOSTRAR MODAL
+     *************************************************/
+    new bootstrap.Modal(document.getElementById("reviewModalCF")).show();
+});
+
+
+/*************************************************
+ * 6. SAVE → INSERT TWO SEPARATE RECORDS (GRAD + REACT)
+ *************************************************/
+document.getElementById("btnSaveReviewCF").addEventListener("click", () => {
+
+    const sampleID = document.getElementById("SampleName").value;
+    const sampleNumber = document.getElementById("SampleNumber").value;
+    const structure = document.getElementById("Structure").value;
+    const area = document.getElementById("Area").value;
+    const source = document.getElementById("Source").value;
+    const comments = document.getElementById("Comments").value;
+    const now = new Date().toISOString().slice(0,19).replace("T"," ");
+
+    const payloadGrad = {
+        Sample_ID: sampleID,
+        Sample_Number: sampleNumber,
+        Structure: structure,
+        Area: area,
+        Source: source,
+        Material_Type: "CF",
+        Test_Type: "Gradation",
+        Test_Condition: window.gradStatusCF,
+        Comments: comments,
+        Noconformidad: window.gradNC_CF,
+        Report_Date: now
+    };
+
+    const payloadReact = {
+        Sample_ID: sampleID,
+        Sample_Number: sampleNumber,
+        Structure: structure,
+        Area: area,
+        Source: source,
+        Material_Type: "CF",
+        Test_Type: "Acid Reactivity",
+        Test_Condition: window.reactStatusCF,
+        Comments: comments,
+        Noconformidad: window.reactNC_CF,
+        Report_Date: now
+    };
+
+    // Insertar los dos registros
+    Promise.all([
+        fetch("../database/insert_review.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payloadGrad)
+        }),
+        fetch("../database/insert_review.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payloadReact)
+        })
+    ])
+    .then(() => {
+        alert("Review saved successfully (Gradation + Reactivity)");
+        location.reload();
+    })
+    .catch(err => console.error(err));
+});
+</script>
 
 <?php include_once('../components/footer.php');  ?>

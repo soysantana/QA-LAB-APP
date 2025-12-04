@@ -423,8 +423,8 @@ document.getElementById("btnReview").addEventListener("click", () => {
     const ok = (!isNaN(passValue) && passValue >= min && passValue <= max);
 
     const badge = ok
-      ? "<span class='badge bg-success'>PASS</span>"
-      : "<span class='badge bg-danger'>FAIL</span>";
+      ? "<span class='badge bg-success'>Passed</span>"
+      : "<span class='badge bg-danger'>Failed</span>";
 
     // tabla
     html += `
@@ -444,27 +444,18 @@ document.getElementById("btnReview").addEventListener("click", () => {
   // === INSIGHT AUTOMÁTICO ===
   let insight = "";
 
-  if (fails.length === 0) {
+if (fails.length === 0) {
     insight = `
-      ✔️ <b>Material meets LPF specification.</b><br>
-      All sieve requirements are within limits.<br>
-      Material is fully compliant and acceptable for placement.<br>
-      Suitable for <b>LLD, SD1, SD2, SD3</b>.
+        Material meets LPF specification.
     `;
-    window.lastReviewStatus = "PASS";
-  } 
-  else {
+    window.lastReviewStatus = "Passed";
+} 
+else {
     insight = `
-      ❌ <b>Material does NOT meet LPF specification.</b><br>
-      Out-of-spec sieve(s): <b>${fails.join(", ")}</b>.<br><br>
-      Any single sieve outside limits results in <b>automatic rejection</b>.<br><br>
-      Recommended actions:<br>
-      - Verify sampling (segregation, contamination)<br>
-      - Re-check splitting and drying<br>
-      - Consider retest / notify QA
+      Material does not meets:${fails.join(", ")}.
     `;
-    window.lastReviewStatus = "FAIL";
-  }
+    window.lastReviewStatus = "Failed";
+}
 
   // Guardar insight global
   window.lastReviewInsight = insight;
@@ -485,7 +476,7 @@ document.getElementById("btnSaveReview").addEventListener("click", () => {
         Structure: document.getElementById("Structure").value,
 
         Material_Type: "LPF",
-        Test_Type: "GS-LPF",
+        Test_Type: "Gradation",
 
         Test_Condition: window.lastReviewStatus,
         Comments: document.getElementById("Comments").value,

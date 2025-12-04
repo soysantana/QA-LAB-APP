@@ -170,3 +170,4 @@ document.querySelectorAll('[data-exportar]').forEach((el) => {
     enviarImagenAlServidor(tipo, ["GrainSizeChart"]);
   });
 });
+

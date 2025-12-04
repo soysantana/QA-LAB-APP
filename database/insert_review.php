@@ -2,11 +2,11 @@
 @ob_clean();
 header('Content-Type: application/json');
 
-require_once('../config/load.php'); // Usa tu conexión $db y funciones
+require_once('../config/load.php'); 
 
 try {
 
-    // Leer JSON recibido desde fetch()
+    // Leer JSON
     $input = json_decode(file_get_contents("php://input"), true);
 
     if (!$input) {
@@ -19,10 +19,11 @@ try {
         "Sample_ID",
         "Sample_Number",
         "Structure",
+        "Area",
+        "Source",
         "Material_Type",
         "Test_Type",
         "Test_Condition",
-        "Comments",
         "Noconformidad",
         "Report_Date"
     ];
@@ -38,10 +39,11 @@ try {
     $Sample_ID      = $db->escape($input["Sample_ID"]);
     $Sample_Number  = $db->escape($input["Sample_Number"]);
     $Structure      = $db->escape($input["Structure"]);
+    $Area           = $db->escape($input["Area"]);
+    $Source         = $db->escape($input["Source"]);
     $Material_Type  = $db->escape($input["Material_Type"]);
     $Test_Type      = $db->escape($input["Test_Type"]);
     $Test_Condition = $db->escape($input["Test_Condition"]);
-    $Comments       = $db->escape($input["Comments"]);
     $Noconformidad  = $db->escape($input["Noconformidad"]);
     $Report_Date    = $db->escape($input["Report_Date"]);
 
@@ -49,7 +51,11 @@ try {
     $user = current_user();
     $UserName = $db->escape($user["name"]);
 
-    // SQL INSERT
+    // ➤ NUEVO: Comentario generado automáticamente
+    $Comments = "At {$Area} - From {$Source}";
+    $Comments = $db->escape($Comments);
+
+    // SQL INSERT corregido + Comments añadido
     $sql = "
         INSERT INTO ensayos_reporte (
             Sample_ID,

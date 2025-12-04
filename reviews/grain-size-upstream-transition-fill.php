@@ -406,6 +406,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="repeat_gs_utf">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="reviewed_gs_utf">Reviewed</button>
+                  <button type="button"class="btn btn-warning" id="btnReviewUTF">General Revision</button>
+
                 <?php endif; ?>
               </div>
 
@@ -419,8 +421,284 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </div>
   </section>
+<!-- ================================
+     MODAL — GENERAL UTF REVISION
+================================= -->
+<div class="modal fade" id="reviewModalUTF" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title">General Revision — UTF</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- =======================================
+             GRADATION SUMMARY UTF (Sand + Fines)
+        ======================================== -->
+        <h5 class="mt-2">Gradation — UTF</h5>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Required</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reviewBodyGradUTF"></tbody>
+        </table>
+
+        <div class="alert alert-info mt-2" id="insightGradUTF"></div>
+
+        <!-- =======================================
+             REACTIVITY SUMMARY
+        ======================================== -->
+        <h5 class="mt-4">Reactivity Test</h5>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Test</th>
+              <th>Value</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reviewBodyReactUTF"></tbody>
+        </table>
+
+        <div class="alert alert-info mt-2" id="insightReactUTF"></div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+        <button type="button"
+                class="btn btn-warning"
+                id="btnSaveReviewUTF">
+          Save Review
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
 
 </main><!-- End #main -->
 
 <script type="module" src="../js/grain-size/gs-utf.js"></script>
+
+<script>
+/*************************************************
+ * 1. CLICK → REVISIÓN COMPLETA UTF
+ *************************************************/
+document.getElementById("btnReviewUTF").addEventListener("click", () => {
+
+    /***********************************************
+     *  ESPECIFICACIONES UTF (SAND / FINES)
+     ***********************************************/
+    const structure = document.getElementById("Structure").value.trim().toUpperCase();
+
+    // SPEC LIMITS per structure
+    const limits = {
+        LLD:     { SandMin: 35, FinesMax: 6 },
+        SD1:     { SandMin: 35, FinesMax: 6 },
+        SD2:     { SandMin: 35, FinesMax: 6 },
+        SD3:     { SandMin: 35, FinesMax: 6 },
+        "PVDJ-AGG": { SandMin: 40, FinesMax: 4 },
+        "PVDJ-AGG-DIO": { SandMin: 40, FinesMax: 4 }
+    };
+
+    let spec;
+
+    if (["LLD","SD1","SD2","SD3"].includes(structure)) {
+        spec = limits.LLD;
+    } else if (structure.includes("PVDJ-AGG-DIO")) {
+        spec = limits["PVDJ-AGG-DIO"];
+    } else {
+        spec = limits["PVDJ-AGG"];
+    }
+
+    /***********************************************
+     * CAPTURAR VARIABLES CALCULADAS
+     ***********************************************/
+    const sand  = parseFloat(document.getElementById("Sand").value);
+    const fines = parseFloat(document.getElementById("Fines").value);
+
+    const reaction = document.getElementById("ReactionResult").value.trim();
+    const acid = document.getElementById("AcidResult").value.trim();
+
+
+    /***********************************************
+     * 1) REVISIÓN DE SAND / FINES
+     ***********************************************/
+    let rowsGrad = "";
+    let failuresGrad = [];
+
+    // Sand
+    const sandOK = (!isNaN(sand) && sand >= spec.SandMin);
+    if (!sandOK) failuresGrad.push("Sand");
+
+    rowsGrad += `
+        <tr>
+            <td>Sand %</td>
+            <td>${isNaN(sand) ? "-" : sand.toFixed(2)}</td>
+            <td>> ${spec.SandMin}</td>
+            <td>${sandOK ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+        </tr>
+    `;
+
+    // Fines
+    const finesOK = (!isNaN(fines) && fines <= spec.FinesMax);
+    if (!finesOK) failuresGrad.push("Fines");
+
+    rowsGrad += `
+        <tr>
+            <td>Fines %</td>
+            <td>${isNaN(fines) ? "-" : fines.toFixed(2)}</td>
+            <td>< ${spec.FinesMax}</td>
+            <td>${finesOK ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+        </tr>
+    `;
+
+    document.getElementById("reviewBodyGradUTF").innerHTML = rowsGrad;
+
+    // Insight GRAD
+    let insightGradUTF = "";
+    if (failuresGrad.length === 0) {
+        insightGradUTF =
+            `<b>Gradation UTF: Passed</b><br>Material meets all UTF requirements.`;
+    } else {
+        insightGradUTF =
+            `Material does not meet on: <b>${failuresGrad.join(", ")}%.`;
+    }
+
+    document.getElementById("insightGradUTF").innerHTML = insightGradUTF;
+
+
+    /***********************************************
+     * 2) REACTIVITY CHECK
+     ***********************************************/
+    let failuresReact = [];
+
+    const reactionPass = (reaction === "No Reaction" || reaction === "Weak Reaction" || reaction === "Moderate Reaction");
+    const acidPass = (acid === "Accepted");
+
+    if (!reactionPass) failuresReact.push("Reaction Strength");
+    if (!acidPass) failuresReact.push("Acid Reactivity");
+
+    let reactRows = `
+        <tr>
+            <td>Reaction Strength</td>
+            <td>${reaction}</td>
+            <td>${reactionPass ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+        </tr>
+        <tr>
+            <td>Acid Reactivity</td>
+            <td>${acid}</td>
+            <td>${acidPass ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+        </tr>
+    `;
+
+    document.getElementById("reviewBodyReactUTF").innerHTML = reactRows;
+
+    // Insight REACT
+    let insightReactUTF = "";
+
+    if (failuresReact.length === 0) {
+        insightReactUTF =
+            ``;
+    } else {
+        insightReactUTF =
+            `<b>Reactivity UTF: Failed</b><br>${failuresReact.join(", ")} out of spec.`;
+    }
+
+    document.getElementById("insightReactUTF").innerHTML = insightReactUTF;
+
+
+    /***********************************************
+     * 3) GUARDAR ESTADO EN VARIABLES GLOBALES
+     ***********************************************/
+    window.UTF_Gradation_Status = failuresGrad.length === 0 ? "Passed" : "Failed";
+    window.UTF_Gradation_Insight = insightGradUTF.replace(/<[^>]*>?/gm, '');
+
+    window.UTF_Reactivity_Status = failuresReact.length === 0 ? "Passed" : "Failed";
+    window.UTF_Reactivity_Insight = insightReactUTF.replace(/<[^>]*>?/gm, '');
+
+
+    /***********************************************
+     * MOSTRAR MODAL
+     ***********************************************/
+    new bootstrap.Modal(document.getElementById("reviewModalUTF")).show();
+});
+
+
+
+/*************************************************
+ * 4. BOTÓN → GUARDAR REVISIÓN UTF
+ *************************************************/
+document.getElementById("btnSaveReviewUTF").addEventListener("click", () => {
+
+    const commonData = {
+        Sample_ID: document.getElementById("SampleName").value,
+        Sample_Number: document.getElementById("SampleNumber").value,
+        Structure: document.getElementById("Structure").value,
+        Area: document.getElementById("Area").value,
+        Source: document.getElementById("Source").value,
+        Material_Type: "UTF",
+        Report_Date: new Date().toISOString().slice(0,19).replace("T"," ")
+    };
+
+    /*******************************
+     * 1) REGISTRO UTF — GRADATION
+     *******************************/
+    const gradPayload = {
+        ...commonData,
+        Test_Type: "Gradation",
+        Test_Condition: window.UTF_Gradation_Status,
+        Noconformidad: window.UTF_Gradation_Insight,
+        Comments: `At ${commonData.Area} - From ${commonData.Source}`
+    };
+
+    /*******************************
+     * 2) REGISTRO UTF — REACTIVITY
+     *******************************/
+    const reactPayload = {
+        ...commonData,
+        Test_Type: "Acid Reactivity",
+        Test_Condition: window.UTF_Reactivity_Status,
+        Noconformidad: window.UTF_Reactivity_Insight,
+        Comments: `At ${commonData.Area} - From ${commonData.Source}`
+    };
+
+    /*******************************
+     * ENVIAR AMBOS REGISTROS
+     *******************************/
+    Promise.all([
+        fetch("../database/insert_review.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(gradPayload)
+        }),
+
+        fetch("../database/insert_review.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(reactPayload)
+        })
+    ])
+    .then(() => {
+        alert("UTF Review saved successfully (2 records).");
+    })
+    .catch(err => console.error(err));
+
+});
+</script>
+
+
 <?php include_once('../components/footer.php');  ?>

@@ -402,7 +402,13 @@ function draw_client_bar_chart($pdf, array $clientes) {
  * ============================= */
 function render_ensayos_reporte($pdf, $start, $end) {
   // Obtener datos desde la tabla `ensayos_reporte`
-  $ensayos_reporte = find_by_sql("SELECT * FROM ensayos_reporte WHERE Report_Date BETWEEN '{$start}' AND '{$end}'");
+$ensayos_reporte = find_by_sql("
+    SELECT * FROM ensayos_reporte 
+    WHERE DATE(Report_Date) = DATE('{$end}')
+");
+
+
+
 
   // Título de la sección
   $pdf->section_title("8. Summary of Dam Constructions Test");
@@ -437,21 +443,22 @@ function render_ensayos_reporte($pdf, $start, $end) {
   }
 }
 
-function observaciones_ensayos_reporte($start, $end) {
+function observaciones_ensayos_reporte($end) {
   return find_by_sql("
     SELECT 
-      Sample_ID, 
-      Sample_Number, 
-      Structure, 
-      Material_Type, 
-      Noconformidad 
-    FROM ensayos_reporte 
+      Sample_ID,
+      Sample_Number,
+      Structure,
+      Material_Type,
+      Noconformidad
+    FROM ensayos_reporte
     WHERE 
-      Noconformidad IS NOT NULL 
-      AND TRIM(Noconformidad) != '' 
-      AND Report_Date BETWEEN '{$start}' AND '{$end}'
+      Noconformidad <> ''
+      AND Noconformidad IS NOT NULL
+      AND DATE(Report_Date) = DATE('{$end}')
   ");
 }
+
 
 /* =============================
  * Clase PDF
@@ -702,7 +709,8 @@ $pdf->Ln(5);
 
 // 9. Summary of Observations/Non-Conformities
 $pdf->section_title("9. Summary of Observations/Non-Conformities");
-$observaciones = observaciones_ensayos_reporte($start, $end);
+$observaciones = observaciones_ensayos_reporte($end);
+
 
 // Encabezado
 $pdf->SetFont('Arial', 'B', 9);

@@ -424,6 +424,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="repeat-gs-fine">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="reviewed-gs-fine">Reviewed</button>
+                    <button type="button" class="btn btn-warning" id="btnReview">General Revision</button>
+                 
                 <?php endif; ?>
               </div>
 
@@ -437,8 +439,276 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </div>
   </section>
+<div class="modal fade" id="reviewModalFF" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">GS-FF Review Summary</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- ========================= -->
+        <!-- 1. GRADATION REVIEW       -->
+        <!-- ========================= -->
+        <h5><b>Gradation Review</b></h5>
+
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Sieve</th>
+              <th>% Passing</th>
+              <th>Specs</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="reviewTableBodyFF"></tbody>
+        </table>
+
+        <!-- INSIGHT DE GRANULOMETRIA -->
+        <div id="insightGradFF" class="p-2 mb-3 border rounded bg-light"></div>
+
+        <hr>
+
+        <!-- ========================= -->
+        <!-- 2. REACTIVITY REVIEW      -->
+        <!-- ========================= -->
+        <h5><b>Acid Reactivity Review</b></h5>
+
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="reviewReactivityBodyFF"></tbody>
+        </table>
+
+       <h6><b>Gradation Insight</b></h6>
+<div id="insightGradFF" class="p-2 border rounded bg-light mb-3"></div>
+
+<h6><b>Reactivity Insight</b></h6>
+<div id="insightReactFF" class="p-2 border rounded bg-light"></div>
+
+
+      </div>
+
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-success" id="btnSaveReviewFF">
+          <i class="bi bi-save"></i> Save Review
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
 </main><!-- End #main -->
 
 <script type="module" src="../js/grain-size/gs-ff.js"></script>
+<script>
+/*************************************************
+ * 1. CLICK → REVISIÓN COMPLETA GS-FF
+ *************************************************/
+document.getElementById("btnReview").addEventListener("click", () => {
+
+    /*************************************************
+     * ESPECIFICACIONES SEGÚN EL ENTORNO
+     *************************************************/
+    const structure = document.getElementById("Structure").value.trim().toUpperCase();
+
+    const specs_LLD = { 11:[100,100],12:[95,100],13:[75,100],14:[60,85],16:[10,30],17:[5,25],18:[0,5.4] };
+    const specs_AGG = { 11:[100,100],12:[95,100],13:[75,100],14:[60,85],16:[10,30],17:[5,25],18:[0,2.4] };
+    const specs_DIO = { 11:[100,100],12:[95,100],13:[75,100],14:[50,85],16:[5,30],17:[0,25],18:[0,2.4] };
+
+    let specs;
+
+    if (["LLD","SD1","SD2","SD3"].includes(structure)) specs = specs_LLD;
+    else if (structure.includes("PVDJ-AGG-DIO")) specs = specs_DIO;
+    else specs = specs_AGG;
+
+    const sieveNames = {
+      11: '3/8"',
+      12: 'No.4',
+      13: 'No.10',
+      14: 'No.16',
+      16: 'No.50',
+      17: 'No.60',
+      18: 'No.200'
+    };
+
+
+    /*************************************************
+     * 2. TABLA DE GRADACIÓN
+     *************************************************/
+    let htmlGrad = "";
+    let failsGrad = [];
+
+    for (let i in specs) {
+        const pass = parseFloat(document.getElementById("Pass"+i).value);
+        const [min, max] = specs[i];
+        const ok = (!isNaN(pass) && pass >= min && pass <= max);
+
+        if (!ok) failsGrad.push(sieveNames[i]);
+
+        htmlGrad += `
+            <tr>
+                <td>${sieveNames[i]}</td>
+                <td>${isNaN(pass) ? '-' : pass.toFixed(2)}</td>
+                <td>${min} - ${max}</td>
+                <td>${ok ? "<span class='badge bg-success'>Passed</span>" : "<span class='badge bg-danger'>Failed</span>"}</td>
+            </tr>
+        `;
+    }
+
+    document.getElementById("reviewTableBodyFF").innerHTML = htmlGrad;
+
+
+    /*************************************************
+     * 3. TABLA DE REACTIVIDAD
+     *************************************************/
+    const reaction = document.getElementById("ReactionResult").value.trim();
+    const acid = document.getElementById("AcidResult").value.trim();
+
+    const reactionPass = (reaction === "Weak Reaction" || reaction === "Moderate Reaction" || reaction === "No Reaction");
+    const acidPass = (acid === "Accepted");
+
+
+    /*************************************************
+     * 4. INSIGHT + NO CONFORMIDAD GRADACIÓN
+     *************************************************/
+    let insightGrad = "";
+    let ncGrad = "";
+
+    if (failsGrad.length === 0) {
+
+        insightGrad = `
+          <b>Gradation: Passed</b><br>
+          All sieves comply with specification.
+        `;
+
+      
+
+    } else {
+
+        insightGrad = `
+          <b>Gradation: Failed</b><br>
+          Out-of-spec sieves: <b>${failsGrad.join(", ")}</b>.
+        `;
+
+        ncGrad = `Material does not meets on Sieve: ${failsGrad.join(", ")},.`;
+    }
+
+    document.getElementById("insightGradFF").innerHTML = insightGrad;
+    window.ncGrad = ncGrad;
+
+
+
+    /*************************************************
+     * 5. INSIGHT + NO CONFORMIDAD REACTIVIDAD
+     *************************************************/
+    let insightReact = "";
+    let ncReact = "";
+
+    if (reactionPass && acidPass) {
+
+        insightReact = `
+          <b>Reactivity: Passed</b><br>
+          Reaction Strength: ${reaction}<br>
+          Acid Test: ${acid}
+        `;
+
+        
+
+    } else {
+
+        insightReact = `
+          <b>Reactivity: Failed</b><br>
+          Reaction Strength: ${reaction}<br>
+          Acid Test: ${acid}
+        `;
+
+        ncReact = "Reactivity does not meet requirements.";
+    }
+
+    document.getElementById("insightReactFF").innerHTML = insightReact;
+
+    window.ncReact = ncReact;
+
+
+    /*************************************************
+     * 6. RESULTADOS GLOBALES PARA MODAL
+     *************************************************/
+    window.lastReviewStatus =
+        (failsGrad.length === 0 && reactionPass && acidPass)
+        ? "Passed"
+        : "Failed";
+
+    new bootstrap.Modal(document.getElementById("reviewModalFF")).show();
+});
+
+
+
+/*************************************************
+ * 8. GUARDAR — DOS REGISTROS INDIVIDUALES
+ *************************************************/
+document.getElementById("btnSaveReviewFF").addEventListener("click", () => {
+
+    const base = {
+        Sample_ID: document.getElementById("SampleName").value,
+        Sample_Number: document.getElementById("SampleNumber").value,
+        Structure: document.getElementById("Structure").value,
+        Area: document.getElementById("Area").value,
+        Source: document.getElementById("Source").value,
+        Material_Type: "FF",
+        Comments: document.getElementById("Comments").value,
+        Report_Date: new Date().toISOString().slice(0,19).replace("T"," ")
+    };
+
+    /************** REGISTRO 1 → GRADACIÓN ***************/
+    const payloadGrad = {
+        ...base,
+        Test_Type: "Gradation",
+        Test_Condition: (window.ncGrad.includes("does not")) ? "Failed" : "Passed",
+        Noconformidad: window.ncGrad
+    };
+
+    /************** REGISTRO 2 → REACTIVIDAD ***************/
+    const payloadReact = {
+        ...base,
+        Test_Type: "Acid Reactivity",
+        Test_Condition: (window.ncReact.includes("does not")) ? "Failed" : "Passed",
+        Noconformidad: window.ncReact
+    };
+
+    Promise.all([
+        fetch("../database/insert_review.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payloadGrad)
+        }),
+        fetch("../database/insert_review.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payloadReact)
+        })
+    ])
+
+    .then(res => Promise.all(res.map(r => r.json())))
+    .then(() => {
+        alert("Review saved successfully.");
+    })
+    .catch(err => console.error(err));
+});
+</script>
+
+
+
 <?php include_once('../components/footer.php');  ?>
