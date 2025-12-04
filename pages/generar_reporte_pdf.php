@@ -401,46 +401,51 @@ function draw_client_bar_chart($pdf, array $clientes) {
  * 8. Ensayos reporte + 9. Observaciones
  * ============================= */
 function render_ensayos_reporte($pdf, $start, $end) {
-  // Obtener datos desde la tabla `ensayos_reporte`
-$ensayos_reporte = find_by_sql("
-    SELECT * FROM ensayos_reporte 
-    WHERE DATE(Report_Date) = DATE('{$end}')
-");
 
+    // Filtrar SOLO las estructuras permitidas
+    $allowed_structures = "'LLD','SD1','SD2','SD3','PVDJ-AGG','PVDJ-AGG-INV'";
 
+    // Obtener datos filtrados
+    $ensayos_reporte = find_by_sql("
+        SELECT * 
+        FROM ensayos_reporte
+        WHERE DATE(Report_Date) = DATE('{$end}')
+        AND UPPER(Structure) IN ($allowed_structures)
+    ");
 
+    // Título
+    $pdf->section_title("8. Summary of Dam Constructions Test");
 
-  // Título de la sección
-  $pdf->section_title("8. Summary of Dam Constructions Test");
-
-  // Encabezados de la tabla
-  $pdf->SetFont('Arial', 'B', 9);
-  $pdf->Cell(40, 8, 'Sample', 1);
-  $pdf->Cell(25, 8, 'Structure', 1);
-  $pdf->Cell(20, 8, 'Mat. Type', 1);
-  $pdf->Cell(30, 8, 'Test Type', 1);
-  $pdf->Cell(20, 8, 'Condition', 1);
-  $pdf->Cell(55, 8, 'Comments', 1);
-  $pdf->Ln();
-
-  // Contenido de la tabla
-  $pdf->SetFont('Arial', '', 9);
-  foreach ($ensayos_reporte as $row) {
-    $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
-    $structure = $row['Structure'];
-    $mat_type = $row['Material_Type'];
-    $test_type = $row['Test_Type'];
-    $condition = $row['Test_Condition'];
-    $comments = substr($row['Comments'], 0, 45); // Limita comentarios largos
-
-    $pdf->Cell(40, 8, $sample, 1);
-    $pdf->Cell(25, 8, $structure, 1);
-    $pdf->Cell(20, 8, $mat_type, 1);
-    $pdf->Cell(30, 8, $test_type, 1);
-    $pdf->Cell(20, 8, $condition, 1);
-    $pdf->Cell(55, 8, $comments, 1);
+    // Encabezados
+    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->Cell(40, 8, 'Sample', 1);
+    $pdf->Cell(25, 8, 'Structure', 1);
+    $pdf->Cell(20, 8, 'Mat. Type', 1);
+    $pdf->Cell(30, 8, 'Test Type', 1);
+    $pdf->Cell(20, 8, 'Condition', 1);
+    $pdf->Cell(55, 8, 'Comments', 1);
     $pdf->Ln();
-  }
+
+    // Contenido
+    $pdf->SetFont('Arial', '', 9);
+
+    foreach ($ensayos_reporte as $row) {
+
+        $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
+        $structure = $row['Structure'];
+        $mat_type = $row['Material_Type'];
+        $test_type = $row['Test_Type'];
+        $condition = $row['Test_Condition'];
+        $comments = substr($row['Comments'], 0, 45);
+
+        $pdf->Cell(40, 8, $sample, 1);
+        $pdf->Cell(25, 8, $structure, 1);
+        $pdf->Cell(20, 8, $mat_type, 1);
+        $pdf->Cell(30, 8, $test_type, 1);
+        $pdf->Cell(20, 8, $condition, 1);
+        $pdf->Cell(55, 8, $comments, 1);
+        $pdf->Ln();
+    }
 }
 
 function observaciones_ensayos_reporte($end) {

@@ -566,7 +566,7 @@ document.getElementById("saveReviewAtterberg").addEventListener("click", async (
             Source: "<?php echo $Search['Source']; ?>",
 
             Material_Type: "<?php echo $Search['Material_Type']; ?>",
-            Test_Type: "Atterberg Limit — " + paramName,
+            Test_Type: "Atterberg Limit-" + paramName,
 
             // condición de cada parámetro
             Test_Condition: isOK ? "Passed" : "Failed",
