@@ -403,7 +403,7 @@ function draw_client_bar_chart($pdf, array $clientes) {
 function render_ensayos_reporte($pdf, $start, $end) {
 
     // Filtrar SOLO las estructuras permitidas
-    $allowed_structures = "'LLD','SD1','SD2','SD3','PVDJ-AGG','PVDJ-AGG-INV'";
+    $allowed_structures = "'LLD','SD1','SD2','SD3','PVDJ-AGG',,'LBOR','PVDJ-AGG-INV'";
 
     // Obtener datos filtrados
     $ensayos_reporte = find_by_sql("
