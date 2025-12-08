@@ -99,13 +99,14 @@ $applyPI = in_array(strtoupper($t["Structure"]), $structures);
 
 $PI_req = [
   "applies" => $applyPI,
-  "required_max" => ($applyPI ? 15 : null),
+  "required_min" => ($applyPI ? 15 : null),
   "actual" => floatval($t["PI"]),
   "status" => ($applyPI 
-      ? (floatval($t["PI"]) <= 15 ? "OK" : "Fail")
+      ? (floatval($t["PI"]) >= 15 ? "OK" : "Fail")
       : "N/A"
   )
 ];
+
 
 /* ============================================================
    7. RESPONSE JSON
