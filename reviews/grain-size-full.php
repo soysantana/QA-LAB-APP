@@ -716,6 +716,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (user_can_access(1)): ?>
                   <button type="submit" class="btn btn-primary" name="RepeatGSFull">Repeat</button>
                   <button type="submit" class="btn btn-primary" name="ReviewedGSFull">Reviewed</button>
+                  <button type="button" class="btn btn-warning w-100 mt-2" id="btnReviewSpecs"> <i class="bi bi-search"></i> General Revision</button>
+
                 <?php endif; ?>
               </div>
 
