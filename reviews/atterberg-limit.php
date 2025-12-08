@@ -478,7 +478,7 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
     if (!window.Rev_PI_OK) fails.push("PI");
     if (!window.Rev_PI_Struct_OK) fails.push("PI Structure");
 
-    let finalCondition = fails.length === 0 ? "PASS" : "FAIL";
+    let finalCondition = fails.length === 0 ? "Passed" : "Failed";
 
     // ======================================================
     // 6) Construir el Insight completo
