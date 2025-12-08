@@ -11,6 +11,13 @@ if (!isset($_GET['id'])) {
 $id = $db->escape($_GET['id']);
 
 // ============================================================
+// 0. COMPATIBILIDAD PHP (REEMPLAZO DE str_starts_with)
+// ============================================================
+function startsWith($string, $startString) {
+    return substr($string, 0, strlen($startString)) === $startString;
+}
+
+// ============================================================
 // 1. OBTENER ENSAYO
 // ============================================================
 $q = $db->query("
@@ -70,7 +77,7 @@ function calcSR($arr) {
 function calcSD($sr) {
     if ($sr === null) return null;
     if ($sr == 0) return 0;
-    return $sr / 2.83; // ASTM
+    return $sr / 2.83;
 }
 
 $LL_SR = calcSR($LL_vals);
@@ -96,16 +103,15 @@ $PL_ok = ($PL_SR !== null && $PL_SR <= $ASTM["PL_repeat"]);
 $PI_ok = ($PI_SR !== null && $PI_SR <= $ASTM["PI_repeat"]);
 
 // ============================================================
-// 6. REGLA DE PROYECTO PARA PI (CORREGIDA)
-//    APLICA A LLD / SD1 / SD2 / SD3 (INCLUYE SUFIJOS)
+// 6. REGLA DE PROYECTO PARA PI (COMPATIBLE Y CORREGIDA)
 // ============================================================
 $S = strtoupper(trim($t["Structure"]));
 
 $applyPI =
-    str_starts_with($S, "LLD") ||
-    str_starts_with($S, "SD1") ||
-    str_starts_with($S, "SD2") ||
-    str_starts_with($S, "SD3");
+    startsWith($S, "LLD") ||
+    startsWith($S, "SD1") ||
+    startsWith($S, "SD2") ||
+    startsWith($S, "SD3");
 
 $PI_value = floatval($t["PI"]);
 
