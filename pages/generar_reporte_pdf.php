@@ -402,21 +402,47 @@ function draw_client_bar_chart($pdf, array $clientes) {
  * ============================= */
 function render_ensayos_reporte($pdf, $start, $end) {
 
-    // Filtrar SOLO las estructuras permitidas
-    $allowed_structures = "'LLD-258', 'LLD-265','SD1-258','SD2-258','SD3-258','PVDJ-AGG','LBOR26','LBOR25','PVDJ-AGG-INV'";
+    // ===============================
+    // 1. PATRONES DE ESTRUCTURAS PERMITIDAS (DINÁMICO)
+    // ===============================
+    $patterns = [
+        "LLD-%",
+        "SD1-%",
+        "SD2-%",
+        "SD3-%",
+        "PVDJ-AGG%",
+        "LBOR%"
+    ];
 
-    // Obtener datos filtrados
-    $ensayos_reporte = find_by_sql("
-        SELECT * 
+    // Convertir el array en condiciones SQL:
+    $conditions = array_map(function($p) {
+        return "UPPER(Structure) LIKE '" . strtoupper($p) . "'";
+    }, $patterns);
+
+    // Unir todas las condiciones con OR
+    $whereStructures = implode(" OR ", $conditions);
+
+    // ===============================
+    // 2. SQL FINAL
+    // ===============================
+    $query = "
+        SELECT *
         FROM ensayos_reporte
         WHERE DATE(Report_Date) = DATE('{$end}')
-        AND UPPER(Structure) IN ($allowed_structures)
-    ");
+        AND ($whereStructures)
+        ORDER BY Structure, Sample_ID, Test_Type
+    ";
 
-    // Título
+    $ensayos_reporte = find_by_sql($query);
+
+    // ===============================
+    // 3. TÍTULO
+    // ===============================
     $pdf->section_title("8. Summary of Dam Constructions Test");
 
-    // Encabezados
+    // ===============================
+    // 4. ENCABEZADOS
+    // ===============================
     $pdf->SetFont('Arial', 'B', 9);
     $pdf->Cell(40, 8, 'Sample', 1);
     $pdf->Cell(25, 8, 'Structure', 1);
@@ -426,13 +452,15 @@ function render_ensayos_reporte($pdf, $start, $end) {
     $pdf->Cell(55, 8, 'Comments', 1);
     $pdf->Ln();
 
-    // Contenido
+    // ===============================
+    // 5. CONTENIDO
+    // ===============================
     $pdf->SetFont('Arial', '', 9);
 
     foreach ($ensayos_reporte as $row) {
 
         $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
-        $structure = $row['Structure'];
+        $structure = strtoupper($row['Structure']);
         $mat_type = $row['Material_Type'];
         $test_type = $row['Test_Type'];
         $condition = $row['Test_Condition'];
@@ -447,6 +475,7 @@ function render_ensayos_reporte($pdf, $start, $end) {
         $pdf->Ln();
     }
 }
+
 
 function observaciones_ensayos_reporte($end) {
   return find_by_sql("

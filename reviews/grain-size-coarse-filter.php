@@ -100,11 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-md-6">
                   <label for="ProductionDate" class="form-label">Production Date</label>
-                  <input type="date" class="form-control" name="ProductionDate" id="ProductionDate" value="<?php echo ($Search['ProductionDate']); ?>">
-                </div>
+              <input type="date" class="form-control" name="ProductionDate" id="ProductionDate"
+                  value="<?= isset($Search['ProductionDate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $Search['ProductionDate']) ? $Search['ProductionDate'] : '' ?>">
+
                 <div class="col-md-6">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
-                  <input type="date" class="form-control" name="DateTesting" id="DateTesting" value="<?php echo ($Search['Test_Start_Date']); ?>">
+                 <input type="date" class="form-control" name="DateTesting" id="DateTesting"
+                   value="<?= isset($Search['Test_Start_Date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $Search['Test_Start_Date']) ? $Search['Test_Start_Date'] : '' ?>">
+
                 </div>
                 <div class="col-12">
                   <label for="Comments" class="form-label">Comments</label>
@@ -582,21 +585,21 @@ const specsCF_DIO = {
     1: [100,100],
     2: [87,100],
     3: [80,100],
-    4: [50,100],
-    5: [15,60],
-    6: [2,15],
+    4: [40,100],
+    5: [7,60],
+    6: [0,15],
     7: [0,7],
     8: [0,2.4]
 };
 
 // Correspondencia exacta de PassX según tu formulario GS-CF
 const sieveMapCF = {
-    1: "Pass1",   // 1.5"
-    2: "Pass2",   // 1"
-    3: "Pass3",   // 3/4"
-    4: "Pass4",   // 3/8"
-    5: "Pass5",   // No.4
-    6: "Pass6",   // No.10
+    1: "Pass7",   // 1.5"
+    2: "Pass8",   // 1"
+    3: "Pass9",   // 3/4"
+    4: "Pass11",   // 3/8"
+    5: "Pass12",   // No.4
+    6: "Pass13",   // No.10
     7: "Pass15",  // No.20
     8: "Pass18"   // No.200
 };
@@ -619,29 +622,53 @@ document.getElementById("btnReviewCF").addEventListener("click", () => {
 
     const structure = document.getElementById("Structure").value.trim().toUpperCase();
 
-let specs;
-let S = structure.toUpperCase();
+let S = structure
+        .toUpperCase()
+        .replace(/\s+/g, "")      // quita TODOS los espacios
+        .replace(/[–—]/g, "-")    // reemplaza guiones raros
+        .replace(/_/g, "-")       // reemplaza underscore
+        .replace(/\./g, "-")      // reemplaza puntos
+        .replace(/\u00A0/g, "")   // quita NBSP
+        .trim();
 
-// 1) LLD / SD1 / SD2 / SD3 con cualquier número (25, 26, 258, 265...)
-if (["LLD-258", "SD1-258", "SD2-258", "SD3-258"]) {
+console.log("STRUCTURE NORMALIZADO =", S);
+
+let specs = null;
+
+/***********************
+ * 1) LLD / SD1 / SD2 / SD3
+ ***********************/
+if (S.startsWith("LLD") || S.startsWith("SD1") || S.startsWith("SD2") || S.startsWith("SD3")) {
     specs = specsCF_LLD;
 }
 
-// 2) AGG-DIO — mientras tenga las palabras AGG y DIO y un número
-else if ( S.includes("AGG") && S.includes("DIO") && (S.includes("25") || S.includes("26")) ) {
+/***********************
+ * 2) AGG-DIO
+ ***********************/
+else if (S.match(/PVDJ-AGG-DIO/i)) {
     specs = specsCF_DIO;
 }
 
-// 3) AGG — mientras tenga AGG y un número
-else if ( S.includes("AGG") && (S.includes("25") || S.includes("26")) ) {
+/***********************
+ * 3) AGG normal
+ ***********************/
+else if (S.match(/PVDJ-AGG/i)) {
     specs = specsCF_AGG;
 }
 
-// 4) Si no encontró nada → error controlado
+/***********************
+ * 4) No match
+ ***********************/
 if (!specs) {
-    console.error("No se encontraron especificaciones para:", S);
+    console.error("NO MATCH FOR:", S);
+    Swal.fire({
+        icon: "error",
+        title: "No Specs Found",
+        text: `No se encontraron especificaciones para: ${S}`
+    });
     return;
 }
+
 
 
 
