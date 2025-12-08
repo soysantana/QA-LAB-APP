@@ -10,9 +10,9 @@ if (!isset($_GET['id'])) {
 
 $id = $db->escape($_GET['id']);
 
-//============================================================
-// 1. OBTENER ENSAYO
-//============================================================
+/* ============================================================
+   1. OBTENER ENSAYO
+============================================================ */
 $q = $db->query("
     SELECT id, Technician, Classification, Structure,
            Liquid_Limit_Porce AS LL,
@@ -31,15 +31,15 @@ if ($q->num_rows == 0) {
 
 $t = $q->fetch_assoc();
 
-//============================================================
-// 2. NORMALIZAR TECNICOS
-//============================================================
+/* ============================================================
+   2. NORMALIZAR TECNICOS
+============================================================ */
 $rawTechs = strtoupper($t['Technician']);
-$techs = preg_split("/[\/,;| ]+/", $rawTechs, -1, PREG_SPLIT_NO_EMPTY);
+$techs = preg_split("/[\s\/,;|]+/", trim($rawTechs), -1, PREG_SPLIT_NO_EMPTY);
 
-//============================================================
-// 3. VALORES DE LL, PL, PI POR TRIAL
-//============================================================
+/* ============================================================
+   3. VALORES DE LL, PL, PI POR TRIAL
+============================================================ */
 $LL_vals = array_filter([
     floatval($t['LL_MC_Porce_1']),
     floatval($t['LL_MC_Porce_2']),
@@ -59,28 +59,28 @@ for ($i=1; $i<=3; $i++) {
     if ($ll > 0 && $pl > 0) $PI_vals[] = $ll - $pl;
 }
 
-//============================================================
-// 4. FUNCIONES ASTM SR Y SD
-//============================================================
+/* ============================================================
+   4. FUNCIONES ASTM SR Y SD
+============================================================ */
 function calcSR($arr){
     return (count($arr) >= 2) ? (max($arr) - min($arr)) : null;
 }
 function calcSD($sr){
-    return ($sr !== null) ? $sr / 2.83 : null;
+    if ($sr === null) return null;
+    if ($sr == 0) return 0;
+    return $sr / 2.83;
 }
 
 $LL_SR = calcSR($LL_vals);
 $LL_SD = calcSD($LL_SR);
-
 $PL_SR = calcSR($PL_vals);
 $PL_SD = calcSD($PL_SR);
-
 $PI_SR = calcSR($PI_vals);
 $PI_SD = calcSD($PI_SR);
 
-//============================================================
-// 5. ASTM LIMITES (Tabla 2)
-//============================================================
+/* ============================================================
+   5. ASTM LIMITES (Tabla 2)
+============================================================ */
 $ASTM = [
   "LL_repeat" => 2.9,
   "PL_repeat" => 2.0,
@@ -91,22 +91,25 @@ $LL_ok = ($LL_SR !== null && $LL_SR <= $ASTM["LL_repeat"]);
 $PL_ok = ($PL_SR !== null && $PL_SR <= $ASTM["PL_repeat"]);
 $PI_ok = ($PI_SR !== null && $PI_SR <= $ASTM["PI_repeat"]);
 
-//============================================================
-// 6. PI REQUIREMENT (LLD, SD1, SD2, SD3)
-//============================================================
+/* ============================================================
+   6. PI REQUIREMENT PARA LLD / SD1 / SD2 / SD3
+============================================================ */
 $structures = ["LLD","SD1","SD2","SD3"];
 $applyPI = in_array(strtoupper($t["Structure"]), $structures);
 
 $PI_req = [
   "applies" => $applyPI,
-  "required_min" => ($applyPI ? 15 : 0),
+  "required_max" => ($applyPI ? 15 : null),
   "actual" => floatval($t["PI"]),
-  "status" => ($applyPI ? (floatval($t["PI"]) < 15 ? "OK" : "Fail") : "N/A")
+  "status" => ($applyPI 
+      ? (floatval($t["PI"]) <= 15 ? "OK" : "Fail")
+      : "N/A"
+  )
 ];
 
-//============================================================
-// 7. RESPONSE JSON
-//============================================================
+/* ============================================================
+   7. RESPONSE JSON
+============================================================ */
 echo json_encode([
   "test" => [
     "LL" => floatval($t["LL"]),
@@ -134,3 +137,4 @@ echo json_encode([
 
   "PI_requirement" => $PI_req
 ]);
+?>
