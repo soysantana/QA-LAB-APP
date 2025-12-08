@@ -4,159 +4,313 @@ $Pending_List = 'show';
 require_once('../config/load.php');
 page_require_level(3);
 include_once('../components/header.php');
+
+if (!function_exists('h')) {
+    function h($string){
+        return htmlspecialchars((string)$string, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+
+function N($v){ return strtoupper(trim((string)$v)); }
+function daysSince($date){
+    if(!$date) return 0;
+    $t = strtotime($date);
+    if(!$t) return 0;
+    return (time() - $t) / 86400;
+}
+
+/* =============================
+   CARGA BASE
+============================= */
+$req = find_all("lab_test_requisition_form");
+
+$prep = find_all("test_preparation");
+$real = find_all("test_realization");
+$ent  = find_all("test_delivery");
+$rev  = find_all("test_review");
+$rep  = find_all("test_repeat");
+$rev2 = find_all("test_reviewed");
+
+/* =============================
+   INDEX GENERAL DE ESTADO
+============================= */
+$index = [];
+
+foreach ($prep as $r)
+  $index[N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])]
+    = ['stage'=>'PREP','SD'=>$r['Start_Date']];
+
+foreach ($real as $r)
+  $index[N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])]
+    = ['stage'=>'REAL','SD'=>$r['Start_Date']];
+
+foreach ($ent as $r)
+  $index[N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])]
+    = ['stage'=>'ENT','SD'=>$r['Start_Date']];
+
+foreach ($rev as $r)
+  $index[N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])]
+    = ['stage'=>'REV','SD'=>$r['Start_Date']];
+
+foreach ($rep as $r)
+  $index[N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])]
+    = ['stage'=>'REP','SD'=>$r['Start_Date']];
+
+foreach ($rev2 as $r)
+  $index[N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])]
+    = ['stage'=>'REV','SD'=>$r['Start_Date']];
+
+/* =============================
+   CONSTRUCCIÓN DE RESUMEN
+============================= */
+
+$summary = [];   // tabla principal
+$pending = [];   // lista sin iniciar (solo vista inferior)
+
+foreach ($req as $row){
+
+    if(empty($row["Test_Type"])) continue;
+
+    $tests = array_map('trim', explode(",", $row["Test_Type"]));
+
+    foreach ($tests as $t){
+
+        $T = N($t);
+
+        // Crear si no existe
+        if(!isset($summary[$T])){
+            $summary[$T] = [
+                'sin'=>0,'prep'=>0,'prep_est'=>0,
+                'real'=>0,'real_est'=>0,'ent'=>0,
+                'rev'=>0,'rep'=>0,'total'=>0
+            ];
+        }
+
+        $key = N($row['Sample_ID'])."|".N($row['Sample_Number'])."|".$T;
+
+        $stData = $index[$key] ?? null;
+
+        $stage = $stData['stage'] ?? 'SIN';
+        $SD    = $stData['SD'] ?? $row["Registed_Date"];
+
+        /* === ESTANCADOS === */
+        if($stage === 'PREP' && daysSince($SD) >= 3)
+            $stage = 'PREP_EST';
+
+        if($stage === 'REAL' && daysSince($SD) >= 4)
+            $stage = 'REAL_EST';
+
+        /* === Contar === */
+        if($stage === 'SIN')          $summary[$T]['sin']++;
+        if($stage === 'PREP')         $summary[$T]['prep']++;
+        if($stage === 'PREP_EST')     $summary[$T]['prep_est']++;
+        if($stage === 'REAL')         $summary[$T]['real']++;
+        if($stage === 'REAL_EST')     $summary[$T]['real_est']++;
+        if($stage === 'ENT')          $summary[$T]['ent']++;
+        if($stage === 'REV')          $summary[$T]['rev']++;
+        if($stage === 'REP')          $summary[$T]['rep']++;
+
+        $summary[$T]['total']++;
+
+        /* === Lista inferior (solo SIN) === */
+        if($stage === 'SIN'){
+            $pending[] = [
+                'sid'=>$row['Sample_ID'],
+                'num'=>$row['Sample_Number'],
+                'type'=>$T,
+                'date'=>$row['Registed_Date']
+            ];
+        }
+    }
+}
+
+ksort($summary); // ordenar por tipo ensayo
 ?>
 
 <main id="main" class="main">
   <div class="pagetitle">
     <h1>Lista de Pendientes</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="home.php">Home</a></li>
-        <li class="breadcrumb-item">Paginas</li>
-        <li class="breadcrumb-item active">Lista de Pendientes</li>
-      </ol>
-    </nav>
-  </div>
-
-  <div class="col-md-4">
-    <?php echo display_msg($msg); ?>
   </div>
 
   <section class="section">
-    <div class="row">
-      <form class="row">
-        <div class="col-lg-9">
-          <div class="card">
-            <div class="card-body">
-              <table class="table datatable">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Muestra</th>
-                    <th>Numero</th>
-                    <th>Tipo de prueba</th>
-                    <th>Fecha de muestra</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php
-                  function normalize($v)
-                  {
-                    return strtoupper(trim($v));
-                  }
 
-                  $requisitions = find_all("lab_test_requisition_form");
-                  $tables_to_check = [
-                    'test_preparation',
-                    'test_delivery',
-                    'test_realization',
-                    'test_repeat',
-                    'test_review',
-                    'test_reviewed'
-                  ];
+    <!-- ==============================
+         TABLA RESUMEN
+    =============================== -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h4 class="card-title">Estado por ensayo (incluye estancados)</h4>
 
-                  $indexed_status = [];
+        <table class="table table-bordered small">
+          <thead class="table-light">
+            <tr>
+              <th>Ensayo</th>
+              <th>Sin iniciar</th>
+              <th>Prep</th>
+              <th>Prep est.</th>
+              <th>Real</th>
+              <th>Real est.</th>
+              <th>Entrega</th>
+              <th>Revisión</th>
+              <th>Repeat</th>
+              <th>Total</th>
+              <th>PDF</th>
+            </tr>
+          </thead>
+          <tbody>
 
-                  // Cargar todas las tablas de seguimiento
-                  foreach ($tables_to_check as $table) {
-                    $data = find_all($table);
-                    foreach ($data as $row) {
-                      $key = normalize($row['Sample_ID']) . "|" . normalize($row['Sample_Number']) . "|" . normalize($row['Test_Type']);
-                      $indexed_status[$key] = true;
-                    }
-                  }
+<?php foreach($summary as $t => $s): ?>
+<tr>
+  <td><b><?=h($t)?></b></td>
 
-                  $testTypes = [];
+  <!-- SIN -->
+  <td>
+    <?=$s['sin']?>
+    <?php if($s['sin']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=SIN"
+       class="btn btn-dark btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                  foreach ($requisitions as $requisition) {
-                    if (empty($requisition['Test_Type'])) continue;
+  <!-- PREP -->
+  <td>
+    <?=$s['prep']?>
+    <?php if($s['prep']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=PREP"
+       class="btn btn-primary btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                    $sample_id = normalize($requisition['Sample_ID']);
-                    $sample_num = normalize($requisition['Sample_Number']);
-                    $date = $requisition['Sample_Date'];
+  <!-- PREP_EST -->
+  <td class="text-danger fw-bold">
+    <?=$s['prep_est']?>
+    <?php if($s['prep_est']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=PREP_EST"
+       class="btn btn-danger btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                    // Separar los tipos de ensayo por comas y recorrer cada uno
-                    $testTypesArray = array_map('trim', explode(',', $requisition['Test_Type']));
+  <!-- REAL -->
+  <td>
+    <?=$s['real']?>
+    <?php if($s['real']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REAL"
+       class="btn btn-info btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                    foreach ($testTypesArray as $test_type) {
-                      $test_type = normalize($test_type);
-                      $key = $sample_id . "|" . $sample_num . "|" . $test_type;
+  <!-- REAL_EST -->
+  <td class="text-danger fw-bold">
+    <?=$s['real_est']?>
+    <?php if($s['real_est']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REAL_EST"
+       class="btn btn-danger btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                      if (!isset($indexed_status[$key])) {
-                        $testTypes[] = [
-                          'Sample_ID' => $requisition['Sample_ID'],
-                          'Sample_Number' => $requisition['Sample_Number'],
-                          'Test_Type' => $test_type,
-                          'Sample_Date' => $date
-                        ];
-                      }
-                    }
-                  }
+  <!-- ENTREGA -->
+  <td>
+    <?=$s['ent']?>
+    <?php if($s['ent']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=ENT"
+       class="btn btn-secondary btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
+  <!-- REV -->
+  <td>
+    <?=$s['rev']?>
+    <?php if($s['rev']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REV"
+       class="btn btn-warning btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                  usort($testTypes, fn($a, $b) => strcmp($a['Test_Type'], $b['Test_Type']));
+  <!-- REP -->
+  <td>
+    <?=$s['rep']?>
+    <?php if($s['rep']>0): ?>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REP"
+       class="btn btn-danger btn-sm ms-1">
+       <i class="bi bi-printer"></i>
+    </a>
+    <?php endif; ?>
+  </td>
 
-                  foreach ($testTypes as $index => $sample): ?>
-                    <tr>
-                      <td><?php echo $index + 1; ?></td>
-                      <td><?php echo htmlspecialchars($sample['Sample_ID']); ?></td>
-                      <td><?php echo htmlspecialchars($sample['Sample_Number']); ?></td>
-                      <td><?php echo htmlspecialchars($sample['Test_Type']); ?></td>
-                      <td><?php echo htmlspecialchars($sample['Sample_Date']); ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+  <!-- TOTAL -->
+  <td><b><?=$s['total']?></b></td>
 
-        <div class="col-lg-3">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Conteo</h5>
-              <ul class="list-group">
-                <?php
-                $typeCount = [];
-                $columnaTipo = [];
+  <!-- PDF GENERAL -->
+  <td>
+    <a target="_blank"
+       href="../pdf/pendings-process.php?type=<?=$t?>"
+       class="btn btn-dark btn-sm">
+       <i class="bi bi-printer"></i>
+    </a>
+  </td>
+</tr>
+<?php endforeach; ?>
 
-                foreach ($requisitions as $req) {
-  if (!empty($req['Test_Type'])) {
-    $testTypesArray = array_map('trim', explode(',', $req['Test_Type']));
-    foreach ($testTypesArray as $testType) {
-      $columnaTipo[strtoupper(trim($testType))] = 'Test_Type'; // normalizado
-    }
-  }
-}
-
-
-                foreach ($testTypes as $s) {
-                  $t = $s['Test_Type'];
-                  $typeCount[$t] = ($typeCount[$t] ?? 0) + 1;
-                }
-
-                foreach ($typeCount as $t => $count): ?>
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <code><?php echo htmlspecialchars($t); ?></code>
-                      <span class="badge bg-primary rounded-pill"><?php echo $count; ?></span>
-                    </div>
-                    <?php if (isset($columnaTipo[$t])): ?>
-                      <a href="../pdf/pendings.php?type=<?php echo urlencode($t); ?>" target="_blank"
-                        class="btn btn-secondary btn-sm ms-2" title="Generar PDF"><i class="bi bi-printer"></i></a>
-                    <?php else: ?>
-                      <span class="badge bg-danger">Err</span>
-                    <?php endif; ?>
-                  </li>
-                <?php endforeach; ?>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-
-      </form>
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <!-- ==============================
+         LISTA DE SIN INICIAR
+    =============================== -->
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Pendientes sin iniciar</h4>
+
+        <table class="table datatable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Muestra</th>
+              <th>Número</th>
+              <th>Tipo</th>
+              <th>Fecha Muestra</th>
+            </tr>
+          </thead>
+          <tbody>
+<?php foreach($pending as $i => $p): ?>
+<tr>
+  <td><?=$i+1?></td>
+  <td><?=h($p['sid'])?></td>
+  <td><?=h($p['num'])?></td>
+  <td><code><?=h($p['type'])?></code></td>
+  <td><?=h($p['date'])?></td>
+</tr>
+<?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </section>
 </main>
 
