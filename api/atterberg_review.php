@@ -119,10 +119,9 @@ $PI_req = [
   "applies" => $applyPI,
   "required_min" => ($applyPI ? 15 : null),
   "actual" => $PI_value,
-  "status" => ($applyPI
-      ? ($PI_value >= 15 ? "OK" : "Fail")
-      : "N/A"
-  )
+ "status" => ($applyPI ? (floatval($t["PI"]) >= 15 ? "OK" : "Fail") : "N/A")
+
+
 ];
 
 // ============================================================
