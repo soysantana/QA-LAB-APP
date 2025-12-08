@@ -386,7 +386,7 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
     const testId = "<?php echo $Search['id']; ?>";
 
     // ======================================================
-    // 1) Fetch API
+    // 1) FETCH API
     // ======================================================
     let res = await fetch("../api/atterberg_review.php?id=" + testId);
     let data = await res.json();
@@ -400,7 +400,7 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
     const piReq = data.PI_requirement;
 
     // ======================================================
-    // 2) Tomar los tres valores de LL y PL del ensayo
+    // 2) LL / PL valores ingresados en la vista
     // ======================================================
     let LL_vals = [
         parseFloat(document.getElementById("LLMCPorce1").value || 0),
@@ -414,44 +414,54 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
         parseFloat(document.getElementById("PLMCPorce3").value || 0)
     ].filter(v => v > 0);
 
-    // Helper para estadísticos
-    function stats(arr) {
-        if (arr.length < 2) return { mean: arr[0] || 0, sd: 0, sr: 0 };
-
+    // ======================================================
+    // Helper estadístico
+    // ======================================================
+    function stats(arr){
+        if (arr.length < 2){
+            return { mean: arr[0] || 0, sd: 0, sr: 0 };
+        }
         let mean = arr.reduce((a,b)=>a+b,0) / arr.length;
-
-        let variance = arr.reduce((a,b)=>a + Math.pow(b-mean,2),0) / (arr.length - 1);
+        let variance = arr.reduce((a,b)=>a + (b-mean)**2,0) / (arr.length - 1);
         let sd = Math.sqrt(variance);
-
         let sr = Math.max(...arr) - Math.min(...arr);
-
         return { mean, sd, sr };
     }
 
     let LL = stats(LL_vals);
     let PL = stats(PL_vals);
 
+    // ======================================================
+    // 3) CÁLCULO REAL DE PI POR TRIAL (ASTM)
+    // ======================================================
+    let PI_vals = [];
+    for (let i = 0; i < LL_vals.length; i++) {
+        if (LL_vals[i] && PL_vals[i]) {
+            PI_vals.push(LL_vals[i] - PL_vals[i]);
+        }
+    }
+
+    let PIstats = stats(PI_vals);
+
     let PI = {
         mean: parseFloat(t.PI),
-        sd: Math.abs(LL.sd - PL.sd),   // criterio simplificado
-        sr: Math.abs(LL.sr - PL.sr)
+        sd: PIstats.sd,
+        sr: PIstats.sr
     };
 
     // ======================================================
-    // 3) Validaciones ASTM
+    // 4) Validaciones ASTM
     // ======================================================
-
     window.Rev_LL_OK = (LL.sr <= 2.9);
     window.Rev_PL_OK = (PL.sr <= 2.0);
     window.Rev_PI_OK = (PI.sr <= 4.0);
 
-    // Validación estructura LLD/SD1/SD2/SD3
+    // PI structure condition (validación proyecto)
     window.Rev_PI_Struct_OK = (piReq.status === "OK");
 
     // ======================================================
-    // 4) Crear NCR individuales (para guardar en Base de Datos)
+    // 5) NCRs individuales
     // ======================================================
-
     let NCR_LL = window.Rev_LL_OK
         ? "LL within ASTM repeatability limits."
         : "LL out of ASTM repeatability limits (SR > 2.9).";
@@ -465,14 +475,13 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
         : "PI out of ASTM repeatability limits (SR > 4.0).";
 
     let NCR_PI_Struct = window.Rev_PI_Struct_OK
-        ? "PI meets minimum structural requirement."
-        : "PI does not meet minimum structural requirement (PI < 15%) for LLD/SD1/SD2/SD3.";
+        ? "PI meets minimum structural requirement (PI ≥ 15%)."
+        : "PI does not meet minimum structural requirement (PI < 15%).";
 
     // ======================================================
-    // 5) Determinar condición general
+    // 6) Final Condition
     // ======================================================
     let fails = [];
-
     if (!window.Rev_LL_OK) fails.push("LL");
     if (!window.Rev_PL_OK) fails.push("PL");
     if (!window.Rev_PI_OK) fails.push("PI");
@@ -481,7 +490,7 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
     let finalCondition = fails.length === 0 ? "Passed" : "Failed";
 
     // ======================================================
-    // 6) Construir el Insight completo
+    // 7) Insight completo
     // ======================================================
     let Insight =
         NCR_LL + " | " +
@@ -490,9 +499,8 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
         NCR_PI_Struct;
 
     // ======================================================
-    // 7) Construir HTML del modal
+    // 8) HTML modal summary
     // ======================================================
-
     let html = `
         <h5 class="text-primary fw-bold">Atterberg Review Summary</h5>
 
@@ -509,13 +517,13 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
             <tr><th>PL SR</th><td>${PL.sr.toFixed(2)}</td></tr>
             <tr><th>PL Status</th><td>${NCR_PL}</td></tr>
 
-            <tr><th>PI</th><td>${t.PI}</td></tr>
+            <tr><th>PI (Mean)</th><td>${t.PI}</td></tr>
             <tr><th>PI SR</th><td>${PI.sr.toFixed(2)}</td></tr>
             <tr><th>PI Status</th><td>${NCR_PI}</td></tr>
 
             <tr><th>PI Structural Requirement</th><td>${NCR_PI_Struct}</td></tr>
 
-            <tr class="${finalCondition === 'PASS' ? 'table-success' : 'table-danger'}">
+            <tr class="${finalCondition === 'Passed' ? 'table-success' : 'table-danger'}">
                 <th>FINAL CONDITION</th>
                 <td><b>${finalCondition}</b></td>
             </tr>
@@ -534,27 +542,21 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
 });
 
 
+// =========================================================
+// SAVE REVIEW
+// =========================================================
 document.getElementById("saveReviewAtterberg").addEventListener("click", async () => {
 
-    // =====================================================
-    // 1. Recuperar flags globales del cálculo
-    // =====================================================
     let LL_ok = window.Rev_LL_OK;
     let PL_ok = window.Rev_PL_OK;
     let PI_ok = window.Rev_PI_OK;
     let PI_req_ok = window.Rev_PI_Struct_OK;
 
-    // =====================================================
-    // 2. Determinar insights individuales
-    // =====================================================
-    let insight_LL = LL_ok ? "" : "LL out of ASTM repeatability limits (SR > 2.9).";
-    let insight_PL = PL_ok ? "" : "PL out of ASTM repeatability limits (SR > 2.0).";
-    let insight_PI = PI_ok ? "" : "PI out of ASTM repeatability limits (SR > 4.0).";
-    let insight_PI_req = PI_req_ok ? "" : "PI does not meet minimum structural requirement (PI < 15%).";
+    let insight_LL = LL_ok ? null : "LL out of ASTM repeatability limits (SR > 2.9).";
+    let insight_PL = PL_ok ? null : "PL out of ASTM repeatability limits (SR > 2.0).";
+    let insight_PI = PI_ok ? null : "PI out of ASTM repeatability limits (SR > 4.0).";
+    let insight_PI_req = PI_req_ok ? null : "PI < 15% for structural requirement.";
 
-    // =====================================================
-    // 3. Función genérica para enviar cada registro
-    // =====================================================
     async function saveRecord(paramName, isOK, insightText) {
 
         let payload = {
@@ -568,11 +570,8 @@ document.getElementById("saveReviewAtterberg").addEventListener("click", async (
             Material_Type: "<?php echo $Search['Material_Type']; ?>",
             Test_Type: "Atterberg Limit-" + paramName,
 
-            // condición de cada parámetro
             Test_Condition: isOK ? "Passed" : "Failed",
-
-            // SOLO incluir Noconformidad si NO cumple
-            Noconformidad: isOK ? "" : insightText,
+            Noconformidad: insightText,
 
             Report_Date: new Date().toISOString().slice(0,10)
         };
@@ -586,27 +585,14 @@ document.getElementById("saveReviewAtterberg").addEventListener("click", async (
         return await res.json();
     }
 
-    // =====================================================
-    // 4. Guardado INDIVIDUAL (siempre guarda los 4)
-    //     Pero solo coloca 'Noconformidad' si falla
-    // =====================================================
+    await saveRecord("LL", LL_ok, insight_LL);
+    await saveRecord("PL", PL_ok, insight_PL);
+    await saveRecord("PI", PI_ok, insight_PI);
+    await saveRecord("PI Requirement", PI_req_ok, insight_PI_req);
 
-    let results = [];
-
-    results.push(await saveRecord("LL", LL_ok, insight_LL));
-    results.push(await saveRecord("PL", PL_ok, insight_PL));
-    results.push(await saveRecord("PI", PI_ok, insight_PI));
-    results.push(await saveRecord("PI Requirement", PI_req_ok, insight_PI_req));
-
-    console.log("SAVE RESULTS:", results);
-
-    alert("Atterberg Review Records Saved.");
+    alert("Atterberg Review Records Saved Successfully.");
 });
-
-
 </script>
-
-
 
 
 
