@@ -14,242 +14,168 @@
 
   <div class="search-bar">
     <form class="search-form d-flex align-items-center" method="POST" action="../php/ajax.php" id="sug-form">
-      <input type="text" name="title" placeholder="Search" title="Enter search keyword" id="sug_input" list="search-results">
-      <button type="submit" title="Search"><i class="bi bi-search"></i></button>
+      <input type="text" name="title" placeholder="Search" id="sug_input" list="search-results">
+      <button type="submit"><i class="bi bi-search"></i></button>
       <datalist id="search-results"></datalist>
     </form>
-  </div><!-- End Search Bar -->
+  </div>
 
   <nav class="header-nav ms-auto">
     <ul class="d-flex align-items-center">
 
-      <li class="nav-item d-block d-lg-none">
-        <a class="nav-link nav-icon search-bar-toggle " href="#">
-          <i class="bi bi-search"></i>
-        </a>
-      </li><!-- End Search Icon-->
-
+      <!-- 🔔 CAMPANA DE NOTIFICACIONES -->
       <li class="nav-item dropdown">
-        <?php
-        $username = $user["name"];
-
-        // Realizar las consultas SQL directamente
-        $repeatSql = "SELECT * FROM test_repeat 
-              WHERE Register_By = '$username' 
-              AND Start_Date >= DATE_SUB(NOW(), INTERVAL 6 DAY) 
-              ORDER BY Start_Date DESC";
-        $repeatTests = find_by_sql($repeatSql);
-
-
-        $reviewedSql = "SELECT * FROM test_reviewed 
-                WHERE Register_By = '$username' 
-                AND Signed != 1 
-                AND Start_Date >= DATE_SUB(NOW(), INTERVAL 6 DAY) 
-                ORDER BY Start_Date DESC";
-        $reviewedTests = find_by_sql($reviewedSql);
-
-        $totalNotifications = count($repeatTests) + count($reviewedTests);
-
-        $urls = [
-          'AL' => '../reviews/atterberg-limit.php',
-          'AR-FF' => '../reviews/reactivity-fine.php',
-          'AR-CF' => '../reviews/reactivity-coarse.php',
-          'BTS' => '../reviews/brazilian.php',
-          'HY' => '../reviews/hydrometer.php',
-          'DHY' => '../reviews/double-hydrometer.php',
-          'GS' => '../reviews/grain-size.php',
-          'GS-Fine' => '../reviews/grain-size-fine-agg.php',
-          'GS-Coarse' => '../reviews/grain-size-coarse-agg.php',
-          'GS_FF' => '../reviews/grain-size-fine-filter.php',
-          'GS_CF' => '../reviews/grain-size-coarse-filter.php',
-          'GS_LPF' => '../reviews/grain-size-lpf.php',
-          'GS_UTF' => '../reviews/grain-size-upstream-transition-fill.php',
-          'GS-TRF' => '../reviews/grain-size-full.php',
-          'GS-UFF' => '../reviews/grain-size-full.php',
-          'GS-FRF' => '../reviews/grain-size-full.php',
-          'GS-IRF' => '../reviews/grain-size-full.php',
-          'GS-RF' => '../reviews/grain-size-full.php',
-          'GS-BF' => '../reviews/grain-size-full.php',
-          'GS-Common' => '../reviews/grain-size-full.php?id=',
-          'GS-LQ2' => '../reviews/grain-size-full.php?id=',
-          'LAA_Large' => '../reviews/LAA-Large.php',
-          'LAA_Small' => '../reviews/LAA-Small.php',
-          'MC_Oven' => '../reviews/moisture-oven.php',
-          'MC_Microwave' => '../reviews/moisture-microwave.php',
-          'MC_Constant_Mass' => '../reviews/moisture-constant-mass.php',
-          'PLT' => '../reviews/point-Load.php',
-          'SND' => '../reviews/soundness.php',
-          'SG' => '../reviews/specific-gravity.php',
-          'SG-Coarse' => '../reviews/specific-gravity-coarse-aggregates.php',
-          'SG-Fine' => '../reviews/specific-gravity-fine-aggregate.php',
-          'SP' => '../reviews/standard-proctor.php',
-          'SCT' => '../reviews/sand-castle-test.php',
-          'UCS' => '../reviews/unixial-compressive.php',
-        ];
-
-        function formatTimeElapsed($startDate)
-        {
-          $timeElapsed = time() - strtotime($startDate);
-          $minutesElapsed = floor($timeElapsed / 60);
-          $hoursElapsed = floor($minutesElapsed / 60);
-          $daysElapsed = floor($hoursElapsed / 24);
-
-          if ($daysElapsed > 0) {
-            return "$daysElapsed day" . ($daysElapsed == 1 ? '' : 's') . " ago";
-          } elseif ($hoursElapsed > 0) {
-            return "$hoursElapsed hr" . ($hoursElapsed == 1 ? '' : 's') . " ago";
-          } else {
-            return "$minutesElapsed min. ago";
-          }
-        }
-
-        function generateNotificationItem($item, $type, $urls)
-        {
-          $url = $urls[$item['Test_Type']] ?? '#';
-          $iconClass = $type === 'repeat' ? 'bi-exclamation-circle text-warning' : 'bi-check-circle text-success';
-          $message = $type === 'repeat' ? $item['Comment'] : 'Enviar a Firma';
-
-          echo "
-        <li class='notification-item' onclick=\"redirectToURL('{$item['Test_Type']}', '{$item['Tracking']}')\">
-            <i class='bi $iconClass'></i>
-            <div>
-                <h4>{$item['Sample_ID']}-{$item['Sample_Number']}-{$item['Test_Type']}</h4>
-                <p>$message</p>
-                <p>" . formatTimeElapsed($item['Start_Date']) . "</p>
-            </div>
-        </li>";
-        }
-        ?>
 
         <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
           <i class="bi bi-bell"></i>
-          <span class="badge bg-primary badge-number"><?php echo $totalNotifications; ?></span>
-        </a><!-- End Notification Icon -->
+          <span id="notif-count" class="badge bg-primary badge-number">0</span>
+        </a>
 
-        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications">
+        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications" style="width:330px;">
           <li class="dropdown-header">
-            Tienes <?php echo $totalNotifications; ?> nuevas notificaciones
-            <a href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">Ver todo</span></a>
+            Notificaciones del laboratorio
+            <a href="../pages/message.php">
+              <span class="badge rounded-pill bg-primary p-2 ms-2">Ver todo</span>
+            </a>
           </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
 
-          <?php
-          $maxNotifications = 3;
-          $count = 0;
+          <li><hr class="dropdown-divider"></li>
 
-          foreach ($repeatTests as $repeatItem) {
-            if ($count >= $maxNotifications) break;
-            generateNotificationItem($repeatItem, 'repeat', $urls);
-            $count++;
-          }
+          <div id="notif-list"></div>
 
-          $count = 0;
-
-          foreach ($reviewedTests as $reviewedItem) {
-            if ($count >= $maxNotifications) break;
-            generateNotificationItem($reviewedItem, 'reviewed', $urls);
-            $count++;
-          }
-          ?>
-
-          <li>
-            <hr class="dropdown-divider">
-          </li>
+          <li><hr class="dropdown-divider"></li>
           <li class="dropdown-footer">
             <a href="../pages/message.php">Mostrar todas las notificaciones</a>
           </li>
-        </ul><!-- End Notification Dropdown Items -->
+        </ul>
+
       </li><!-- End Notification Nav -->
 
+      <!-- Perfil -->
       <li class="nav-item dropdown pe-3">
 
         <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-         <?php if (!empty($row['photo'])): ?>
-  <img src="data:image/jpeg;base64,<?= base64_encode($row['photo']); ?>" alt="Foto" class="img-fluid rounded-circle">
-<?php else: ?>
-  <img src="../assets/img/default-avatar.jpg" alt="Foto" class="img-fluid rounded-circle">
-<?php endif; ?>
 
-          <span class="d-none d-md-block dropdown-toggle ps-2"><?php echo remove_junk(ucfirst($user['name'])); ?></span>
-        </a><!-- End Profile Iamge Icon -->
+          <?php if (!empty($row['photo'])): ?>
+            <img src="data:image/jpeg;base64,<?= base64_encode($row['photo']); ?>" class="rounded-circle">
+          <?php else: ?>
+            <img src="../assets/img/default-avatar.jpg" class="rounded-circle">
+          <?php endif; ?>
+
+          <span class="d-none d-md-block dropdown-toggle ps-2">
+            <?= remove_junk(ucfirst($user['name'])); ?>
+          </span>
+        </a>
 
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
           <li class="dropdown-header">
-            <h6><?php echo remove_junk(ucfirst($user['name'])); ?></h6>
-            <span><?php echo remove_junk(ucfirst($user['username'])); ?></span>
+            <h6><?= remove_junk(ucfirst($user['name'])); ?></h6>
+            <span><?= remove_junk(ucfirst($user['username'])); ?></span>
           </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
+
+          <li><hr class="dropdown-divider"></li>
 
           <li>
             <a class="dropdown-item d-flex align-items-center" href="../pages/users-profile.php">
-              <i class="bi bi-person"></i>
-              <span>Mi perfil</span>
+              <i class="bi bi-person"></i><span>Mi perfil</span>
             </a>
           </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
+
+          <li><hr class="dropdown-divider"></li>
 
           <li>
             <a class="dropdown-item d-flex align-items-center" href="../user/logout.php">
-              <i class="bi bi-box-arrow-right"></i>
-              <span>Cerrar sesión</span>
+              <i class="bi bi-box-arrow-right"></i><span>Cerrar sesión</span>
             </a>
           </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
 
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-
-        </ul><!-- End Profile Dropdown Items -->
-      </li><!-- End Profile Nav -->
+        </ul>
+      </li>
 
     </ul>
-  </nav><!-- End Icons Navigation -->
+  </nav>
+</header>
 
-</header><!-- End Header -->
-
+<!-- Menú por roles -->
 <?php if ($user['user_level'] === '1'): ?>
-  <!-- Supervisor menu -->
   <?php include_once('menu.php'); ?>
-
 <?php elseif ($user['user_level'] === '2'): ?>
-  <!-- Document Control user -->
   <?php include_once('menu-lv2.php'); ?>
-
 <?php elseif ($user['user_level'] === '3'): ?>
-  <!-- Tecnico menu -->
   <?php include_once('menu-tecnico.php'); ?>
-
 <?php elseif ($user['user_level'] === '4'): ?>
-  <!-- Visitante menu -->
   <?php include_once('menu-lv4.php'); ?>
-
 <?php endif; ?>
 
-<script>
-  function redirectToURL(testType, tracking) {
-    <?php if (isset($urls)) : ?>
-      var urls = <?php echo json_encode($urls); ?>;
-      var url = urls[testType];
-      if (url) {
-        // Agrega el parámetro id a la URL
-        url += "?id=" + tracking;
-        window.location.href = url;
-      } else {
-        alert("No se encontró una URL para este tipo de prueba.");
-      }
-    <?php else : ?>
-      // Handle error when $urls is undefined
-      console.error("Error: $urls is undefined.");
-      alert("Error: $urls is undefined. Please contact the administrator.");
-    <?php endif; ?>
+<style>
+  .notification-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    transition:0.2s;
   }
+  .notification-item:hover {
+    background:#eef6ff;
+  }
+  .notification-item i {
+    font-size:18px;
+    margin-top:4px;
+  }
+</style>
+
+<!-- 🔔 SONIDO -->
+<audio id="notif-sound">
+  <source src="../assets/sounds/notify.mp3" type="audio/mpeg">
+</audio>
+
+<!-- LIVE NOTIFICATIONS -->
+<script>
+let lastCount = 0;
+
+function loadNotifications() {
+  fetch("/api/notifications_live.php")
+    .then(r => r.json())
+    .then(data => {
+
+      // Actualiza contador
+      document.getElementById("notif-count").textContent = data.count;
+
+      // Sonido si llegan nuevas
+      if (data.count > lastCount) {
+        document.getElementById("notif-sound").play();
+      }
+      lastCount = data.count;
+
+      // Lista de notificaciones
+      let html = "";
+
+      if (data.items.length === 0) {
+        html = "<li class='text-center py-2 text-muted'>Sin notificaciones recientes</li>";
+      } else {
+        data.items.forEach(n => {
+          html += `
+            <li class="notification-item" onclick="window.location='${n.url}'">
+              <i class="bi ${n.icon}"></i>
+              <div>
+                <h4>${n.title}</h4>
+                <p>${n.msg}</p>
+                <small>${n.time}</small>
+              </div>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+          `;
+        });
+      }
+
+      document.getElementById("notif-list").innerHTML = html;
+    });
+}
+
+// Actualización automática cada 10s
+setInterval(loadNotifications, 10000);
+
+// Cargar al entrar
+loadNotifications();
 </script>
