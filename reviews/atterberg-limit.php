@@ -442,25 +442,33 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
     }
 
     let PIstats = stats(PI_vals);
-
-    let PI = {
-        mean: parseFloat(t.PI),
-        sd: PIstats.sd,
-        sr: PIstats.sr
-    };
+    let PI_mean = PIstats.mean; // PI REAL CALCULADO
 
     // ======================================================
-    // 4) Validaciones ASTM
+    // 4) Validaciones ASTM (SR)
     // ======================================================
     window.Rev_LL_OK = (LL.sr <= 2.9);
     window.Rev_PL_OK = (PL.sr <= 2.0);
-    window.Rev_PI_OK = (PI.sr <= 4.0);
-
-    // PI structure condition (validación proyecto)
-    window.Rev_PI_Struct_OK = (piReq.status === "OK");
+    window.Rev_PI_OK = (PIstats.sr <= 4.0);
 
     // ======================================================
-    // 5) NCRs individuales
+    // 5) Validación estructural PI ≥ 15 SOLO SI estructura es LLD, SD1, SD2, SD3
+    // ======================================================
+    let structure = "<?php echo strtoupper(trim($Search['Structure'])); ?>";
+    let PI_structures = ["LLD", "SD1", "SD2", "SD3"];
+
+    let appliesPI = PI_structures.some(prefix => structure.startsWith(prefix));
+
+    // Si aplica se evalúa PI; si NO aplica → automáticamente OK (N/A)
+    window.Rev_PI_Struct_OK = appliesPI ? (PI_mean >= 15) : true;
+
+    // Textos NCR adecuadamente formateados
+    let NCR_PI_Struct = appliesPI
+        ? (window.Rev_PI_Struct_OK ? "PI ≥ 15% (OK)" : "PI < 15% (Fail)")
+        : "N/A (Structure is not LLD/SD1/SD2/SD3)";
+
+    // ======================================================
+    // 6) NCRs individuales
     // ======================================================
     let NCR_LL = window.Rev_LL_OK
         ? "LL within ASTM repeatability limits."
@@ -474,23 +482,19 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
         ? "PI within ASTM repeatability limits."
         : "PI out of ASTM repeatability limits (SR > 4.0).";
 
-    let NCR_PI_Struct = window.Rev_PI_Struct_OK
-        ? "PI meets minimum structural requirement (PI ≥ 15%)."
-        : "PI does not meet minimum structural requirement (PI < 15%).";
-
     // ======================================================
-    // 6) Final Condition
+    // 7) Final Condition
     // ======================================================
     let fails = [];
     if (!window.Rev_LL_OK) fails.push("LL");
     if (!window.Rev_PL_OK) fails.push("PL");
     if (!window.Rev_PI_OK) fails.push("PI");
-    if (!window.Rev_PI_Struct_OK) fails.push("PI Structure");
+    if (!window.Rev_PI_Struct_OK) fails.push("PI Structure Req");
 
     let finalCondition = fails.length === 0 ? "Passed" : "Failed";
 
     // ======================================================
-    // 7) Insight completo
+    // 8) Insight completo
     // ======================================================
     let Insight =
         NCR_LL + " | " +
@@ -499,7 +503,7 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
         NCR_PI_Struct;
 
     // ======================================================
-    // 8) HTML modal summary
+    // 9) HTML modal summary
     // ======================================================
     let html = `
         <h5 class="text-primary fw-bold">Atterberg Review Summary</h5>
@@ -517,8 +521,8 @@ document.getElementById("btnReviewAtterberg").addEventListener("click", async ()
             <tr><th>PL SR</th><td>${PL.sr.toFixed(2)}</td></tr>
             <tr><th>PL Status</th><td>${NCR_PL}</td></tr>
 
-            <tr><th>PI (Mean)</th><td>${t.PI}</td></tr>
-            <tr><th>PI SR</th><td>${PI.sr.toFixed(2)}</td></tr>
+            <tr><th>PI (calc mean)</th><td>${PI_mean.toFixed(2)}</td></tr>
+            <tr><th>PI SR</th><td>${PIstats.sr.toFixed(2)}</td></tr>
             <tr><th>PI Status</th><td>${NCR_PI}</td></tr>
 
             <tr><th>PI Structural Requirement</th><td>${NCR_PI_Struct}</td></tr>
@@ -555,7 +559,7 @@ document.getElementById("saveReviewAtterberg").addEventListener("click", async (
     let insight_LL = LL_ok ? null : "LL out of ASTM repeatability limits (SR > 2.9).";
     let insight_PL = PL_ok ? null : "PL out of ASTM repeatability limits (SR > 2.0).";
     let insight_PI = PI_ok ? null : "PI out of ASTM repeatability limits (SR > 4.0).";
-    let insight_PI_req = PI_req_ok ? null : "PI < 15% for structural requirement.";
+    let insight_PI_req = PI_req_ok ? null : "PI < 15% for required structures (LLD/SD1/SD2/SD3).";
 
     async function saveRecord(paramName, isOK, insightText) {
 
@@ -593,6 +597,7 @@ document.getElementById("saveReviewAtterberg").addEventListener("click", async (
     alert("Atterberg Review Records Saved Successfully.");
 });
 </script>
+
 
 
 
