@@ -160,6 +160,23 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
         </a>
       </div>
 
+      <!-- Detalle cliente -->
+      <div class="col-12 col-md-6 col-lg-4">
+        <a href="/pages/expediente.php" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 hover-elevate">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-database me-2"></i>
+                <h5 class="card-title mb-0">Expediente de Muestras</h5>
+              </div>
+              <p class="card-text small text-muted mb-0">
+                Resumen de muestras y ensayos solicitados y realizados.
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+
       <!-- =========================
            Firma y documentación
            ========================= -->
