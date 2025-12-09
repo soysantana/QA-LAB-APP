@@ -378,7 +378,7 @@ foreach ($ReqSP as $req) {
     <!-- PROCESS STREAM -->
     <div class="panel glass">
       <div class="panel-header">
-        <h2>Proceso de Muestreo</h2>
+        <h2>Proceso de Ensayos</h2>
       </div>
 
       <div class="stream">
