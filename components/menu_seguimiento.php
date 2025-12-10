@@ -52,7 +52,7 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
                 <h5 class="card-title mb-0">Procesos de Ensayos</h5>
               </div>
               <p class="card-text small text-muted mb-0">
-                Vista completa del flujo de ensayos: Registrado → Preparación → Realización → Entrega.
+                Vista completa del flujo de ensayos: Registrado → Preparación → Realización → Repetición → Entrega.
               </p>
             </div>
           </div>
@@ -83,22 +83,7 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
         <h6 class="text-muted text-uppercase small mb-1">Control de Calidad</h6>
       </div>
 
-      <!-- Ensayos en repetición -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <a href="/pages/test-repeat.php" class="text-decoration-none">
-          <div class="card h-100 shadow-sm border-0 hover-elevate">
-            <div class="card-body">
-              <div class="d-flex align-items-center mb-2">
-                <i class="bi bi-arrow-clockwise me-2"></i>
-                <h5 class="card-title mb-0">Ensayos en Repetición</h5>
-              </div>
-              <p class="card-text small text-muted mb-0">
-                Ensayos que requieren repetición según criterios de calidad.
-              </p>
-            </div>
-          </div>
-        </a>
-      </div>
+     
 
       <!-- Ensayos en revisión (OCULTO para técnico puro) -->
       <?php if (!$is_pure_tech): ?>
