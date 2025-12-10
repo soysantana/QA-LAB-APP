@@ -4,13 +4,11 @@ declare(strict_types=1);
 require_once('../config/load.php');
 header('Content-Type: application/json; charset=utf-8');
 
-/**
- * SLA por estado (en horas).
- */
 $SLA = [
   'Registrado'  => 24,
   'Preparación' => 48,
   'Realización' => 72,
+  'Repetición'  => 72,
   'Entrega'     => 24,
   'Revisado'    => 24,
 ];
@@ -35,7 +33,8 @@ try {
     $testEsc = $db->escape($test);
     $where[] = "UPPER(TRIM(Test_Type)) = UPPER('{$testEsc}')";
   }
-  $whereSql = $where ? ('WHERE '.implode(' AND ', $where)) : '';
+
+  $whereSql = $where ? 'WHERE '.implode(' AND ', $where) : '';
 
   $sql = "
     SELECT
@@ -50,7 +49,7 @@ try {
       Updated_By
     FROM test_workflow
     {$whereSql}
-    ORDER BY FIELD(Status,'Registrado','Preparación','Realización','Entrega','Revisado'),
+    ORDER BY FIELD(Status,'Registrado','Preparación','Realización','Repetición','Entrega','Revisado'),
              Updated_At DESC
   ";
 
@@ -60,6 +59,7 @@ try {
     'Registrado'  => [],
     'Preparación' => [],
     'Realización' => [],
+    'Repetición'  => [],
     'Entrega'     => [],
     'Revisado'    => [],
   ];
@@ -73,7 +73,7 @@ try {
     }
 
     $started = $r['Process_Started'] ? new DateTime($r['Process_Started']) : clone $now;
-    $diffH   = max(0, (int)floor(($now->getTimestamp() - $started->getTimestamp()) / 3600));
+    $diffH   = max(0, (int) floor(($now->getTimestamp() - $started->getTimestamp()) / 3600));
     $limitH  = slaHours($status, $r['Test_Type'], $SLA);
     $alert   = $diffH >= $limitH;
 
@@ -93,6 +93,7 @@ try {
   }
 
   echo json_encode(['ok' => true, 'data' => $by], JSON_UNESCAPED_UNICODE);
+
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['ok' => false, 'error' => $e->getMessage()]);

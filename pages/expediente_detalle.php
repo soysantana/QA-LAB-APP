@@ -12,26 +12,37 @@ function resumen_clave($testType, $row) {
     // 1) ATTERBERG LIMIT
     if ($testType === "AL") {
         return "
-            LL: <b>{$row['Liquid_Limit_Porce']}</b> • 
-            PL: <b>{$row['Plastic_Limit_Porce']}</b> • 
-            PI: <b>{$row['Plasticity_Index_Porce']}</b>
+            LL: <b>{$row['Liquid_Limit_Porce']}</b><br>
+            PL: <b>{$row['Plastic_Limit_Porce']}</b><br>
+            PI: <b>{$row['Plasticity_Index_Porce']}</b><br>
+            Clasification: <b>{$row['Classification']}</b>
         ";
     }
 
-    // 2) GRANULOMETRÍA GENERAL (ejemplo, ajustar según columnas reales)
-if ($testType === "GS") {
+   if ($testType === "GS") {
     return "
-        <div>
-            No. 4: <b>{$row['Pass14']}%</b><br>
-            No. 10: <b>{$row['Pass15']}%</b><br>
-            No. 200: <b>{$row['Pass22']}%</b><br>
-            % Coarse Than: <b>{$row['Coarser_than_Gravel']}%</b><br>
-            % Gravel: <b>{$row['Gravel']}%</b><br>
-            % Sand: <b>{$row['Sand']}%</b><br>
-            % Fines: <b>{$row['Fines']}%</b>
+        <div style='display:flex; justify-content:space-between;'>
+            
+            <!-- Columna izquierda -->
+            <div>
+                No. 4: <b>{$row['Pass14']}%</b><br>
+                No. 10: <b>{$row['Pass15']}%</b><br>
+                Gravel: <b>{$row['Gravel']}%</b><br>
+                Fines: <b>{$row['Fines']}%</b>
+            </div>
+
+            <!-- Columna derecha -->
+            <div>
+                No. 200: <b>{$row['Pass22']}%</b><br>
+                Coarse Than: <b>{$row['Coarser_than_Gravel']}%</b><br>
+                Sand: <b>{$row['Sand']}%</b><br>
+                D10: <b>{$row['D10']}mm</b>
+            </div>
+
         </div>
     ";
 }
+
 
     // 3) PROCTOR
     if ($testType === "SP" || $testType === "MP") {
@@ -52,7 +63,14 @@ if ($testType === "GS") {
     // 5) HUMEDAD
     if ($testType === "MC") {
         return "
-            Humedad: <b>{$row['Moisture_Content']}</b>%
+            Humedad: <b>{$row['Moisture_Content_Porce']}</b>%
+        ";
+    }
+
+    // 6) Hidrometro
+    if ($testType === "HY") {
+        return "
+            Clasification: <b>{$row['Classification1']}</b>
         ";
     }
 
@@ -99,7 +117,7 @@ $testTables = [
     "BTS" => ["table" => "brazilian", "url" => "../reviews/brazilian.php?id="],
 
     // GRANULOMETRÍA
-    "GS"        => ["table" => "grain_size_general", "url" => "../reviews/grain-size-general.php?id="],
+    "GS"        => ["table" => "grain_size_general", "url" => "../reviews/grain-size.php?id="],
     "GS-FINE"   => ["table" => "grain_size_fine", "url" => "../reviews/grain-size-fine-agg.php?id="],
     "GS-COARSE" => ["table" => "grain_size_coarse", "url" => "../reviews/grain-size-coarse-agg.php?id="],
     "GS-CF"     => ["table" => "grain_size_coarse_filter", "url" => "../reviews/grain-size-coarse-filter.php?id="],
@@ -201,6 +219,14 @@ foreach ($requestedTests as $t) {
             <p><b>Fecha Registro:</b> <?= $info["Registed_Date"] ?></p>
         </div>
     </div>
+
+<a href="../pdf/expediente_pdf.php?sample=<?= $sampleID ?>&num=<?= $sampleNum ?>" 
+   target="_blank"
+   class="btn btn-danger btn-lg mb-3">
+   <i class="bi bi-filetype-pdf"></i> Generar Expediente PDF
+</a>
+
+
 
     <h4>Ensayos Solicitados</h4>
 
