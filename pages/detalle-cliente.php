@@ -117,15 +117,45 @@ $sql = "
       (EXISTS (SELECT 1 FROM test_preparation p WHERE p.Sample_ID=e.Sample_ID AND p.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(p.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
     ) AS atendidos,
 
-    -- *** NUEVO: Pendientes por entregar = (Prep OR Real) AND (NOT Delivery)
+    -- *** NUEVO: Pendientes por entregar = (Prep OR Real OR Workflow) AND (NOT Delivery)
     SUM(
       (
-        (EXISTS (SELECT 1 FROM test_preparation p WHERE p.Sample_ID=e.Sample_ID AND p.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(p.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+        (EXISTS (
+          SELECT 1
+          FROM test_preparation p
+          WHERE p.Sample_ID     = e.Sample_ID
+            AND p.Sample_Number = e.Sample_Number
+            AND LOWER(REPLACE(TRIM(p.Test_Type),' ','')) 
+                = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+        ))
         OR
-        (EXISTS (SELECT 1 FROM test_realization r WHERE r.Sample_ID=e.Sample_ID AND r.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(r.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ',''))))
+        (EXISTS (
+          SELECT 1
+          FROM test_realization r2
+          WHERE r2.Sample_ID     = e.Sample_ID
+            AND r2.Sample_Number = e.Sample_Number
+            AND LOWER(REPLACE(TRIM(r2.Test_Type),' ','')) 
+                = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+        ))
+        OR
+        (EXISTS (
+          SELECT 1
+          FROM test_workflow w
+          WHERE w.Sample_ID     = e.Sample_ID
+            AND w.Sample_Number = e.Sample_Number
+            AND LOWER(REPLACE(TRIM(w.Test_Type),' ','')) 
+                = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+        ))
       )
       AND
-      NOT EXISTS (SELECT 1 FROM test_delivery d WHERE d.Sample_ID=e.Sample_ID AND d.Sample_Number=e.Sample_Number AND LOWER(REPLACE(TRIM(d.Test_Type),' ',''))=LOWER(REPLACE(TRIM(e.Test_Type),' ','')))
+      NOT EXISTS (
+        SELECT 1
+        FROM test_delivery d2
+        WHERE d2.Sample_ID     = e.Sample_ID
+          AND d2.Sample_Number = e.Sample_Number
+          AND LOWER(REPLACE(TRIM(d2.Test_Type),' ','')) 
+              = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+      )
     ) AS pendientes_entrega
 
   FROM ( $expandedSubquery ) e
@@ -387,7 +417,8 @@ function monthName($m) {
               } else {
                 die('Error solicitados: ' . $db->error);
               }
-              // Pendientes por entregar
+
+              // Pendientes por entregar (detalle)
               $sqlPend = "
                 SELECT e.Sample_ID, e.Sample_Number, e.Test_Type, DATE(e.Sample_Date) AS fecha
                 FROM ( $expanded ) e
@@ -414,6 +445,14 @@ function monthName($m) {
                           WHERE r2.Sample_ID = e.Sample_ID
                             AND r2.Sample_Number = e.Sample_Number
                             AND LOWER(REPLACE(TRIM(r2.Test_Type),' ','')) 
+                                = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
+                        )
+                        OR
+                        EXISTS (
+                          SELECT 1 FROM test_workflow w
+                          WHERE w.Sample_ID = e.Sample_ID
+                            AND w.Sample_Number = e.Sample_Number
+                            AND LOWER(REPLACE(TRIM(w.Test_Type),' ','')) 
                                 = LOWER(REPLACE(TRIM(e.Test_Type),' ','')) 
                         )
                       )
