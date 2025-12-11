@@ -645,7 +645,7 @@ if (S.startsWith("LLD") || S.startsWith("SD1") || S.startsWith("SD2") || S.start
 /***********************
  * 2) AGG-DIO
  ***********************/
-else if (S.match(/PVDJ-AGG-DIO/i)) {
+else if (S.match(/Diorite/i)) {
     specs = specsCF_DIO;
 }
 
