@@ -5,29 +5,32 @@ require "../libs/fpdf/fpdf.php";
 /* ============================================================
    0. CAPTURA DE PARÁMETROS
 ============================================================ */
-$sampleID  = $_GET["sample"] ?? '';
+$sampleID     = isset($_GET["sample"]) ? trim((string)$_GET["sample"]) : '';
 $sampleNumRaw = $_GET["num"] ?? null;
 
 if ($sampleID === '') {
     die("Sample ID missing.");
 }
 
-// Determinar si es paquete o individual
-if ($sampleNumRaw === null || $sampleNumRaw === "") {
-    $isPackage = true;
-    $sampleNum = "";
-} else {
-    $isPackage = false;
-    $sampleNum = trim($sampleNumRaw);
-}
+// Normalizamos num (puede venir null, vacío, con espacios)
+$sampleNumRaw = is_null($sampleNumRaw) ? null : trim((string)$sampleNumRaw);
 
 /* ============================================================
    1. CONSULTA BASE SEGÚN MODO
+   REGLA:
+   - Si num está vacío  → paquete (todos los Sample_Number de ese Sample_ID)
+   - Si num es numérico → individual (solo ese Sample_Number)
+   - Si num tiene letras→ paquete (todos los Sample_Number de ese Sample_ID)
 ============================================================ */
 
-// PAQUETE (muchos Sample_Number)
-if ($isPackage) {
+$base      = [];
+$isPackage = false;
+$sampleNum = '';
 
+if ($sampleNumRaw === null || $sampleNumRaw === '') {
+    // Caso: no mandaste num → asumimos paquete
+    $isPackage = true;
+    $sampleNum = '';
     $base = find_by_sql("
         SELECT *
         FROM lab_test_requisition_form
@@ -35,21 +38,41 @@ if ($isPackage) {
         ORDER BY Sample_Number ASC
     ");
 
-    if (!$base) die("Package not found.");
+} else {
 
+    $sampleNum = $sampleNumRaw;
+
+    if (ctype_digit($sampleNum)) {
+        // num SOLO dígitos → muestra normal (LLD-258-0078, etc.)
+        $isPackage = false;
+
+        $base = find_by_sql("
+            SELECT *
+            FROM lab_test_requisition_form
+            WHERE Sample_ID = '{$sampleID}'
+              AND Sample_Number = '{$sampleNum}'
+            LIMIT 1
+        ");
+
+    } else {
+        // num con letras (G1…G10, etc.) → asumimos paquete
+        $isPackage = true;
+
+        $base = find_by_sql("
+            SELECT *
+            FROM lab_test_requisition_form
+            WHERE Sample_ID = '{$sampleID}'
+            ORDER BY Sample_Number ASC
+        ");
+    }
 }
-// INDIVIDUAL (solo un Sample_Number)
-else {
 
-    $base = find_by_sql("
-        SELECT *
-        FROM lab_test_requisition_form
-        WHERE Sample_ID = '{$sampleID}'
-          AND Sample_Number = '{$sampleNum}'
-        LIMIT 1
-    ");
-
-    if (!$base) die("Sample+Number not found.");
+if (!$base) {
+    if ($isPackage) {
+        die("Package not found for Sample_ID '{$sampleID}'.");
+    } else {
+        die("Sample+Number not found ({$sampleID} / {$sampleNum}).");
+    }
 }
 
 /* ============================================================
@@ -57,27 +80,42 @@ else {
 ============================================================ */
 $first = $base[0];
 
-$client    = $first["Client"];
-$material  = $first["Material_Type"];
-$structure = $first["Structure"];
-$source    = $first["Source"];
-$regDate   = $first["Registed_Date"];
+$client    = $first["Client"]         ?? '';
+$material  = $first["Material_Type"]  ?? '';
+$structure = $first["Structure"]      ?? '';
+$source    = $first["Source"]         ?? '';
+$regDate   = $first["Registed_Date"]  ?? '';
 
 /* AGRUPAR sample_number → test types */
 $group = [];
 
+// Acumulamos ensayos por Sample_Number,
+// por si hay más de una fila con el mismo número.
 foreach ($base as $b) {
-    $sn = $b["Sample_Number"];
-    $tests = array_map("trim", explode(",", $b["Test_Type"]));
-    $group[$sn] = $tests;
+    $sn    = trim((string)$b["Sample_Number"]);
+    $types = array_map("trim", explode(",", (string)$b["Test_Type"]));
+
+    if (!isset($group[$sn])) {
+        $group[$sn] = [];
+    }
+
+    foreach ($types as $tt) {
+        if ($tt === '') continue;
+        if (!in_array($tt, $group[$sn], true)) {
+            $group[$sn][] = $tt;
+        }
+    }
 }
+
+// Ordenar los Sample_Number de forma natural (G1, G2, G10 / 001, 002, 010)
+ksort($group, SORT_NATURAL);
 
 /* ============================================================
    3. TABLAS POR ENSAYO
 ============================================================ */
 $testTables = [
     "AL"  => ["table"=>"atterberg_limit",      "name"=>"Atterberg Limits"],
-    "GS"  => ["table"=>"grain_size_general",   "name"=>"Grain Size Analysis"],
+    "GS"  => ["table"=>"grain_size_general",   "name"=>"Grain Size Analysis"], // GS genérico
     "SP"  => ["table"=>"standard_proctor",     "name"=>"Standard Proctor"],
     "MC"  => ["table"=>"moisture_oven",        "name"=>"Moisture Content"],
     "UCS" => ["table"=>"unixial_compressive",  "name"=>"Unconfined Compression"],
@@ -91,23 +129,24 @@ $testTables = [
 function pdf_summary_results($t, $row) {
 
     if ($t=="AL") {
-        return "LL {$row['Liquid_Limit_Porce']} - PL {$row['Plastic_Limit_Porce']} - PI {$row['Plasticity_Index_Porce']} - Class: {$row['Classification']}";
+        return "LL: {$row['Liquid_Limit_Porce']} - PL: {$row['Plastic_Limit_Porce']} - PI: {$row['Plasticity_Index_Porce']} - Class: {$row['Classification']}";
     }
 
     if ($t=="GS") {
-        return "Sand {$row['Sand']}% - Gravel {$row['Gravel']}% - Fines {$row['Fines']}%";
+        // Usamos solo Sand/Gravel/Fines porque están comunes en las tablas de granulometría
+        return "Sand: {$row['Sand']}% - Gravel: {$row['Gravel']}% - Fines: {$row['Fines']}%";
     }
 
     if ($t=="SP") {
-        return "MDD {$row['MDD']} - OMC {$row['OMC']}%";
+        return "MDD: {$row['MDD']} - OMC: {$row['OMC']}%";
     }
 
     if ($t=="MC") {
-        return "Moisture {$row['Moisture_Content_Porce']}%";
+        return "Moisture: {$row['Moisture_Content_Porce']}%";
     }
 
     if ($t=="UCS") {
-        return "qu {$row['UCS_q']} MPa - Strain {$row['Strain']}%";
+        return "qu: {$row['UCS_q']} MPa - Strain: {$row['Strain']}%";
     }
 
     if ($t=="HY") {
@@ -121,8 +160,8 @@ function pdf_summary_results($t, $row) {
    5. PDF CONFIG
 ============================================================ */
 $pdf = new FPDF("P","mm","Letter");
-$pdf->AddPage();
 $pdf->SetMargins(12,12,12);
+$pdf->AddPage();
 
 /* HEADER */
 $pdf->Image("../assets/img/Pueblo-VIejo.jpg", 12, 10, 40);
@@ -186,8 +225,61 @@ foreach ($group as $sn => $tests) {
 
     foreach ($tests as $t) {
 
+        // Si no está mapeado, lo ignoramos
         if (!isset($testTables[$t])) continue;
 
+        // Caso especial: GS puede estar en varias tablas según tipo de material
+        if ($t === "GS") {
+
+            $name = $testTables["GS"]["name"];
+
+            // Candidatos posibles de tablas de granulometría
+            $gsCandidates = [
+                "grain_size_general",
+                "grain_size_fine",
+                "grain_size_coarse",
+                "grain_size_coarse_filter",
+                "grain_size_lpf",
+                "grain_size_upstream_transition_fill",
+                "grain_size_full",
+            ];
+
+            $rowData  = null;
+
+            foreach ($gsCandidates as $tblGS) {
+                $tmp = find_by_sql("
+                    SELECT *
+                    FROM {$tblGS}
+                    WHERE Sample_ID = '{$sampleID}'
+                      AND Sample_Number = '{$sn}'
+                    LIMIT 1
+                ");
+                if ($tmp) {
+                    $rowData = $tmp[0];
+                    break;
+                }
+            }
+
+            $completed = ($rowData !== null);
+            $status    = $completed ? "Completed" : "Pending";
+            $results   = $completed ? pdf_summary_results("GS", $rowData) : "-";
+
+            // ROW
+            $pdf->Cell(25,7,$t,1,0,"C");
+            $pdf->Cell(60,7,$name,1,0);
+
+            if ($completed) $pdf->SetTextColor(0,128,0);
+            else $pdf->SetTextColor(200,0,0);
+
+            $pdf->Cell(25,7,$status,1,0,"C");
+            $pdf->SetTextColor(0,0,0);
+
+            $pdf->Cell(80,7,$results,1,1);
+
+            continue; // next test
+        }
+
+        // Resto de ensayos (AL, SP, MC, UCS, HY, DHY, etc.)
         $tbl  = $testTables[$t]["table"];
         $name = $testTables[$t]["name"];
 
@@ -207,7 +299,6 @@ foreach ($group as $sn => $tests) {
         $pdf->Cell(25,7,$t,1,0,"C");
         $pdf->Cell(60,7,$name,1,0);
 
-        // Color del estado
         if ($completed) $pdf->SetTextColor(0,128,0);
         else $pdf->SetTextColor(200,0,0);
 

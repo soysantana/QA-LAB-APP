@@ -1,4 +1,4 @@
-<?php
+ <?php
 $page_title = "Expediente Técnico - Detalle de Muestra";
 require_once "../config/load.php";
 page_require_level(2);
@@ -8,8 +8,7 @@ include_once('../components/header.php');
    FUNCIÓN: Resumen clave por ensayo
 ============================================================ */
 function resumen_clave($testType, $row) {
-
-    // 1) ATTERBERG LIMIT
+  // 1) ATTERBERG LIMIT
     if ($testType === "AL") {
         return "
             LL: <b>{$row['Liquid_Limit_Porce']}</b><br>
@@ -18,6 +17,68 @@ function resumen_clave($testType, $row) {
             Clasification: <b>{$row['Classification']}</b>
         ";
     }
+    
+   if ($testType === "GS_FF") {
+  return "
+<div style='display:flex; justify-content:space-between; gap:10px;'>
+
+    <div style='flex:1;'>
+        No. 4: <b>{$row['Pass12']}%</b><br>
+        No. 10: <b>{$row['Pass13']}%</b><br>
+        No. 200: <b>{$row['Pass18']}%</b><br>
+        D10: <b>{$row['D10']}mm</b><br>
+    </div>
+
+    <div style='flex:1;'>
+        
+        Coarse Than: <b>{$row['Coarser_than_Gravel']}%</b><br>
+        Gravel: <b>{$row['Gravel']}%</b><br>
+        Sand: <b>{$row['Sand']}%</b><br>
+        Fines: <b>{$row['Fines']}%</b><br>
+        
+       
+    </div>
+
+    <div style='flex:1;'>
+        Particles Reactive: <b>{$row['Average_Particles_Reactive']}</b><br>
+        Reaction Strength: <b>{$row['Reaction_Strength_Result']}</b><br>
+    </div>
+
+</div>
+";
+
+}
+if ($testType === "GS_CF") {
+  return "
+<div style='display:flex; justify-content:space-between; gap:10px;'>
+
+    <div style='flex:1;'>
+        No. 4: <b>{$row['Pass12']}%</b><br>
+        No. 10: <b>{$row['Pass13']}%</b><br>
+        No. 200: <b>{$row['Pass18']}%</b><br>
+        D10: <b>{$row['D10']}mm</b><br>
+    </div>
+
+    <div style='flex:1;'>
+        
+        Coarse Than: <b>{$row['Coarser_than_Gravel']}%</b><br>
+        Gravel: <b>{$row['Gravel']}%</b><br>
+        Sand: <b>{$row['Sand']}%</b><br>
+        Fines: <b>{$row['Fines']}%</b><br>
+        
+       
+    </div>
+
+    <div style='flex:1;'>
+        Particles Reactive: <b>{$row['Average_Particles_Reactive']}</b><br>
+        Reaction Strength: <b>{$row['Reaction_Strength_Result']}</b><br>
+    </div>
+
+</div>
+";
+
+}
+
 
    if ($testType === "GS") {
     return "
@@ -47,7 +108,7 @@ function resumen_clave($testType, $row) {
     // 3) PROCTOR
     if ($testType === "SP" || $testType === "MP") {
         return "
-            MDD: <b>{$row['MDD']}</b> g/cm³  
+            MDD: <b>{$row['MDD']}</b> Kg/m³  
             OMC: <b>{$row['OMC']}</b>%
         ";
     }
@@ -63,7 +124,7 @@ function resumen_clave($testType, $row) {
     // 5) HUMEDAD
     if ($testType === "MC") {
         return "
-            Humedad: <b>{$row['Moisture_Content_Porce']}</b>%
+        Moisture Content: <b>{$row['Moisture_Content_Porce']}</b>%
         ";
     }
 
@@ -82,8 +143,9 @@ function resumen_clave($testType, $row) {
             Apparent: <b>{$row['Apparent_SG']}</b>
         ";
     }
-
+    
     return "<span class='text-muted'>Sin resumen disponible</span>";
+    
 }
 
 /* ============================================================
@@ -110,18 +172,17 @@ $info = $info[0];
 $requestedTests = array_map('trim', explode(",", $info["Test_Type"]));
 
 /* ============================================================
-   TABLAS POR ENSAYO
+   TABLAS POR ENSAYO (para códigos específicos)
 ============================================================ */
 $testTables = [
     "AL" => ["table" => "atterberg_limit", "url" => "../reviews/atterberg-limit.php?id="],
     "BTS" => ["table" => "brazilian", "url" => "../reviews/brazilian.php?id="],
 
-    // GRANULOMETRÍA
+    // GRANULOMETRÍA (estos se usan cuando el código ya viene específico)
     "GS"        => ["table" => "grain_size_general", "url" => "../reviews/grain-size.php?id="],
-    "GS-FINE"   => ["table" => "grain_size_fine", "url" => "../reviews/grain-size-fine-agg.php?id="],
     "GS-COARSE" => ["table" => "grain_size_coarse", "url" => "../reviews/grain-size-coarse-agg.php?id="],
     "GS-CF"     => ["table" => "grain_size_coarse_filter", "url" => "../reviews/grain-size-coarse-filter.php?id="],
-    "GS-FF"     => ["table" => "grain_size_fine_filter", "url" => "../reviews/grain-size-fine-filter.php?id="],
+    "GS_FF"     => ["table" => "grain_size_fine", "url" => "../reviews/grain-size-fine-filter.php?id="],
     "GS-LPF"    => ["table" => "grain_size_lpf", "url" => "../reviews/grain-size-lpf.php?id="],
     "GS-UTF"    => ["table" => "grain_size_upstream_transition_fill", "url" => "../reviews/grain-size-upstream-transition-fill.php?id="],
     "GS-TRF"    => ["table" => "grain_size_full", "url" => "../reviews/grain-size-full.php?id="],
@@ -131,19 +192,19 @@ $testTables = [
     "GS-IRF"    => ["table" => "grain_size_full", "url" => "../reviews/grain-size-full.php?id="],
 
     // OTROS ENSAYOS
-    "HY" => ["table" => "hydrometer", "url" => "../reviews/hydrometer.php?id="],
-    "DHY" => ["table" => "double_hydrometer", "url" => "../reviews/double-hydrometer.php?id="],
-    "LAA" => ["table" => "los_angeles_abrasion_large", "url" => "../reviews/LAA-Large.php?id="],
-    "MC" => ["table" => "moisture_oven", "url" => "../reviews/moisture-oven.php?id="],
-    "SG" => ["table" => "specific_gravity", "url" => "../reviews/specific-gravity.php?id="],
+    "HY"        => ["table" => "hydrometer", "url" => "../reviews/hydrometer.php?id="],
+    "DHY"       => ["table" => "double_hydrometer", "url" => "../reviews/double-hydrometer.php?id="],
+    "LAA"       => ["table" => "los_angeles_abrasion_large", "url" => "../reviews/LAA-Large.php?id="],
+    "MC"        => ["table" => "moisture_oven", "url" => "../reviews/moisture-oven.php?id="],
+    "SG"        => ["table" => "specific_gravity", "url" => "../reviews/specific-gravity.php?id="],
     "SG-COARSE" => ["table" => "specific_gravity_coarse", "url" => "../reviews/specific-gravity-coarse-aggregates.php?id="],
-    "SG-FINE" => ["table" => "specific_gravity_fine", "url" => "../reviews/specific-gravity-fine-aggregate.php?id="],
-    "SP" => ["table" => "standard_proctor", "url" => "../reviews/standard-proctor.php?id="],
-    "UCS" => ["table" => "unixial_compressive", "url" => "../reviews/unixial-compressive.php?id="],
-    "PLT" => ["table" => "point_load", "url" => "../reviews/point-load.php?id="],
-    "SND" => ["table" => "soundness", "url" => "../reviews/soundness.php?id="],
-    "PH" => ["table" => "pinhole_test", "url" => "../reviews/pinhole-test.php?id="],
-    "AR" => ["table" => "reactivity", "url" => "../reviews/reactivity.php?id="],
+    "SG-FINE"   => ["table" => "specific_gravity_fine", "url" => "../reviews/specific-gravity-fine-aggregate.php?id="],
+    "SP"        => ["table" => "standard_proctor", "url" => "../reviews/standard-proctor.php?id="],
+    "UCS"       => ["table" => "unixial_compressive", "url" => "../reviews/unixial-compressive.php?id="],
+    "PLT"       => ["table" => "point_load", "url" => "../reviews/point-load.php?id="],
+    "SND"       => ["table" => "soundness", "url" => "../reviews/soundness.php?id="],
+    "PH"        => ["table" => "pinhole_test", "url" => "../reviews/pinhole-test.php?id="],
+    "AR"        => ["table" => "reactivity", "url" => "../reviews/reactivity.php?id="],
 ];
 
 /* ============================================================
@@ -151,21 +212,88 @@ $testTables = [
 ============================================================ */
 $testCards = [];
 
-foreach ($requestedTests as $t) {
+foreach ($requestedTests as $reqCode) {
 
-    if (!isset($testTables[$t])) {
-        $testCards[] = ["test"=>$t, "status"=>"unknown", "msg"=>"No existe tabla"];
+    // CASO ESPECIAL: TODOS LOS GS EN LA REQUISICIÓN VIENEN COMO "GS"
+    if ($reqCode === "GS") {
+
+        // Lista de posibles tablas GS donde puede estar el resultado
+        $gsCandidates = [
+            [ "code" => "GS",      "table" => "grain_size_general",               "url" => "../reviews/grain-size.php?id=" ],
+            [ "code" => "GS_FF",   "table" => "grain_size_fine",                  "url" => "../reviews/grain-size-fine-filter.php?id=" ],
+            [ "code" => "GS-COARSE","table" => "grain_size_coarse",               "url" => "../reviews/grain-size-coarse-agg.php?id=" ],
+            [ "code" => "GS-CF",   "table" => "grain_size_coarse_filter",         "url" => "../reviews/grain-size-coarse-filter.php?id=" ],
+            [ "code" => "GS-LPF",  "table" => "grain_size_lpf",                   "url" => "../reviews/grain-size-lpf.php?id=" ],
+            [ "code" => "GS-UTF",  "table" => "grain_size_upstream_transition_fill","url" => "../reviews/grain-size-upstream-transition-fill.php?id=" ],
+            [ "code" => "GS-TRF",  "table" => "grain_size_full",                  "url" => "../reviews/grain-size-full.php?id=" ],
+        ];
+
+        $found = null;
+
+        foreach ($gsCandidates as $c) {
+            $row = find_by_sql("
+                SELECT id, Registed_Date, Register_By
+                FROM {$c['table']}
+                WHERE Sample_ID = '{$sampleID}'
+                  AND Sample_Number = '{$sampleNum}'
+                LIMIT 1
+            ");
+
+            if ($row) {
+                $r = $row[0];
+                $found = [
+                    "display" => "GS",         // Lo que se ve en la tarjeta
+                    "code"    => $c["code"],  // Código interno para resumen_clave
+                    "status"  => "completed",
+                    "id"      => $r["id"],
+                    "date"    => $r["Registed_Date"],
+                    "tech"    => $r["Register_By"],
+                    "table"   => $c["table"],
+                    "url"     => $c["url"] . $r["id"],
+                ];
+                break;
+            }
+        }
+
+        if ($found) {
+            $testCards[] = $found;
+        } else {
+            // No se encontró en ninguna tabla GS → pendiente
+            $testCards[] = [
+                "display" => "GS",
+                "code"    => "GS",
+                "status"  => "pending",
+                "test"    => "GS",
+            ];
+        }
+
+        continue; // Pasamos al siguiente ensayo solicitado
+    }
+
+    // RESTO DE ENSAYOS (NO GS GENÉRICO)
+    if (!isset($testTables[$reqCode])) {
+        $testCards[] = [
+            "display" => $reqCode,
+            "code"    => $reqCode,
+            "status"  => "unknown",
+            "msg"     => "No existe tabla"
+        ];
         continue;
     }
 
-    $table = $testTables[$t]["table"];
+    $table = $testTables[$reqCode]["table"];
 
     // Verificar columnas de la tabla
-    $cols = find_by_sql("SHOW COLUMNS FROM {$table}");
+    $cols  = find_by_sql("SHOW COLUMNS FROM {$table}");
     $names = array_column($cols, "Field");
 
     if (!in_array("Sample_ID", $names)) {
-        $testCards[] = ["test"=>$t, "status"=>"error", "msg"=>"Tabla sin Sample_ID"];
+        $testCards[] = [
+            "display" => $reqCode,
+            "code"    => $reqCode,
+            "status"  => "error",
+            "msg"     => "Tabla sin Sample_ID"
+        ];
         continue;
     }
 
@@ -182,15 +310,21 @@ foreach ($requestedTests as $t) {
         $r = $row[0];
 
         $testCards[] = [
-            "test"   => $t,
-            "status" => "completed",
-            "id"     => $r["id"],
-            "date"   => $r["Registed_Date"],
-            "tech"   => $r["Register_By"],
-            "url"    => $testTables[$t]["url"] . $r["id"]
+            "display" => $reqCode,                     // lo que vino en la requisición
+            "code"    => $reqCode,                     // mismo código para resumen_clave
+            "status"  => "completed",
+            "id"      => $r["id"],
+            "date"    => $r["Registed_Date"],
+            "tech"    => $r["Register_By"],
+            "table"   => $table,
+            "url"     => $testTables[$reqCode]["url"] . $r["id"]
         ];
     } else {
-        $testCards[] = ["test"=>$t, "status"=>"pending"];
+        $testCards[] = [
+            "display" => $reqCode,
+            "code"    => $reqCode,
+            "status"  => "pending",
+        ];
     }
 }
 
@@ -220,13 +354,11 @@ foreach ($requestedTests as $t) {
         </div>
     </div>
 
-<a href="../pdf/expediente_pdf.php?sample=<?= $sampleID ?>&num=<?= $sampleNum ?>" 
-   target="_blank"
-   class="btn btn-danger btn-lg mb-3">
-   <i class="bi bi-filetype-pdf"></i> Generar Expediente PDF
-</a>
-
-
+    <a href="../pdf/expediente_pdf.php?sample=<?= $sampleID ?>&num=<?= $sampleNum ?>" 
+       target="_blank"
+       class="btn btn-danger btn-lg mb-3">
+       <i class="bi bi-filetype-pdf"></i> Generar Expediente PDF
+    </a>
 
     <h4>Ensayos Solicitados</h4>
 
@@ -241,19 +373,21 @@ foreach ($requestedTests as $t) {
                     : ($t["status"]=="pending" ? '#dc3545' : '#6c757d') ?>">
 
                 <div class="card-body">
-                    <h5 class="card-title"><?= $t["test"] ?></h5>
+                    <h5 class="card-title"><?= $t["display"] ?? ($t["test"] ?? '') ?></h5>
 
                     <?php if ($t["status"] == "completed"): ?>
 
                         <?php
-                            $dataRow = find_by_sql("
+                            $tableForRow = $t["table"];
+                            $data = find_by_sql("
                                 SELECT *
-                                FROM {$testTables[$t['test']]['table']}
+                                FROM {$tableForRow}
                                 WHERE id = '{$t['id']}'
                                 LIMIT 1
-                            ")[0];
-
-                            $resumen = resumen_clave($t["test"], $dataRow);
+                            ");
+                            $dataRow = $data ? $data[0] : [];
+                            $code    = $t["code"] ?? $t["display"];
+                            $resumen = $dataRow ? resumen_clave($code, $dataRow) : "<span class='text-muted'>Sin datos</span>";
                         ?>
 
                         <p><b>Estado:</b> <span class="text-success">Completado ✔</span></p>
@@ -272,7 +406,7 @@ foreach ($requestedTests as $t) {
 
                     <?php else: ?>
 
-                        <p class="text-muted"><?= $t["msg"] ?></p>
+                        <p class="text-muted"><?= $t["msg"] ?? 'Sin información' ?></p>
 
                     <?php endif; ?>
 
