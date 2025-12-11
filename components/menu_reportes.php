@@ -177,6 +177,25 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
         </a>
       </div>
 
+      <!-- Auditorías de Laboratorio -->
+<div class="col-12 col-md-6 col-lg-4">
+  <a href="/pages/auditorias_list.php" class="text-decoration-none">
+    <div class="card h-100 shadow-sm border-0 hover-elevate">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-2">
+          <i class="bi bi-clipboard-check me-2"></i>
+          <h5 class="card-title mb-0">Auditorías del Laboratorio</h5>
+        </div>
+        <p class="card-text small text-muted mb-0">
+          Registro y seguimiento de auditorías internas, externas y cruzadas,
+          con su estado y severidad.
+        </p>
+      </div>
+    </div>
+  </a>
+</div>
+
+
       <!-- =========================
            Firma y documentación
            ========================= -->
