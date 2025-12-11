@@ -70,10 +70,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="PackageID" class="form-label">Paquete ID</label>
                   <input type="text" class="form-control" name="PackageID" id="PackageID" disabled>
                 </div>
-                <div class="col-md-3">
-                  <label for="Structure" class="form-label">Estructura</label>
-                  <input type="text" class="form-control" name="Structure" id="Structure" required>
-                </div>
+               <div class="col-md-3">
+  <label for="Structure" class="form-label">Estructura</label>
+  <select class="form-control" name="Structure" id="Structure" required>
+      <option value="">Seleccione...</option>
+      <option value="LLD">LLD</option>
+      <option value="SD1">SD1</option>
+      <option value="SD2">SD2</option>
+      <option value="SD3">SD3</option>
+      <option value="LBOR">Areas de Banco</option>
+      <option value="Site Investigation">Site Investigation</option>
+      <option value="Stockpile">Acopios</option>
+      <option value="Quarry">Cantera</option>
+      <option value="Diorite">Diorita</option>
+      <option value="Source Investigation">Investigacion Fuentes</option>
+      <option value="Miscelaneus">Miscelaneos</option>
+   
+  </select>
+</div>
+
                 <div class="col-md-3">
                   <label for="CollectionDate" class="form-label">Fecha de colección</label>
                   <input type="date" class="form-control" name="CollectionDate" id="CollectionDate" required>

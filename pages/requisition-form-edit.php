@@ -96,10 +96,26 @@ include_once('../components/header.php');
                     <?php if (!user_can_access(2)) echo 'readonly'; ?>>
                   <input type="hidden" name="OldPackageID" value="<?php echo $Search['Package_ID']; ?>" />
                 </div>
-                <div class="col-md-3">
-                  <label for="Structure" class="form-label">Estructura</label>
-                  <input type="text" class="form-control" name="Structure" id="Structure" value="<?php echo $Search['Structure']; ?>">
-                </div>
+               <div class="col-md-3">
+  <label for="Structure" class="form-label">Estructura</label>
+  <select class="form-control" name="Structure" id="Structure" required>
+      <option value="">Seleccione...</option>
+
+      <option value="LLD"                 <?= ($Search['Structure'] == 'LLD') ? 'selected' : '' ?>>LLD</option>
+      <option value="SD1"                 <?= ($Search['Structure'] == 'SD1') ? 'selected' : '' ?>>SD1</option>
+      <option value="SD2"                 <?= ($Search['Structure'] == 'SD2') ? 'selected' : '' ?>>SD2</option>
+      <option value="SD3"                 <?= ($Search['Structure'] == 'SD3') ? 'selected' : '' ?>>SD3</option>
+      <option value="LBOR"                <?= ($Search['Structure'] == 'LBOR') ? 'selected' : '' ?>>Areas de Banco</option>
+      <option value="Site Investigation"  <?= ($Search['Structure'] == 'Site Investigation') ? 'selected' : '' ?>>Site Investigation</option>
+      <option value="Stockpile"           <?= ($Search['Structure'] == 'Stockpile') ? 'selected' : '' ?>>Acopios</option>
+      <option value="Quarry"              <?= ($Search['Structure'] == 'Quarry') ? 'selected' : '' ?>>Cantera</option>
+      <option value="Diorite"             <?= ($Search['Structure'] == 'Diorite') ? 'selected' : '' ?>>Diorita</option>
+      <option value="Source Investigation"<?= ($Search['Structure'] == 'Source Investigation') ? 'selected' : '' ?>>Investigacion Fuentes</option>
+      <option value="Miscelaneus"         <?= ($Search['Structure'] == 'Miscelaneus') ? 'selected' : '' ?>>Miscelaneos</option>
+
+  </select>
+</div>
+
                 <div class="col-md-3">
                   <label for="CollectionDate" class="form-label">Fecha de colección</label>
                   <input type="date" class="form-control" name="CollectionDate" id="CollectionDate" value="<?php echo $Search['Sample_Date']; ?>" required>
