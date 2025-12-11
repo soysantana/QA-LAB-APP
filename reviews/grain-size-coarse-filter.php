@@ -652,7 +652,7 @@ else if (S.match(/PVDJ-AGG-DIO/i)) {
 /***********************
  * 3) AGG normal
  ***********************/
-else if (S.match(/PVDJ-AGG/i)) {
+else if (S.match(/Stockpile/i)) {
     specs = specsCF_AGG;
 }
 
