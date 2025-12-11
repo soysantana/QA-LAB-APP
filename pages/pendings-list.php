@@ -31,9 +31,8 @@ $ent  = find_all("test_delivery");
 $rev  = find_all("test_review");
 $rep  = find_all("test_repeat");
 $rev2 = find_all("test_reviewed");
+$flow = find_all("test_workflow");   // tabla de workflow
 
-// NUEVO: test_workflow, PERO A PRUEBA DE ERRORES
-$flow = find_all("test_workflow");
 if (!is_array($flow)) {
     $flow = [];
 }
@@ -46,7 +45,7 @@ $index = [];
 /* === PREPARATION === */
 foreach ($prep as $r) {
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
     ] = [
         'stage' => 'PREP',
         'SD'    => $r['Start_Date'] ?? null
@@ -56,7 +55,7 @@ foreach ($prep as $r) {
 /* === REALIZATION === */
 foreach ($real as $r) {
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
     ] = [
         'stage' => 'REAL',
         'SD'    => $r['Start_Date'] ?? null
@@ -66,7 +65,7 @@ foreach ($real as $r) {
 /* === DELIVERY === */
 foreach ($ent as $r) {
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
     ] = [
         'stage' => 'ENT',
         'SD'    => $r['Start_Date'] ?? null
@@ -76,7 +75,7 @@ foreach ($ent as $r) {
 /* === REVIEW === */
 foreach ($rev as $r) {
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
     ] = [
         'stage' => 'REV',
         'SD'    => $r['Start_Date'] ?? null
@@ -86,7 +85,7 @@ foreach ($rev as $r) {
 /* === REPEAT === */
 foreach ($rep as $r) {
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
     ] = [
         'stage' => 'REP',
         'SD'    => $r['Start_Date'] ?? null
@@ -96,35 +95,67 @@ foreach ($rep as $r) {
 /* === REVIEWED === */
 foreach ($rev2 as $r) {
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
     ] = [
         'stage' => 'REV',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === WORKFLOW (AGREGADO, PERO SEGURO) === */
+/* === WORKFLOW (MAPEANDO LOS STAGE) === */
+
+// Mapa de posibles textos que puedas tener en test_workflow.Stage
+$stageMap = [
+    'SIN'          => 'SIN',
+    'REGISTRO'     => 'SIN',
+    'REGISTRATION' => 'SIN',
+
+    'PREP'         => 'PREP',
+    'PREPARACION'  => 'PREP',
+    'PREPARACIÓN'  => 'PREP',
+    'PREPARATION'  => 'PREP',
+
+    'REAL'         => 'REAL',
+    'REALIZACION'  => 'REAL',
+    'REALIZACIÓN'  => 'REAL',
+    'REALIZATION'  => 'REAL',
+
+    'ENT'          => 'ENT',
+    'ENTREGA'      => 'ENT',
+    'DELIVERY'     => 'ENT',
+
+    'REV'          => 'REV',
+    'REVISION'     => 'REV',
+    'REVISIÓN'     => 'REV',
+    'REVIEW'       => 'REV',
+
+    'REP'          => 'REP',
+    'REPEAT'       => 'REP'
+];
+
 foreach ($flow as $r) {
 
-    // Si no existe Stage, lo ignoramos para no romper nada
-    if (!isset($r['Stage'])) {
+    $sampleID   = N($r['Sample_ID']   ?? '');
+    $sampleNum  = N($r['Sample_Number'] ?? '');
+    $testType   = N($r['Test_Type']   ?? '');
+    $stageField = strtoupper(trim((string)($r['Stage'] ?? '')));
+    $startDate  = $r['Start_Date'] ?? $r['Date'] ?? null;
+
+    if ($sampleID === '' || $testType === '' || $stageField === '') {
         continue;
     }
 
-    $stageRaw = strtoupper(trim((string)$r['Stage']));
-
-    // Opcional: si en test_workflow se usan otros textos, los puedes mapear aquí
-    // pero por ahora solo dejamos pasar los que encajan con tu lógica
-    if (!in_array($stageRaw, ['SIN','PREP','REAL','ENT','REV','REP'], true)) {
-        // Si no coincide con tus estados conocidos, lo ignoramos
+    $stage = $stageMap[$stageField] ?? null;
+    if ($stage === null) {
+        // Si no lo reconozco, no lo uso para no dañar tu lógica
         continue;
     }
 
     $index[
-        N($r['Sample_ID'])."|".N($r['Sample_Number'])."|".N($r['Test_Type'])
+        $sampleID."|".$sampleNum."|".$testType
     ] = [
-        'stage' => $stageRaw,
-        'SD'    => $r['Start_Date'] ?? null
+        'stage' => $stage,
+        'SD'    => $startDate
     ];
 }
 
@@ -153,7 +184,7 @@ foreach ($req as $row){
             ];
         }
 
-        $key = N($row['Sample_ID'])."|".N($row['Sample_Number'])."|".$T;
+        $key = N($row['Sample_ID'] ?? '')."|".N($row['Sample_Number'] ?? '')."|".$T;
 
         $stData = $index[$key] ?? null;
 
