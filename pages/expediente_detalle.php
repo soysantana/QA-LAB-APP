@@ -47,7 +47,7 @@ function resumen_clave($testType, $row) {
     // 3) PROCTOR
     if ($testType === "SP" || $testType === "MP") {
         return "
-            MDD: <b>{$row['MDD']}</b> g/cm³ • 
+            MDD: <b>{$row['MDD']}</b> g/cm³  
             OMC: <b>{$row['OMC']}</b>%
         ";
     }
@@ -55,7 +55,7 @@ function resumen_clave($testType, $row) {
     // 4) UCS
     if ($testType === "UCS") {
         return "
-            qu: <b>{$row['UCS_q']}</b> kPa • 
+            qu: <b>{$row['UCS_q']}</b> kPa  
             Deform.: <b>{$row['Strain']}</b>%
         ";
     }
@@ -77,8 +77,8 @@ function resumen_clave($testType, $row) {
     // 6) SPECIFIC GRAVITY
     if ($testType === "SG") {
         return "
-            Gsb: <b>{$row['Bulk_SG']}</b> • 
-            Gsa: <b>{$row['Saturated_Surface_Dry_SG']}</b> • 
+            Gsb: <b>{$row['Bulk_SG']}</b>  
+            Gsa: <b>{$row['Saturated_Surface_Dry_SG']}</b>  
             Apparent: <b>{$row['Apparent_SG']}</b>
         ";
     }
@@ -203,7 +203,7 @@ foreach ($requestedTests as $t) {
 <main id="main" class="main">
 
     <div class="pagetitle">
-        <h1>Expediente Técnico – <?= $sampleID ?></h1>
+        <h1>Expediente Técnico - <?= $sampleID ?></h1>
     </div>
 
     <!-- Información de la muestra -->
