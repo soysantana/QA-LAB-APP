@@ -1029,7 +1029,7 @@ if (empty($matrix4)) {
     }
 
     // (Aquí continúa TU código de la tabla / gráfico tal como ya lo tienes)
-}
+
 
 
     // ---------- TABLA TIPO × CLIENTE ----------
