@@ -965,68 +965,162 @@ $testNames = [
     "Envio" => "For Shipment",
 ];
 
-/* ---------- Construir matriz Tipo × Cliente ---------- */
+/* ======================================================
+   0) SETTINGS (DEBUG)
+====================================================== */
+$DEBUG_NA = true; // <- pon en false cuando termines de depurar
 
-$rowsTipo = resumen_tipo_entregado($start_str, $end_str);
+/* ======================================================
+   1) BUILD MATRIX Type × Client
+====================================================== */
+$rowsTipo = resumen_tipo_entregado($start_str, $end_str); // debe devolver Client y Test_Type
 $matrix4  = [];
 $clients4 = [];
 
-foreach ($rowsTipo as $r) {
-
-    /* ===== CLIENTE (ROBUSTO, SIN FALSOS N/A) ===== */
-    $client = (string)($r['Client'] ?? '');
-
-    // Limpia espacios raros (NBSP / CHAR(160))
-    $client = str_replace([chr(160), "\xC2\xA0"], ' ', $client);
-    $client = trim($client);
-
-    // SOLO si realmente está vacío
-    if ($client === '') {
-        $client = 'N/A';
-    }
-
-    /* ===== TEST TYPES ===== */
-    $testsRaw = (string)$r['Test_Type'];
-    $testsArr = array_filter(array_map('trim', explode(',', $testsRaw)));
-
-    foreach ($testsArr as $t) {
-        if ($t === '') continue;
-
-        if (!isset($matrix4[$t])) {
-            $matrix4[$t] = [];
-        }
-
-        if (!isset($matrix4[$t][$client])) {
-            $matrix4[$t][$client] = 0;
-        }
-
-        $matrix4[$t][$client]++;
-
-        if (!in_array($client, $clients4, true)) {
-            $clients4[] = $client;
-        }
-    }
-}
-
-if (empty($matrix4)) {
-
+/* Si no hay data */
+if (empty($rowsTipo)) {
     $pdf->SetFont('Arial', 'B', 10);
     $pdf->SetFillColor(245, 245, 245);
     $pdf->Cell(0, 10, "No completed tests in this week.", 1, 1, 'C', true);
     $pdf->Ln(5);
-
 } else {
 
-    sort($clients4);
-
-    $testTypes = array_keys($matrix4);
-    sort($testTypes);
-
-    /* Convertir abreviaturas → nombres completos */
-    $testTypesPretty = [];
-    foreach ($testTypes as $tp) {
-        $testTypesPretty[$tp] = $testNames[$tp] ?? $tp;
+    /* === (Opcional) Verifica que exista la key 'Client' en el resultado === */
+    if (!array_key_exists('Client', $rowsTipo[0])) {
+        // Esto no es PDF: es tu SQL que no está devolviendo AS Client
+        echo "<pre>ERROR: resumen_tipo_entregado() NO trae la columna 'Client'.\n";
+        echo "Keys disponibles:\n";
+        print_r(array_keys($rowsTipo[0]));
+        echo "</pre>";
+        exit;
     }
+
+    foreach ($rowsTipo as $r) {
+
+        /* ===== CLIENTE (ROBUSTO) ===== */
+        $rawClient = $r['Client'] ?? null;
+
+        $client = (string)($rawClient ?? '');
+        // Limpia NBSP / CHAR(160)
+        $client = str_replace([chr(160), "\xC2\xA0"], ' ', $client);
+        $client = trim($client);
+
+        /* ===== SI QUEDA VACÍO → N/A (DEBUG imprime fila exacta) ===== */
+        if ($client === '') {
+            $client = 'N/A';
+
+            if ($DEBUG_NA) {
+                echo "<pre>FILA QUE DISPARA N/A (Client vacío o no existe):\n";
+                print_r($r);
+                echo "\nRAW Client: "; var_dump($rawClient);
+                echo "\nHEX Client: ";
+                echo isset($r['Client']) ? bin2hex((string)$r['Client']) : 'NO_KEY';
+                echo "</pre>";
+                exit;
+            }
+        }
+
+        /* ===== TEST TYPES ===== */
+        $testsRaw = (string)($r['Test_Type'] ?? '');
+        $testsRaw = str_replace(["\r", "\n", "\t"], ' ', $testsRaw);
+        $testsArr = array_filter(array_map('trim', explode(',', $testsRaw)));
+
+        foreach ($testsArr as $t) {
+            if ($t === '') continue;
+
+            if (!isset($matrix4[$t])) $matrix4[$t] = [];
+            if (!isset($matrix4[$t][$client])) $matrix4[$t][$client] = 0;
+
+            $matrix4[$t][$client]++;
+
+            if (!in_array($client, $clients4, true)) {
+                $clients4[] = $client;
+            }
+        }
+    }
+
+    /* Si por alguna razón no quedó nada */
+    if (empty($matrix4)) {
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->SetFillColor(245, 245, 245);
+        $pdf->Cell(0, 10, "No completed tests in this week.", 1, 1, 'C', true);
+        $pdf->Ln(5);
+    } else {
+
+        sort($clients4);
+
+        $testTypes = array_keys($matrix4);
+        sort($testTypes);
+
+        /* Convertir abreviaturas → nombres completos */
+        $testTypesPretty = [];
+        foreach ($testTypes as $tp) {
+            $testTypesPretty[$tp] = $testNames[$tp] ?? $tp;
+        }
+
+        /* ======================================================
+           2) PDF TABLE (Clients = Columns, Tests = Rows)
+        ======================================================= */
+
+        $pdf->SetFont('Arial','B',8);
+
+        // --- Cálculo de anchos de columnas ---
+        $pageW = $pdf->GetPageWidth();
+        $lm    = method_exists($pdf,'lMargin') ? $pdf->lMargin : 10;
+        $rm    = method_exists($pdf,'rMargin') ? $pdf->rMargin : 10;
+        $usableW = $pageW - $lm - $rm;
+
+        $wTest  = 58;   // ancho columna "Test Type"
+        $wTotal = 14;   // ancho columna "Total"
+        $nClients = max(1, count($clients4));
+        $wClient = ($usableW - $wTest - $wTotal) / $nClients;
+
+        // Si queda muy estrecho, ajusta un poco
+        if ($wClient < 12) {
+            $wTest = 52;
+            $wTotal = 14;
+            $wClient = ($usableW - $wTest - $wTotal) / $nClients;
+        }
+
+        // Header
+        $pdf->SetFillColor(235,235,235);
+        $pdf->Cell($wTest, 7, "Test Type", 1, 0, 'L', true);
+
+        foreach ($clients4 as $c) {
+            $label = (strlen($c) > 14) ? substr($c,0,14).'…' : $c;
+            $pdf->Cell($wClient, 7, utf8_decode($label), 1, 0, 'C', true);
+        }
+        $pdf->Cell($wTotal, 7, "Total", 1, 1, 'C', true);
+
+        $pdf->SetFont('Arial','',8);
+
+        $grandTotal = 0;
+
+        foreach ($testTypes as $tp) {
+
+            $rowTotal = 0;
+
+            $pdf->Cell($wTest, 6, utf8_decode($testTypesPretty[$tp]), 1, 0, 'L', false);
+
+            foreach ($clients4 as $c) {
+                $val = (int)($matrix4[$tp][$c] ?? 0);
+                $rowTotal += $val;
+                $pdf->Cell($wClient, 6, $val ? (string)$val : "", 1, 0, 'C', false);
+            }
+
+            $grandTotal += $rowTotal;
+            $pdf->Cell($wTotal, 6, (string)$rowTotal, 1, 1, 'C', false);
+        }
+
+        // Footer total general
+        $pdf->SetFont('Arial','B',8);
+        $pdf->SetFillColor(245,245,245);
+        $pdf->Cell($wTest + ($wClient * $nClients), 7, "Grand Total", 1, 0, 'R', true);
+        $pdf->Cell($wTotal, 7, (string)$grandTotal, 1, 1, 'C', true);
+
+        $pdf->Ln(4);
+    }
+
 
     // (Aquí continúa TU código de la tabla / gráfico tal como ya lo tienes)
 
