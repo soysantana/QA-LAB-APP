@@ -111,7 +111,7 @@ function insert_operational_rows(
     // INSERT solo con columnas seguras por tabla
     $sql = sprintf(
       "INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s)
-       VALUES('%s','%s','%s','%s','%s','%s',NOW(),'InProgress')",
+       VALUES('%s','%s','%s','%s','%s','%s',NOW(),'In Progress')",
       $tbl,
       $C['id'], $C['sample_id'], $C['sample_number'], $C['test_type'],
       $C['technician'], $C['register_by'], $C['register_date'], $C['status'],
