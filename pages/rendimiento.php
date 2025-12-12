@@ -126,224 +126,375 @@ $lastRows = $vm['lastRows'];
     </div>
   </section>
 
-  <!-- 2 COLUMNAS: Ranking + Chart -->
+  <!-- BLOQUE MODERNO: Cards + Chart -->
   <section class="mb-3">
     <div class="row g-3">
 
-      <!-- Ranking -->
-      <div class="col-lg-6">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <!-- Cards -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
             <div>
-              <strong>Ranking por técnico</strong>
-              <div class="small text-muted">Clic para ver el perfil abajo.</div>
+              <strong>Leaderboard (Cards)</strong>
+              <div class="small text-muted">Clic en un técnico para abrir el panel lateral (drawer).</div>
             </div>
-            <span class="badge bg-light text-muted border small">
-              Técnicos: <?= count($statsSorted) ?>
-            </span>
-          </div>
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Técnico</th>
-                    <th class="text-end">Reg</th>
-                    <th class="text-end">Prep</th>
-                    <th class="text-end">Real</th>
-                    <th class="text-end">Ent</th>
-                    <th class="text-end">Dig</th>
-                    <th class="text-end">Total</th>
-                    <th class="text-end">% Rep</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if (empty($statsSorted)): ?>
-                    <tr><td colspan="8" class="text-muted text-center py-3">Sin datos en el rango seleccionado.</td></tr>
-                  <?php else: ?>
-                    <?php foreach ($statsSorted as $alias => $st): ?>
-                      <?php
-                        $isSel = ($selectedAlias === $alias);
-                        $name  = $st['name'];
-                        $url = "?quick=".urlencode($quick)."&from=".urlencode($from)."&to=".urlencode($to)."&tech=".urlencode($alias)."&ttype=".urlencode($filterType);
-                      ?>
-                      <tr class="<?= $isSel ? 'table-primary' : '' ?>">
-                        <td>
-                          <a href="<?= $url ?>" class="d-flex align-items-center gap-2 text-decoration-none text-reset">
-                            <div class="avatar-tech"><?= $h(mb_substr($name,0,1,'UTF-8')) ?></div>
-                            <div>
-                              <div class="fw-semibold"><?= $h($name) ?></div>
-                              <div class="small text-muted"><?= $st['avg_per_day'] ?> ensayos/día</div>
-                            </div>
-                          </a>
-                        </td>
-                        <td class="text-end"><?= $st['reg'] ?: '' ?></td>
-                        <td class="text-end"><?= $st['pre'] ?: '' ?></td>
-                        <td class="text-end"><?= $st['rea'] ?: '' ?></td>
-                        <td class="text-end"><?= $st['ent'] ?: '' ?></td>
-                        <td class="text-end"><?= $st['dig'] ?: '' ?></td>
-                        <td class="text-end fw-semibold"><?= (int)$st['total'] ?></td>
-                        <td class="text-end <?= $st['rep_pct']>0?'text-danger':'text-success' ?>">
-                          <?= $st['rep'] ? (int)$st['rep'].' ('.$st['rep_pct'].'%)' : '0%' ?>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </tbody>
-              </table>
+            <div class="d-flex gap-2">
+              <input id="techSearch" class="form-control form-control-sm" style="width:220px" placeholder="Buscar..." />
+              <select id="sortMode" class="form-select form-select-sm" style="width:190px">
+                <option value="total">Orden: Total</option>
+                <option value="rep">Orden: % Repetición</option>
+                <option value="rea">Orden: Realización</option>
+              </select>
             </div>
           </div>
-          <div class="card-footer bg-white small text-muted">
-            Selecciona un técnico para ver “Perfil + Mix + Últimos ensayos”.
+
+          <div class="card-body">
+            <div id="cardsGrid" class="cards-grid"></div>
+
+            <?php if(empty($statsSorted)): ?>
+              <div class="text-muted text-center py-3">Sin datos en el rango seleccionado.</div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
 
       <!-- Chart -->
-      <div class="col-lg-6">
+      <div class="col-lg-5">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-header bg-white">
             <strong>Distribución por etapa (Top 10)</strong>
             <div class="small text-muted">Barra apilada por técnico.</div>
           </div>
           <div class="card-body">
-            <div id="chartByTech" style="height: 360px;"></div>
+            <div id="chartByTech" style="height: 420px;"></div>
           </div>
         </div>
       </div>
 
-    </div>
-  </section>
-
-  <!-- PERFIL -->
-  <section>
-    <div class="card shadow-sm border-0">
-      <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <div>
-          <strong>Perfil del técnico</strong>
-          <div class="small text-muted">Mix de ensayos (Realización) + últimos registros.</div>
-        </div>
-        <span class="badge bg-light text-muted border small">
-          Seleccionado:
-          <strong><?= $selectedAlias!=='' ? $h($selectedName).' ('.$h($selectedAlias).')' : '—' ?></strong>
-        </span>
-      </div>
-
-      <div class="card-body">
-        <?php if ($selectedAlias==='' || !isset($stats[$selectedAlias])): ?>
-          <div class="text-muted text-center py-4">Selecciona un técnico en el ranking.</div>
-        <?php else:
-          $stSel = $stats[$selectedAlias];
-        ?>
-        <div class="row g-3">
-
-          <!-- Perfil + Donut -->
-          <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-3">
-              <div class="card-body">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <div class="avatar-tech avatar-lg"><?= $h(mb_substr($selectedName,0,1,'UTF-8')) ?></div>
-                  <div>
-                    <div class="fw-semibold"><?= $h($selectedName) ?></div>
-                    <div class="small text-muted"><?= $h($aliasMap[$selectedAlias]['job'] ?? 'Técnico de laboratorio') ?></div>
-                  </div>
-                </div>
-
-                <ul class="list-unstyled mb-2 small">
-                  <li><strong>Total:</strong> <?= (int)$stSel['total'] ?></li>
-                  <li><strong>Promedio/día:</strong> <?= $stSel['avg_per_day'] ?></li>
-                  <li><strong>Repetidos:</strong> <?= (int)$stSel['rep'] ?> (<?= $stSel['rep_pct'] ?>%)</li>
-                </ul>
-
-                <hr>
-                <div class="small text-muted mb-1">Etapas:</div>
-                <ul class="list-unstyled small mb-0">
-                  <li>Registradas: <strong><?= (int)$stSel['reg'] ?></strong></li>
-                  <li>Preparadas: <strong><?= (int)$stSel['pre'] ?></strong></li>
-                  <li>Realizadas: <strong><?= (int)$stSel['rea'] ?></strong></li>
-                  <li>Entregadas: <strong><?= (int)$stSel['ent'] ?></strong></li>
-                  <li>Digitadas: <strong><?= (int)$stSel['dig'] ?></strong></li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="card border-0 shadow-sm">
-              <div class="card-body">
-                <div class="small text-muted mb-2">Mix de ensayos (Realización)</div>
-                <div id="chartTechDonut" style="height:220px;"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Últimos ensayos -->
-          <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="small text-muted">Últimos ensayos del técnico</div>
-                  <span class="badge bg-light text-muted border small">Máx. 50</span>
-                </div>
-
-                <div class="table-responsive" style="max-height:340px; overflow:auto;">
-                  <table class="table table-sm align-middle mb-0">
-                    <thead class="table-light">
-                      <tr>
-                        <th>Fecha</th>
-                        <th>Sample ID</th>
-                        <th>#</th>
-                        <th>Ensayo</th>
-                        <th>Etapa</th>
-                        <th>Repetido</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <?php if(empty($lastRows)): ?>
-                        <tr><td colspan="6" class="text-muted text-center py-3">Sin registros recientes.</td></tr>
-                      <?php else: ?>
-                        <?php foreach($lastRows as $r): ?>
-                          <?php
-                            $stage = (string)$r['Stage'];
-                            $badgeClass = 'bg-secondary-subtle text-secondary border';
-                            if ($stage==='Registrada')   $badgeClass = 'bg-light text-muted border';
-                            if ($stage==='Preparación') $badgeClass = 'bg-primary-subtle text-primary border';
-                            if ($stage==='Realización') $badgeClass = 'bg-info-subtle text-info border';
-                            if ($stage==='Entrega')     $badgeClass = 'bg-success-subtle text-success border';
-                            if ($stage==='Digitado')    $badgeClass = 'bg-warning-subtle text-warning border';
-                          ?>
-                          <tr>
-                            <td><?= $h(substr((string)$r['Dt'],0,10)) ?></td>
-                            <td><?= $h($r['Sample_ID']) ?></td>
-                            <td><?= $h($r['Sample_Number']) ?></td>
-                            <td><code><?= $h($r['Test_Type']) ?></code></td>
-                            <td><span class="badge <?= $badgeClass ?>"><?= $h($stage) ?></span></td>
-                            <td>
-                              <?php if(!empty($r['is_rep'])): ?>
-                                <span class="badge bg-danger-subtle text-danger border">Sí</span>
-                              <?php else: ?>
-                                —
-                              <?php endif; ?>
-                            </td>
-                          </tr>
-                        <?php endforeach; ?>
-                      <?php endif; ?>
-                    </tbody>
-                  </table>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <?php endif; ?>
-      </div>
     </div>
   </section>
 
 </main>
 
+<!-- Drawer -->
+<div id="drawerBackdrop" class="drawer-backdrop"></div>
+
+<aside id="drawer" class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title" id="drawerTitle">Técnico</div>
+      <div class="drawer-subtitle" id="drawerSub">Detalle</div>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" id="drawerClose">Cerrar</button>
+  </div>
+
+  <div class="drawer-body">
+    <div class="drawer-kpis" id="drawerKpis"></div>
+
+    <div class="drawer-block">
+      <div class="drawer-block-title">Mix de ensayos (Realización)</div>
+      <div id="drawerDonut" style="height:220px;"></div>
+      <div class="small text-muted mt-2">
+        Nota: por ahora el donut se actualiza solo con el técnico seleccionado por URL (como tu lógica actual).
+      </div>
+    </div>
+
+    <div class="drawer-block">
+      <div class="drawer-block-title">Últimos ensayos</div>
+      <div class="drawer-table-wrap">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Fecha</th>
+              <th>Sample</th>
+              <th>#</th>
+              <th>Ensayo</th>
+              <th>Etapa</th>
+              <th>Rep</th>
+            </tr>
+          </thead>
+          <tbody id="drawerLastBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</aside>
+
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
 <script>
+  // Model desde backend (MISMA LOGICA)
+  const PERF_MODEL = {
+    from: <?= json_encode($from) ?>,
+    to: <?= json_encode($to) ?>,
+    quick: <?= json_encode($quick) ?>,
+    filterType: <?= json_encode($filterType) ?>,
+    selectedAlias: <?= json_encode($selectedAlias) ?>,
+
+    stats: <?= json_encode($stats, JSON_UNESCAPED_UNICODE) ?>,
+
+    // Estos 2 vienen de tu lógica actual (solo seleccionado)
+    lastRowsSelected: <?= json_encode($lastRows, JSON_UNESCAPED_UNICODE) ?>,
+    donutSelected: <?= json_encode($vm['charts']['donut'], JSON_UNESCAPED_UNICODE) ?>
+  };
+</script>
+
+<script>
+/* ===========================
+   Cards + Drawer (Frontend)
+=========================== */
+(function(){
+  const stats = PERF_MODEL.stats || {};
+
+  const grid = document.getElementById('cardsGrid');
+  const search = document.getElementById('techSearch');
+  const sortMode = document.getElementById('sortMode');
+
+  function toItems(){
+    return Object.keys(stats).map(alias => {
+      const st = stats[alias];
+      return {
+        alias,
+        name: st.name || alias,
+        job: st.job || 'Técnico',
+        reg: Number(st.reg||0),
+        pre: Number(st.pre||0),
+        rea: Number(st.rea||0),
+        ent: Number(st.ent||0),
+        dig: Number(st.dig||0),
+        total: Number(st.total||0),
+        rep: Number(st.rep||0),
+        rep_pct: Number(st.rep_pct||0),
+      };
+    });
+  }
+
+  let items = toItems();
+
+  function sortItems(mode){
+    const arr = [...items];
+    if(mode === 'rep') arr.sort((a,b)=> (b.rep_pct - a.rep_pct) || (b.total - a.total));
+    else if(mode === 'rea') arr.sort((a,b)=> (b.rea - a.rea) || (b.total - a.total));
+    else arr.sort((a,b)=> (b.total - a.total));
+    return arr;
+  }
+
+  function filterItems(q, arr){
+    q = (q||'').toLowerCase().trim();
+    if(!q) return arr;
+    return arr.filter(x =>
+      (x.name||'').toLowerCase().includes(q) ||
+      (x.alias||'').toLowerCase().includes(q)
+    );
+  }
+
+  function stageBar(st){
+    const sum = st.reg+st.pre+st.rea+st.ent+st.dig;
+    const pct = (v)=> sum>0 ? Math.round((v/sum)*100) : 0;
+
+    return `
+      <div class="mini-bars" title="Distribución por etapa">
+        <span style="width:${pct(st.reg)}%"></span>
+        <span style="width:${pct(st.pre)}%"></span>
+        <span style="width:${pct(st.rea)}%"></span>
+        <span style="width:${pct(st.ent)}%"></span>
+        <span style="width:${pct(st.dig)}%"></span>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str){
+    return (str ?? '').toString()
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#039;");
+  }
+
+  function cardHtml(st){
+    const badgeClass = st.rep_pct>0 ? 'badge-danger' : 'badge-ok';
+    const repText = st.rep>0 ? `${st.rep} (${st.rep_pct}%)` : `0%`;
+
+    return `
+      <div class="tech-card" data-alias="${escapeHtml(st.alias)}">
+        <div class="tech-card-top">
+          <div class="tech-avatar">${escapeHtml((st.name||'?').trim().slice(0,1).toUpperCase())}</div>
+          <div class="tech-meta">
+            <div class="tech-name">${escapeHtml(st.name)} <span class="tech-alias">(${escapeHtml(st.alias)})</span></div>
+            <div class="tech-job">${escapeHtml(st.job || 'Técnico')}</div>
+          </div>
+        </div>
+
+        <div class="tech-metrics">
+          <div class="metric">
+            <div class="metric-label">Total</div>
+            <div class="metric-value">${st.total}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Real</div>
+            <div class="metric-value">${st.rea}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Rep</div>
+            <div class="metric-value"><span class="${badgeClass}">${repText}</span></div>
+          </div>
+        </div>
+
+        ${stageBar(st)}
+
+        <div class="tech-card-footer">
+          <span class="chip">Reg ${st.reg}</span>
+          <span class="chip">Prep ${st.pre}</span>
+          <span class="chip">Ent ${st.ent}</span>
+          <span class="chip">Dig ${st.dig}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function render(){
+    const mode = sortMode.value;
+    const q = search.value;
+    const arr = filterItems(q, sortItems(mode));
+
+    if(arr.length === 0){
+      grid.innerHTML = `<div class="text-muted p-3">No hay técnicos para mostrar.</div>`;
+      return;
+    }
+
+    grid.innerHTML = arr.map(cardHtml).join('');
+  }
+
+  // Drawer
+  const drawer = document.getElementById('drawer');
+  const backdrop = document.getElementById('drawerBackdrop');
+  const closeBtn = document.getElementById('drawerClose');
+  const titleEl = document.getElementById('drawerTitle');
+  const subEl = document.getElementById('drawerSub');
+  const kpisEl = document.getElementById('drawerKpis');
+  const lastBody = document.getElementById('drawerLastBody');
+
+  let donutChart = null;
+
+  function openDrawer(){
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+  }
+  function closeDrawer(){
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  closeBtn.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+
+  function renderLast(rows){
+    if(!rows || rows.length===0){
+      lastBody.innerHTML = `<tr><td colspan="6" class="text-muted text-center py-3">Sin registros.</td></tr>`;
+      return;
+    }
+
+    lastBody.innerHTML = rows.map(r=>{
+      const dt = (r.Dt||'').toString().substring(0,10);
+      const rep = r.is_rep ? 'Sí' : '—';
+      const repBadge = r.is_rep ? 'badge bg-danger-subtle text-danger border' : '';
+      const stage = r.Stage || '';
+      return `
+        <tr>
+          <td>${escapeHtml(dt)}</td>
+          <td>${escapeHtml(r.Sample_ID||'')}</td>
+          <td>${escapeHtml(r.Sample_Number||'')}</td>
+          <td><code>${escapeHtml(r.Test_Type||'')}</code></td>
+          <td><span class="badge bg-light text-muted border">${escapeHtml(stage)}</span></td>
+          <td>${r.is_rep ? `<span class="${repBadge}">Sí</span>` : '—'}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderDonut(data){
+    const el = document.getElementById('drawerDonut');
+    if(!el) return;
+
+    if(typeof echarts === 'undefined'){
+      el.innerHTML = `<div class="text-muted small">ECharts no disponible.</div>`;
+      return;
+    }
+
+    if(!donutChart) donutChart = echarts.init(el);
+
+    if(!data || data.length===0){
+      donutChart.clear();
+      donutChart.setOption({ title:{ text:'Sin datos', left:'center', top:'middle' } });
+      return;
+    }
+
+    donutChart.setOption({
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie',
+        radius: ['40%','70%'],
+        label: { show:false },
+        labelLine: { show:false },
+        data: data
+      }]
+    });
+  }
+
+  function renderDrawer(alias){
+    const st = stats[alias];
+    if(!st) return;
+
+    titleEl.textContent = `${st.name || alias} (${alias})`;
+    subEl.textContent = `Rango: ${PERF_MODEL.from} → ${PERF_MODEL.to}`;
+
+    kpisEl.innerHTML = `
+      <div class="drawer-kpi"><div class="dk-label">Total</div><div class="dk-val">${st.total}</div></div>
+      <div class="drawer-kpi"><div class="dk-label">Registradas</div><div class="dk-val">${st.reg}</div></div>
+      <div class="drawer-kpi"><div class="dk-label">Preparadas</div><div class="dk-val">${st.pre}</div></div>
+      <div class="drawer-kpi"><div class="dk-label">Realizadas</div><div class="dk-val">${st.rea}</div></div>
+      <div class="drawer-kpi"><div class="dk-label">Entregadas</div><div class="dk-val">${st.ent}</div></div>
+      <div class="drawer-kpi"><div class="dk-label">Digitadas</div><div class="dk-val">${st.dig}</div></div>
+      <div class="drawer-kpi"><div class="dk-label">Repetidos</div><div class="dk-val">${st.rep} (${st.rep_pct}%)</div></div>
+    `;
+
+    // Con tu lógica actual, estos datos solo existen para el seleccionado por URL
+    const donutData = (alias === PERF_MODEL.selectedAlias) ? (PERF_MODEL.donutSelected || []) : [];
+    const last = (alias === PERF_MODEL.selectedAlias) ? (PERF_MODEL.lastRowsSelected || []) : [];
+
+    renderDonut(donutData);
+    renderLast(last);
+
+    openDrawer();
+  }
+
+  // Click en card -> drawer
+  grid.addEventListener('click', (e)=>{
+    const card = e.target.closest('.tech-card');
+    if(!card) return;
+    const alias = card.getAttribute('data-alias');
+    renderDrawer(alias);
+  });
+
+  search.addEventListener('input', render);
+  sortMode.addEventListener('change', render);
+
+  render();
+
+  // Abre drawer si hay técnico seleccionado (opcional)
+  if(PERF_MODEL.selectedAlias){
+    renderDrawer(PERF_MODEL.selectedAlias);
+  }
+
+})();
+</script>
+
+<script>
+/* ===========================
+   Chart apilado por técnico
+=========================== */
 (function(){
   const el = document.getElementById('chartByTech');
   if(!el) return;
@@ -373,42 +524,10 @@ $lastRows = $vm['lastRows'];
 
   window.addEventListener('resize', () => chart.resize());
 })();
-
-(function(){
-  const el = document.getElementById('chartTechDonut');
-  if(!el) return;
-  const chart = echarts.init(el);
-
-  const dataDonut = <?= json_encode($vm['charts']['donut'], JSON_UNESCAPED_UNICODE); ?>;
-
-  if(!dataDonut || dataDonut.length === 0){
-    chart.setOption({
-      title:{ text:'Sin datos', left:'center', top:'middle' }
-    });
-    return;
-  }
-
-  chart.setOption({
-    tooltip: { trigger: 'item' },
-    legend: { bottom: 0 },
-    series: [{
-      name: 'Ensayos',
-      type: 'pie',
-      radius: ['40%','70%'],
-      avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 6, borderWidth: 2 },
-      label: { show: false, position: 'center' },
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-      labelLine: { show: false },
-      data: dataDonut
-    }]
-  });
-
-  window.addEventListener('resize', () => chart.resize());
-})();
 </script>
 
 <style>
+  /* KPIs */
   .kpi-card{
     border-radius:14px;
     border:1px solid #e5e7eb;
@@ -433,12 +552,12 @@ $lastRows = $vm['lastRows'];
     color:#64748b;
   }
   .kpi-value{
-    font-size:1.4rem;
-    font-weight:700;
+    font-size:1.35rem;
+    font-weight:800;
     color:#0f172a;
     line-height:1.1;
   }
-  .kpi-mini{ font-size:0.8rem; font-weight:600; margin-left:0.2rem; }
+  .kpi-mini{ font-size:0.8rem; font-weight:700; margin-left:0.2rem; }
   .kpi-icon{
     width:38px;
     height:38px;
@@ -452,22 +571,210 @@ $lastRows = $vm['lastRows'];
   }
   .kpi-subtext{ margin-top:0.35rem; }
 
-  .avatar-tech{
-    width:28px;
-    height:28px;
+  /* Cards Grid */
+  .cards-grid{
+    display:grid;
+    grid-template-columns: repeat( auto-fit, minmax(260px, 1fr) );
+    gap:12px;
+  }
+  .tech-card{
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 6px 18px rgba(15,23,42,0.05);
+    padding:14px;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .tech-card:hover{
+    transform: translateY(-2px);
+    box-shadow:0 10px 26px rgba(15,23,42,0.08);
+  }
+  .tech-card-top{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .tech-avatar{
+    width:42px;
+    height:42px;
     border-radius:999px;
     background:#e0f2fe;
     color:#0369a1;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:0.8rem;
-    font-weight:700;
+    font-weight:900;
+    font-size:1.05rem;
   }
-  .avatar-tech.avatar-lg{
-    width:40px;
-    height:40px;
+  .tech-name{ font-weight:900; color:#0f172a; line-height:1.1; }
+  .tech-alias{ font-weight:800; color:#64748b; font-size:0.9rem; }
+  .tech-job{ font-size:0.85rem; color:#64748b; }
+
+  .tech-metrics{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .metric{
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:10px;
+    background:#fbfdff;
+  }
+  .metric-label{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:#64748b;
+  }
+  .metric-value{
     font-size:1.1rem;
+    font-weight:900;
+    color:#0f172a;
+    margin-top:2px;
+  }
+
+  .badge-ok{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:999px;
+    background:#ecfdf3;
+    color:#15803d;
+    border:1px solid #bbf7d0;
+    font-weight:900;
+    font-size:0.82rem;
+  }
+  .badge-danger{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:999px;
+    background:#fef2f2;
+    color:#b91c1c;
+    border:1px solid #fecaca;
+    font-weight:900;
+    font-size:0.82rem;
+  }
+
+  .mini-bars{
+    height:8px;
+    border-radius:999px;
+    overflow:hidden;
+    display:flex;
+    background:#f1f5f9;
+    margin-bottom:10px;
+  }
+  .mini-bars span{ height:100%; display:block; }
+  .mini-bars span:nth-child(1){ background:#cbd5e1; } /* reg */
+  .mini-bars span:nth-child(2){ background:#93c5fd; } /* pre */
+  .mini-bars span:nth-child(3){ background:#67e8f9; } /* rea */
+  .mini-bars span:nth-child(4){ background:#86efac; } /* ent */
+  .mini-bars span:nth-child(5){ background:#fde68a; } /* dig */
+
+  .tech-card-footer{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .chip{
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#f8fafc;
+    font-weight:800;
+    font-size:0.8rem;
+    color:#334155;
+  }
+
+  /* Drawer */
+  .drawer-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.35);
+    opacity:0;
+    pointer-events:none;
+    transition:.2s;
+    z-index:1040;
+  }
+  .drawer-backdrop.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .drawer{
+    position:fixed;
+    top:0;
+    right:-420px;
+    width:420px;
+    height:100%;
+    background:#fff;
+    border-left:1px solid #e5e7eb;
+    box-shadow:-10px 0 30px rgba(15,23,42,.12);
+    transition:.25s ease;
+    z-index:1050;
+    display:flex;
+    flex-direction:column;
+  }
+  .drawer.open{ right:0; }
+
+  .drawer-header{
+    padding:14px;
+    border-bottom:1px solid #eef2f7;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .drawer-title{ font-size:1.05rem; font-weight:900; color:#0f172a; }
+  .drawer-subtitle{ font-size:.85rem; color:#64748b; }
+
+  .drawer-body{
+    padding:14px;
+    overflow:auto;
+  }
+  .drawer-kpis{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .drawer-kpi{
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:10px;
+    background:#fbfdff;
+  }
+  .dk-label{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:#64748b;
+  }
+  .dk-val{
+    font-size:1rem;
+    font-weight:900;
+    color:#0f172a;
+    margin-top:2px;
+  }
+  .drawer-block{
+    border:1px solid #eef2f7;
+    border-radius:14px;
+    padding:12px;
+    background:#fff;
+    margin-bottom:12px;
+  }
+  .drawer-block-title{
+    font-weight:900;
+    color:#0f172a;
+    margin-bottom:8px;
+  }
+  .drawer-table-wrap{
+    max-height:320px;
+    overflow:auto;
+  }
+  @media (max-width: 520px){
+    .drawer{ width:100%; }
   }
 </style>
 
