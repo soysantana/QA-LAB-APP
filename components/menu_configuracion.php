@@ -82,6 +82,7 @@ $is_pure_tech = $is_technical && !$is_supervisor && !$is_doccontrol;
           </div>
         </a>
       </div>
+      
 
       <!-- Usuarios / Grupos -->
       <div class="col-12 col-md-6 col-lg-4">

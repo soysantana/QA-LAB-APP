@@ -947,47 +947,62 @@ $testNames = [
     "PLT" => "Point Load Test",
     "GS"  => "Grain Size",
     "UCS" => "UCS",
-    "Densidad-Vibrataorio"  => "Weight Vibrating-Hammer",
+    "Densidad-Vibrataorio" => "Weight Vibrating-Hammer",
     "MC"  => "Moisture Content",
     "AR"  => "Acid Reactivity",
     "AL"  => "Atterberg Limit",
     "SG"  => "Specific Gravity",
     "DHY" => "Double Hydrometer",
     "HY"  => "Hydrometer",
-    "SCT"  => "Sand Castle Test",
+    "SCT" => "Sand Castle Test",
     "SP"  => "Standard Proctor",
     "MP"  => "Modified Proctor",
     "PH"  => "Pinhole Test",
     "SND" => "Soundness",
     "LAA" => "Los Angeles Abrasion",
-    "SHAPE"  => "Particle Shape",
+    "SHAPE" => "Particle Shape",
     "PERM" => "Permeability",
     "Envio" => "For Shipment",
 ];
 
 /* ---------- Construir matriz Tipo × Cliente ---------- */
 
-$rowsTipo = resumen_tipo_entregado($start_str,$end_str);
+$rowsTipo = resumen_tipo_entregado($start_str, $end_str);
 $matrix4  = [];
 $clients4 = [];
 
-foreach ($rowsTipo as $r){
+foreach ($rowsTipo as $r) {
 
-    $client = trim((string)$r['Client']);
-    if ($client === '') $client = 'N/A';
+    /* ===== CLIENTE (ROBUSTO, SIN FALSOS N/A) ===== */
+    $client = (string)($r['Client'] ?? '');
 
+    // Limpia espacios raros (NBSP / CHAR(160))
+    $client = str_replace([chr(160), "\xC2\xA0"], ' ', $client);
+    $client = trim($client);
+
+    // SOLO si realmente está vacío
+    if ($client === '') {
+        $client = 'N/A';
+    }
+
+    /* ===== TEST TYPES ===== */
     $testsRaw = (string)$r['Test_Type'];
     $testsArr = array_filter(array_map('trim', explode(',', $testsRaw)));
 
-    foreach ($testsArr as $t){
+    foreach ($testsArr as $t) {
         if ($t === '') continue;
 
-        if (!isset($matrix4[$t])) $matrix4[$t] = [];
-        if (!isset($matrix4[$t][$client])) $matrix4[$t][$client] = 0;
+        if (!isset($matrix4[$t])) {
+            $matrix4[$t] = [];
+        }
+
+        if (!isset($matrix4[$t][$client])) {
+            $matrix4[$t][$client] = 0;
+        }
 
         $matrix4[$t][$client]++;
 
-        if (!in_array($client,$clients4,true)) {
+        if (!in_array($client, $clients4, true)) {
             $clients4[] = $client;
         }
     }
@@ -995,9 +1010,9 @@ foreach ($rowsTipo as $r){
 
 if (empty($matrix4)) {
 
-    $pdf->SetFont('Arial','B',10);
-    $pdf->SetFillColor(245,245,245);
-    $pdf->Cell(0,10,"No completed tests in this week.",1,1,'C',true);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->SetFillColor(245, 245, 245);
+    $pdf->Cell(0, 10, "No completed tests in this week.", 1, 1, 'C', true);
     $pdf->Ln(5);
 
 } else {
@@ -1009,9 +1024,13 @@ if (empty($matrix4)) {
 
     /* Convertir abreviaturas → nombres completos */
     $testTypesPretty = [];
-    foreach ($testTypes as $tp){
+    foreach ($testTypes as $tp) {
         $testTypesPretty[$tp] = $testNames[$tp] ?? $tp;
     }
+
+    // (Aquí continúa TU código de la tabla / gráfico tal como ya lo tienes)
+}
+
 
     // ---------- TABLA TIPO × CLIENTE ----------
 
