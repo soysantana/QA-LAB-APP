@@ -652,7 +652,7 @@ else if (S.match(/Diorite/i)) {
 /***********************
  * 3) AGG normal
  ***********************/
-else if (S.match(/Stockpile/i)) {
+else if (S.match(/Stockpiles/i)) {
     specs = specsCF_AGG;
 }
 
