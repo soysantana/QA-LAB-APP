@@ -2967,11 +2967,12 @@ function aliasTest($raw){
         
 
         // Atterberg
-        'AL'              => 'Atterberg Limit',
-        'Atterberg Limit-PI' => 'Atterberg Limit',
+        'ATTEMBERG LIMIT'              => 'Atterberg Limit',
+        'ATTERBERG LIMIT-PI' => 'Atterberg Limit',
         'Atterberg Limit-LL' => 'Atterberg Limit',
-        'Atterberg Limit-PI Requirement'          => 'Atterberg Limit',
-        'Atterberg Limit-LP' => 'Atterberg Limit',
+        'ATTERBERG LIMIT-PI REQUIREMENT'          => 'Atterberg Limit',
+        'ATTERBERG LIMIT-PL' => 'Atterberg Limit',
+         'AL'              => 'Atterberg Limit',
 
         // Moisture Content
         'MC'              => 'MC',
@@ -3003,11 +3004,14 @@ function aliasTest($raw){
         // Specific Gravity / Soundness / etc (ejemplos)
         'SG'              => 'Specific Gravity',
         'SG-Fine'         => 'Specific Gravity',
-        'SG-Coarse'       => 'SOUND',
+        'SG-Coarse'       => 'Specific Gravity',
         'MC_Oven'           => 'Moisture Content',
         'AR'              => 'Acid Reactivity',
         'MC_MICROWAVE'  => 'Moisture Content',
         'MC_Scale'  => 'Moisture Content',
+        'SND'  => 'Soundness',
+        'SOUNDNESS'  => 'Soundness',
+         'LAA'  => 'Los Angeles Abrasion',
     ];
 
     // primero intenta match directo por texto normal
