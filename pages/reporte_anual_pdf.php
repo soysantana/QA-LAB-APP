@@ -2969,7 +2969,7 @@ function aliasTest($raw){
         // Atterberg
         'ATTEMBERG LIMIT'              => 'Atterberg Limit',
         'ATTERBERG LIMIT-PI' => 'Atterberg Limit',
-        'Atterberg Limit-LL' => 'Atterberg Limit',
+        'ATTERBERG LIMIT-PL' => 'Atterberg Limit',
         'ATTERBERG LIMIT-PI REQUIREMENT'          => 'Atterberg Limit',
         'ATTERBERG LIMIT-PL' => 'Atterberg Limit',
          'AL'              => 'Atterberg Limit',
