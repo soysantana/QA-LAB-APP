@@ -2867,7 +2867,7 @@ $testTables = [
     'moisture_microwave','moisture_scale','grain_size_general',
     'grain_size_coarse','grain_size_fine','soundness',
     'specific_gravity','specific_gravity_coarse','specific_gravity_fine',
-    'standard_proctor'
+    'standard_proctor','hydrometer','doublehydrometer'
 ];
 
 $keywords = [
