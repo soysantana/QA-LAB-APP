@@ -2667,11 +2667,16 @@ $pdf->Ln(8);
 ============================================================ */
 
 $pdf->SubTitle("7.2 Repeat by Test Type (Chart)");
-ensureSpace($pdf, 60);
-$chartX = 40;
+ensureSpace($pdf, 50);
+
+arsort($repeatByType);
+
+$chartX = 70;          // 👈 mueve barras a la derecha para dejar espacio a labels
 $chartY = $pdf->GetY() + 4;
-$barW   = 120;
-$barH   = 6;
+$labelW = 60;          // 👈 ancho real de etiqueta
+$barW   = 100;
+$barH   = 5;
+$rowGap = 7;
 
 $maxR = max($repeatByType);
 if ($maxR<=0) $maxR = 1;
@@ -2679,27 +2684,41 @@ if ($maxR<=0) $maxR = 1;
 $i = 0;
 foreach ($repeatByType as $t=>$cnt){
 
-    $y = $chartY + ($i * 7.5);
+    $y = $chartY + ($i * $rowGap);
     list($r,$g,$b) = pickColor($i);
 
     $bw = ($cnt / $maxR) * $barW;
 
     $label = $testNames[$t] ?? $t;
 
-    $pdf->SetXY($chartX - 38, $y);
-    $pdf->SetFont("Arial","",8);
-    $pdf->Cell(35,6,utf8_decode($label),0,0,"R");
+    // ✅ etiqueta (más espacio y dentro del margen)
+    $pdf->SetXY($chartX - $labelW - 3, $y);
+    $pdf->SetFont("Arial","",7);
+    $pdf->Cell($labelW, $barH, safeTextUtf($label), 0, 0, "R");
 
+    // ✅ barra
     $pdf->SetFillColor($r,$g,$b);
     $pdf->Rect($chartX, $y, $bw, $barH, "F");
 
-    $pdf->SetXY($chartX + $bw + 5, $y);
-    $pdf->Cell(15,6,$cnt);
+    // ✅ valor
+    $pdf->SetXY($chartX + $barW + 3, $y);
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(15, $barH, (string)$cnt, 0, 0);
 
     $i++;
+
+    // ✅ si se acerca al final de página, saltar
+    if ($y > 265) {
+        $pdf->AddPage();
+        $chartY = $pdf->GetY() + 4;
+        $i = 0;
+    }
 }
 
-$pdf->Ln(($i*8)+5);
+// ✅ baja el cursor debajo del gráfico (correcto, no con Ln inventado)
+$pdf->SetY($chartY + ($i * $rowGap) + 2);
+$pdf->Ln(3);
+
 
 /* ============================================================
    7.6 REPEAT PER CLIENT — TABLE
@@ -2733,17 +2752,40 @@ $pdf->Ln(8);
 ============================================================ */
 
 $pdf->SubTitle("7.4 Monthly Repeat Trend");
-ensureSpace($pdf, 60);
+ensureSpace($pdf, 20);
+
 $cx = 25;
 $cy = $pdf->GetY() + 15;
 $w  = 160;
-$h  = 40;
+$h  = 30;
 
-drawAxis($pdf,$cx,$cy,$w,$h);
+drawAxis($pdf, $cx, $cy, $w, $h);
 
 $maxM = max($repeatByMonth);
-if ($maxM<=0) $maxM = 1;
+if ($maxM <= 0) $maxM = 1;
 
+/* --- Y labels (0, mid, max) --- */
+$pdf->SetFont("Arial","",7);
+$pdf->SetTextColor(60,60,60);
+
+$y0 = $cy + $h;
+$yMid = $cy + $h/2;
+$yTop = $cy;
+
+$pdf->SetXY($cx - 10, $y0 - 3);   $pdf->Cell(8, 4, "0", 0, 0, "R");
+$pdf->SetXY($cx - 10, $yMid - 3); $pdf->Cell(8, 4, (string)round($maxM/2), 0, 0, "R");
+$pdf->SetXY($cx - 10, $yTop - 3); $pdf->Cell(8, 4, (string)$maxM, 0, 0, "R");
+
+/* --- Month labels --- */
+$months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+for ($m=1; $m<=12; $m++){
+    $x = $cx + ($w/12)*($m-0.5);
+    $pdf->SetXY($x - 6, $cy + $h + 2);
+    $pdf->Cell(12, 4, $months[$m-1], 0, 0, "C");
+}
+
+/* --- Line + markers --- */
 $prevX = null;
 $prevY = null;
 
@@ -2753,18 +2795,20 @@ foreach ($repeatByMonth as $m=>$v){
     $y = $cy + $h - ($v/$maxM)*($h-4);
 
     if ($prevX !== null){
-        $pdf->Line($prevX,$prevY,$x,$y);
+        $pdf->Line($prevX, $prevY, $x, $y);
     }
 
-     /* marker */
     $pdf->SetFillColor(0,0,0);
-    $pdf->Rect($x-1.5, $y-1.5, 3, 3, "F");
+    $pdf->Rect($x-1.2, $y-1.2, 2.4, 2.4, "F");
 
     $prevX = $x;
     $prevY = $y;
 }
 
-$pdf->Ln(55);
+/* ✅ baja el cursor debajo del chart (en vez de Ln(55) fijo) */
+$pdf->SetY($cy + $h + 10);
+$pdf->Ln(120);
+
 
 
 /* ============================================================
@@ -3127,7 +3171,7 @@ foreach ($perMonthNCR as $i=>$val){
 
 $pdf->Ln(15);
 gc_collect_cycles();
-
+ensureSpace($pdf, 20);
 /* ============================================================
    8.3 — NCR by Material Type (FULL NAMES)
 ============================================================ */
