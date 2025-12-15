@@ -397,52 +397,47 @@ function draw_client_bar_chart($pdf, array $clientes) {
   $pdf->SetY($y0 + $chartHeight + $chartBottomMargin);
 }
 
-/* =============================
- * 8. Ensayos reporte + 9. Observaciones
- * ============================= */
 function render_ensayos_reporte($pdf, $start, $end) {
+    global $db;
 
-    // ===============================
-    // 1. PATRONES DE ESTRUCTURAS PERMITIDAS (DINÁMICO)
-    // ===============================
-    $patterns = [
-        "LLD-%",
-        "SD1-%",
-        "SD2-%",
-        "SD3-%",
-        "PVDJ-AGG%",
-        "LBOR%"
-    ];
+    $patterns = ["LLD","SD1","SD2","SD3","Stockpiles","Borrow Source"];
 
-    // Convertir el array en condiciones SQL:
-    $conditions = array_map(function($p) {
-        return "UPPER(Structure) LIKE '" . strtoupper($p) . "'";
-    }, $patterns);
+    // ✅ Día del reporte (usa la fecha del END)
+    $day = $db->escape(substr($end, 0, 10)); // YYYY-MM-DD
 
-    // Unir todas las condiciones con OR
+    // NBSP UTF-8
+    $nbsp = "\xC2\xA0";
+
+    // Normaliza Structure
+    $structureExpr = "UPPER(TRIM(REPLACE(CONVERT(COALESCE(Structure,'') USING utf8mb4), '{$nbsp}', ' ')))";
+
+    $conditions = [];
+    foreach ($patterns as $p) {
+        $pEsc = $db->escape(strtoupper($p));
+        $conditions[] = "{$structureExpr} LIKE '{$pEsc}'";
+    }
     $whereStructures = implode(" OR ", $conditions);
 
-    // ===============================
-    // 2. SQL FINAL
-    // ===============================
+    // ✅ CLAVE: filtrar por DIA (funciona si Report_Date es DATE o DATETIME)
     $query = "
-        SELECT *
+        SELECT Sample_ID, Sample_Number, Structure, Material_Type, Test_Type, Test_Condition, Comments, Report_Date
         FROM ensayos_reporte
-        WHERE DATE(Report_Date) = DATE('{$end}')
-        AND ($whereStructures)
-        ORDER BY Structure, Sample_ID, Test_Type
+        WHERE DATE(Report_Date) = DATE('{$day}')
+          AND ({$whereStructures})
+        ORDER BY {$structureExpr}, Sample_ID, Test_Type
     ";
 
     $ensayos_reporte = find_by_sql($query);
 
-    // ===============================
-    // 3. TÍTULO
-    // ===============================
     $pdf->section_title("8. Summary of Dam Constructions Test");
 
-    // ===============================
-    // 4. ENCABEZADOS
-    // ===============================
+    if (empty($ensayos_reporte)) {
+        $pdf->SetFont('Arial', 'I', 9);
+        $pdf->Cell(0, 6, "No records found for {$day} (ensayos_reporte).", 0, 1, 'L');
+        return;
+    }
+
+    // Encabezados
     $pdf->SetFont('Arial', 'B', 9);
     $pdf->Cell(40, 8, 'Sample', 1);
     $pdf->Cell(25, 8, 'Structure', 1);
@@ -452,19 +447,15 @@ function render_ensayos_reporte($pdf, $start, $end) {
     $pdf->Cell(55, 8, 'Comments', 1);
     $pdf->Ln();
 
-    // ===============================
-    // 5. CONTENIDO
-    // ===============================
+    // Contenido
     $pdf->SetFont('Arial', '', 9);
-
     foreach ($ensayos_reporte as $row) {
-
-        $sample = $row['Sample_ID'] . '-' . $row['Sample_Number'];
-        $structure = strtoupper($row['Structure']);
-        $mat_type = $row['Material_Type'];
-        $test_type = $row['Test_Type'];
-        $condition = $row['Test_Condition'];
-        $comments = substr($row['Comments'], 0, 45);
+        $sample    = ($row['Sample_ID'] ?? '') . '-' . ($row['Sample_Number'] ?? '');
+        $structure = strtoupper(trim((string)($row['Structure'] ?? '')));
+        $mat_type  = (string)($row['Material_Type'] ?? '');
+        $test_type = (string)($row['Test_Type'] ?? '');
+        $condition = (string)($row['Test_Condition'] ?? '');
+        $comments  = substr((string)($row['Comments'] ?? ''), 0, 45);
 
         $pdf->Cell(40, 8, $sample, 1);
         $pdf->Cell(25, 8, $structure, 1);
