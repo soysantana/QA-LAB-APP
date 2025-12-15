@@ -1864,34 +1864,44 @@ $pdf->SectionTitle("5. Technician Performance Overview");
 /* ============================================================
    5.0 LOAD TECHNICIAN ALIAS MAP
 ============================================================ */
-
 list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
 
 /* ============================================================
    5.0A — LOAD LIST OF REAL TECHNICIANS FROM users TABLE
 ============================================================ */
 $realTechRows = find_by_sql("
-    SELECT name 
-    FROM users 
-    WHERE job = 'Technical' 
+    SELECT name
+    FROM users
+    WHERE job = 'Technical'
        OR job LIKE '%Technician%'
        OR job LIKE '%Lab Tech%'
 ");
-$realTechnicians = array_map(fn($r)=>trim($r['name']), $realTechRows);
 
-/* fallback: if nothing found, avoid crash */
+$realTechnicians = [];
+$realTechSet = []; // para validar rápido
+
+foreach ((array)$realTechRows as $r){
+    $nm = trim((string)($r['name'] ?? ''));
+    if ($nm === '') continue;
+    $realTechnicians[] = $nm;
+    $realTechSet[strtoupper($nm)] = $nm; // key normalizada -> nombre original
+}
+
 if (empty($realTechnicians)) {
     $realTechnicians = ["UNKNOWN_TECH"];
+    $realTechSet["UNKNOWN_TECH"] = "UNKNOWN_TECH";
 }
 
 /* ============================================================
-   5.1 RAW TECHNICIAN DATA
+   5.1 RAW TECHNICIAN DATA (FAST DATE RANGE)
 ============================================================ */
+$y0 = $db->escape($year.'-01-01');
+$y1 = $db->escape(($year+1).'-01-01');
 
 $tecRaw = find_by_sql("
     SELECT Technician, COUNT(*) total, 'Preparation' etapa
     FROM test_preparation
-    WHERE YEAR(Register_Date) = '{$year}'
+    WHERE Register_Date >= '{$y0}' AND Register_Date < '{$y1}'
       AND TRIM(IFNULL(Technician,'')) <> ''
     GROUP BY Technician
 
@@ -1899,7 +1909,7 @@ $tecRaw = find_by_sql("
 
     SELECT Technician, COUNT(*) total, 'Realization' etapa
     FROM test_realization
-    WHERE YEAR(Register_Date) = '{$year}'
+    WHERE Register_Date >= '{$y0}' AND Register_Date < '{$y1}'
       AND TRIM(IFNULL(Technician,'')) <> ''
     GROUP BY Technician
 
@@ -1907,78 +1917,88 @@ $tecRaw = find_by_sql("
 
     SELECT Technician, COUNT(*) total, 'Delivery' etapa
     FROM test_delivery
-    WHERE YEAR(Register_Date) = '{$year}'
+    WHERE Register_Date >= '{$y0}' AND Register_Date < '{$y1}'
       AND TRIM(IFNULL(Technician,'')) <> ''
     GROUP BY Technician
 ");
+
+if (!is_array($tecRaw)) $tecRaw = [];
 
 /* ============================================================
    5.2 NORMALIZATION → techSummary[name][stage]
    + DISTRIBUTION RULES FOR INVALID NAMES
 ============================================================ */
-
 $techSummary = [];
-$tempDistributed = []; // acumulador para distribuir cargas malas
+$tempDistributed = []; // stage => totalInvalid
+
+function initTech(&$techSummary, $name){
+    if (!isset($techSummary[$name])) {
+        $techSummary[$name] = [
+            "Preparation" => 0,
+            "Realization" => 0,
+            "Delivery"    => 0
+        ];
+    }
+}
 
 foreach ($tecRaw as $row){
 
-    $rawTech = trim((string)$row["Technician"]);
-    $stage   = $row["etapa"];
-    $count   = (int)$row["total"];
+    $rawTech = trim((string)($row["Technician"] ?? ''));
+    $stage   = (string)($row["etapa"] ?? '');
+    $count   = (float)($row["total"] ?? 0);
 
-    /* 1A — Resolver alias */
+    if ($rawTech === '' || $stage === '' || $count <= 0) continue;
+
+    // 1A — Resolver alias (puede devolver null o lista separada por coma)
     $resolved = resolveTechnician($aliasMap, $firstLetterName, $rawTech);
 
-    /* 1B — Si NO se pudo resolver → distribuir */
+    // 1B — No resolvió → distribuir
     if ($resolved === null) {
         if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
         $tempDistributed[$stage] += $count;
         continue;
     }
 
-    $names = array_filter(array_map('trim', explode(',', $resolved)));
+    $names = array_values(array_filter(array_map('trim', explode(',', $resolved))));
+    if (empty($names)) {
+        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+        $tempDistributed[$stage] += $count;
+        continue;
+    }
 
-    /* 1C — Validar si el nombre pertenece a un técnico real */
-    foreach ($names as $name){
-
-        if (!in_array($name, $realTechnicians)) {
-            // nombre invalido → distribuir
-            if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-            $tempDistributed[$stage] += $count;
-            continue;
+    // 1C — Filtra solo técnicos reales (comparación normalizada)
+    $validNames = [];
+    foreach ($names as $nm){
+        $k = strtoupper($nm);
+        if (isset($realTechSet[$k])) {
+            $validNames[] = $realTechSet[$k]; // nombre “oficial”
         }
+    }
 
-        // corregir nombre válido
-        if (!isset($techSummary[$name])) {
-            $techSummary[$name] = [
-                "Preparation" => 0,
-                "Realization" => 0,
-                "Delivery"    => 0
-            ];
-        }
+    if (empty($validNames)) {
+        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+        $tempDistributed[$stage] += $count;
+        continue;
+    }
 
-        $techSummary[$name][$stage] += $count;
+    // ✅ IMPORTANTE: si hay varios nombres válidos, repartir el count entre ellos
+    $split = $count / count($validNames);
+
+    foreach ($validNames as $nm){
+        initTech($techSummary, $nm);
+        $techSummary[$nm][$stage] += $split;
     }
 }
 
 /* ============================================================
    5.3 DISTRIBUTE INVALID COUNTS BETWEEN ALL REAL TECHNICIANS
 ============================================================ */
-
 foreach ($tempDistributed as $stage => $totalInvalid){
 
-    $perTech = $totalInvalid / count($realTechnicians);
+    $perTech = $totalInvalid / max(1, count($realTechnicians));
 
     foreach ($realTechnicians as $tech){
-
-        if (!isset($techSummary[$tech])) {
-            $techSummary[$tech] = [
-                "Preparation" => 0,
-                "Realization" => 0,
-                "Delivery"    => 0
-            ];
-        }
-
+        initTech($techSummary, $tech);
         $techSummary[$tech][$stage] += $perTech;
     }
 }
@@ -1986,25 +2006,21 @@ foreach ($tempDistributed as $stage => $totalInvalid){
 /* ============================================================
    5.4 SORT TABLE — DESCENDING BY TOTAL
 ============================================================ */
-
 $totalsForSort = [];
 
 foreach ($techSummary as $name => $stages){
     $totalsForSort[$name] = $stages["Preparation"] + $stages["Realization"] + $stages["Delivery"];
 }
-
-arsort($totalsForSort); // sort DESC
+arsort($totalsForSort);
 
 $techSummaryOrdered = [];
 foreach ($totalsForSort as $name => $v){
     $techSummaryOrdered[$name] = $techSummary[$name];
 }
 
-
 /* ============================================================
    5.5 TABLE — Technician Summary
 ============================================================ */
-
 $pdf->SubTitle("5.1 Technician Activity Summary");
 
 if (empty($techSummaryOrdered)) {
@@ -2030,9 +2046,9 @@ if (empty($techSummaryOrdered)) {
 
     foreach ($techSummaryOrdered as $name => $stages){
 
-        $prep = round($stages["Preparation"],1);
-        $real = round($stages["Realization"],1);
-        $del  = round($stages["Delivery"],1);
+        $prep = round((float)$stages["Preparation"],1);
+        $real = round((float)$stages["Realization"],1);
+        $del  = round((float)$stages["Delivery"],1);
         $tot  = round($prep + $real + $del,1);
 
         $pdf->TableRow([
@@ -2047,60 +2063,37 @@ if (empty($techSummaryOrdered)) {
     $pdf->Ln(8);
 }
 
-
-/* ============================================================
-   5.6 BUILD TOTALS FOR CHART
-============================================================ */
-
-$techTotals = [];
-foreach ($techSummaryOrdered as $name => $stages){
-    $techTotals[$name] = $stages["Preparation"] + $stages["Realization"] + $stages["Delivery"];
-}
-
-if (empty($techTotals)) {
-    $pdf->BodyText("No data available to generate technician contribution chart.");
-    $pdf->Ln(10);
-   
-}
-
 /* ============================================================
    5.2 PROCESS-SPECIFIC CHARTS
 ============================================================ */
-
 $pdf->SubTitle("5.2 Technician Contribution per Process");
 
-/* ----------------------------------------------
-   PREPARATION CHART
----------------------------------------------- */
-
+/* --- PREP --- */
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(0,6,"Preparation Workload",0,1);
 ensureSpace($pdf, 40);
+
 $prepData = [];
 foreach ($techSummaryOrdered as $name=>$stages){
-    $prepData[$name] = $stages["Preparation"];
+    $prepData[$name] = (float)$stages["Preparation"];
 }
-
 arsort($prepData);
 
 if (array_sum($prepData) == 0){
     $pdf->BodyText("No preparation data recorded.");
+    $pdf->Ln(5);
 } else {
-
     $chartX = 45;
     $chartY = $pdf->GetY() + 4;
     $barW   = 110;
     $barH   = 6;
 
-    $maxVal = max($prepData);
-    if ($maxVal <= 0) $maxVal = 1;
-
+    $maxVal = max($prepData); if ($maxVal <= 0) $maxVal = 1;
     $i = 0;
+
     foreach ($prepData as $name => $val){
-
         list($rC,$gC,$bC) = pickColor($i);
-
-        $y = $chartY + ($i * 8.5);
+        $y  = $chartY + ($i * 8.5);
         $bw = ($val / $maxVal) * $barW;
 
         $pdf->SetXY($chartX - 40, $y);
@@ -2110,48 +2103,42 @@ if (array_sum($prepData) == 0){
         $pdf->SetFillColor($rC,$gC,$bC);
         $pdf->Rect($chartX, $y, $bw, $barH, "F");
 
-        $pdf->SetXY($chartX + $bw + 4, $y);
+        $pdf->SetXY($chartX + $barW + 4, $y);
         $pdf->Cell(10, 5, round($val,1));
 
         $i++;
     }
 
-    $pdf->Ln(($i * 2) + 3);
+    // ✅ baja al final real del chart
+    $pdf->SetY($chartY + ($i * 8.5) + 6);
 }
 
-/* ----------------------------------------------
-   REALIZATION CHART
----------------------------------------------- */
-
+/* --- REAL --- */
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(0,6,"Realization Workload",0,1);
 ensureSpace($pdf, 40);
 
 $realData = [];
 foreach ($techSummaryOrdered as $name=>$stages){
-    $realData[$name] = $stages["Realization"];
+    $realData[$name] = (float)$stages["Realization"];
 }
-
 arsort($realData);
 
 if (array_sum($realData) == 0){
     $pdf->BodyText("No realization data recorded.");
+    $pdf->Ln(5);
 } else {
-
     $chartX = 45;
     $chartY = $pdf->GetY() + 4;
     $barW   = 110;
     $barH   = 4;
 
-    $maxVal = max($realData);
-    if ($maxVal <= 0) $maxVal = 1;
-
+    $maxVal = max($realData); if ($maxVal <= 0) $maxVal = 1;
     $i = 0;
+
     foreach ($realData as $name => $val){
-
         list($rC,$gC,$bC) = pickColor($i+3);
-
-        $y = $chartY + ($i * 6);
+        $y  = $chartY + ($i * 6);
         $bw = ($val / $maxVal) * $barW;
 
         $pdf->SetXY($chartX - 40, $y);
@@ -2161,47 +2148,41 @@ if (array_sum($realData) == 0){
         $pdf->SetFillColor($rC,$gC,$bC);
         $pdf->Rect($chartX, $y, $bw, $barH, "F");
 
-        $pdf->SetXY($chartX + $bw + 4, $y);
+        $pdf->SetXY($chartX + $barW + 4, $y);
         $pdf->Cell(10, 5, round($val,1));
 
         $i++;
     }
 
-    $pdf->Ln(($i * 1) + 2);
+    $pdf->SetY($chartY + ($i * 6) + 6);
 }
 
-/* ----------------------------------------------
-   DELIVERY CHART
----------------------------------------------- */
-
+/* --- DEL --- */
 $pdf->SetFont("Arial","B",10);
 $pdf->Cell(0,6,"Delivery Workload",0,1);
 ensureSpace($pdf, 40);
+
 $delData = [];
 foreach ($techSummaryOrdered as $name=>$stages){
-    $delData[$name] = $stages["Delivery"];
+    $delData[$name] = (float)$stages["Delivery"];
 }
-
 arsort($delData);
 
 if (array_sum($delData) == 0){
     $pdf->BodyText("No delivery data recorded.");
+    $pdf->Ln(5);
 } else {
-
     $chartX = 45;
     $chartY = $pdf->GetY() + 4;
     $barW   = 110;
     $barH   = 4;
 
-    $maxVal = max($delData);
-    if ($maxVal <= 0) $maxVal = 1;
-
+    $maxVal = max($delData); if ($maxVal <= 0) $maxVal = 1;
     $i = 0;
+
     foreach ($delData as $name => $val){
-
         list($rC,$gC,$bC) = pickColor($i+5);
-
-        $y = $chartY + ($i * 6);
+        $y  = $chartY + ($i * 6);
         $bw = ($val / $maxVal) * $barW;
 
         $pdf->SetXY($chartX - 40, $y);
@@ -2211,35 +2192,42 @@ if (array_sum($delData) == 0){
         $pdf->SetFillColor($rC,$gC,$bC);
         $pdf->Rect($chartX, $y, $bw, $barH, "F");
 
-        $pdf->SetXY($chartX + $bw + 4, $y);
+        $pdf->SetXY($chartX + $barW + 4, $y);
         $pdf->Cell(10, 5, round($val,1));
 
         $i++;
     }
 
-    $pdf->Ln(($i * 1) + 3);
+    $pdf->SetY($chartY + ($i * 6) + 6);
 }
 
-
 /* ============================================================
-   5.4 Insights (Based on 3-process analysis)
+   5.4 Insights (SAFE)
 ============================================================ */
 $pdf->SubTitle("5.4 Insights");
 
-$topPrep = array_key_first($prepData);
-$topReal = array_key_first($realData);
-$topDel  = array_key_first($delData);
+// top solo si hay suma > 0
+$topPrep = (array_sum($prepData) > 0) ? array_key_first($prepData) : null;
+$topReal = (array_sum($realData) > 0) ? array_key_first($realData) : null;
+$topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
 
-$pdf->BodyText("
-- In Preparation, the leading contributor was **$topPrep**, indicating stronger participation in sample setup activities.
+$lines = [];
 
-- In Realization, the highest execution workload was handled by **$topReal**, reflecting primary involvement in final test execution.
+$lines[] = $topPrep
+  ? "- In Preparation, the leading contributor was {$topPrep}, indicating stronger participation in sample setup activities."
+  : "- In Preparation, no workload was recorded for the selected period.";
 
-- Delivery activities were dominated by **$topDel**, suggesting strong documentation and reporting performance.
+$lines[] = $topReal
+  ? "- In Realization, the highest execution workload was handled by {$topReal}, reflecting primary involvement in final test execution."
+  : "- In Realization, no workload was recorded for the selected period.";
 
-- The distribution shows whether technicians tend to specialize in specific steps or maintain balanced involvement.
-");
+$lines[] = $topDel
+  ? "- Delivery activities were dominated by {$topDel}, suggesting strong documentation and reporting performance."
+  : "- In Delivery, no workload was recorded for the selected period.";
 
+$lines[] = "- The distribution shows whether technicians tend to specialize in specific steps or maintain balanced involvement.";
+
+$pdf->BodyText(implode("\n\n", $lines));
 
 
 
@@ -2967,10 +2955,9 @@ function aliasTest($raw){
         
 
         // Atterberg
-        'ATTERBERG LIMITS'   => 'Atterberg Limit',
-        
+        'ATTERBERG LIMITS'   => 'Atterberg Limit',        
         'ATTERBERG LIMIT'   => 'Atterberg Limit',
-         'ATTEMBERG LIMIT'   => 'Atterberg Limit',
+        'ATTEMBERG LIMIT'   => 'Atterberg Limit',
         'ATTERBERG LIMIT-PI' => 'Atterberg Limit',
         'ATTERBERG LIMIT-PL' => 'Atterberg Limit',
         'ATTERBERG LIMIT-PI REQUIREMENT'    => 'Atterberg Limit',
