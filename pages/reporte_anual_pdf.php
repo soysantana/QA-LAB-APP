@@ -9,7 +9,9 @@ set_time_limit(300);
 require_once('../config/load.php');
 require_once('../libs/fpdf/fpdf.php');
 error_reporting(E_ALL);
-
+$user = current_user();
+$preparedBy = $user['name'] ?? $user['username'] ?? 'N/A';
+$generatedAt = date('Y-m-d H:i');
 $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
 
 /* ============================================================
@@ -366,15 +368,23 @@ $pdf->MultiCell(0,6, utf8_decode($clientList), 0, "C");
 $pdf->Ln(15);
 
 // ---------------- BLOQUE DE INFORMACIÓN ----------------
-$pdf->SetFont("Arial","",11);
 $pdf->SetTextColor(60,60,60);
 
-$pdf->Cell(210,7, safeTextUtf("Prepared by: Wendin De Jesús - Chief Laboratory"), 0, 1, "C");
+// Info operativa (quién y cuándo) — IZQUIERDA
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(210,6, safeTextUtf("Prepared by: ".$preparedBy), 0, 1, 'C');
+$pdf->Cell(210,6, safeTextUtf("Generated at: ".$generatedAt), 0, 1, 'C');
+
+$pdf->Ln(4);
+
+// Info institucional — CENTRADA
+$pdf->SetFont('Arial','',11);
 $pdf->Cell(210,7, safeTextUtf("Location: Pueblo Viejo - Sánchez Ramírez - Dominican Republic"), 0, 1, "C");
 $pdf->Cell(210,7, safeTextUtf("Reporting Period: January 1st, $anio - December 31st, $anio"), 0, 1, "C");
 $pdf->Cell(210,7, safeTextUtf("Document Type: Annual CQA Laboratory Performance Report"), 0, 1, "C");
 
-$pdf->Ln(20);
+$pdf->Ln(15);
+
 
 // ---------------- LÍNEA FINAL ----------------
 $pdf->SetDrawColor(120,120,120);
@@ -2923,48 +2933,140 @@ gc_collect_cycles();
 
 
 /* ============================================================
-   8.1 — NCR Summary by Test Type
+   8.1 — NCR Summary by Test Type (FULL NAMES)
 ============================================================ */
 
 $pdf->SubTitle("8.1 NCR Summary by Test Type");
 
+/* Normaliza texto */
+function normTest($v){
+    $v = (string)$v;
+    $v = str_replace(["\xC2\xA0", "\t", "\r", "\n"], " ", $v); // NBSP/tabs
+    $v = strtoupper(trim($v));
+    $v = preg_replace('/\s+/', ' ', $v);
+    return $v;
+}
+
+/* Convierte alias/variantes a un código estándar */
+function aliasTest($raw){
+    $t = normTest($raw);
+    if ($t === '' || $t === 'N/A' || $t === 'NA') return '';
+
+    // limpia puntos, guiones, etc. para comparar
+    $flat = str_replace(['.', '-', '_', '/', '\\', ' '], '', $t);
+
+    $map = [
+        // Grain Size
+        'GS'     => 'Grain Size',
+        'GS_FF'  => 'Grain Size',
+        'GS_Full' => 'Grain Size',
+        'GS_UTF'    => 'Grain Size',
+        'GS_Soil'   => 'Grain Size',
+         'Gradation'   => 'Grain Size',
+         'GRADATION'   => 'Grain Size',
+        
+
+        // Atterberg
+        'AL'              => 'Atterberg Limit',
+        'Atterberg Limit-PI' => 'Atterberg Limit',
+        'Atterberg Limit-LL' => 'Atterberg Limit',
+        'Atterberg Limit-PI Requirement'          => 'Atterberg Limit',
+        'Atterberg Limit-LP' => 'Atterberg Limit',
+
+        // Moisture Content
+        'MC'              => 'MC',
+        'MOISTURECONTENT' => 'MC',
+        'WATERCONTENT'    => 'MC',
+
+        // Proctor
+        'SP'              => 'SP',
+        'STANDARDPROCTOR' => 'SP',
+        'MP'              => 'MP',
+        'MODIFIEDPROCTOR' => 'MP',
+
+        // Hydrometer
+        'HY'              => 'Hydrometer',
+        'HYDROMETER'      => 'HY',
+        'DHY'             => 'Double Hydrometer',
+        'DOUBLEHYDROMETER'=> 'DHY',
+
+        // UCS / PLT / BTS
+        'UCS'             => 'UCS',
+        'UNCONFINEDCOMPRESSIVESTRENGTH' => 'UCS',
+        'PLT'             => 'PLT',
+        'POINTLOAD'       => 'PLT',
+        'POINTLOADTEST'   => 'PLT',
+        'BTS'             => 'BTS',
+        'BRAZILIAN'       => 'BTS',
+        'ACID REACTIVITY'   => 'Acid Reactivity',
+
+        // Specific Gravity / Soundness / etc (ejemplos)
+        'SG'              => 'Specific Gravity',
+        'SG-Fine'         => 'Specific Gravity',
+        'SG-Coarse'       => 'SOUND',
+        'MC_Oven'           => 'Moisture Content',
+        'AR'              => 'Acid Reactivity',
+        'MC_MICROWAVE'  => 'Moisture Content',
+        'MC_Scale'  => 'Moisture Content',
+    ];
+
+    // primero intenta match directo por texto normal
+    if (isset($map[$t])) return $map[$t];
+
+    // luego intenta por versión “flat”
+    if (isset($map[$flat])) return $map[$flat];
+
+    // si ya viene corto tipo "GS, AL, MC", lo devolvemos como está (limpio)
+    if (preg_match('/^[A-Z0-9]{1,6}$/', $t)) return $t;
+
+    // fallback: deja el original normalizado (pero esto puede crear “categorías” raras)
+    return $t;
+}
+
+/* Conteo por tipo (ya normalizado a código) */
 $ncrPerType = [];
 foreach ($allNCR as $n){
-    $t = trim($n["Test_Type"]);
-    if ($t === "") continue;
-    if (!isset($ncrPerType[$t])) $ncrPerType[$t]=0;
-    $ncrPerType[$t]++;
+    $raw = $n["Test_Type"] ?? '';
+    $code = aliasTest($raw);
+    if ($code === '') continue;
+
+    if (!isset($ncrPerType[$code])) $ncrPerType[$code] = 0;
+    $ncrPerType[$code]++;
 }
 
 if (empty($ncrPerType)){
     $pdf->BodyText("No NCR recorded for this year.");
     $pdf->Ln(5);
+
 } else {
 
     arsort($ncrPerType);
 
     $pdf->TableHeader([
-        50=>"Test Type",
+        80=>"Test Type",
         35=>"NCR Count",
         30=>"% of Total"
     ]);
 
     $totalNCR = array_sum($ncrPerType);
 
-    foreach ($ncrPerType as $test=>$cnt){
-        $pct = $totalNCR > 0 ? round(($cnt/$totalNCR)*100,1) : 0;
-        $name = $testNames[$test] ?? $test;
+    foreach ($ncrPerType as $code => $cnt){
+        $pct  = $totalNCR > 0 ? round(($cnt/$totalNCR)*100,1) : 0;
+
+        // Nombre completo desde tu diccionario
+        $fullName = $testNames[$code] ?? $code;
 
         $pdf->TableRow([
-            50=>utf8_decode($name),
+            80=>safeTextUtf($fullName),
             35=>$cnt,
             30=>$pct."%"
         ]);
     }
 
-    $pdf->TableRow([50=>"TOTAL",35=>$totalNCR,30=>"100%"]);
+    $pdf->TableRow([80=>"TOTAL",35=>$totalNCR,30=>"100%"]);
     $pdf->Ln(10);
 }
+
 
 gc_collect_cycles();
 
@@ -2988,8 +3090,8 @@ $pdf->TableHeader([
     30=>"NCR Count"
 ]);
 
-$monthNames=[1=>"Jan",2=>"Feb",3=>"Mar",4=>"Apr",5=>"May",6=>"Jun",
-             7=>"Jul",8=>"Aug",9=>"Sep",10=>"Oct",11=>"Nov",12=>"Dec"];
+$monthNames=[1=>"January",2=>"February",3=>"March",4=>"April",5=>"May",6=>"June",
+             7=>"July",8=>"August",9=>"September",10=>"October",11=>"November",12=>"December"];
 
 foreach ($perMonthNCR as $i=>$val){
     $pdf->TableRow([25=>$monthNames[$i],30=>$val]);
@@ -2999,7 +3101,7 @@ $pdf->TableRow([25=>"TOTAL",30=>array_sum($perMonthNCR)]);
 $pdf->Ln(10);
 
 /* Chart */
-ensureSpace($pdf,60);
+ensureSpace($pdf,40);
 $maxMonth = max($perMonthNCR);
 if ($maxMonth<1) $maxMonth=1;
 
@@ -3029,75 +3131,134 @@ $pdf->Ln(15);
 gc_collect_cycles();
 
 /* ============================================================
-   8.3 — NCR by Material Type
+   8.3 — NCR by Material Type (FULL NAMES)
 ============================================================ */
 
 $pdf->SubTitle("8.3 NCR by Material Type");
 ensureSpace($pdf,60);
 
-$perMaterial=[];
+/* 1) Normalización del material */
+function normMat($v){
+    $v = (string)$v;
+    $v = str_replace(["\xC2\xA0", "\t", "\r", "\n"], " ", $v); // NBSP, tabs, etc.
+    $v = strtoupper(trim($v));
+    $v = preg_replace('/\s+/', ' ', $v); // espacios múltiples
+    return $v;
+}
+
+/* 2) Diccionario (ajústalo a tus códigos reales) */
+$materialMap = [
+    // Fills
+    'LPF' => 'Low Permeability Fill',
+    'CF'  => 'Coarse Filter',
+    'FF'  => 'Fine Filter',
+    'IRF' => 'Intermediate Rock Fill',
+    'TRF' => 'Transition Rock Fill',
+    'UFF' => 'Upstream Facing Fill',
+    'UTF' => 'Upstream Transition Fill',
+    'RF' => 'ROck Fill',
+    'SOIL'  => 'Soil',
+    'FRF' => 'Fine Rock Fill',
+   
+];
+
+/* 3) Función para “expandir” a nombre completo */
+function materialFullName($raw, $map){
+    $k = normMat($raw);
+
+    if ($k === '' || $k === 'N/A' || $k === 'NA' || $k === 'NULL') {
+        return 'UNKNOWN';
+    }
+
+    // match directo
+    if (isset($map[$k])) return $map[$k];
+
+    // match por “contiene” (útil si te llegan textos tipo "CF - Borrow Area")
+    foreach ($map as $abbr => $full){
+        if ($abbr === '') continue;
+        if (strpos($k, $abbr) !== false) return $full;
+    }
+
+    // fallback: deja el valor original pero limpio
+    return $k;
+}
+
+/* 4) Conteo por material (ya con nombre completo) */
+$perMaterial = [];
 foreach ($allNCR as $n){
-    $m=trim($n["Material_Type"] ?? "");
-    if ($m==="") $m="UNKNOWN";
-    if (!isset($perMaterial[$m])) $perMaterial[$m]=0;
-    $perMaterial[$m]++;
+    $mRaw = $n["Material_Type"] ?? "";
+    $mFull = materialFullName($mRaw, $materialMap);
+
+    if (!isset($perMaterial[$mFull])) $perMaterial[$mFull] = 0;
+    $perMaterial[$mFull]++;
 }
 
 if (empty($perMaterial)){
     $pdf->BodyText("No material information available.");
     $pdf->Ln(10);
+
 } else {
 
     arsort($perMaterial);
 
     $pdf->TableHeader([
-        50=>"Material Type",
+        80=>"Material Type",
         35=>"NCR Count",
         30=>"% of Total"
     ]);
 
     $totalMT = array_sum($perMaterial);
 
-    foreach ($perMaterial as $mat=>$cnt){
+    foreach ($perMaterial as $matFull => $cnt){
         $pct = $totalMT>0 ? round(($cnt/$totalMT)*100,1) : 0;
         $pdf->TableRow([
-            50=>utf8_decode($mat),
+            80=>safeTextUtf($matFull),
             35=>$cnt,
             30=>$pct."%"
         ]);
     }
 
-    $pdf->TableRow([50=>"TOTAL",35=>$totalMT,30=>"100%"]);
+    $pdf->TableRow([80=>"TOTAL",35=>$totalMT,30=>"100%"]);
     $pdf->Ln(10);
 
     /* Chart */
     ensureSpace($pdf,60);
+
     $maxMat = max($perMaterial);
-    if ($maxMat<1) $maxMat=1;
+    if ($maxMat < 1) $maxMat = 1;
 
-    $x0=20;
-    $y0=$pdf->GetY();
-    $h=5;
+    $x0 = 15;
+    $y0 = $pdf->GetY();
+    $h  = 5;
 
-    foreach ($perMaterial as $mat=>$cnt){
+    foreach ($perMaterial as $matFull => $cnt){
 
-        $bar=($cnt/$maxMat)*100;
+        $bar = ($cnt / $maxMat) * 100;
 
-        $pdf->SetXY($x0,$y0);
+        $pdf->SetXY($x0, $y0);
         $pdf->SetFont("Arial","",8);
-        $pdf->Cell(50,$h,utf8_decode($mat),0,0);
+
+        // label (más ancho para nombre completo)
+        $pdf->Cell(75, $h, safeTextUtf($matFull), 0, 0);
 
         $pdf->SetFillColor(200,80,80);
-        $pdf->Rect($x0+52,$y0,$bar,$h,"F");
+        $pdf->Rect($x0+77, $y0, $bar, $h, "F");
 
-        $pdf->SetXY($x0+155,$y0);
-        $pdf->Cell(10,$h,$cnt,0,0);
+        $pdf->SetXY($x0+185, $y0);
+        $pdf->Cell(10, $h, $cnt, 0, 0);
 
-        $y0+=($h+2);
+        $y0 += ($h + 2);
+
+        // si se va a salir, salta página
+        if ($y0 > 270) {
+            $pdf->AddPage();
+            $y0 = $pdf->GetY();
+        }
     }
 
     $pdf->Ln(15);
 }
+
 gc_collect_cycles();
 
 /* ============================================================
