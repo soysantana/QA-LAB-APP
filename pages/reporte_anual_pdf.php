@@ -3155,12 +3155,14 @@ $materialMap = [
     // Fills
     'LPF' => 'Low Permeability Fill',
     'CF'  => 'Coarse Filter',
+    'COARSE FILTER'  => 'Coarse Filter',
     'FF'  => 'Fine Filter',
+    'FINE FILTER'  => 'Fine Filter',
     'IRF' => 'Intermediate Rock Fill',
     'TRF' => 'Transition Rock Fill',
     'UFF' => 'Upstream Facing Fill',
     'UTF' => 'Upstream Transition Fill',
-    'RF' => 'ROck Fill',
+    'RF' => 'Rock Fill',
     'SOIL'  => 'Soil',
     'FRF' => 'Fine Rock Fill',
    
