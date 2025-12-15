@@ -2967,7 +2967,7 @@ function aliasTest($raw){
         
 
         // Atterberg
-        'ATTERBERG LIMIT'   => 'Atterberg Limit',
+        'ATTERBERG LIMITS'   => 'Atterberg Limit',
          'ATTEMBERG LIMIT'   => 'Atterberg Limit',
         'ATTERBERG LIMIT-PI' => 'Atterberg Limit',
         'ATTERBERG LIMIT-PL' => 'Atterberg Limit',
@@ -3013,6 +3013,10 @@ function aliasTest($raw){
         'SND'  => 'Soundness',
         'SOUNDNESS'  => 'Soundness',
          'LAA'  => 'Los Angeles Abrasion',
+         'PQ'  => 'Poor Quality Rock',
+         'Crudo'  => 'Raw Material',
+         'Diorite'  => 'Diorite',
+         'Common'  => 'Common',
     ];
 
     // primero intenta match directo por texto normal
