@@ -21,149 +21,139 @@ function daysSince($date){
 }
 
 /* =============================
-   CARGA BASE
+   FILTRO FECHA (para rendimiento)
+   - por defecto: últimos 90 días
 ============================= */
-$req  = find_all("lab_test_requisition_form");
+$from = $_GET['from'] ?? date('Y-m-d', strtotime('-90 days'));
+$to   = $_GET['to']   ?? date('Y-m-d');
 
-$prep = find_all("test_preparation");
-$real = find_all("test_realization");
-$ent  = find_all("test_delivery");
-$rev  = find_all("test_review");
-$rep  = find_all("test_repeat");
-$rev2 = find_all("test_reviewed");
-$flow = find_all("test_workflow");   // tabla de workflow
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) $from = date('Y-m-d', strtotime('-90 days'));
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $to))   $to   = date('Y-m-d');
 
-if (!is_array($flow)) {
-    $flow = [];
-}
+$fromEsc = $db->escape($from);
+$toEsc   = $db->escape($to);
+
+/* =============================
+   CARGA BASE (OPTIMIZADA)
+   - NO usamos find_all() para traer todo
+   - Traemos solo campos necesarios
+============================= */
+$req = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Registed_Date
+    FROM lab_test_requisition_form
+    WHERE Registed_Date BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+
+/* Si no hay resultados, evita warnings */
+if (!is_array($req)) $req = [];
 
 /* =============================
    INDEX GENERAL DE ESTADO
+   - en vez de find_all(), solo columnas necesarias
 ============================= */
 $index = [];
 
-/* === PREPARATION === */
+/* PREPARATION */
+$prep = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_preparation
+    WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+if (!is_array($prep)) $prep = [];
+
 foreach ($prep as $r) {
-    $index[
-        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
-    ] = [
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
         'stage' => 'PREP',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === REALIZATION === */
+/* REALIZATION */
+$real = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_realization
+    WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+if (!is_array($real)) $real = [];
+
 foreach ($real as $r) {
-    $index[
-        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
-    ] = [
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
         'stage' => 'REAL',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === DELIVERY === */
+/* DELIVERY */
+$ent = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_delivery
+    WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+if (!is_array($ent)) $ent = [];
+
 foreach ($ent as $r) {
-    $index[
-        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
-    ] = [
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
         'stage' => 'ENT',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === REVIEW === */
+/* REVIEW */
+$rev = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_review
+    WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+if (!is_array($rev)) $rev = [];
+
 foreach ($rev as $r) {
-    $index[
-        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
-    ] = [
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
         'stage' => 'REV',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === REPEAT === */
+/* REPEAT */
+$rep = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_repeat
+    WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+if (!is_array($rep)) $rep = [];
+
 foreach ($rep as $r) {
-    $index[
-        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
-    ] = [
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
         'stage' => 'REP',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === REVIEWED === */
+/* REVIEWED */
+$rev2 = find_by_sql("
+    SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
+    FROM test_reviewed
+    WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+");
+if (!is_array($rev2)) $rev2 = [];
+
 foreach ($rev2 as $r) {
-    $index[
-        N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')
-    ] = [
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
         'stage' => 'REV',
         'SD'    => $r['Start_Date'] ?? null
     ];
 }
 
-/* === WORKFLOW (MAPEANDO LOS STAGE) === */
-
-// Mapa de posibles textos que puedas tener en test_workflow.Stage
-$stageMap = [
-    'SIN'          => 'SIN',
-    'REGISTRO'     => 'SIN',
-    'REGISTRATION' => 'SIN',
-
-    'PREP'         => 'PREP',
-    'PREPARACION'  => 'PREP',
-    'PREPARACIÓN'  => 'PREP',
-    'PREPARATION'  => 'PREP',
-
-    'REAL'         => 'REAL',
-    'REALIZACION'  => 'REAL',
-    'REALIZACIÓN'  => 'REAL',
-    'REALIZATION'  => 'REAL',
-
-    'ENT'          => 'ENT',
-    'ENTREGA'      => 'ENT',
-    'DELIVERY'     => 'ENT',
-
-    'REV'          => 'REV',
-    'REVISION'     => 'REV',
-    'REVISIÓN'     => 'REV',
-    'REVIEW'       => 'REV',
-
-    'REP'          => 'REP',
-    'REPEAT'       => 'REP'
-];
-
-foreach ($flow as $r) {
-
-    $sampleID   = N($r['Sample_ID']   ?? '');
-    $sampleNum  = N($r['Sample_Number'] ?? '');
-    $testType   = N($r['Test_Type']   ?? '');
-    $stageField = strtoupper(trim((string)($r['Stage'] ?? '')));
-    $startDate  = $r['Start_Date'] ?? $r['Date'] ?? null;
-
-    if ($sampleID === '' || $testType === '' || $stageField === '') {
-        continue;
-    }
-
-    $stage = $stageMap[$stageField] ?? null;
-    if ($stage === null) {
-        // Si no lo reconozco, no lo uso para no dañar tu lógica
-        continue;
-    }
-
-    $index[
-        $sampleID."|".$sampleNum."|".$testType
-    ] = [
-        'stage' => $stage,
-        'SD'    => $startDate
-    ];
-}
-
 /* =============================
-   CONSTRUCCIÓN DE RESUMEN
+   CONSTRUCCIÓN DE RESUMEN (IGUAL)
 ============================= */
-$summary = [];   // tabla principal
-$pending = [];   // lista SIN iniciar
+$summary = [];
+$pending = [];
 
 foreach ($req as $row){
 
@@ -174,8 +164,8 @@ foreach ($req as $row){
     foreach ($tests as $t){
 
         $T = N($t);
+        if($T==='') continue;
 
-        // Crear si no existe
         if(!isset($summary[$T])){
             $summary[$T] = [
                 'sin'=>0,'prep'=>0,'prep_est'=>0,
@@ -185,32 +175,25 @@ foreach ($req as $row){
         }
 
         $key = N($row['Sample_ID'] ?? '')."|".N($row['Sample_Number'] ?? '')."|".$T;
-
         $stData = $index[$key] ?? null;
 
         $stage = $stData['stage'] ?? 'SIN';
         $SD    = $stData['SD'] ?? $row["Registed_Date"];
 
-        /* === ESTANCADOS === */
-        if($stage === 'PREP' && daysSince($SD) >= 3)
-            $stage = 'PREP_EST';
+        if($stage === 'PREP' && daysSince($SD) >= 3) $stage = 'PREP_EST';
+        if($stage === 'REAL' && daysSince($SD) >= 4) $stage = 'REAL_EST';
 
-        if($stage === 'REAL' && daysSince($SD) >= 4)
-            $stage = 'REAL_EST';
-
-        /* === Contar === */
-        if($stage === 'SIN')          $summary[$T]['sin']++;
-        if($stage === 'PREP')         $summary[$T]['prep']++;
-        if($stage === 'PREP_EST')     $summary[$T]['prep_est']++;
-        if($stage === 'REAL')         $summary[$T]['real']++;
-        if($stage === 'REAL_EST')     $summary[$T]['real_est']++;
-        if($stage === 'ENT')          $summary[$T]['ent']++;
-        if($stage === 'REV')          $summary[$T]['rev']++;
-        if($stage === 'REP')          $summary[$T]['rep']++;
+        if($stage === 'SIN')      $summary[$T]['sin']++;
+        if($stage === 'PREP')     $summary[$T]['prep']++;
+        if($stage === 'PREP_EST') $summary[$T]['prep_est']++;
+        if($stage === 'REAL')     $summary[$T]['real']++;
+        if($stage === 'REAL_EST') $summary[$T]['real_est']++;
+        if($stage === 'ENT')      $summary[$T]['ent']++;
+        if($stage === 'REV')      $summary[$T]['rev']++;
+        if($stage === 'REP')      $summary[$T]['rep']++;
 
         $summary[$T]['total']++;
 
-        /* === Lista SIN iniciar === */
         if($stage === 'SIN'){
             $pending[] = [
                 'sid'=>$row['Sample_ID'],
@@ -222,20 +205,23 @@ foreach ($req as $row){
     }
 }
 
-ksort($summary); // ordenar ensayos A-Z
-
+ksort($summary);
 ?>
 
 <main id="main" class="main">
-  <div class="pagetitle">
+  <div class="pagetitle d-flex align-items-center justify-content-between">
     <h1>Lista de Pendientes</h1>
+
+    <!-- filtro (opcional) -->
+    <form class="d-flex gap-2" method="GET" style="max-width:520px;">
+      <input type="date" name="from" class="form-control form-control-sm" value="<?=h($from)?>">
+      <input type="date" name="to" class="form-control form-control-sm" value="<?=h($to)?>">
+      <button class="btn btn-sm btn-dark">Filtrar</button>
+    </form>
   </div>
 
   <section class="section">
 
-    <!-- ==============================
-         TABLA RESUMEN
-    =============================== -->
     <div class="card mb-4">
       <div class="card-body">
         <h4 class="card-title">Estado por ensayo (incluye estancados)</h4>
@@ -262,7 +248,6 @@ ksort($summary); // ordenar ensayos A-Z
 <tr>
   <td><b><?=h($t)?></b></td>
 
-  <!-- SIN -->
   <td>
     <?=$s['sin']?>
     <?php if($s['sin']>0): ?>
@@ -274,7 +259,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- PREP -->
   <td>
     <?=$s['prep']?>
     <?php if($s['prep']>0): ?>
@@ -286,7 +270,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- PREP_EST -->
   <td class="text-danger fw-bold">
     <?=$s['prep_est']?>
     <?php if($s['prep_est']>0): ?>
@@ -298,7 +281,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- REAL -->
   <td>
     <?=$s['real']?>
     <?php if($s['real']>0): ?>
@@ -310,7 +292,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- REAL_EST -->
   <td class="text-danger fw-bold">
     <?=$s['real_est']?>
     <?php if($s['real_est']>0): ?>
@@ -322,7 +303,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- ENTREGA -->
   <td>
     <?=$s['ent']?>
     <?php if($s['ent']>0): ?>
@@ -334,7 +314,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- REV -->
   <td>
     <?=$s['rev']?>
     <?php if($s['rev']>0): ?>
@@ -346,7 +325,6 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- REP -->
   <td>
     <?=$s['rep']?>
     <?php if($s['rep']>0): ?>
@@ -358,10 +336,8 @@ ksort($summary); // ordenar ensayos A-Z
     <?php endif; ?>
   </td>
 
-  <!-- TOTAL -->
   <td><b><?=$s['total']?></b></td>
 
-  <!-- PDF GENERAL -->
   <td>
     <a target="_blank"
        href="../pdf/pendings-process.php?type=<?=$t?>"
@@ -377,9 +353,6 @@ ksort($summary); // ordenar ensayos A-Z
       </div>
     </div>
 
-    <!-- ==============================
-         LISTA DE SIN INICIAR
-    =============================== -->
     <div class="card">
       <div class="card-body">
         <h4 class="card-title">Pendientes sin iniciar</h4>

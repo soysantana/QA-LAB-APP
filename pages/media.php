@@ -13,7 +13,7 @@ if (isset($_POST['submit'])) {
   } else {
     $session->msg('d', join('<br>', $photo->errors));
   }
-  redirect('media.php');
+  redirect('../pages/media.php');
 }
 ?>
 
@@ -57,7 +57,7 @@ if (isset($_POST['submit'])) {
                     <tr>
                       <td class="text-center"><?php echo count_id(); ?></td>
                       <td class="text-center">
-                        <img src="uploads/products/<?php echo $media_file['file_name']; ?>" class="img-thumbnail" width="80">
+                        <img src="../uploads/products/<?php echo $media_file['file_name']; ?>" class="img-thumbnail" width="80">
                       </td>
                       <td class="text-center"><?php echo htmlspecialchars($media_file['file_name']); ?></td>
                       <td class="text-center"><?php echo htmlspecialchars($media_file['file_type']); ?></td>
