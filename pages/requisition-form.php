@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <option value="SD3">SD3</option>
       <option value="LBOR">Areas de Banco</option>
       <option value="Site Investigation">Site Investigation</option>
-      <option value="Stockpile">Acopios</option>
+      <option value="Stockpiles">Acopios</option>
       <option value="Quarry">Cantera</option>
       <option value="Diorite">Diorita</option>
       <option value="Source Investigation">Investigacion Fuentes</option>
