@@ -59,7 +59,7 @@
           <?php if (!empty($row['photo'])): ?>
             <img src="data:image/jpeg;base64,<?= base64_encode($row['photo']); ?>" class="rounded-circle">
           <?php else: ?>
-            <img src="../assets/img/default-avatar.jpg" class="rounded-circle">
+            <img src="../assets/img/profile-default.jpg" class="rounded-circle">
           <?php endif; ?>
 
           <span class="d-none d-md-block dropdown-toggle ps-2">
@@ -127,7 +127,7 @@
 
 <!-- 🔔 SONIDO -->
 <audio id="notif-sound">
-  <source src="../assets/sounds/notify.mp3" type="audio/mpeg">
+  <source src="#" type="audio/mpeg">
 </audio>
 
 <!-- LIVE NOTIFICATIONS -->
