@@ -182,7 +182,7 @@ function tech_clean($s){
 }
 function tech_unify_separators($s){
   $s = tech_clean($s);
-  $s = str_replace([',','&','+','|','\\'], '/', $s);
+  $s = str_replace([',','&','-','+','|','\\'], '/', $s);
   $s = preg_replace('/\s*\/\s*/', '/', $s);
   return $s;
 }
