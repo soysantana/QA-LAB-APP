@@ -518,10 +518,10 @@ document.getElementById("btnReviewUTF").addEventListener("click", () => {
 
     if (["LLD","SD1","SD2","SD3"].includes(structure)) {
         spec = limits.LLD;
-    } else if (structure.includes("PVDJ-AGG-DIO")) {
-        spec = limits["PVDJ-AGG-DIO"];
+    } else if (structure.includes("Diorite")) {
+        spec = limits["Diorite"];
     } else {
-        spec = limits["PVDJ-AGG"];
+        spec = limits["Stockpiles"];
     }
 
     /***********************************************
