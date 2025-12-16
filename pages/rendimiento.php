@@ -1,6 +1,6 @@
 <?php
-// /pages/desempeno_tecnicos_cards.php
-$page_title = 'Desempeño de Técnicos (Cards)';
+// /pages/rendimiento.php  (LISTA + DETALLE en el mismo archivo)
+$page_title = 'Desempeño de Técnicos';
 require_once('../config/load.php');
 page_require_level(2);
 include_once('../components/header.php');
@@ -10,8 +10,12 @@ if (!function_exists('h')) {
 }
 
 /* ======================================================
-   1) Filtro de fechas
+   0) PARAMS
 ====================================================== */
+$view = $_GET['view'] ?? 'list';     // list | detail
+$techSelected = trim((string)($_GET['tech'] ?? ''));
+
+// fechas
 $from = $_GET['from'] ?? date('Y-m-d', strtotime('-30 days'));
 $to   = $_GET['to']   ?? date('Y-m-d');
 
@@ -21,10 +25,8 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $to))   $to   = date('Y-m-d');
 $fromEsc = $db->escape($from . " 00:00:00");
 $toEsc   = $db->escape($to   . " 23:59:59");
 
-$selectedTech = trim((string)($_GET['tech'] ?? ''));
-
 /* ======================================================
-   2) Nombres de ensayos (ajusta)
+   1) TEST NAMES (ajusta a tu gusto)
 ====================================================== */
 $testNames = [
   "GS" => "Grain Size",
@@ -43,31 +45,30 @@ $testNames = [
 ];
 
 /* ======================================================
-   3) Normalización de técnicos (TU MISMA IDEA, robusta)
-   Regla A: "DF-RV" => DF +1, RV +1
+   2) ALIAS MAP (OFICIAL)  **AQUÍ ES DONDE SE RESUELVE TODO**
+   - Solo se cuentan técnicos que caigan en un alias de esta lista
 ====================================================== */
-
-// Alias -> Nombre completo (AJUSTA TU LISTA REAL)
 $aliasMap = [
-  'WD'  => 'Wendin De Jesús Mendoza',
-  'DF'  => 'Darielvy Félix',
-  'RV'  => 'Rony Vargas',
+  'WD'  => 'Wendin De Jesús',
+  'JV'  => 'Jonathan Vargas',
   'RRH' => 'Rafael Reyes',
   'VM'  => 'Victor Mercedes',
-  'DV'  => 'Diana Carolina Vázquez',
+  'DV'  => 'Diana Vázquez',
   'LS'  => 'Laura Sánchez',
   'YM'  => 'Yamilexi Mejía',
   'AS'  => 'Arturo Santana',
   'FE'  => 'Frandy Espinal',
   'WM'  => 'Wilson Martínez',
   'RL'  => 'Rafy Leocadio',
+  'RV'  => 'Rony Vargas',
+  'DF'  => 'Darielvy Félix',
   'JA'  => 'Jordany Almonte',
   'MC'  => 'Melvin Castillo',
+  'JMA' => 'Jordany Amparo',
   'LM'  => 'Luis Monegro',
-  'JV'  => 'Jonathan Vargas',
 ];
 
-// Variantes -> Alias (agrega TODO lo que te llegue “mal escrito”)
+/* Variantes -> Alias (agrega todas las que tú sabes que aparecen) */
 $variantsToAlias = [
   'WENDIN' => 'WD',
   'WENDIN DE JESUS' => 'WD',
@@ -82,16 +83,14 @@ $variantsToAlias = [
   'JONATHAN VARGAS' => 'JV',
   'J VARGAS' => 'JV',
   'J. VARGAS' => 'JV',
-  'JV' => 'JV',
 
-  'RONY' => 'RV',
-  'RONY VARGAS' => 'RV',
-
-  'DARIELVY' => 'DF',
-  'DARIELVY FELIX' => 'DF',
-  'DARIELVY FÉLIX' => 'DF',
+  'RAFAEL REYES' => 'RRH',
+  'R REYES' => 'RRH',
 ];
 
+/* ======================================================
+   3) TECH NORMALIZATION (tu forma, robusta)
+====================================================== */
 function tech_clean($s){
   $s = strtoupper(trim((string)$s));
   $s = str_replace(["\t","\n","\r"], ' ', $s);
@@ -100,27 +99,16 @@ function tech_clean($s){
   return trim($s);
 }
 
-/**
- * Convierte separadores raros a "/"
- * - soporta: , & + | \ /
- * - soporta guiones unicode: - ‐ ‒ – — ― (y cualquier \p{Pd})
- */
 function tech_unify_separators($s){
   $s = tech_clean($s);
-
-  // Cualquier tipo de dash unicode => "/"
+  // cualquier guion unicode => "/"
   $s = preg_replace('/[\p{Pd}]+/u', '/', $s);
-
-  // Otros separadores comunes => "/"
+  // otros separadores => "/"
   $s = str_replace([',','&','+','|','\\'], '/', $s);
-
-  // Normaliza " / " => "/"
   $s = preg_replace('/\s*\/\s*/', '/', $s);
-
   return trim($s, '/');
 }
 
-/** Devuelve tokens: "DF-RV" => ["DF","RV"] incluso con guion raro */
 function tech_split($s){
   $s = tech_unify_separators($s);
   if ($s === '') return [];
@@ -134,41 +122,39 @@ function tech_split($s){
   return array_values(array_unique($out));
 }
 
-/** "VICTOR MERCEDES" => VM */
 function tech_guess_alias_from_name($t){
   $t = tech_clean($t);
   if ($t === '') return '';
   $words = preg_split('/\s+/', $t);
-
   if (count($words) >= 2){
-    $a = substr($words[0], 0, 1);
-    $b = substr($words[1], 0, 1);
-    return $a.$b;
+    return substr($words[0],0,1) . substr($words[1],0,1);
   }
-  return substr($t, 0, 2);
+  return substr($t,0,2);
 }
 
 /**
- * Convierte a alias oficial.
- * Para evitar lista infinita:
- * - si no se reconoce => devuelve "OTROS"
+ * MODO ESTRICTO:
+ * - si no cae en aliasMap => retorna '' (NO SE CUENTA)
  */
-function tech_to_alias($raw, $variantsToAlias, $aliasMap){
+function tech_to_alias_strict($raw, $variantsToAlias, $aliasMap){
   $t = tech_clean($raw);
   if ($t === '') return '';
 
-  // ya alias
+  if (strpos($t,'/') !== false){
+    $t = explode('/', $t)[0];
+    $t = tech_clean($t);
+  }
+
   if (isset($aliasMap[$t])) return $t;
+  if (isset($variantsToAlias[$t])) {
+    $a = $variantsToAlias[$t];
+    return isset($aliasMap[$a]) ? $a : '';
+  }
 
-  // variante conocida
-  if (isset($variantsToAlias[$t])) return $variantsToAlias[$t];
-
-  // intenta deducir iniciales
   $guess = tech_guess_alias_from_name($t);
   if ($guess !== '' && isset($aliasMap[$guess])) return $guess;
 
-  // no reconocido => OTROS (para no explotar listado)
-  return 'OTROS';
+  return '';
 }
 
 function tech_fullname($alias, $aliasMap){
@@ -176,20 +162,19 @@ function tech_fullname($alias, $aliasMap){
 }
 
 /* ======================================================
-   4) SQL UNIFICADO (REG/PREP/REAL/DEL)
-   Nota: REG usa Register_By
+   4) SQL UNIFICADO (sin "real" como alias, evita errores)
 ====================================================== */
-$sql = "
+$sqlUnified = "
 SELECT
   x.Technician,
   x.Test_Type,
-  SUM(CASE WHEN x.Stage='REG'  THEN 1 ELSE 0 END) AS reg,
-  SUM(CASE WHEN x.Stage='PREP' THEN 1 ELSE 0 END) AS prep,
-  SUM(CASE WHEN x.Stage='REAL' THEN 1 ELSE 0 END) AS rea,
-  SUM(CASE WHEN x.Stage='DEL'  THEN 1 ELSE 0 END) AS del,
-  COUNT(*) AS total
+  SUM(CASE WHEN x.Stage='REG'  THEN 1 ELSE 0 END) AS reg_cnt,
+  SUM(CASE WHEN x.Stage='PREP' THEN 1 ELSE 0 END) AS prep_cnt,
+  SUM(CASE WHEN x.Stage='REAL' THEN 1 ELSE 0 END) AS real_cnt,
+  SUM(CASE WHEN x.Stage='DEL'  THEN 1 ELSE 0 END) AS del_cnt,
+  COUNT(*) AS total_cnt
 FROM (
-  /* REGISTRO: explota Test_Type CSV */
+  /* REGISTRO: Register_By + split Test_Type por coma */
   SELECT
     TRIM(IFNULL(r.Register_By,'')) AS Technician,
     TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(IFNULL(r.Test_Type,''), ',', n.n), ',', -1)) AS Test_Type,
@@ -207,7 +192,7 @@ FROM (
 
   UNION ALL
 
-  /* PREP */
+  /* PREPARACIÓN */
   SELECT
     TRIM(IFNULL(p.Technician,'')) AS Technician,
     TRIM(IFNULL(p.Test_Type,''))  AS Test_Type,
@@ -218,7 +203,7 @@ FROM (
 
   UNION ALL
 
-  /* REAL */
+  /* REALIZACIÓN */
   SELECT
     TRIM(IFNULL(a.Technician,'')) AS Technician,
     TRIM(IFNULL(a.Test_Type,''))  AS Test_Type,
@@ -229,7 +214,7 @@ FROM (
 
   UNION ALL
 
-  /* DEL */
+  /* ENTREGA */
   SELECT
     TRIM(IFNULL(d.Technician,'')) AS Technician,
     TRIM(IFNULL(d.Test_Type,''))  AS Test_Type,
@@ -241,97 +226,89 @@ FROM (
 WHERE TRIM(IFNULL(x.Technician,'')) <> ''
   AND TRIM(IFNULL(x.Test_Type,'')) <> ''
 GROUP BY x.Technician, x.Test_Type
-ORDER BY total DESC
+ORDER BY total_cnt DESC
 ";
 
-$rows = find_by_sql($sql);
+$rows = find_by_sql($sqlUnified);
 if (!is_array($rows)) $rows = [];
 
 /* ======================================================
-   5) Construcción de datasets (cards + detalle)
-   Regla A: split => cada alias suma completo
+   5) BUILD DATASETS (Lista y Detalle)
+   - Split DF-RV => DF y RV
+   - Strict alias => si no se mapea, NO entra
 ====================================================== */
-$byTech = [];            // resumen por técnico (alias)
-$byTechType = [];        // detalle por técnico + tipo
-$techList = [];          // alias => nombre
+$byTech = [];          // resumen por técnico (alias)
+$byTechTest = [];      // detalle por técnico + tipo
 
 foreach ($rows as $r){
-  $rawTech = (string)($r['Technician'] ?? '');
+  $techRaw = (string)($r['Technician'] ?? '');
   $tt      = trim((string)($r['Test_Type'] ?? ''));
-  if ($tt==='') continue;
+  if ($tt === '') continue;
 
-  $reg  = (int)($r['reg'] ?? 0);
-  $prep = (int)($r['prep'] ?? 0);
-  $real = (int)($r['rea'] ?? 0);
-  $del  = (int)($r['del'] ?? 0);
-  $tot  = (int)($r['total'] ?? 0);
+  $reg  = (int)($r['reg_cnt']  ?? 0);
+  $prep = (int)($r['prep_cnt'] ?? 0);
+  $real = (int)($r['real_cnt'] ?? 0);
+  $del  = (int)($r['del_cnt']  ?? 0);
+  $tot  = (int)($r['total_cnt']?? 0);
 
-  $parts = tech_split($rawTech);
-  if (!$parts) continue;
+  $parts = tech_split($techRaw);
+  if (empty($parts)) continue;
 
   foreach($parts as $p){
-    $alias = tech_to_alias($p, $variantsToAlias, $aliasMap);
-    if ($alias==='') continue;
-
-    $full = ($alias==='OTROS') ? 'No reconocido (revisar variantes)' : tech_fullname($alias, $aliasMap);
+    $alias = tech_to_alias_strict($p, $variantsToAlias, $aliasMap);
+    if ($alias === '') continue; // <- evita lista infinita
 
     if (!isset($byTech[$alias])){
       $byTech[$alias] = [
-        'alias'=>$alias, 'name'=>$full,
-        'reg'=>0,'prep'=>0,'rea'=>0,'del'=>0,'total'=>0
+        'alias'=>$alias,
+        'name'=>tech_fullname($alias, $aliasMap),
+        'reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0
       ];
     }
 
     $byTech[$alias]['reg']   += $reg;
     $byTech[$alias]['prep']  += $prep;
-    $byTech[$alias]['rea']  += $real;
+    $byTech[$alias]['real']  += $real;
     $byTech[$alias]['del']   += $del;
     $byTech[$alias]['total'] += $tot;
 
-    if (!isset($byTechType[$alias])) $byTechType[$alias] = [];
-    if (!isset($byTechType[$alias][$tt])){
-      $byTechType[$alias][$tt] = ['reg'=>0,'prep'=>0,'rea'=>0,'del'=>0,'total'=>0];
+    if (!isset($byTechTest[$alias])) $byTechTest[$alias] = [];
+    if (!isset($byTechTest[$alias][$tt])){
+      $byTechTest[$alias][$tt] = ['reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0];
     }
-    $byTechType[$alias][$tt]['reg']   += $reg;
-    $byTechType[$alias][$tt]['prep']  += $prep;
-    $byTechType[$alias][$tt]['rea']  += $real;
-    $byTechType[$alias][$tt]['del']   += $del;
-    $byTechType[$alias][$tt]['total'] += $tot;
-
-    $techList[$alias] = $full;
+    $byTechTest[$alias][$tt]['reg']   += $reg;
+    $byTechTest[$alias][$tt]['prep']  += $prep;
+    $byTechTest[$alias][$tt]['real']  += $real;
+    $byTechTest[$alias][$tt]['del']   += $del;
+    $byTechTest[$alias][$tt]['total'] += $tot;
   }
 }
 
-// Orden por total DESC
-uasort($byTech, fn($a,$b)=>($b['total']<=>$a['total']));
+/* ordenar técnicos por total desc */
+uasort($byTech, function($a,$b){ return ($b['total'] <=> $a['total']); });
 
-// KPI global
+/* KPI global */
 $kpi = ['reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0];
 foreach($byTech as $st){
   $kpi['reg']   += (int)$st['reg'];
   $kpi['prep']  += (int)$st['prep'];
-  $kpi['rea']  += (int)$st['rea'];
+  $kpi['real']  += (int)$st['real'];
   $kpi['del']   += (int)$st['del'];
   $kpi['total'] += (int)$st['total'];
 }
 
-// Si no seleccionó tech, el top
-if ($selectedTech==='' && !empty($byTech)) $selectedTech = array_key_first($byTech);
-
-// detalle seleccionado
-$selSummary = $byTech[$selectedTech] ?? null;
-$selTypes   = $byTechType[$selectedTech] ?? [];
-if ($selTypes) {
-  uasort($selTypes, fn($a,$b)=>($b['total']<=>$a['total']));
-}
+/* ======================================================
+   6) RENDER
+====================================================== */
 ?>
-
 <main id="main" class="main" style="padding:18px;">
 
-  <div class="pagetitle d-flex flex-wrap justify-content-between align-items-center mb-3">
-    <div class="me-3">
+  <div class="pagetitle d-flex justify-content-between align-items-center mb-3">
+    <div>
       <h1 class="mb-0">Desempeño de Técnicos</h1>
-      <div class="text-muted small">Tarjetas por técnico + click para ver detalle. (DF-RV = cuenta para DF y RV)</div>
+      <small class="text-muted">
+        <?= $view==='detail' ? 'Detalle por técnico' : 'Listado de técnicos (clic para ver detalle)' ?>
+      </small>
     </div>
     <span class="badge bg-light text-dark border">
       Rango: <strong><?=h($from)?></strong> → <strong><?=h($to)?></strong>
@@ -342,6 +319,11 @@ if ($selTypes) {
   <div class="card shadow-sm border-0 mb-3">
     <div class="card-body">
       <form class="row g-2 align-items-end" method="GET">
+        <input type="hidden" name="view" value="<?=h($view)?>">
+        <?php if($view==='detail' && $techSelected!==''): ?>
+          <input type="hidden" name="tech" value="<?=h($techSelected)?>">
+        <?php endif; ?>
+
         <div class="col-6 col-md-2">
           <label class="form-label form-label-sm">Desde</label>
           <input type="date" name="from" class="form-control form-control-sm" value="<?=h($from)?>">
@@ -350,25 +332,33 @@ if ($selTypes) {
           <label class="form-label form-label-sm">Hasta</label>
           <input type="date" name="to" class="form-control form-control-sm" value="<?=h($to)?>">
         </div>
-        <div class="col-12 col-md-6">
-          <label class="form-label form-label-sm">Buscar técnico</label>
-          <input id="qTech" type="text" class="form-control form-control-sm" placeholder="Ej: DF, RV, WD, Victor..." autocomplete="off">
+
+        <div class="col-12 col-md-3 d-grid">
+          <button class="btn btn-primary btn-sm">
+            <i class="bi bi-funnel me-1"></i>Aplicar
+          </button>
         </div>
-        <div class="col-12 col-md-2 d-grid">
-          <button class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Aplicar</button>
-        </div>
+
+        <?php if($view==='detail'): ?>
+          <div class="col-12 col-md-3 d-grid">
+            <a class="btn btn-outline-secondary btn-sm"
+               href="?view=list&from=<?=h($from)?>&to=<?=h($to)?>">
+              <i class="bi bi-arrow-left me-1"></i>Volver a la lista
+            </a>
+          </div>
+        <?php endif; ?>
       </form>
     </div>
   </div>
 
-  <!-- KPIs globales -->
+  <!-- KPIs -->
   <div class="row g-3 mb-3">
     <?php
       $cards = [
         ['label'=>'Total',       'value'=>number_format($kpi['total']), 'icon'=>'bi-collection'],
         ['label'=>'Registro',    'value'=>number_format($kpi['reg']),   'icon'=>'bi-clipboard-plus'],
         ['label'=>'Preparación', 'value'=>number_format($kpi['prep']),  'icon'=>'bi-hammer'],
-        ['label'=>'Realización', 'value'=>number_format($kpi['rea']),  'icon'=>'bi-activity'],
+        ['label'=>'Realización', 'value'=>number_format($kpi['real']),  'icon'=>'bi-activity'],
         ['label'=>'Entrega',     'value'=>number_format($kpi['del']),   'icon'=>'bi-box-arrow-up-right'],
       ];
     ?>
@@ -378,7 +368,7 @@ if ($selTypes) {
           <div class="d-flex align-items-center justify-content-between">
             <div>
               <div class="kpi-label"><?=h($c['label'])?></div>
-              <div class="kpi-value"><?= $c['value'] ?></div>
+              <div class="kpi-value"><?=h($c['value'])?></div>
             </div>
             <div class="kpi-icon"><i class="bi <?=h($c['icon'])?>"></i></div>
           </div>
@@ -387,124 +377,120 @@ if ($selTypes) {
     <?php endforeach; ?>
   </div>
 
-  <div class="row g-3">
-    <!-- LEFT: CARDS GRID -->
-    <div class="col-lg-7">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <div>
-            <strong>Técnicos</strong>
-            <div class="small text-muted">Click en una tarjeta para ver detalle.</div>
-          </div>
-          <span class="badge bg-light text-dark border"><?=count($byTech)?> técnicos</span>
-        </div>
-        <div class="card-body">
-          <?php if(empty($byTech)): ?>
-            <div class="text-muted text-center py-4">Sin datos en el rango.</div>
-          <?php else: ?>
-            <div id="gridTech" class="grid-tech">
-              <?php foreach($byTech as $alias=>$st): ?>
-                <?php
-                  $isSel = ($alias === $selectedTech);
-                  $url = "?from=".urlencode($from)."&to=".urlencode($to)."&tech=".urlencode($alias);
-                ?>
-                <a class="tech-card <?= $isSel?'selected':''; ?>" href="<?=h($url)?>" data-alias="<?=h($alias)?>" data-name="<?=h($st['name'])?>">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                      <div class="tech-alias"><?=h($alias)?></div>
-                      <div class="tech-name"><?=h($st['name'])?></div>
-                    </div>
-                    <div class="tech-total"><?= (int)$st['total'] ?></div>
-                  </div>
+  <?php if($view === 'detail'): ?>
 
-                  <div class="tech-kpis">
-                    <div><span>REG</span><b><?= (int)$st['reg'] ?></b></div>
-                    <div><span>PREP</span><b><?= (int)$st['prep'] ?></b></div>
-                    <div><span>REAL</span><b><?= (int)$st['rea'] ?></b></div>
-                    <div><span>DEL</span><b><?= (int)$st['del'] ?></b></div>
-                  </div>
-                </a>
-              <?php endforeach; ?>
+    <?php
+      $alias = $techSelected;
+      if ($alias === '' || !isset($byTech[$alias])) {
+        echo '<div class="alert alert-warning">Técnico no encontrado en el rango o alias inválido.</div>';
+      } else {
+        $st = $byTech[$alias];
+        $tests = $byTechTest[$alias] ?? [];
+        uasort($tests, fn($a,$b)=>($b['total']<=>$a['total']));
+      }
+    ?>
+
+    <?php if($alias !== '' && isset($byTech[$alias])): ?>
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <h3 class="mb-1"><?=h($st['alias'])?> — <?=h($st['name'])?></h3>
+              <div class="text-muted small">Resumen del técnico en el rango seleccionado.</div>
             </div>
-          <?php endif; ?>
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="badge bg-light text-dark border">REG: <strong><?= (int)$st['reg'] ?></strong></span>
+              <span class="badge bg-light text-dark border">PREP: <strong><?= (int)$st['prep'] ?></strong></span>
+              <span class="badge bg-light text-dark border">REAL: <strong><?= (int)$st['real'] ?></strong></span>
+              <span class="badge bg-light text-dark border">DEL: <strong><?= (int)$st['del'] ?></strong></span>
+              <span class="badge bg-primary">TOTAL: <strong><?= (int)$st['total'] ?></strong></span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- RIGHT: DETAIL -->
-    <div class="col-lg-5">
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white">
-          <strong>Detalle del Técnico</strong>
-          <div class="small text-muted">Por tipo de ensayo.</div>
+          <strong>Detalle por Tipo de Ensayo</strong>
+          <div class="small text-muted">Conteos por etapa (REG / PREP / REAL / DEL).</div>
         </div>
         <div class="card-body">
-          <?php if(!$selSummary): ?>
-            <div class="text-muted text-center py-4">Selecciona un técnico.</div>
-          <?php else: ?>
-            <div class="mb-2">
-              <div class="d-flex align-items-center justify-content-between">
-                <div>
-                  <div style="font-size:1.2rem;font-weight:900;"><?=h($selSummary['alias'])?></div>
-                  <div class="text-muted"><?=h($selSummary['name'])?></div>
-                </div>
-                <span class="badge bg-dark">Total: <?= (int)$selSummary['total'] ?></span>
-              </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-              <div class="col-6"><div class="mini"><span>REG</span><b><?= (int)$selSummary['reg'] ?></b></div></div>
-              <div class="col-6"><div class="mini"><span>PREP</span><b><?= (int)$selSummary['prep'] ?></b></div></div>
-              <div class="col-6"><div class="mini"><span>REAL</span><b><?= (int)$selSummary['rea'] ?></b></div></div>
-              <div class="col-6"><div class="mini"><span>DEL</span><b><?= (int)$selSummary['del'] ?></b></div></div>
-            </div>
-
-            <div class="table-responsive">
-              <table class="table table-sm table-bordered align-middle">
-                <thead class="table-light">
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Test</th>
+                  <th class="text-center">REG</th>
+                  <th class="text-center">PREP</th>
+                  <th class="text-center">REAL</th>
+                  <th class="text-center">DEL</th>
+                  <th class="text-center">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+              <?php if(empty($tests)): ?>
+                <tr><td colspan="6" class="text-center text-muted py-3">Sin datos.</td></tr>
+              <?php else: ?>
+                <?php foreach($tests as $code=>$cnt): ?>
                   <tr>
-                    <th>Test</th>
-                    <th class="text-center">REG</th>
-                    <th class="text-center">PREP</th>
-                    <th class="text-center">REAL</th>
-                    <th class="text-center">DEL</th>
-                    <th class="text-center">TOTAL</th>
+                    <td>
+                      <code><?=h($code)?></code>
+                      <span class="text-muted">— <?=h($testNames[$code] ?? $code)?></span>
+                    </td>
+                    <td class="text-center"><?= (int)$cnt['reg'] ?></td>
+                    <td class="text-center"><?= (int)$cnt['prep'] ?></td>
+                    <td class="text-center"><?= (int)$cnt['real'] ?></td>
+                    <td class="text-center"><?= (int)$cnt['del'] ?></td>
+                    <td class="text-center fw-bold"><?= (int)$cnt['total'] ?></td>
                   </tr>
-                </thead>
-                <tbody>
-                  <?php if(empty($selTypes)): ?>
-                    <tr><td colspan="6" class="text-center text-muted py-3">Sin detalle.</td></tr>
-                  <?php else: ?>
-                    <?php foreach($selTypes as $tt=>$c): ?>
-                      <tr>
-                        <td>
-                          <code><?=h($tt)?></code>
-                          <div class="small text-muted"><?=h($testNames[$tt] ?? $tt)?></div>
-                        </td>
-                        <td class="text-center"><?= (int)$c['reg'] ?></td>
-                        <td class="text-center"><?= (int)$c['prep'] ?></td>
-                        <td class="text-center"><?= (int)$c['rea'] ?></td>
-                        <td class="text-center"><?= (int)$c['del'] ?></td>
-                        <td class="text-center fw-bold"><?= (int)$c['total'] ?></td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-
-            <?php if($selectedTech==='OTROS'): ?>
-              <div class="alert alert-warning mt-2 mb-0">
-                <b>OTROS</b> agrupa nombres no reconocidos para evitar listas infinitas.
-                Si quieres que “OTROS” se reparta bien, agrega variantes a <code>$variantsToAlias</code>.
-              </div>
-            <?php endif; ?>
-
-          <?php endif; ?>
+                <?php endforeach; ?>
+              <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    <?php endif; ?>
+
+  <?php else: /* view=list */ ?>
+
+    <?php if(empty($byTech)): ?>
+      <div class="alert alert-info">No hay datos en el rango seleccionado.</div>
+    <?php else: ?>
+      <div class="row g-3">
+        <?php foreach($byTech as $alias=>$st): ?>
+          <div class="col-12 col-md-6 col-lg-4">
+            <a class="text-decoration-none"
+               href="?view=detail&tech=<?=urlencode($alias)?>&from=<?=h($from)?>&to=<?=h($to)?>">
+              <div class="card shadow-sm border-0 tech-card h-100">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="tech-alias"><?=h($st['alias'])?></div>
+                      <div class="tech-name"><?=h($st['name'])?></div>
+                    </div>
+                    <span class="badge bg-primary"><?= (int)$st['total'] ?></span>
+                  </div>
+
+                  <div class="mt-3 d-flex gap-2 flex-wrap small">
+                    <span class="badge bg-light text-dark border">REG <?= (int)$st['reg'] ?></span>
+                    <span class="badge bg-light text-dark border">PREP <?= (int)$st['prep'] ?></span>
+                    <span class="badge bg-light text-dark border">REAL <?= (int)$st['real'] ?></span>
+                    <span class="badge bg-light text-dark border">DEL <?= (int)$st['del'] ?></span>
+                  </div>
+
+                  <div class="mt-3 text-muted small">
+                    Clic para ver detalle del técnico.
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+  <?php endif; ?>
 
 </main>
 
@@ -512,92 +498,33 @@ if ($selTypes) {
 .kpi-card{
   border-radius:14px;
   border:1px solid #e5e7eb;
-  background:#ffffff;
+  background:#fff;
   box-shadow:0 4px 12px rgba(15,23,42,0.04);
   padding:0.75rem 0.9rem;
   height:100%;
 }
-.kpi-label{ font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; }
-.kpi-value{ font-size:1.35rem; font-weight:800; color:#0f172a; line-height:1.1; }
-.kpi-icon{
-  width:38px;height:38px;border-radius:999px;background:#f1f5f9;
-  display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#0f172a;
+.kpi-label{
+  font-size:0.75rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:#64748b;
 }
-
-.grid-tech{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap:12px;
-}
-@media (min-width: 1200px){
-  .grid-tech{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-.tech-card{
-  display:block;
-  text-decoration:none;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  padding:12px;
-  background:#fff;
-  box-shadow:0 4px 12px rgba(15,23,42,0.04);
-  transition:transform .08s ease, box-shadow .08s ease;
+.kpi-value{
+  font-size:1.35rem;
+  font-weight:800;
   color:#0f172a;
+  line-height:1.1;
 }
-.tech-card:hover{ transform:translateY(-1px); box-shadow:0 10px 24px rgba(15,23,42,0.08); }
-.tech-card.selected{ outline:2px solid rgba(59,130,246,.55); border-color:rgba(59,130,246,.35); }
-
-.tech-alias{ font-size:1.05rem; font-weight:900; letter-spacing:.02em; }
-.tech-name{ font-size:.82rem; color:#64748b; margin-top:2px; }
-.tech-total{
-  font-size:1.05rem;
-  font-weight:900;
-  background:#0f172a;
-  color:#fff;
-  padding:4px 10px;
-  border-radius:999px;
-  line-height:1;
+.kpi-icon{
+  width:38px;height:38px;border-radius:999px;
+  background:#f1f5f9;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;color:#0f172a;
 }
-.tech-kpis{
-  margin-top:10px;
-  display:grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap:8px;
-}
-.tech-kpis > div{
-  border:1px solid #eef2f7;
-  border-radius:10px;
-  padding:8px 8px;
-  text-align:center;
-}
-.tech-kpis span{ display:block; font-size:.67rem; color:#64748b; letter-spacing:.05em; }
-.tech-kpis b{ display:block; font-size:.92rem; font-weight:900; color:#0f172a; }
-
-.mini{
-  border:1px solid #eef2f7; border-radius:12px; padding:10px;
-  display:flex; justify-content:space-between; align-items:center;
-}
-.mini span{ font-size:.75rem; color:#64748b; letter-spacing:.06em; }
-.mini b{ font-size:1rem; font-weight:900; }
+.tech-card{ border-radius:16px; transition:transform .12s ease, box-shadow .12s ease; }
+.tech-card:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(15,23,42,0.10); }
+.tech-alias{ font-weight:900; font-size:1.15rem; color:#0f172a; }
+.tech-name{ color:#64748b; font-size:.9rem; margin-top:2px; }
 </style>
-
-<script>
-(function(){
-  const q = document.getElementById('qTech');
-  const grid = document.getElementById('gridTech');
-  if(!q || !grid) return;
-
-  q.addEventListener('input', ()=>{
-    const needle = (q.value || '').toLowerCase().trim();
-    const cards = grid.querySelectorAll('.tech-card');
-    cards.forEach(card=>{
-      const alias = (card.getAttribute('data-alias') || '').toLowerCase();
-      const name  = (card.getAttribute('data-name')  || '').toLowerCase();
-      const ok = !needle || alias.includes(needle) || name.includes(needle);
-      card.style.display = ok ? '' : 'none';
-    });
-  });
-})();
-</script>
 
 <?php include_once('../components/footer.php'); ?>
