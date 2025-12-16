@@ -8,11 +8,10 @@ include_once('../components/header.php');
 if (!function_exists('h')) {
   function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 }
-function N($v){ return strtoupper(trim((string)$v)); }
 
-// ======================================================
-// 1) Filtro de fechas
-// ======================================================
+/* ======================================================
+   1) Filtro de fechas
+====================================================== */
 $from = $_GET['from'] ?? date('Y-m-d', strtotime('-30 days'));
 $to   = $_GET['to']   ?? date('Y-m-d');
 
@@ -22,9 +21,9 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $to))   $to   = date('Y-m-d');
 $fromEsc = $db->escape($from . " 00:00:00");
 $toEsc   = $db->escape($to   . " 23:59:59");
 
-// ======================================================
-// 2) Mapa de nombres de ensayos (ajusta a tu gusto)
-// ======================================================
+/* ======================================================
+   2) Nombres de ensayos
+====================================================== */
 $testNames = [
   "GS" => "Grain Size",
   "GS_CF" => "Grain Size (Coarse Filter)",
@@ -51,23 +50,22 @@ $testNames = [
   "AR" => "Acid Reactivity",
 ];
 
-// ======================================================
-// 3) QUERY UNIFICADO (UNION ALL) — Etapas por técnico + por tipo
-//    NOTA: en Registro usamos Register_By como "Technician"
-// ======================================================
+/* ======================================================
+   3) QUERY UNIFICADO (UNION ALL)
+   - Registro: Register_By
+   - Prep/Real/Del: Technician
+====================================================== */
 $sqlUnified = "
 SELECT
   x.Technician,
   x.Test_Type,
-  SUM(CASE WHEN x.Stage='REG'  THEN 1 ELSE 0 END)  AS reg,
-  SUM(CASE WHEN x.Stage='PREP' THEN 1 ELSE 0 END)  AS prep,
-  SUM(CASE WHEN x.Stage='REAL' THEN 1 ELSE 0 END)  AS rea,
-  SUM(CASE WHEN x.Stage='DEL'  THEN 1 ELSE 0 END)  AS del,
+  SUM(CASE WHEN x.Stage='REG'  THEN 1 ELSE 0 END)  AS `reg`,
+  SUM(CASE WHEN x.Stage='PREP' THEN 1 ELSE 0 END)  AS `prep`,
+  SUM(CASE WHEN x.Stage='REAL' THEN 1 ELSE 0 END)  AS `real`,
+  SUM(CASE WHEN x.Stage='DEL'  THEN 1 ELSE 0 END)  AS `del`,
   COUNT(*) AS total
 FROM (
-  /* =========================
-     REGISTRO (lab_test_requisition_form)
-     ========================= */
+  /* REGISTRO */
   SELECT
     TRIM(IFNULL(r.Register_By,'')) AS Technician,
     TRIM(IFNULL(tt.Test,''))       AS Test_Type,
@@ -92,9 +90,7 @@ FROM (
 
   UNION ALL
 
-  /* =========================
-     PREPARATION (test_preparation)
-     ========================= */
+  /* PREPARATION */
   SELECT
     TRIM(IFNULL(p.Technician,'')) AS Technician,
     TRIM(IFNULL(p.Test_Type,'')) AS Test_Type,
@@ -105,9 +101,7 @@ FROM (
 
   UNION ALL
 
-  /* =========================
-     REALIZATION (test_realization)
-     ========================= */
+  /* REALIZATION */
   SELECT
     TRIM(IFNULL(a.Technician,'')) AS Technician,
     TRIM(IFNULL(a.Test_Type,'')) AS Test_Type,
@@ -118,9 +112,7 @@ FROM (
 
   UNION ALL
 
-  /* =========================
-     DELIVERY (test_delivery)
-     ========================= */
+  /* DELIVERY */
   SELECT
     TRIM(IFNULL(d.Technician,'')) AS Technician,
     TRIM(IFNULL(d.Test_Type,'')) AS Test_Type,
@@ -135,125 +127,206 @@ GROUP BY x.Technician, x.Test_Type
 ORDER BY x.Technician, total DESC
 ";
 
-
-// Ejecutar
 $rows = find_by_sql($sqlUnified);
 if (!is_array($rows)) $rows = [];
 
-// ======================================================
-// 4) Construir:
-//    A) resumen por técnico
-//    B) detalle por técnico+tipo
-// ======================================================
-$byTech = [];            // KPIs por técnico
-$detail = [];            // detalle por técnico+tipo
-$techList = [];          // lista para selector
+/* ======================================================
+   3.5) Normalización + Split + Alias Map (NOMBRES COMPLETOS)
+====================================================== */
+
+// Alias -> Nombre completo (AJUSTA)
+$aliasMap = [
+  'WD' => 'Wendin De Jesús',
+  'JV' => 'Jonathan Vargas',
+  'RRH' => 'Rafael Reyes',
+  'VM' => 'Victor Mercedes',
+  'DV' => 'Diana  Vázquez',
+  'LS' => 'Laura Sánchez',
+  'YM' => 'Yamilexi Mejía',
+  'AS' => 'Arturo Santana',
+  'FE' => 'Frandy Espinal',
+  'WM' => 'Wilson Martínez',
+  'RL' => 'Rafy Leocadio',
+  'RV' => 'Rony Vargas',
+  'DF' => 'Darielvy Felix',
+  'JA' => 'Jordany Almonte',
+  'MC' => 'Melvin Castillo',
+  'JMA' => 'Jordany Amparo',
+  'LM' => 'Luis Monegro',
+];
+
+// Variantes -> Alias
+$variantsToAlias = [
+  'WENDIN' => 'WD',
+  'WENDIN DE JESUS' => 'WD',
+  'WENDIN DE JESÚS' => 'WD',
+  'WENDIN DE JESUS MENDOZA' => 'WD',
+  'WENDIN DE JESÚS MENDOZA' => 'WD',
+  'W D' => 'WD',
+  'W.D' => 'WD',
+  'WD.' => 'WD',
+
+  'JONATHAN' => 'JL',
+  'JONATHAN VARGAS' => 'JL',
+  'J VARGAS' => 'JL',
+  'J. VARGAS' => 'JL',
+  'JV' => 'JL',
+];
+
+function tech_clean($s){
+  $s = strtoupper(trim((string)$s));
+  $s = str_replace(["\t","\n","\r"], ' ', $s);
+  $s = str_replace(['.', ';'], '', $s);
+  $s = preg_replace('/\s+/', ' ', $s);
+  return $s;
+}
+function tech_unify_separators($s){
+  $s = tech_clean($s);
+  $s = str_replace([',','&','+','|','\\'], '/', $s);
+  $s = preg_replace('/\s*\/\s*/', '/', $s);
+  return $s;
+}
+function tech_split($s){
+  $s = tech_unify_separators($s);
+  if ($s === '') return [];
+  $parts = explode('/', $s);
+  $out = [];
+  foreach($parts as $p){
+    $p = tech_clean($p);
+    if ($p==='') continue;
+    $out[] = $p;
+  }
+  return array_values(array_unique($out));
+}
+function tech_to_alias($raw, $variantsToAlias, $aliasMap){
+  $t = tech_clean($raw);
+  if (isset($aliasMap[$t])) return $t;
+  if (isset($variantsToAlias[$t])) return $variantsToAlias[$t];
+  $t2 = trim($t);
+  if (isset($aliasMap[$t2])) return $t2;
+  return $t; // si no lo conoce, lo deja como venga
+}
+function tech_fullname($alias, $aliasMap){
+  return $aliasMap[$alias] ?? $alias;
+}
+
+/* ======================================================
+   4) Construir datasets (SÓLIDO)
+====================================================== */
+$byTech   = [];
+$detail   = [];
+$techList = [];
 
 foreach ($rows as $r) {
-  $tech = trim((string)$r['Technician']);
-  $tt   = trim((string)$r['Test_Type']);
+  $techRaw = (string)($r['Technician'] ?? '');
+  $tt      = trim((string)($r['Test_Type'] ?? ''));
+  if ($tt === '') continue;
 
-  if ($tech === '' || $tt === '') continue;
+  $reg  = (int)($r['reg']  ?? 0);
+  $prep = (int)($r['prep'] ?? 0);
+  $real = (int)($r['real'] ?? 0);
+  $del  = (int)($r['del']  ?? 0);
+  $tot  = (int)($r['total']?? 0);
 
-  if (!isset($byTech[$tech])) {
-    $byTech[$tech] = [
-      'reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0,
-      'mix_real'=>[], // mix SOLO de Realización
-      'mix_all'=>[]   // mix de todas las etapas
+  $parts = tech_split($techRaw);
+  if (empty($parts)) continue;
+
+  foreach ($parts as $p) {
+    $alias = tech_to_alias($p, $variantsToAlias, $aliasMap);
+    if ($alias === '') continue;
+    $full  = tech_fullname($alias, $aliasMap);
+
+    if (!isset($byTech[$alias])) {
+      $byTech[$alias] = [
+        'alias'=>$alias,
+        'name'=>$full,
+        'reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0,
+        'mix_real'=>[],
+        'mix_all'=>[]
+      ];
+    } else {
+      if (($byTech[$alias]['name'] ?? $alias) === $alias && $full !== $alias) {
+        $byTech[$alias]['name'] = $full;
+      }
+    }
+
+    $byTech[$alias]['reg']   += $reg;
+    $byTech[$alias]['prep']  += $prep;
+    $byTech[$alias]['real']  += $real;
+    $byTech[$alias]['del']   += $del;
+    $byTech[$alias]['total'] += $tot;
+
+    $byTech[$alias]['mix_all'][$tt] = ($byTech[$alias]['mix_all'][$tt] ?? 0) + $tot;
+    if ($real > 0) {
+      $byTech[$alias]['mix_real'][$tt] = ($byTech[$alias]['mix_real'][$tt] ?? 0) + $real;
+    }
+
+    $detail[] = [
+      'Technician'=>$alias,
+      'Technician_Name'=>$full,
+      'Test_Type'=>$tt,
+      'Test_Name'=>$testNames[$tt] ?? $tt,
+      'reg'=>$reg,'prep'=>$prep,'real'=>$real,'del'=>$del,'total'=>$tot
     ];
+
+    $techList[$alias] = $full;
   }
-
-  $reg  = (int)$r['reg'];
-  $prep = (int)$r['prep'];
-  $real = (int)$r['rea'];
-  $del  = (int)$r['del'];
-  $tot  = (int)$r['total'];
-
-  $byTech[$tech]['reg']   += $reg;
-  $byTech[$tech]['prep']  += $prep;
-  $byTech[$tech]['rea']  += $real;
-  $byTech[$tech]['del']   += $del;
-  $byTech[$tech]['total'] += $tot;
-
-  // Mix por tipos:
-  // - mix_real: solo cuenta lo que sea REAL
-  // - mix_all : cuenta total (reg+prep+real+del)
-  if (!isset($byTech[$tech]['mix_all'][$tt])) $byTech[$tech]['mix_all'][$tt] = 0;
-  $byTech[$tech]['mix_all'][$tt] += $tot;
-
-  if ($real > 0) {
-    if (!isset($byTech[$tech]['mix_real'][$tt])) $byTech[$tech]['mix_real'][$tt] = 0;
-    $byTech[$tech]['mix_real'][$tt] += $real;
-  }
-
-  $detail[] = [
-    'Technician'=>$tech,
-    'Test_Type'=>$tt,
-    'Test_Name'=>$testNames[$tt] ?? $tt,
-    'reg'=>$reg,'prep'=>$prep,'real'=>$real,'del'=>$del,'total'=>$tot
-  ];
-
-  $techList[$tech] = $tech;
 }
 
 ksort($techList);
+uasort($byTech, function($a,$b){ return ($b['total'] <=> $a['total']); });
 
-// Ordenar técnicos por total DESC
-uasort($byTech, function($a,$b){
-  return ($b['total'] <=> $a['total']);
-});
-
-// ======================================================
-// 5) KPI Global
-// ======================================================
-$kpi = ['reg'=>0,'prep'=>0,'rea'=>0,'del'=>0,'total'=>0];
-foreach ($byTech as $t => $st){
-  $kpi['reg']   += $st['reg'];
-  $kpi['prep']  += $st['prep'];
-  $kpi['rea']  += $st['rea'];
-  $kpi['del']   += $st['del'];
-  $kpi['total'] += $st['total'];
+/* ======================================================
+   5) KPI Global
+====================================================== */
+$kpi = ['reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0];
+foreach ($byTech as $st){
+  $kpi['reg']   += (int)$st['reg'];
+  $kpi['prep']  += (int)$st['prep'];
+  $kpi['real']  += (int)$st['real'];
+  $kpi['del']   += (int)$st['del'];
+  $kpi['total'] += (int)$st['total'];
 }
 
-// ======================================================
-// 6) Técnico seleccionado para donut (por URL)
-// ======================================================
+/* ======================================================
+   6) Donut (tech seleccionado)
+====================================================== */
 $selectedTech = $_GET['tech'] ?? '';
 $selectedTech = trim($selectedTech);
+
 if ($selectedTech === '' && !empty($byTech)) {
-  // el top
   $selectedTech = array_key_first($byTech);
 }
 
-// Donut: mix_real (por defecto) — si no hay, cae a mix_all
 $donutMap = [];
 if ($selectedTech && isset($byTech[$selectedTech])) {
   $donutMap = $byTech[$selectedTech]['mix_real'];
   if (array_sum($donutMap) <= 0) $donutMap = $byTech[$selectedTech]['mix_all'];
 }
 arsort($donutMap);
-
-// Top 12 para que no sea infinito
-$donutMap = array_slice($donutMap, 0, 12, true);
+$donutMap  = array_slice($donutMap, 0, 12, true);
 $donutData = [];
 foreach ($donutMap as $code=>$val){
-  $donutData[] = ['name'=>($testNames[$code] ?? $code), 'value'=>$val];
+  $donutData[] = ['name'=>($testNames[$code] ?? $code), 'value'=>(int)$val];
 }
 
-// Datos para barra apilada (Top 10 técnicos)
+/* ======================================================
+   7) Datos gráfico barras (Top 10)
+====================================================== */
 $labels = [];
 $regA=[]; $prepA=[]; $realA=[]; $delA=[];
 $i=0;
-foreach ($byTech as $tech=>$st){
-  $labels[] = $tech;
-  $regA[]   = $st['reg'];
-  $prepA[]  = $st['prep'];
-  $realA[]  = $st['rea'];
-  $delA[]   = $st['del'];
+foreach ($byTech as $alias=>$st){
+  $labels[] = $alias; // deja alias corto en el gráfico
+  $regA[]   = (int)$st['reg'];
+  $prepA[]  = (int)$st['prep'];
+  $realA[]  = (int)$st['real'];
+  $delA[]   = (int)$st['del'];
   $i++;
   if ($i>=10) break;
 }
 ?>
+
 <main id="main" class="main" style="padding:18px;">
 
   <div class="pagetitle d-flex justify-content-between align-items-center mb-3">
@@ -278,13 +351,13 @@ foreach ($byTech as $tech=>$st){
           <label class="form-label form-label-sm">Hasta</label>
           <input type="date" name="to" class="form-control form-control-sm" value="<?=h($to)?>">
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6">
           <label class="form-label form-label-sm">Técnico (para donut)</label>
           <select name="tech" class="form-select form-select-sm">
             <option value="">(Top automáticamente)</option>
-            <?php foreach($techList as $t): ?>
-              <option value="<?=h($t)?>" <?= $t===$selectedTech?'selected':''; ?>>
-                <?=h($t)?>
+            <?php foreach($techList as $alias=>$full): ?>
+              <option value="<?=h($alias)?>" <?= $alias===$selectedTech?'selected':''; ?>>
+                <?=h($alias)?> — <?=h($full)?>
               </option>
             <?php endforeach; ?>
           </select>
@@ -296,15 +369,15 @@ foreach ($byTech as $tech=>$st){
     </div>
   </div>
 
-  <!-- KPIs globales -->
+  <!-- KPIs -->
   <div class="row g-3 mb-3">
     <?php
       $cards = [
-        ['label'=>'Total', 'value'=>number_format($kpi['total']), 'icon'=>'bi-collection'],
-        ['label'=>'Registro', 'value'=>number_format($kpi['reg']), 'icon'=>'bi-clipboard-plus'],
-        ['label'=>'Preparación', 'value'=>number_format($kpi['prep']), 'icon'=>'bi-hammer'],
-        ['label'=>'Realización', 'value'=>number_format($kpi['rea']), 'icon'=>'bi-activity'],
-        ['label'=>'Entrega', 'value'=>number_format($kpi['del']), 'icon'=>'bi-box-arrow-up-right'],
+        ['label'=>'Total',       'value'=>number_format($kpi['total']), 'icon'=>'bi-collection'],
+        ['label'=>'Registro',    'value'=>number_format($kpi['reg']),   'icon'=>'bi-clipboard-plus'],
+        ['label'=>'Preparación', 'value'=>number_format($kpi['prep']),  'icon'=>'bi-hammer'],
+        ['label'=>'Realización', 'value'=>number_format($kpi['real']),  'icon'=>'bi-activity'],
+        ['label'=>'Entrega',     'value'=>number_format($kpi['del']),   'icon'=>'bi-box-arrow-up-right'],
       ];
     ?>
     <?php foreach($cards as $c): ?>
@@ -323,7 +396,7 @@ foreach ($byTech as $tech=>$st){
   </div>
 
   <div class="row g-3">
-    <!-- Tabla resumen por técnico -->
+    <!-- Tabla resumen -->
     <div class="col-lg-7">
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white">
@@ -347,11 +420,12 @@ foreach ($byTech as $tech=>$st){
                 <?php if(empty($byTech)): ?>
                   <tr><td colspan="6" class="text-center text-muted py-3">Sin datos en el rango.</td></tr>
                 <?php else: ?>
-                  <?php foreach($byTech as $tech=>$st): ?>
+                  <?php foreach($byTech as $alias=>$st): ?>
                     <tr>
                       <td>
-                        <a href="?from=<?=h(substr($fromEsc,0,10))?>&to=<?=h(substr($toEsc,0,10))?>&tech=<?=urlencode($tech)?>">
-                          <?=h($tech)?>
+                        <a href="?from=<?=h($from)?>&to=<?=h($to)?>&tech=<?=urlencode($alias)?>">
+                          <strong><?=h($alias)?></strong>
+                          <div class="small text-muted"><?=h($st['name'] ?? ($techList[$alias] ?? ''))?></div>
                         </a>
                       </td>
                       <td class="text-center"><?= (int)$st['reg'] ?></td>
@@ -368,7 +442,7 @@ foreach ($byTech as $tech=>$st){
         </div>
       </div>
 
-      <!-- Tabla detalle por técnico+tipo -->
+      <!-- Tabla detalle -->
       <div class="card shadow-sm border-0 mt-3">
         <div class="card-header bg-white">
           <strong>Detalle por Técnico y Tipo de Ensayo</strong>
@@ -394,7 +468,10 @@ foreach ($byTech as $tech=>$st){
                 <?php else: ?>
                   <?php foreach($detail as $d): ?>
                     <tr>
-                      <td><?=h($d['Technician'])?></td>
+                      <td>
+                        <strong><?=h($d['Technician'])?></strong>
+                        <div class="small text-muted"><?=h($d['Technician_Name'] ?? '')?></div>
+                      </td>
                       <td>
                         <code><?=h($d['Test_Type'])?></code>
                         <span class="text-muted">— <?=h($d['Test_Name'])?></span>
@@ -412,7 +489,6 @@ foreach ($byTech as $tech=>$st){
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- Charts -->
@@ -429,7 +505,7 @@ foreach ($byTech as $tech=>$st){
 
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white">
-          <strong>Mix de ensayos — <?=h($selectedTech ?: 'N/A')?></strong>
+          <strong>Mix de ensayos — <?=h($selectedTech ?: 'N/A')?> <?= $selectedTech && isset($techList[$selectedTech]) ? '— '.h($techList[$selectedTech]) : '' ?></strong>
           <div class="small text-muted">Por defecto usa Realización; si no hay, usa total.</div>
         </div>
         <div class="card-body">
@@ -442,6 +518,7 @@ foreach ($byTech as $tech=>$st){
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
 <script>
 (function(){
   const el = document.getElementById('chartStages');
