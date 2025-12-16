@@ -1,781 +1,533 @@
 <?php
-// /pages/rendimiento.php
+// /pages/desempeno_tecnicos.php
 $page_title = 'Desempeño de Técnicos';
 require_once('../config/load.php');
 page_require_level(2);
 include_once('../components/header.php');
 
-require_once __DIR__ . '/../controllers/rendimiento_controller.php';
+if (!function_exists('h')) {
+  function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+}
+function N($v){ return strtoupper(trim((string)$v)); }
 
-// Shortcuts
-$h = 'perf_h';
-$vmk = $vm['kpis'];
-$quick = $vm['quick'];
-$from  = $vm['from'];
-$to    = $vm['to'];
-$filterAlias = $vm['filterAlias'];
-$filterType  = $vm['filterType'];
-$techList = $vm['techList'];
-$ttList   = $vm['ttList'];
-$statsSorted = $vm['statsSorted'];
-$stats = $vm['stats'];
-$selectedAlias = $vm['selected']['alias'];
-$selectedName  = $vm['selected']['name'];
-$aliasMap = $vm['aliasMap'];
-$lastRows = $vm['lastRows'];
+// ======================================================
+// 1) Filtro de fechas
+// ======================================================
+$from = $_GET['from'] ?? date('Y-m-d', strtotime('-30 days'));
+$to   = $_GET['to']   ?? date('Y-m-d');
+
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) $from = date('Y-m-d', strtotime('-30 days'));
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $to))   $to   = date('Y-m-d');
+
+$fromEsc = $db->escape($from . " 00:00:00");
+$toEsc   = $db->escape($to   . " 23:59:59");
+
+// ======================================================
+// 2) Mapa de nombres de ensayos (ajusta a tu gusto)
+// ======================================================
+$testNames = [
+  "GS" => "Grain Size",
+  "GS_CF" => "Grain Size (Coarse Filter)",
+  "GS_FF" => "Grain Size (Fine Filter)",
+  "GS_LPF" => "Grain Size (LPF)",
+  "GS_UTF" => "Grain Size (UTF)",
+  "AL" => "Atterberg Limit",
+  "MC" => "Moisture Content",
+  "MC_OVEN" => "Moisture Content (Oven)",
+  "MC_MICROWAVE" => "Moisture Content (Microwave)",
+  "MC_CONSTANT_MASS" => "Moisture Content (Constant Mass)",
+  "MC_SCALE" => "Moisture Content (Scale)",
+  "SG" => "Specific Gravity",
+  "SG_COARSE" => "Specific Gravity (Coarse)",
+  "SG_FINE" => "Specific Gravity (Fine)",
+  "HY" => "Hydrometer",
+  "DHY" => "Double Hydrometer",
+  "SP" => "Standard Proctor",
+  "MP" => "Modified Proctor",
+  "UCS" => "UCS",
+  "PLT" => "Point Load Test",
+  "BTS" => "Brazilian (BTS)",
+  "SND" => "Soundness",
+  "AR" => "Acid Reactivity",
+];
+
+// ======================================================
+// 3) QUERY UNIFICADO (UNION ALL) — Etapas por técnico + por tipo
+//    NOTA: en Registro usamos Register_By como "Technician"
+// ======================================================
+$sqlUnified = "
+SELECT
+  x.Technician,
+  x.Test_Type,
+  SUM(CASE WHEN x.Stage='REG'  THEN 1 ELSE 0 END)  AS reg,
+  SUM(CASE WHEN x.Stage='PREP' THEN 1 ELSE 0 END)  AS prep,
+  SUM(CASE WHEN x.Stage='REAL' THEN 1 ELSE 0 END)  AS rea,
+  SUM(CASE WHEN x.Stage='DEL'  THEN 1 ELSE 0 END)  AS del,
+  COUNT(*) AS total
+FROM (
+  /* =========================
+     REGISTRO (lab_test_requisition_form)
+     ========================= */
+  SELECT
+    TRIM(IFNULL(r.Register_By,'')) AS Technician,
+    TRIM(IFNULL(tt.Test,''))       AS Test_Type,
+    'REG'                          AS Stage,
+    r.Registed_Date                AS Dt
+  FROM lab_test_requisition_form r
+  JOIN (
+    SELECT
+      id,
+      TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(Test_Type, ',', n.n), ',', -1)) AS Test
+    FROM lab_test_requisition_form
+    JOIN (
+      SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+      UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+      UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+      UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20
+    ) n
+      ON n.n <= 1 + LENGTH(IFNULL(Test_Type,'')) - LENGTH(REPLACE(IFNULL(Test_Type,''), ',', ''))
+  ) tt
+    ON tt.id = r.id
+  WHERE r.Registed_Date BETWEEN '{$fromEsc}' AND '{$toEsc}'
+
+  UNION ALL
+
+  /* =========================
+     PREPARATION (test_preparation)
+     ========================= */
+  SELECT
+    TRIM(IFNULL(p.Technician,'')) AS Technician,
+    TRIM(IFNULL(p.Test_Type,'')) AS Test_Type,
+    'PREP' AS Stage,
+    p.Register_Date AS Dt
+  FROM test_preparation p
+  WHERE p.Register_Date BETWEEN '{$fromEsc}' AND '{$toEsc}'
+
+  UNION ALL
+
+  /* =========================
+     REALIZATION (test_realization)
+     ========================= */
+  SELECT
+    TRIM(IFNULL(a.Technician,'')) AS Technician,
+    TRIM(IFNULL(a.Test_Type,'')) AS Test_Type,
+    'REAL' AS Stage,
+    a.Register_Date AS Dt
+  FROM test_realization a
+  WHERE a.Register_Date BETWEEN '{$fromEsc}' AND '{$toEsc}'
+
+  UNION ALL
+
+  /* =========================
+     DELIVERY (test_delivery)
+     ========================= */
+  SELECT
+    TRIM(IFNULL(d.Technician,'')) AS Technician,
+    TRIM(IFNULL(d.Test_Type,'')) AS Test_Type,
+    'DEL' AS Stage,
+    d.Register_Date AS Dt
+  FROM test_delivery d
+  WHERE d.Register_Date BETWEEN '{$fromEsc}' AND '{$toEsc}'
+) x
+WHERE TRIM(IFNULL(x.Technician,'')) <> ''
+  AND TRIM(IFNULL(x.Test_Type,'')) <> ''
+GROUP BY x.Technician, x.Test_Type
+ORDER BY x.Technician, total DESC
+";
+
+
+// Ejecutar
+$rows = find_by_sql($sqlUnified);
+if (!is_array($rows)) $rows = [];
+
+// ======================================================
+// 4) Construir:
+//    A) resumen por técnico
+//    B) detalle por técnico+tipo
+// ======================================================
+$byTech = [];            // KPIs por técnico
+$detail = [];            // detalle por técnico+tipo
+$techList = [];          // lista para selector
+
+foreach ($rows as $r) {
+  $tech = trim((string)$r['Technician']);
+  $tt   = trim((string)$r['Test_Type']);
+
+  if ($tech === '' || $tt === '') continue;
+
+  if (!isset($byTech[$tech])) {
+    $byTech[$tech] = [
+      'reg'=>0,'prep'=>0,'real'=>0,'del'=>0,'total'=>0,
+      'mix_real'=>[], // mix SOLO de Realización
+      'mix_all'=>[]   // mix de todas las etapas
+    ];
+  }
+
+  $reg  = (int)$r['reg'];
+  $prep = (int)$r['prep'];
+  $real = (int)$r['rea'];
+  $del  = (int)$r['del'];
+  $tot  = (int)$r['total'];
+
+  $byTech[$tech]['reg']   += $reg;
+  $byTech[$tech]['prep']  += $prep;
+  $byTech[$tech]['rea']  += $real;
+  $byTech[$tech]['del']   += $del;
+  $byTech[$tech]['total'] += $tot;
+
+  // Mix por tipos:
+  // - mix_real: solo cuenta lo que sea REAL
+  // - mix_all : cuenta total (reg+prep+real+del)
+  if (!isset($byTech[$tech]['mix_all'][$tt])) $byTech[$tech]['mix_all'][$tt] = 0;
+  $byTech[$tech]['mix_all'][$tt] += $tot;
+
+  if ($real > 0) {
+    if (!isset($byTech[$tech]['mix_real'][$tt])) $byTech[$tech]['mix_real'][$tt] = 0;
+    $byTech[$tech]['mix_real'][$tt] += $real;
+  }
+
+  $detail[] = [
+    'Technician'=>$tech,
+    'Test_Type'=>$tt,
+    'Test_Name'=>$testNames[$tt] ?? $tt,
+    'reg'=>$reg,'prep'=>$prep,'real'=>$real,'del'=>$del,'total'=>$tot
+  ];
+
+  $techList[$tech] = $tech;
+}
+
+ksort($techList);
+
+// Ordenar técnicos por total DESC
+uasort($byTech, function($a,$b){
+  return ($b['total'] <=> $a['total']);
+});
+
+// ======================================================
+// 5) KPI Global
+// ======================================================
+$kpi = ['reg'=>0,'prep'=>0,'rea'=>0,'del'=>0,'total'=>0];
+foreach ($byTech as $t => $st){
+  $kpi['reg']   += $st['reg'];
+  $kpi['prep']  += $st['prep'];
+  $kpi['rea']  += $st['rea'];
+  $kpi['del']   += $st['del'];
+  $kpi['total'] += $st['total'];
+}
+
+// ======================================================
+// 6) Técnico seleccionado para donut (por URL)
+// ======================================================
+$selectedTech = $_GET['tech'] ?? '';
+$selectedTech = trim($selectedTech);
+if ($selectedTech === '' && !empty($byTech)) {
+  // el top
+  $selectedTech = array_key_first($byTech);
+}
+
+// Donut: mix_real (por defecto) — si no hay, cae a mix_all
+$donutMap = [];
+if ($selectedTech && isset($byTech[$selectedTech])) {
+  $donutMap = $byTech[$selectedTech]['mix_real'];
+  if (array_sum($donutMap) <= 0) $donutMap = $byTech[$selectedTech]['mix_all'];
+}
+arsort($donutMap);
+
+// Top 12 para que no sea infinito
+$donutMap = array_slice($donutMap, 0, 12, true);
+$donutData = [];
+foreach ($donutMap as $code=>$val){
+  $donutData[] = ['name'=>($testNames[$code] ?? $code), 'value'=>$val];
+}
+
+// Datos para barra apilada (Top 10 técnicos)
+$labels = [];
+$regA=[]; $prepA=[]; $realA=[]; $delA=[];
+$i=0;
+foreach ($byTech as $tech=>$st){
+  $labels[] = $tech;
+  $regA[]   = $st['reg'];
+  $prepA[]  = $st['prep'];
+  $realA[]  = $st['rea'];
+  $delA[]   = $st['del'];
+  $i++;
+  if ($i>=10) break;
+}
 ?>
 <main id="main" class="main" style="padding:18px;">
 
-  <!-- HEADER -->
   <div class="pagetitle d-flex justify-content-between align-items-center mb-3">
     <div>
       <h1 class="mb-0">Desempeño de Técnicos</h1>
-      <small class="text-muted">
-        Productividad por etapa, mix de ensayos (Realización) y repetición por técnico.
-      </small>
+      <small class="text-muted">Contadores por etapa + mix por tipo de ensayo.</small>
     </div>
-    <span class="badge bg-light text-dark border d-none d-md-inline-flex align-items-center gap-1">
-      <i class="bi bi-calendar-range"></i>
-      Rango: <strong><?= $h($from) ?></strong> a <strong><?= $h($to) ?></strong>
+    <span class="badge bg-light text-dark border">
+      Rango: <strong><?=h($from)?></strong> → <strong><?=h($to)?></strong>
     </span>
   </div>
 
-  <!-- FILTROS -->
-  <section class="section mb-3">
-    <div class="card shadow-sm border-0 mb-3">
-      <div class="card-body py-3">
-        <form class="row g-2 align-items-end" method="GET">
-          <div class="col-12 col-md-3">
-            <label class="form-label form-label-sm">Intervalo rápido</label>
-            <select name="quick" class="form-select form-select-sm">
-              <option value="today"  <?= $quick==='today'?'selected':''; ?>>Hoy</option>
-              <option value="7d"     <?= $quick==='7d'?'selected':''; ?>>Últimos 7 días</option>
-              <option value="30d"    <?= $quick==='30d'?'selected':''; ?>>Últimos 30 días</option>
-              <option value="12m"    <?= $quick==='12m'?'selected':''; ?>>Últimos 12 meses</option>
-              <option value="custom" <?= $quick==='custom'?'selected':''; ?>>Personalizado</option>
-            </select>
-          </div>
-          <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm">Desde</label>
-            <input type="date" class="form-control form-control-sm" name="from" value="<?= $h($from) ?>">
-          </div>
-          <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm">Hasta</label>
-            <input type="date" class="form-control form-control-sm" name="to" value="<?= $h($to) ?>">
-          </div>
-          <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm">Técnico</label>
-            <select name="tech" class="form-select form-select-sm">
-              <option value="">Todos</option>
-              <?php foreach ($techList as $alias => $name): ?>
-                <option value="<?= $h($alias) ?>" <?= $filterAlias===$alias?'selected':''; ?>>
-                  <?= $h($name) ?> (<?= $h($alias) ?>)
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-6 col-md-2">
-            <label class="form-label form-label-sm">Tipo de ensayo</label>
-            <select name="ttype" class="form-select form-select-sm">
-              <option value="">Todos</option>
-              <?php foreach ($ttList as $tt): ?>
-                <option value="<?= $h($tt) ?>" <?= strtoupper(trim($filterType))===strtoupper(trim($tt))?'selected':''; ?>>
-                  <?= $h($tt) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-12 col-md-1 d-grid">
-            <button class="btn btn-primary btn-sm">
-              <i class="bi bi-funnel me-1"></i>Aplicar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- KPIs -->
-    <div class="row g-3 mb-3">
-      <?php
-        $kpisCards = [
-          ['label'=>'Ensayos totales', 'value'=>number_format($vmk['total']), 'icon'=>'bi-collection', 'sub'=>'Total en el rango (todas las etapas).'],
-          ['label'=>'Registradas',     'value'=>number_format($vmk['reg']),   'icon'=>'bi-clipboard-plus', 'sub'=>'Ingresadas al sistema.'],
-          ['label'=>'Preparadas',      'value'=>number_format($vmk['pre']),   'icon'=>'bi-hammer', 'sub'=>'Pasaron por preparación.'],
-          ['label'=>'Realizadas',      'value'=>number_format($vmk['rea']),   'icon'=>'bi-activity', 'sub'=>'Ejecutadas en laboratorio.'],
-          ['label'=>'Entregadas',      'value'=>number_format($vmk['ent']),   'icon'=>'bi-box-arrow-up-right', 'sub'=>'Hojas / resultados entregados.'],
-          ['label'=>'Digitadas',       'value'=>number_format($vmk['dig']),   'icon'=>'bi-keyboard', 'sub'=>'Digitadas / revisadas.'],
-          ['label'=>'Repetidos',       'value'=>number_format($vmk['rep'])." <span class='kpi-mini text-danger'>(".$vmk['rep_pct_global']."%)</span>", 'icon'=>'bi-arrow-repeat', 'sub'=>'Ensayos con repetición (global).'],
-        ];
-      ?>
-      <?php foreach ($kpisCards as $c): ?>
-        <div class="col-6 col-md">
-          <div class="kpi-card">
-            <div class="kpi-card-main">
-              <div>
-                <div class="kpi-label"><?= $c['label'] ?></div>
-                <div class="kpi-value"><?= $c['value'] ?></div>
-              </div>
-              <div class="kpi-icon">
-                <i class="bi <?= $c['icon'] ?>"></i>
-              </div>
-            </div>
-            <div class="kpi-subtext text-muted small"><?= $c['sub'] ?></div>
-          </div>
+  <!-- Filtros -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body">
+      <form class="row g-2 align-items-end" method="GET">
+        <div class="col-6 col-md-2">
+          <label class="form-label form-label-sm">Desde</label>
+          <input type="date" name="from" class="form-control form-control-sm" value="<?=h($from)?>">
         </div>
-      <?php endforeach; ?>
+        <div class="col-6 col-md-2">
+          <label class="form-label form-label-sm">Hasta</label>
+          <input type="date" name="to" class="form-control form-control-sm" value="<?=h($to)?>">
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label form-label-sm">Técnico (para donut)</label>
+          <select name="tech" class="form-select form-select-sm">
+            <option value="">(Top automáticamente)</option>
+            <?php foreach($techList as $t): ?>
+              <option value="<?=h($t)?>" <?= $t===$selectedTech?'selected':''; ?>>
+                <?=h($t)?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+          <button class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Aplicar</button>
+        </div>
+      </form>
     </div>
-  </section>
+  </div>
 
-  <!-- BLOQUE MODERNO: Cards + Chart -->
-  <section class="mb-3">
-    <div class="row g-3">
-
-      <!-- Cards -->
-      <div class="col-lg-7">
-        <div class="card shadow-sm border-0">
-          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+  <!-- KPIs globales -->
+  <div class="row g-3 mb-3">
+    <?php
+      $cards = [
+        ['label'=>'Total', 'value'=>number_format($kpi['total']), 'icon'=>'bi-collection'],
+        ['label'=>'Registro', 'value'=>number_format($kpi['reg']), 'icon'=>'bi-clipboard-plus'],
+        ['label'=>'Preparación', 'value'=>number_format($kpi['prep']), 'icon'=>'bi-hammer'],
+        ['label'=>'Realización', 'value'=>number_format($kpi['rea']), 'icon'=>'bi-activity'],
+        ['label'=>'Entrega', 'value'=>number_format($kpi['del']), 'icon'=>'bi-box-arrow-up-right'],
+      ];
+    ?>
+    <?php foreach($cards as $c): ?>
+      <div class="col-6 col-md">
+        <div class="kpi-card">
+          <div class="d-flex align-items-center justify-content-between">
             <div>
-              <strong>Leaderboard (Cards)</strong>
-              <div class="small text-muted">Clic en un técnico para abrir el panel lateral (drawer).</div>
+              <div class="kpi-label"><?=h($c['label'])?></div>
+              <div class="kpi-value"><?= $c['value'] ?></div>
             </div>
-            <div class="d-flex gap-2">
-              <input id="techSearch" class="form-control form-control-sm" style="width:220px" placeholder="Buscar..." />
-              <select id="sortMode" class="form-select form-select-sm" style="width:190px">
-                <option value="total">Orden: Total</option>
-                <option value="rep">Orden: % Repetición</option>
-                <option value="rea">Orden: Realización</option>
-              </select>
-            </div>
+            <div class="kpi-icon"><i class="bi <?=h($c['icon'])?>"></i></div>
           </div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
 
-          <div class="card-body">
-            <div id="cardsGrid" class="cards-grid"></div>
-
-            <?php if(empty($statsSorted)): ?>
-              <div class="text-muted text-center py-3">Sin datos en el rango seleccionado.</div>
-            <?php endif; ?>
+  <div class="row g-3">
+    <!-- Tabla resumen por técnico -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+          <strong>Resumen por Técnico</strong>
+          <div class="small text-muted">Totales por etapa en el rango.</div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Técnico</th>
+                  <th class="text-center">Registro</th>
+                  <th class="text-center">Prep</th>
+                  <th class="text-center">Real</th>
+                  <th class="text-center">Ent</th>
+                  <th class="text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if(empty($byTech)): ?>
+                  <tr><td colspan="6" class="text-center text-muted py-3">Sin datos en el rango.</td></tr>
+                <?php else: ?>
+                  <?php foreach($byTech as $tech=>$st): ?>
+                    <tr>
+                      <td>
+                        <a href="?from=<?=h(substr($fromEsc,0,10))?>&to=<?=h(substr($toEsc,0,10))?>&tech=<?=urlencode($tech)?>">
+                          <?=h($tech)?>
+                        </a>
+                      </td>
+                      <td class="text-center"><?= (int)$st['reg'] ?></td>
+                      <td class="text-center"><?= (int)$st['prep'] ?></td>
+                      <td class="text-center"><?= (int)$st['real'] ?></td>
+                      <td class="text-center"><?= (int)$st['del'] ?></td>
+                      <td class="text-center fw-bold"><?= (int)$st['total'] ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- Chart -->
-      <div class="col-lg-5">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-header bg-white">
-            <strong>Distribución por etapa (Top 10)</strong>
-            <div class="small text-muted">Barra apilada por técnico.</div>
-          </div>
-          <div class="card-body">
-            <div id="chartByTech" style="height: 420px;"></div>
+      <!-- Tabla detalle por técnico+tipo -->
+      <div class="card shadow-sm border-0 mt-3">
+        <div class="card-header bg-white">
+          <strong>Detalle por Técnico y Tipo de Ensayo</strong>
+          <div class="small text-muted">Cuenta por etapa para cada Test_Type.</div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Técnico</th>
+                  <th>Test</th>
+                  <th class="text-center">Reg</th>
+                  <th class="text-center">Prep</th>
+                  <th class="text-center">Real</th>
+                  <th class="text-center">Ent</th>
+                  <th class="text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if(empty($detail)): ?>
+                  <tr><td colspan="7" class="text-center text-muted py-3">Sin datos.</td></tr>
+                <?php else: ?>
+                  <?php foreach($detail as $d): ?>
+                    <tr>
+                      <td><?=h($d['Technician'])?></td>
+                      <td>
+                        <code><?=h($d['Test_Type'])?></code>
+                        <span class="text-muted">— <?=h($d['Test_Name'])?></span>
+                      </td>
+                      <td class="text-center"><?=$d['reg']?></td>
+                      <td class="text-center"><?=$d['prep']?></td>
+                      <td class="text-center"><?=$d['real']?></td>
+                      <td class="text-center"><?=$d['del']?></td>
+                      <td class="text-center fw-bold"><?=$d['total']?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
     </div>
-  </section>
 
+    <!-- Charts -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white">
+          <strong>Etapas (Top 10 técnicos)</strong>
+          <div class="small text-muted">Barra apilada por etapa.</div>
+        </div>
+        <div class="card-body">
+          <div id="chartStages" style="height:360px;"></div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+          <strong>Mix de ensayos — <?=h($selectedTech ?: 'N/A')?></strong>
+          <div class="small text-muted">Por defecto usa Realización; si no hay, usa total.</div>
+        </div>
+        <div class="card-body">
+          <div id="chartDonut" style="height:320px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </main>
 
-<!-- Drawer -->
-<div id="drawerBackdrop" class="drawer-backdrop"></div>
-
-<aside id="drawer" class="drawer">
-  <div class="drawer-header">
-    <div>
-      <div class="drawer-title" id="drawerTitle">Técnico</div>
-      <div class="drawer-subtitle" id="drawerSub">Detalle</div>
-    </div>
-    <button class="btn btn-sm btn-outline-secondary" id="drawerClose">Cerrar</button>
-  </div>
-
-  <div class="drawer-body">
-    <div class="drawer-kpis" id="drawerKpis"></div>
-
-    <div class="drawer-block">
-      <div class="drawer-block-title">Mix de ensayos (Realización)</div>
-      <div id="drawerDonut" style="height:220px;"></div>
-      <div class="small text-muted mt-2">
-        Nota: por ahora el donut se actualiza solo con el técnico seleccionado por URL (como tu lógica actual).
-      </div>
-    </div>
-
-    <div class="drawer-block">
-      <div class="drawer-block-title">Últimos ensayos</div>
-      <div class="drawer-table-wrap">
-        <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Fecha</th>
-              <th>Sample</th>
-              <th>#</th>
-              <th>Ensayo</th>
-              <th>Etapa</th>
-              <th>Rep</th>
-            </tr>
-          </thead>
-          <tbody id="drawerLastBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</aside>
-
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-
 <script>
-  // Model desde backend (MISMA LOGICA)
-  const PERF_MODEL = {
-    from: <?= json_encode($from) ?>,
-    to: <?= json_encode($to) ?>,
-    quick: <?= json_encode($quick) ?>,
-    filterType: <?= json_encode($filterType) ?>,
-    selectedAlias: <?= json_encode($selectedAlias) ?>,
-
-    stats: <?= json_encode($stats, JSON_UNESCAPED_UNICODE) ?>,
-
-    // Estos 2 vienen de tu lógica actual (solo seleccionado)
-    lastRowsSelected: <?= json_encode($lastRows, JSON_UNESCAPED_UNICODE) ?>,
-    donutSelected: <?= json_encode($vm['charts']['donut'], JSON_UNESCAPED_UNICODE) ?>
-  };
-</script>
-
-<script>
-/* ===========================
-   Cards + Drawer (Frontend)
-=========================== */
 (function(){
-  const stats = PERF_MODEL.stats || {};
+  const el = document.getElementById('chartStages');
+  if(!el) return;
+  const chart = echarts.init(el);
 
-  const grid = document.getElementById('cardsGrid');
-  const search = document.getElementById('techSearch');
-  const sortMode = document.getElementById('sortMode');
+  const techs = <?= json_encode($labels, JSON_UNESCAPED_UNICODE) ?>;
+  const reg   = <?= json_encode($regA) ?>;
+  const prep  = <?= json_encode($prepA) ?>;
+  const real  = <?= json_encode($realA) ?>;
+  const del   = <?= json_encode($delA) ?>;
 
-  function toItems(){
-    return Object.keys(stats).map(alias => {
-      const st = stats[alias];
-      return {
-        alias,
-        name: st.name || alias,
-        job: st.job || 'Técnico',
-        reg: Number(st.reg||0),
-        pre: Number(st.pre||0),
-        rea: Number(st.rea||0),
-        ent: Number(st.ent||0),
-        dig: Number(st.dig||0),
-        total: Number(st.total||0),
-        rep: Number(st.rep||0),
-        rep_pct: Number(st.rep_pct||0),
-      };
-    });
-  }
-
-  let items = toItems();
-
-  function sortItems(mode){
-    const arr = [...items];
-    if(mode === 'rep') arr.sort((a,b)=> (b.rep_pct - a.rep_pct) || (b.total - a.total));
-    else if(mode === 'rea') arr.sort((a,b)=> (b.rea - a.rea) || (b.total - a.total));
-    else arr.sort((a,b)=> (b.total - a.total));
-    return arr;
-  }
-
-  function filterItems(q, arr){
-    q = (q||'').toLowerCase().trim();
-    if(!q) return arr;
-    return arr.filter(x =>
-      (x.name||'').toLowerCase().includes(q) ||
-      (x.alias||'').toLowerCase().includes(q)
-    );
-  }
-
-  function stageBar(st){
-    const sum = st.reg+st.pre+st.rea+st.ent+st.dig;
-    const pct = (v)=> sum>0 ? Math.round((v/sum)*100) : 0;
-
-    return `
-      <div class="mini-bars" title="Distribución por etapa">
-        <span style="width:${pct(st.reg)}%"></span>
-        <span style="width:${pct(st.pre)}%"></span>
-        <span style="width:${pct(st.rea)}%"></span>
-        <span style="width:${pct(st.ent)}%"></span>
-        <span style="width:${pct(st.dig)}%"></span>
-      </div>
-    `;
-  }
-
-  function escapeHtml(str){
-    return (str ?? '').toString()
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'","&#039;");
-  }
-
-  function cardHtml(st){
-    const badgeClass = st.rep_pct>0 ? 'badge-danger' : 'badge-ok';
-    const repText = st.rep>0 ? `${st.rep} (${st.rep_pct}%)` : `0%`;
-
-    return `
-      <div class="tech-card" data-alias="${escapeHtml(st.alias)}">
-        <div class="tech-card-top">
-          <div class="tech-avatar">${escapeHtml((st.name||'?').trim().slice(0,1).toUpperCase())}</div>
-          <div class="tech-meta">
-            <div class="tech-name">${escapeHtml(st.name)} <span class="tech-alias">(${escapeHtml(st.alias)})</span></div>
-            <div class="tech-job">${escapeHtml(st.job || 'Técnico')}</div>
-          </div>
-        </div>
-
-        <div class="tech-metrics">
-          <div class="metric">
-            <div class="metric-label">Total</div>
-            <div class="metric-value">${st.total}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Real</div>
-            <div class="metric-value">${st.rea}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Rep</div>
-            <div class="metric-value"><span class="${badgeClass}">${repText}</span></div>
-          </div>
-        </div>
-
-        ${stageBar(st)}
-
-        <div class="tech-card-footer">
-          <span class="chip">Reg ${st.reg}</span>
-          <span class="chip">Prep ${st.pre}</span>
-          <span class="chip">Ent ${st.ent}</span>
-          <span class="chip">Dig ${st.dig}</span>
-        </div>
-      </div>
-    `;
-  }
-
-  function render(){
-    const mode = sortMode.value;
-    const q = search.value;
-    const arr = filterItems(q, sortItems(mode));
-
-    if(arr.length === 0){
-      grid.innerHTML = `<div class="text-muted p-3">No hay técnicos para mostrar.</div>`;
-      return;
-    }
-
-    grid.innerHTML = arr.map(cardHtml).join('');
-  }
-
-  // Drawer
-  const drawer = document.getElementById('drawer');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const closeBtn = document.getElementById('drawerClose');
-  const titleEl = document.getElementById('drawerTitle');
-  const subEl = document.getElementById('drawerSub');
-  const kpisEl = document.getElementById('drawerKpis');
-  const lastBody = document.getElementById('drawerLastBody');
-
-  let donutChart = null;
-
-  function openDrawer(){
-    drawer.classList.add('open');
-    backdrop.classList.add('open');
-  }
-  function closeDrawer(){
-    drawer.classList.remove('open');
-    backdrop.classList.remove('open');
-  }
-
-  closeBtn.addEventListener('click', closeDrawer);
-  backdrop.addEventListener('click', closeDrawer);
-
-  function renderLast(rows){
-    if(!rows || rows.length===0){
-      lastBody.innerHTML = `<tr><td colspan="6" class="text-muted text-center py-3">Sin registros.</td></tr>`;
-      return;
-    }
-
-    lastBody.innerHTML = rows.map(r=>{
-      const dt = (r.Dt||'').toString().substring(0,10);
-      const rep = r.is_rep ? 'Sí' : '—';
-      const repBadge = r.is_rep ? 'badge bg-danger-subtle text-danger border' : '';
-      const stage = r.Stage || '';
-      return `
-        <tr>
-          <td>${escapeHtml(dt)}</td>
-          <td>${escapeHtml(r.Sample_ID||'')}</td>
-          <td>${escapeHtml(r.Sample_Number||'')}</td>
-          <td><code>${escapeHtml(r.Test_Type||'')}</code></td>
-          <td><span class="badge bg-light text-muted border">${escapeHtml(stage)}</span></td>
-          <td>${r.is_rep ? `<span class="${repBadge}">Sí</span>` : '—'}</td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  function renderDonut(data){
-    const el = document.getElementById('drawerDonut');
-    if(!el) return;
-
-    if(typeof echarts === 'undefined'){
-      el.innerHTML = `<div class="text-muted small">ECharts no disponible.</div>`;
-      return;
-    }
-
-    if(!donutChart) donutChart = echarts.init(el);
-
-    if(!data || data.length===0){
-      donutChart.clear();
-      donutChart.setOption({ title:{ text:'Sin datos', left:'center', top:'middle' } });
-      return;
-    }
-
-    donutChart.setOption({
-      tooltip: { trigger: 'item' },
-      legend: { bottom: 0 },
-      series: [{
-        type: 'pie',
-        radius: ['40%','70%'],
-        label: { show:false },
-        labelLine: { show:false },
-        data: data
-      }]
-    });
-  }
-
-  function renderDrawer(alias){
-    const st = stats[alias];
-    if(!st) return;
-
-    titleEl.textContent = `${st.name || alias} (${alias})`;
-    subEl.textContent = `Rango: ${PERF_MODEL.from} → ${PERF_MODEL.to}`;
-
-    kpisEl.innerHTML = `
-      <div class="drawer-kpi"><div class="dk-label">Total</div><div class="dk-val">${st.total}</div></div>
-      <div class="drawer-kpi"><div class="dk-label">Registradas</div><div class="dk-val">${st.reg}</div></div>
-      <div class="drawer-kpi"><div class="dk-label">Preparadas</div><div class="dk-val">${st.pre}</div></div>
-      <div class="drawer-kpi"><div class="dk-label">Realizadas</div><div class="dk-val">${st.rea}</div></div>
-      <div class="drawer-kpi"><div class="dk-label">Entregadas</div><div class="dk-val">${st.ent}</div></div>
-      <div class="drawer-kpi"><div class="dk-label">Digitadas</div><div class="dk-val">${st.dig}</div></div>
-      <div class="drawer-kpi"><div class="dk-label">Repetidos</div><div class="dk-val">${st.rep} (${st.rep_pct}%)</div></div>
-    `;
-
-    // Con tu lógica actual, estos datos solo existen para el seleccionado por URL
-    const donutData = (alias === PERF_MODEL.selectedAlias) ? (PERF_MODEL.donutSelected || []) : [];
-    const last = (alias === PERF_MODEL.selectedAlias) ? (PERF_MODEL.lastRowsSelected || []) : [];
-
-    renderDonut(donutData);
-    renderLast(last);
-
-    openDrawer();
-  }
-
-  // Click en card -> drawer
-  grid.addEventListener('click', (e)=>{
-    const card = e.target.closest('.tech-card');
-    if(!card) return;
-    const alias = card.getAttribute('data-alias');
-    renderDrawer(alias);
+  chart.setOption({
+    tooltip: { trigger:'axis', axisPointer:{ type:'shadow' } },
+    legend: { top: 0 },
+    grid: { left: 10, right: 10, top: 40, bottom: 10, containLabel:true },
+    xAxis: { type:'value' },
+    yAxis: { type:'category', data: techs },
+    series: [
+      { name:'Registro', type:'bar', stack:'t', data: reg },
+      { name:'Preparación', type:'bar', stack:'t', data: prep },
+      { name:'Realización', type:'bar', stack:'t', data: real },
+      { name:'Entrega', type:'bar', stack:'t', data: del }
+    ]
   });
 
-  search.addEventListener('input', render);
-  sortMode.addEventListener('change', render);
-
-  render();
-
-  // Abre drawer si hay técnico seleccionado (opcional)
-  if(PERF_MODEL.selectedAlias){
-    renderDrawer(PERF_MODEL.selectedAlias);
-  }
-
+  window.addEventListener('resize', ()=>chart.resize());
 })();
 </script>
 
 <script>
-/* ===========================
-   Chart apilado por técnico
-=========================== */
 (function(){
-  const el = document.getElementById('chartByTech');
+  const el = document.getElementById('chartDonut');
   if(!el) return;
   const chart = echarts.init(el);
 
-  const techs  = <?= json_encode($vm['charts']['labels'], JSON_UNESCAPED_UNICODE); ?>;
-  const reg    = <?= json_encode($vm['charts']['reg']); ?>;
-  const pre    = <?= json_encode($vm['charts']['pre']); ?>;
-  const rea    = <?= json_encode($vm['charts']['rea']); ?>;
-  const ent    = <?= json_encode($vm['charts']['ent']); ?>;
-  const dig    = <?= json_encode($vm['charts']['dig']); ?>;
+  const data = <?= json_encode($donutData, JSON_UNESCAPED_UNICODE) ?>;
+
+  if(!data || data.length===0){
+    chart.setOption({ title:{ text:'Sin datos', left:'center', top:'middle' } });
+    return;
+  }
 
   chart.setOption({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { top: 0 },
-    grid: { left: 10, right: 10, bottom: 10, top: 40, containLabel: true },
-    xAxis: { type: 'value' },
-    yAxis: { type: 'category', data: techs },
-    series: [
-      { name:'Registradas', type:'bar', stack:'total', data:reg },
-      { name:'Preparadas',  type:'bar', stack:'total', data:pre },
-      { name:'Realizadas',  type:'bar', stack:'total', data:rea },
-      { name:'Entregadas',  type:'bar', stack:'total', data:ent },
-      { name:'Digitadas',   type:'bar', stack:'total', data:dig }
-    ]
+    tooltip: { trigger:'item' },
+    legend: { bottom: 0 },
+    series: [{
+      type:'pie',
+      radius:['40%','70%'],
+      label: { show:false },
+      labelLine: { show:false },
+      data: data
+    }]
   });
 
-  window.addEventListener('resize', () => chart.resize());
+  window.addEventListener('resize', ()=>chart.resize());
 })();
 </script>
 
 <style>
-  /* KPIs */
-  .kpi-card{
-    border-radius:14px;
-    border:1px solid #e5e7eb;
-    background:#ffffff;
-    box-shadow:0 4px 12px rgba(15,23,42,0.04);
-    padding:0.75rem 0.9rem;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-  }
-  .kpi-card-main{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:0.75rem;
-  }
-  .kpi-label{
-    font-size:0.75rem;
-    text-transform:uppercase;
-    letter-spacing:0.06em;
-    color:#64748b;
-  }
-  .kpi-value{
-    font-size:1.35rem;
-    font-weight:800;
-    color:#0f172a;
-    line-height:1.1;
-  }
-  .kpi-mini{ font-size:0.8rem; font-weight:700; margin-left:0.2rem; }
-  .kpi-icon{
-    width:38px;
-    height:38px;
-    border-radius:999px;
-    background:#f1f5f9;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:1.1rem;
-    color:#0f172a;
-  }
-  .kpi-subtext{ margin-top:0.35rem; }
-
-  /* Cards Grid */
-  .cards-grid{
-    display:grid;
-    grid-template-columns: repeat( auto-fit, minmax(260px, 1fr) );
-    gap:12px;
-  }
-  .tech-card{
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    background:#fff;
-    box-shadow:0 6px 18px rgba(15,23,42,0.05);
-    padding:14px;
-    cursor:pointer;
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  .tech-card:hover{
-    transform: translateY(-2px);
-    box-shadow:0 10px 26px rgba(15,23,42,0.08);
-  }
-  .tech-card-top{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    margin-bottom:10px;
-  }
-  .tech-avatar{
-    width:42px;
-    height:42px;
-    border-radius:999px;
-    background:#e0f2fe;
-    color:#0369a1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:900;
-    font-size:1.05rem;
-  }
-  .tech-name{ font-weight:900; color:#0f172a; line-height:1.1; }
-  .tech-alias{ font-weight:800; color:#64748b; font-size:0.9rem; }
-  .tech-job{ font-size:0.85rem; color:#64748b; }
-
-  .tech-metrics{
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:10px;
-    margin-bottom:10px;
-  }
-  .metric{
-    border:1px solid #eef2f7;
-    border-radius:12px;
-    padding:10px;
-    background:#fbfdff;
-  }
-  .metric-label{
-    font-size:0.72rem;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:#64748b;
-  }
-  .metric-value{
-    font-size:1.1rem;
-    font-weight:900;
-    color:#0f172a;
-    margin-top:2px;
-  }
-
-  .badge-ok{
-    display:inline-block;
-    padding:4px 8px;
-    border-radius:999px;
-    background:#ecfdf3;
-    color:#15803d;
-    border:1px solid #bbf7d0;
-    font-weight:900;
-    font-size:0.82rem;
-  }
-  .badge-danger{
-    display:inline-block;
-    padding:4px 8px;
-    border-radius:999px;
-    background:#fef2f2;
-    color:#b91c1c;
-    border:1px solid #fecaca;
-    font-weight:900;
-    font-size:0.82rem;
-  }
-
-  .mini-bars{
-    height:8px;
-    border-radius:999px;
-    overflow:hidden;
-    display:flex;
-    background:#f1f5f9;
-    margin-bottom:10px;
-  }
-  .mini-bars span{ height:100%; display:block; }
-  .mini-bars span:nth-child(1){ background:#cbd5e1; } /* reg */
-  .mini-bars span:nth-child(2){ background:#93c5fd; } /* pre */
-  .mini-bars span:nth-child(3){ background:#67e8f9; } /* rea */
-  .mini-bars span:nth-child(4){ background:#86efac; } /* ent */
-  .mini-bars span:nth-child(5){ background:#fde68a; } /* dig */
-
-  .tech-card-footer{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-  }
-  .chip{
-    padding:6px 10px;
-    border-radius:999px;
-    border:1px solid #e5e7eb;
-    background:#f8fafc;
-    font-weight:800;
-    font-size:0.8rem;
-    color:#334155;
-  }
-
-  /* Drawer */
-  .drawer-backdrop{
-    position:fixed;
-    inset:0;
-    background:rgba(15,23,42,.35);
-    opacity:0;
-    pointer-events:none;
-    transition:.2s;
-    z-index:1040;
-  }
-  .drawer-backdrop.open{
-    opacity:1;
-    pointer-events:auto;
-  }
-  .drawer{
-    position:fixed;
-    top:0;
-    right:-420px;
-    width:420px;
-    height:100%;
-    background:#fff;
-    border-left:1px solid #e5e7eb;
-    box-shadow:-10px 0 30px rgba(15,23,42,.12);
-    transition:.25s ease;
-    z-index:1050;
-    display:flex;
-    flex-direction:column;
-  }
-  .drawer.open{ right:0; }
-
-  .drawer-header{
-    padding:14px;
-    border-bottom:1px solid #eef2f7;
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:10px;
-  }
-  .drawer-title{ font-size:1.05rem; font-weight:900; color:#0f172a; }
-  .drawer-subtitle{ font-size:.85rem; color:#64748b; }
-
-  .drawer-body{
-    padding:14px;
-    overflow:auto;
-  }
-  .drawer-kpis{
-    display:grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap:8px;
-    margin-bottom:12px;
-  }
-  .drawer-kpi{
-    border:1px solid #eef2f7;
-    border-radius:12px;
-    padding:10px;
-    background:#fbfdff;
-  }
-  .dk-label{
-    font-size:0.72rem;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:#64748b;
-  }
-  .dk-val{
-    font-size:1rem;
-    font-weight:900;
-    color:#0f172a;
-    margin-top:2px;
-  }
-  .drawer-block{
-    border:1px solid #eef2f7;
-    border-radius:14px;
-    padding:12px;
-    background:#fff;
-    margin-bottom:12px;
-  }
-  .drawer-block-title{
-    font-weight:900;
-    color:#0f172a;
-    margin-bottom:8px;
-  }
-  .drawer-table-wrap{
-    max-height:320px;
-    overflow:auto;
-  }
-  @media (max-width: 520px){
-    .drawer{ width:100%; }
-  }
+.kpi-card{
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  background:#ffffff;
+  box-shadow:0 4px 12px rgba(15,23,42,0.04);
+  padding:0.75rem 0.9rem;
+  height:100%;
+}
+.kpi-label{
+  font-size:0.75rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:#64748b;
+}
+.kpi-value{
+  font-size:1.35rem;
+  font-weight:800;
+  color:#0f172a;
+  line-height:1.1;
+}
+.kpi-icon{
+  width:38px;height:38px;border-radius:999px;
+  background:#f1f5f9;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;color:#0f172a;
+}
 </style>
 
 <?php include_once('../components/footer.php'); ?>
