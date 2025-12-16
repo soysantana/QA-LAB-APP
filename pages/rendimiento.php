@@ -26,10 +26,10 @@ $toEsc   = $db->escape($to   . " 23:59:59");
 ====================================================== */
 $testNames = [
   "GS" => "Grain Size",
-  "GS_CF" => "Grain Size (Coarse Filter)",
-  "GS_FF" => "Grain Size (Fine Filter)",
-  "GS_LPF" => "Grain Size (LPF)",
-  "GS_UTF" => "Grain Size (UTF)",
+  "GS_CF" => "Grain Size",
+  "GS_FF" => "Grain Size",
+  "GS_LPF" => "Grain Size",
+  "GS_UTF" => "Grain Size)",
   "AL" => "Atterberg Limit",
   "MC" => "Moisture Content",
   "MC_OVEN" => "Moisture Content (Oven)",
@@ -176,19 +176,36 @@ $variantsToAlias = [
 function tech_clean($s){
   $s = strtoupper(trim((string)$s));
   $s = str_replace(["\t","\n","\r"], ' ', $s);
-  $s = str_replace(['.', ';'], '', $s);
   $s = preg_replace('/\s+/', ' ', $s);
-  return $s;
+  $s = str_replace(['.', ';', ':'], '', $s);
+  return trim($s);
 }
+
+/**
+ * Convierte separadores raros a "/"
+ * - soporta: , & + | \ /
+ * - soporta guiones unicode: - ‐ - ‒ – — ― (y cualquier \p{Pd})
+ */
 function tech_unify_separators($s){
   $s = tech_clean($s);
-  $s = str_replace([',','&','-','+','|','\\'], '/', $s);
+
+  // Cualquier tipo de dash unicode => "/"
+  $s = preg_replace('/[\p{Pd}]+/u', '/', $s);
+
+  // Otros separadores comunes => "/"
+  $s = str_replace([',','&','+','|','\\'], '/', $s);
+
+  // Normaliza " / " => "/"
   $s = preg_replace('/\s*\/\s*/', '/', $s);
-  return $s;
+
+  return trim($s, '/');
 }
+
+/** Devuelve lista de tokens: "DF-RV" => ["DF","RV"] incluso con guion raro */
 function tech_split($s){
   $s = tech_unify_separators($s);
   if ($s === '') return [];
+
   $parts = explode('/', $s);
   $out = [];
   foreach($parts as $p){
@@ -198,14 +215,51 @@ function tech_split($s){
   }
   return array_values(array_unique($out));
 }
+
+/** Intenta derivar alias desde un nombre: "VICTOR MERCEDES" => "VM" */
+function tech_guess_alias_from_name($t){
+  $t = tech_clean($t);
+  if ($t === '') return '';
+  $words = preg_split('/\s+/', $t);
+
+  // Si es tipo "VICTOR MERCEDES" => VM
+  if (count($words) >= 2){
+    $a = substr($words[0], 0, 1);
+    $b = substr($words[1], 0, 1);
+    return $a.$b;
+  }
+
+  // Si es una palabra "VICTOR" => VI (por si acaso)
+  return substr($t, 0, 2);
+}
+
+/**
+ * Convierte cualquier entrada a alias oficial:
+ * - Si ya está en aliasMap => ok
+ * - Si está en variantsToAlias => ok
+ * - Si parece nombre completo, intenta deducir iniciales y ver si existe
+ */
 function tech_to_alias($raw, $variantsToAlias, $aliasMap){
   $t = tech_clean($raw);
+  if ($t === '') return '';
+
+  // Si por error llega con separadores (DF/RV) aquí, toma el primero (split se encarga antes)
+  if (strpos($t,'/') !== false){
+    $t = explode('/', $t)[0];
+    $t = tech_clean($t);
+  }
+
   if (isset($aliasMap[$t])) return $t;
   if (isset($variantsToAlias[$t])) return $variantsToAlias[$t];
-  $t2 = trim($t);
-  if (isset($aliasMap[$t2])) return $t2;
-  return $t; // si no lo conoce, lo deja como venga
+
+  // Si viene como nombre completo, intenta convertir a iniciales
+  $guess = tech_guess_alias_from_name($t);
+  if ($guess !== '' && isset($aliasMap[$guess])) return $guess;
+
+  // Último recurso: deja el token tal cual (pero esto es lo que crea listas largas)
+  return $t;
 }
+
 function tech_fullname($alias, $aliasMap){
   return $aliasMap[$alias] ?? $alias;
 }
