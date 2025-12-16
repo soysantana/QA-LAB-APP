@@ -531,8 +531,8 @@ document.getElementById("btnReview").addEventListener("click", () => {
     let specs;
 
     if (["LLD","SD1","SD2","SD3"].includes(structure)) specs = specs_LLD;
-    else if (structure.includes("PVDJ-AGG-DIO")) specs = specs_DIO;
-    else specs = specs_AGG;
+    else if (structure.includes("Diorite")) specs = specs_DIO;
+    else (structure.includes("Stockpiles")) specs = specs_AGG;
 
     const sieveNames = {
       11: '3/8"',
