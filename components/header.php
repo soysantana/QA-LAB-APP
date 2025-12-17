@@ -39,11 +39,15 @@
             </a>
           </li>
 
-          <li><hr class="dropdown-divider"></li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
 
           <div id="notif-list"></div>
 
-          <li><hr class="dropdown-divider"></li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
           <li class="dropdown-footer">
             <a href="../pages/message.php">Mostrar todas las notificaciones</a>
           </li>
@@ -73,7 +77,9 @@
             <span><?= remove_junk(ucfirst($user['username'])); ?></span>
           </li>
 
-          <li><hr class="dropdown-divider"></li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
 
           <li>
             <a class="dropdown-item d-flex align-items-center" href="../pages/users-profile.php">
@@ -81,7 +87,9 @@
             </a>
           </li>
 
-          <li><hr class="dropdown-divider"></li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
 
           <li>
             <a class="dropdown-item d-flex align-items-center" href="../user/logout.php">
@@ -111,17 +119,19 @@
   .notification-item {
     padding: 8px 12px;
     cursor: pointer;
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    transition:0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    transition: 0.2s;
   }
+
   .notification-item:hover {
-    background:#eef6ff;
+    background: #eef6ff;
   }
+
   .notification-item i {
-    font-size:18px;
-    margin-top:4px;
+    font-size: 18px;
+    margin-top: 4px;
   }
 </style>
 
@@ -132,6 +142,7 @@
 
 <!-- LIVE NOTIFICATIONS -->
 <script>
+  /*
 let lastCount = 0;
 
 function loadNotifications() {
@@ -178,4 +189,5 @@ setInterval(loadNotifications, 10000);
 
 // Cargar al entrar
 loadNotifications();
+*/
 </script>
