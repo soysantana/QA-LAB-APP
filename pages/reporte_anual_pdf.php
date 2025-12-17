@@ -194,7 +194,7 @@ function tech_norm_token($s){
     $s = strtolower(trim((string)$s));
     if ($s === '') return '';
     // quita puntos y caracteres extraños comunes
-    $s = str_replace(['+', '·', '+', '-', "\t"], '', $s);
+    $s = str_replace(['.', '·', '+', '-', "\t"], '', $s);
     // normaliza guiones raros a -
     $s = str_replace(["-","+","—","-"], '-', $s);
     // colapsa espacios

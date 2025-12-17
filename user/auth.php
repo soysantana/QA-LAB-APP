@@ -1,3 +1,11 @@
+<?php
+// DEBUG TEMPORAL (quitar luego)
+file_put_contents(__DIR__ . "/auth_hit.log", date("c") . " HIT auth.php\n", FILE_APPEND);
+header("X-AUTH-HIT: 1");
+?>
+<?php include_once('../config/load.php'); ?>
+
+
 <?php include_once('../config/load.php'); ?>
 <?php
 $req_fields = array('username','password' );
