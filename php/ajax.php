@@ -1,35 +1,56 @@
 <?php
 require_once('../config/load.php');
-?>
+header('Content-Type: application/json; charset=utf-8');
 
-<?php
-// Auto suggetion
-$html = '';
-if (isset($_POST['product_name']) && strlen($_POST['product_name'])) {
-  $products = find_product_by_title($_POST['product_name']);
-  if ($products) {
-    foreach ($products as $product):
-      $html .= "<li class=\"list-group-item\">";
-      $html .= $product['Sample_ID'] . '-' . $product['Sample_Number'];
-      $html .= "</li>";
-    endforeach;
-  } else {
-
-    $html .= '<li class="list-group-item">';
-    $html .= 'No encontrado';
-    $html .= "</li>";
-  }
-
-  echo json_encode($html);
+if (!isset($_POST['action'])) {
+  http_response_code(400);
+  echo json_encode(['error' => 'No action']);
+  exit;
 }
-?>
 
- <?php
-  // find all product
-  $html = '';
-  if (isset($_POST['p_name']) && strlen($_POST['p_name'])) {
+switch ($_POST['action']) {
+
+  /* =========================
+     AUTOSUGGEST
+  ========================= */
+  case 'suggest':
+
+    if (empty($_POST['product_name'])) {
+      echo json_encode(['html' => '']);
+      exit;
+    }
+
+    $products = find_product_by_title($_POST['product_name']);
+    $html = '';
+
+    if ($products) {
+      foreach ($products as $product) {
+        $html .= '<li class="list-group-item">';
+        $html .= $product['Sample_ID'] . '-' . $product['Sample_Number'];
+        $html .= '</li>';
+      }
+    } else {
+      $html = '<li class="list-group-item">No encontrado</li>';
+    }
+
+    echo json_encode(['html' => $html]);
+    exit;
+
+
+    /* =========================
+     FIND PRODUCT
+  ========================= */
+  case 'find_product':
+
+    if (empty($_POST['p_name'])) {
+      echo json_encode(['html' => '']);
+      exit;
+    }
+
     $product_title = remove_junk($db->escape($_POST['p_name']));
     $results = find_all_product_info_by_title($product_title);
+
+    $html = '';
 
     if ($results) {
       foreach ($results as $result) {
@@ -148,8 +169,11 @@ if (isset($_POST['product_name']) && strlen($_POST['product_name'])) {
       $html .= '</div>';
     }
 
-    echo json_encode($html);
-  }
-  ?>
+    echo json_encode(['html' => $html]);
+    exit;
 
-
+  default:
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid action']);
+    exit;
+}
