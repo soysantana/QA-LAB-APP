@@ -64,7 +64,7 @@ $aliasMap = [
   'DF'  => 'Darielvy Félix',
   'JA'  => 'Jordany Almonte',
   'MC'  => 'Melvin Castillo',
-  'j.am' => 'Jordany Amparo',
+  'J.AM' => 'Jordany Amparo',
   'LM'  => 'Luis Monegro',
 ];
 
