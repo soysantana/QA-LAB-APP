@@ -64,7 +64,7 @@ $aliasMap = [
   'DF'  => 'Darielvy Félix',
   'JA'  => 'Jordany Almonte',
   'MC'  => 'Melvin Castillo',
-  'J.AM' => 'Jordany Amparo',
+  'j.am' => 'Jordany Amparo',
   'LM'  => 'Luis Monegro',
 ];
 
@@ -86,7 +86,9 @@ $variantsToAlias = [
 
   'RAFAEL REYES' => 'RRH',
   'R REYES' => 'RRH',
-  'J.MA' => 'Jordany Amparo',
+  'J.AM' => 'Jordany Amparo',
+   'J.am' => 'Jordany Amparo',
+  'JAM' => 'Jordany Amparo',
 ];
 
 /* ======================================================
