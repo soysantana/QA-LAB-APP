@@ -1855,15 +1855,36 @@ $pdf->Ln(3);
 
 /* ============================================================
    SECTION 5 — Technician Performance Overview
+   RULES (AS REQUESTED):
+   1) Multi-tech entry => EACH technician gets FULL credit (no split).
+   2) Invalid / not-in-users => DO NOT redistribute.
+      Instead, list them in a separate table with FULL NAME when possible.
+   3) Handle combinations with many separators: / - & y and + ; | , newlines.
 ============================================================ */
 
 $pdf->AddPage();
 $pdf->SectionTitle("5. Technician Performance Overview");
 
 /* ============================================================
-   5.0 LOAD TECHNICIAN ALIAS MAP
+   5.0 LOAD TECHNICIAN ALIAS MAP (from DB users.alias etc.)
 ============================================================ */
 list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
+
+/* ============================================================
+   5.0B OPTIONAL MANUAL TECH MAP (LIKE $testNames)
+   - Put your aliases/initials here (keys must be UPPER)
+   - Value is the FULL NAME you want to show
+   - Use null to force "unmapped" (ignored as a person)
+============================================================ */
+$technicianNames = [
+    // EXAMPLES (edit to your real ones)
+    "LM"  => "Laura Sánchez",
+    // "RRH" => "Rafy Hernández",
+    // "VM"  => "Victor Mercedes",
+    // "DV"  => "Diana Vázquez",
+    // "QC"  => null,
+    // "N/A" => null,
+];
 
 /* ============================================================
    5.0A — LOAD LIST OF REAL TECHNICIANS FROM users TABLE
@@ -1877,18 +1898,112 @@ $realTechRows = find_by_sql("
 ");
 
 $realTechnicians = [];
-$realTechSet = []; // para validar rápido
+$realTechSet = []; // UPPER(name) => official name
 
 foreach ((array)$realTechRows as $r){
     $nm = trim((string)($r['name'] ?? ''));
     if ($nm === '') continue;
     $realTechnicians[] = $nm;
-    $realTechSet[strtoupper($nm)] = $nm; // key normalizada -> nombre original
+    $realTechSet[strtoupper($nm)] = $nm;
 }
 
 if (empty($realTechnicians)) {
     $realTechnicians = ["UNKNOWN_TECH"];
     $realTechSet["UNKNOWN_TECH"] = "UNKNOWN_TECH";
+}
+
+/* ============================================================
+   5.X HELPERS — robust split + labeling
+============================================================ */
+function initTech(&$arr, $name){
+    if (!isset($arr[$name])) {
+        $arr[$name] = [
+            "Preparation" => 0,
+            "Realization" => 0,
+            "Delivery"    => 0
+        ];
+    }
+}
+
+function cleanTechToken($t){
+    $t = trim((string)$t);
+    if ($t === '') return '';
+    $t = preg_replace('/\([^)]*\)/', ' ', $t);   // remove "(...)" notes
+    $t = preg_replace('/\s+/', ' ', $t);        // normalize spaces
+    return trim($t);
+}
+
+function splitTechRaw($raw){
+    $raw = trim((string)$raw);
+    if ($raw === '') return [];
+
+    $tmp = " ".$raw." ";
+    $tmp = preg_replace('/\s+(y|e|and)\s+/i', ' | ', $tmp);
+    $tmp = preg_replace('/[\/\\\\\|\+\;\&]+/', ' | ', $tmp);
+    $tmp = str_replace(',', ' | ', $tmp);
+    $tmp = preg_replace('/[\r\n\t]+/', ' | ', $tmp);
+
+    // hyphen separator only when between letters: "LS-RRH" => "LS | RRH"
+    $tmp = preg_replace('/(?<=\pL)\s*-\s*(?=\pL)/u', ' | ', $tmp);
+
+    $parts = array_map('trim', explode('|', $tmp));
+
+    $out = [];
+    foreach ($parts as $p){
+        $p = cleanTechToken($p);
+        if ($p === '') continue;
+
+        $k = strtoupper($p);
+        if (in_array($k, ['N/A','NA','NONE','NULL','SIN','S/N','-','--','0'], true)) continue;
+
+        $out[] = $p;
+    }
+    return array_values(array_unique($out));
+}
+
+/**
+ * Try to resolve a token to a FULL NAME.
+ * Order:
+ *  1) manual $technicianNames (like $testNames)
+ *  2) resolveTechnician() from DB alias map
+ * Returns:
+ *  [ 'status' => 'REAL'|'UNREGISTERED'|'UNMAPPED', 'name' => full_or_raw, 'raw' => original_token ]
+ */
+function resolveOneTechToken($token, $technicianNames, $aliasMap, $firstLetterName, $realTechSet){
+    $raw = cleanTechToken($token);
+    if ($raw === '') return ["status"=>"UNMAPPED","name"=>"","raw"=>$token];
+
+    $key = strtoupper($raw);
+
+    // 1) manual map first
+    if (array_key_exists($key, $technicianNames)) {
+        $full = $technicianNames[$key];
+        if ($full === null || trim((string)$full) === '') {
+            return ["status"=>"UNMAPPED","name"=>$raw,"raw"=>$raw];
+        }
+        $full = trim((string)$full);
+        $kfull = strtoupper($full);
+        if (isset($realTechSet[$kfull])) {
+            return ["status"=>"REAL","name"=>$realTechSet[$kfull],"raw"=>$raw];
+        }
+        return ["status"=>"UNREGISTERED","name"=>$full,"raw"=>$raw];
+    }
+
+    // 2) DB alias resolver
+    $resolved = resolveTechnician($aliasMap, $firstLetterName, $raw);
+    if ($resolved === null) {
+        return ["status"=>"UNMAPPED","name"=>$raw,"raw"=>$raw];
+    }
+
+    $resolved = trim((string)$resolved);
+    if ($resolved === '') {
+        return ["status"=>"UNMAPPED","name"=>$raw,"raw"=>$raw];
+    }
+
+    // If resolver returned a combination, we will split later outside.
+    // Here we return the resolved string; caller will split into names.
+    // Mark as RESOLVED_TEXT for further expansion:
+    return ["status"=>"RESOLVED_TEXT","name"=>$resolved,"raw"=>$raw];
 }
 
 /* ============================================================
@@ -1924,24 +2039,13 @@ $tecRaw = find_by_sql("
 if (!is_array($tecRaw)) $tecRaw = [];
 
 /* ============================================================
-   5.2 NORMALIZATION → techSummary[name][stage]
-   RULE UPDATE (YOUR REQUEST):
-   - If 3 technicians appear in one process entry, EACH gets 1 credit per record
-   - Therefore: DO NOT SPLIT counts. Assign full count to each valid technician.
-   - Invalid/unresolved names are distributed later (same as before).
+   5.2 BUILD:
+   - $techSummary (REAL techs only)
+   - $issuesSummary (UNREGISTERED/UNMAPPED) shown as list, NOT redistributed
+   CREDIT RULE: full credit to each technician found in the entry.
 ============================================================ */
-$techSummary = [];
-$tempDistributed = []; // stage => totalInvalid
-
-function initTech(&$techSummary, $name){
-    if (!isset($techSummary[$name])) {
-        $techSummary[$name] = [
-            "Preparation" => 0,
-            "Realization" => 0,
-            "Delivery"    => 0
-        ];
-    }
-}
+$techSummary   = [];
+$issuesSummary = []; // label => stages
 
 foreach ($tecRaw as $row){
 
@@ -1951,71 +2055,100 @@ foreach ($tecRaw as $row){
 
     if ($rawTech === '' || $stage === '' || $count <= 0) continue;
 
-    // 1A — Resolver alias (puede devolver null o lista separada por coma)
-    $resolved = resolveTechnician($aliasMap, $firstLetterName, $rawTech);
+    // A) split raw technician field into tokens
+    $tokens = splitTechRaw($rawTech);
+    if (empty($tokens)) $tokens = [cleanTechToken($rawTech)];
 
-    // 1B — No resolvió → distribuir luego
-    if ($resolved === null) {
-        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-        $tempDistributed[$stage] += $count;
-        continue;
-    }
+    // B) resolve each token
+    $finalPeople = []; // list of ['status'=>..., 'name'=>..., 'raw'=>...]
 
-    $names = array_values(array_filter(array_map('trim', explode(',', $resolved))));
-    if (empty($names)) {
-        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-        $tempDistributed[$stage] += $count;
-        continue;
-    }
+    foreach ($tokens as $tk){
 
-    // 1C — Filtra solo técnicos reales (comparación normalizada)
-    $validNames = [];
-    foreach ($names as $nm){
-        $k = strtoupper(trim($nm));
-        if (isset($realTechSet[$k])) {
-            $validNames[] = $realTechSet[$k]; // nombre “oficial”
+        $res = resolveOneTechToken($tk, $technicianNames, $aliasMap, $firstLetterName, $realTechSet);
+
+        if ($res["status"] === "RESOLVED_TEXT") {
+            // expand resolved text into one or more names
+            $expanded = splitTechRaw($res["name"]);
+            if (empty($expanded)) {
+                // fallback comma split
+                $expanded = array_values(array_filter(array_map('trim', explode(',', $res["name"]))));
+            }
+            if (empty($expanded)) {
+                // still nothing -> unmapped raw
+                $finalPeople[] = ["status"=>"UNMAPPED","name"=>$res["raw"],"raw"=>$res["raw"]];
+                continue;
+            }
+
+            foreach ($expanded as $nm){
+                $nm = trim($nm);
+                if ($nm === '') continue;
+
+                $k = strtoupper($nm);
+                if (isset($realTechSet[$k])) {
+                    $finalPeople[] = ["status"=>"REAL","name"=>$realTechSet[$k],"raw"=>$res["raw"]];
+                } else {
+                    $finalPeople[] = ["status"=>"UNREGISTERED","name"=>$nm,"raw"=>$res["raw"]];
+                }
+            }
+        } else {
+            // REAL / UNREGISTERED / UNMAPPED (single)
+            if (trim((string)$res["name"]) !== '') {
+                $finalPeople[] = $res;
+            }
         }
     }
 
-    $validNames = array_values(array_unique(array_filter($validNames)));
+    // C) dedupe within this entry to avoid double credit
+    $seen = [];
+    $uniquePeople = [];
+    foreach ($finalPeople as $p){
+        $key = $p["status"]."||".strtoupper(trim((string)$p["name"]))."||".strtoupper(trim((string)$p["raw"]));
+        if (isset($seen[$key])) continue;
+        $seen[$key] = true;
+        $uniquePeople[] = $p;
+    }
 
-    if (empty($validNames)) {
-        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-        $tempDistributed[$stage] += $count;
+    if (empty($uniquePeople)) {
+        // nothing could be interpreted: show raw entry as unmapped
+        $label = "UNMAPPED (" . $rawTech . ")";
+        initTech($issuesSummary, $label);
+        $issuesSummary[$label][$stage] += $count;
         continue;
     }
 
-    // ✅ CAMBIO CLAVE:
-    // Antes: $split = $count / count($validNames) y se repartía
-    // Ahora: cada técnico válido recibe el count COMPLETO
-    foreach ($validNames as $nm){
-        initTech($techSummary, $nm);
-        $techSummary[$nm][$stage] += $count;
+    // D) Participation-based counting: FULL count to each person
+    foreach ($uniquePeople as $p){
+
+        if ($p["status"] === "REAL") {
+            initTech($techSummary, $p["name"]);
+            $techSummary[$p["name"]][$stage] += $count;
+            continue;
+        }
+
+        if ($p["status"] === "UNREGISTERED") {
+            // show full name + raw token
+            $label = "UNREGISTERED (" . $p["name"] . ") [raw: " . $p["raw"] . "]";
+            initTech($issuesSummary, $label);
+            $issuesSummary[$label][$stage] += $count;
+            continue;
+        }
+
+        // UNMAPPED
+        $label = "UNMAPPED (" . $p["name"] . ")";
+        initTech($issuesSummary, $label);
+        $issuesSummary[$label][$stage] += $count;
     }
 }
 
 /* ============================================================
-   5.3 DISTRIBUTE INVALID COUNTS BETWEEN ALL REAL TECHNICIANS
-   (unchanged) - This keeps invalid activity in the totals,
-   but evenly, since we don't know who did it.
-============================================================ */
-foreach ($tempDistributed as $stage => $totalInvalid){
-
-    $perTech = $totalInvalid / max(1, count($realTechnicians));
-
-    foreach ($realTechnicians as $tech){
-        initTech($techSummary, $tech);
-        $techSummary[$tech][$stage] += $perTech;
-    }
-}
-
-/* ============================================================
-   5.4 SORT TABLE — DESCENDING BY TOTAL
+   5.3 SORT REAL TECH TABLE — DESCENDING BY TOTAL
 ============================================================ */
 $totalsForSort = [];
-
 foreach ($techSummary as $name => $stages){
-    $totalsForSort[$name] = (float)$stages["Preparation"] + (float)$stages["Realization"] + (float)$stages["Delivery"];
+    $totalsForSort[$name] =
+        (float)$stages["Preparation"] +
+        (float)$stages["Realization"] +
+        (float)$stages["Delivery"];
 }
 arsort($totalsForSort);
 
@@ -2025,7 +2158,7 @@ foreach ($totalsForSort as $name => $v){
 }
 
 /* ============================================================
-   5.5 TABLE — Technician Summary
+   5.4 TABLE — Technician Summary (REAL TECHS ONLY)
 ============================================================ */
 $pdf->SubTitle("5.1 Technician Activity Summary");
 
@@ -2066,11 +2199,67 @@ if (empty($techSummaryOrdered)) {
         ]);
     }
 
+    $pdf->Ln(6);
+}
+
+/* ============================================================
+   5.5 TABLE — Unregistered / Unmapped Entries (NO REDISTRIBUTION)
+============================================================ */
+$pdf->SubTitle("5.3 Unregistered / Unmapped Technician Entries");
+
+if (empty($issuesSummary)) {
+
+    $pdf->BodyText("No unregistered or unmapped technician values were found.");
+    $pdf->Ln(6);
+
+} else {
+
+    $issueSort = [];
+    foreach ($issuesSummary as $name => $stages){
+        $issueSort[$name] =
+            (float)$stages["Preparation"] +
+            (float)$stages["Realization"] +
+            (float)$stages["Delivery"];
+    }
+    arsort($issueSort);
+
+    $wTech  = 85;
+    $wPrep  = 18;
+    $wReal  = 22;
+    $wDel   = 20;
+    $wTotal = 15;
+
+    $pdf->TableHeader([
+        $wTech  => "Entry",
+        $wPrep  => "Prep",
+        $wReal  => "Real",
+        $wDel   => "Del",
+        $wTotal => "Total"
+    ]);
+
+    foreach ($issueSort as $name => $v){
+
+        $stages = $issuesSummary[$name];
+
+        $prep = round((float)$stages["Preparation"],1);
+        $real = round((float)$stages["Realization"],1);
+        $del  = round((float)$stages["Delivery"],1);
+        $tot  = round($prep + $real + $del,1);
+
+        $pdf->TableRow([
+            $wTech  => utf8_decode($name),
+            $wPrep  => $prep,
+            $wReal  => $real,
+            $wDel   => $del,
+            $wTotal => $tot
+        ]);
+    }
+
     $pdf->Ln(8);
 }
 
 /* ============================================================
-   5.2 PROCESS-SPECIFIC CHARTS
+   5.2 PROCESS-SPECIFIC CHARTS (REAL TECHS ONLY)
 ============================================================ */
 $pdf->SubTitle("5.2 Technician Contribution per Process");
 
@@ -2211,7 +2400,7 @@ if (array_sum($delData) == 0){
 ============================================================ */
 $pdf->SubTitle("5.4 Insights");
 
-// top solo si hay suma > 0
+// top only if there is data
 $topPrep = (array_sum($prepData) > 0) ? array_key_first($prepData) : null;
 $topReal = (array_sum($realData) > 0) ? array_key_first($realData) : null;
 $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
@@ -2219,20 +2408,22 @@ $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
 $lines = [];
 
 $lines[] = $topPrep
-  ? "- In Preparation, the leading contributor was {$topPrep}, indicating stronger participation in sample setup activities."
+  ? "- In Preparation, the leading contributor was {$topPrep}."
   : "- In Preparation, no workload was recorded for the selected period.";
 
 $lines[] = $topReal
-  ? "- In Realization, the highest execution workload was handled by {$topReal}, reflecting primary involvement in final test execution."
+  ? "- In Realization, the highest execution workload was handled by {$topReal}."
   : "- In Realization, no workload was recorded for the selected period.";
 
 $lines[] = $topDel
-  ? "- Delivery activities were dominated by {$topDel}, suggesting strong documentation and reporting performance."
+  ? "- Delivery activities were dominated by {$topDel}."
   : "- In Delivery, no workload was recorded for the selected period.";
 
-$lines[] = "- Multi-technician entries grant 1 full credit per technician (participation-based counting).";
+$lines[] = "- Multi-technician entries grant 1 full credit per technician (participation-based).";
+$lines[] = "- Unregistered/Unmapped technician values are listed in Section 5.3 and are NOT redistributed.";
 
 $pdf->BodyText(implode("\n\n", $lines));
+
 
 
 
