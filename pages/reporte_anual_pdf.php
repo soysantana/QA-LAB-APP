@@ -186,6 +186,34 @@ $clientStr = implode(" • ", $clientList);
 /* ============================================================
    ALIAS MAP — Technician Name Resolver
 ============================================================ */
+/* ============================================================
+   TECH ALIAS MAP (ROBUST)
+============================================================ */
+
+function tech_norm_token($s){
+    $s = strtolower(trim((string)$s));
+    if ($s === '') return '';
+    // quita puntos y caracteres extraños comunes
+    $s = str_replace(['+', '·', '+', '-', "\t"], '', $s);
+    // normaliza guiones raros a -
+    $s = str_replace(["-","+","—","-"], '-', $s);
+    // colapsa espacios
+    $s = preg_replace('/\s+/', ' ', $s);
+    return $s;
+}
+
+function tech_split_tokens($raw){
+    $raw = tech_norm_token($raw);
+    if ($raw === '') return [];
+    // separa por / - espacio , \ etc.
+    $parts = preg_split('/[\/\-\s\+,\\\\]+/', $raw);
+    $out = [];
+    foreach ((array)$parts as $p){
+        $p = tech_norm_token($p);
+        if ($p !== '') $out[] = $p;
+    }
+    return $out;
+}
 
 /* 1) LOAD ALIAS MAP */
 function loadTechnicianAliasMap() {
@@ -200,38 +228,68 @@ function loadTechnicianAliasMap() {
     $firstLetterCount = [];
     $firstLetterName  = [];
 
-    foreach ($rows as $r){
+    foreach ((array)$rows as $r){
 
-        $name = trim((string)$r['name']);
+        $name = trim((string)($r['name'] ?? ''));
         if ($name === "") continue;
 
-        $aliasRaw = trim((string)$r['alias']);
-
-        // MAPEAR ALIAS SEPARADOS POR / - , SPACE
+        // =========
+        // A) Alias manuales desde users.alias
+        // =========
+        $aliasRaw = trim((string)($r['alias'] ?? ''));
         if ($aliasRaw !== "") {
-            $tokens = preg_split('/[\/\-\s,\\\\]+/', strtolower($aliasRaw));
+            $tokens = tech_split_tokens($aliasRaw);
             foreach ($tokens as $t) {
-                $t = trim($t);
-                if ($t !== "") {
-                    $aliasMap[$t] = $name;
-                }
+                if ($t !== "") $aliasMap[$t] = $name;
             }
         }
 
-        // CONTAR INICIALES
+        // =========
+        // B) Alias automáticos desde el nombre
+        //    - first name, last name
+        //    - iniciales (LM)
+        // =========
+        $nameClean = tech_norm_token($name);
+        $nameParts = preg_split('/\s+/', $nameClean);
+        $nameParts = array_values(array_filter(array_map('trim',$nameParts)));
+
+        if (!empty($nameParts)){
+            // tokens del nombre (luis, monegro, etc.)
+            foreach ($nameParts as $np){
+                if (strlen($np) >= 2) $aliasMap[$np] = $name;
+            }
+
+            // iniciales (primera letra de cada palabra)
+            $ini = '';
+            foreach ($nameParts as $np){
+                $ini .= substr($np,0,1);
+            }
+            $ini = tech_norm_token($ini); // ej: "lm"
+            if (strlen($ini) >= 2) $aliasMap[$ini] = $name;
+
+            // caso común: primera + apellido (l + monegro)
+            if (count($nameParts) >= 2){
+                $first = substr($nameParts[0],0,1);
+                $last  = $nameParts[count($nameParts)-1];
+                $aliasMap[$first.$last] = $name; // ej: lmonegro
+            }
+        }
+
+        // =========
+        // C) Conteo inicial de la persona (fallback MUY limitado)
+        // =========
         $first = strtolower(substr($name,0,1));
         if (!isset($firstLetterCount[$first])) $firstLetterCount[$first] = 0;
         $firstLetterCount[$first]++;
     }
 
     // SI SOLO HAY UNA PERSONA POR ESA INICIAL → ASIGNAR DIRECTO
-    foreach ($rows as $r){
-        $name = trim((string)$r['name']);
+    foreach ((array)$rows as $r){
+        $name = trim((string)($r['name'] ?? ''));
         if ($name === "") continue;
 
         $first = strtolower(substr($name,0,1));
-
-        if ($firstLetterCount[$first] === 1){
+        if (($firstLetterCount[$first] ?? 0) === 1){
             $firstLetterName[$first] = $name;
         }
     }
@@ -239,37 +297,46 @@ function loadTechnicianAliasMap() {
     return [$aliasMap, $firstLetterName];
 }
 
+
 /* 2) RESOLVE TECH BASED ON ALIAS + INITIALS */
 function resolveTechnician($aliasMap, $firstLetterName, $rawTech){
 
     if ($rawTech === null) return null;
 
-    $clean = strtolower(trim((string)$rawTech));
+    $clean = tech_norm_token($rawTech);
     if ($clean === "") return null;
 
-    // Soporta A, B, C | A/B | A-B | A B | A,B | A-B-C etc.
-    $parts = preg_split('/[\/\-\s,\\\\]+/', $clean);
+    // tokens: soporta LM, L.M., LM/RRH, LM-RRH, LM RRH, etc.
+    $parts = tech_split_tokens($clean);
+    if (empty($parts)) return null;
+
     $names = [];
 
     foreach ($parts as $p){
 
         if ($p === "") continue;
 
-        // Si coincide exactamente con alias conocido
+        // 1) match directo en aliasMap (siglas, alias manual, alias auto)
         if (isset($aliasMap[$p])) {
             $names[] = $aliasMap[$p];
             continue;
         }
 
-        // Intentar con la inicial
-        $first = strtolower(substr($p,0,1));
+        // 2) si viene con puntos pegados (ya los quitamos) pero por si acaso:
+        $p2 = str_replace('.', '', $p);
+        if ($p2 !== $p && isset($aliasMap[$p2])) {
+            $names[] = $aliasMap[$p2];
+            continue;
+        }
 
+        // 3) fallback por inicial SOLO si está unívoca
+        $first = strtolower(substr($p,0,1));
         if (isset($firstLetterName[$first])) {
             $names[] = $firstLetterName[$first];
         }
     }
 
-    $names = array_unique($names);
+    $names = array_values(array_unique(array_filter($names)));
     if (empty($names)) return null;
 
     return implode(", ", $names);
@@ -1887,11 +1954,6 @@ foreach ((array)$realTechRows as $r){
     $realTechSet[strtoupper($nm)] = $nm; // key normalizada -> nombre original
 }
 
-if (empty($realTechnicians)) {
-    $realTechnicians = ["UNKNOWN_TECH"];
-    $realTechSet["UNKNOWN_TECH"] = "UNKNOWN_TECH";
-}
-
 /* ============================================================
    5.1 RAW TECHNICIAN DATA (FAST DATE RANGE)
 ============================================================ */
@@ -1926,10 +1988,13 @@ if (!is_array($tecRaw)) $tecRaw = [];
 
 /* ============================================================
    5.2 NORMALIZATION → techSummary[name][stage]
-   + DISTRIBUTION RULES FOR INVALID NAMES
+   RULE:
+   - Si resuelve alias → usa nombre completo
+   - Si no está en users pero sí en alias → se queda (NO se pierde)
+   - Si no se puede resolver → UNMAPPED (raw)
+   - NO distribuimos counts inválidos (eso daña los números)
 ============================================================ */
 $techSummary = [];
-$tempDistributed = []; // stage => totalInvalid
 
 function initTech(&$techSummary, $name){
     if (!isset($techSummary[$name])) {
@@ -1941,6 +2006,15 @@ function initTech(&$techSummary, $name){
     }
 }
 
+function normKey($s){
+    return strtoupper(trim((string)$s));
+}
+
+function isKnownRealTech($realTechSet, $name){
+    $k = normKey($name);
+    return isset($realTechSet[$k]);
+}
+
 foreach ($tecRaw as $row){
 
     $rawTech = trim((string)($row["Technician"] ?? ''));
@@ -1949,57 +2023,54 @@ foreach ($tecRaw as $row){
 
     if ($rawTech === '' || $stage === '' || $count <= 0) continue;
 
-    // 1A — Resolver alias (puede devolver null o lista separada por coma)
+    // 1) Resolver alias/iniciales
     $resolved = resolveTechnician($aliasMap, $firstLetterName, $rawTech);
 
-    // 1B — No resolvió → distribuir
+    // Si NO resolvió, lo dejamos como UNMAPPED(raw) (no se pierde)
     if ($resolved === null) {
-        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-        $tempDistributed[$stage] += $count;
+        $label = "UNMAPPED (" . $rawTech . ")";
+        initTech($techSummary, $label);
+        $techSummary[$label][$stage] += $count;
         continue;
     }
 
+    // puede venir "Nombre1, Nombre2"
     $names = array_values(array_filter(array_map('trim', explode(',', $resolved))));
+
     if (empty($names)) {
-        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-        $tempDistributed[$stage] += $count;
+        $label = "UNMAPPED (" . $rawTech . ")";
+        initTech($techSummary, $label);
+        $techSummary[$label][$stage] += $count;
         continue;
     }
 
-    // 1C — Filtra solo técnicos reales (comparación normalizada)
-    $validNames = [];
+    // 2) Para cada nombre: si está en users usamos el "oficial"; si no, se queda igual (no se pierde)
+    $finalNames = [];
     foreach ($names as $nm){
-        $k = strtoupper($nm);
+        $k = normKey($nm);
         if (isset($realTechSet[$k])) {
-            $validNames[] = $realTechSet[$k]; // nombre “oficial”
+            $finalNames[] = $realTechSet[$k];
+        } else {
+            // técnico fuera de users, pero resuelto por alias → lo mantenemos
+            $finalNames[] = $nm;
         }
     }
 
-    if (empty($validNames)) {
-        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
-        $tempDistributed[$stage] += $count;
+    $finalNames = array_values(array_unique(array_filter($finalNames)));
+
+    if (empty($finalNames)) {
+        $label = "UNMAPPED (" . $rawTech . ")";
+        initTech($techSummary, $label);
+        $techSummary[$label][$stage] += $count;
         continue;
     }
 
-    // ✅ IMPORTANTE: si hay varios nombres válidos, repartir el count entre ellos
-    $split = $count / count($validNames);
+    // 3) Si hay múltiples técnicos, dividir el count entre ellos
+    $split = $count / count($finalNames);
 
-    foreach ($validNames as $nm){
+    foreach ($finalNames as $nm){
         initTech($techSummary, $nm);
         $techSummary[$nm][$stage] += $split;
-    }
-}
-
-/* ============================================================
-   5.3 DISTRIBUTE INVALID COUNTS BETWEEN ALL REAL TECHNICIANS
-============================================================ */
-foreach ($tempDistributed as $stage => $totalInvalid){
-
-    $perTech = $totalInvalid / max(1, count($realTechnicians));
-
-    foreach ($realTechnicians as $tech){
-        initTech($techSummary, $tech);
-        $techSummary[$tech][$stage] += $perTech;
     }
 }
 
@@ -2009,7 +2080,7 @@ foreach ($tempDistributed as $stage => $totalInvalid){
 $totalsForSort = [];
 
 foreach ($techSummary as $name => $stages){
-    $totalsForSort[$name] = $stages["Preparation"] + $stages["Realization"] + $stages["Delivery"];
+    $totalsForSort[$name] = (float)$stages["Preparation"] + (float)$stages["Realization"] + (float)$stages["Delivery"];
 }
 arsort($totalsForSort);
 
@@ -2030,7 +2101,7 @@ if (empty($techSummaryOrdered)) {
 
 } else {
 
-    $wTech  = 50;
+    $wTech  = 60;
     $wPrep  = 20;
     $wReal  = 30;
     $wDel   = 25;
@@ -2109,7 +2180,6 @@ if (array_sum($prepData) == 0){
         $i++;
     }
 
-    // ✅ baja al final real del chart
     $pdf->SetY($chartY + ($i * 8.5) + 6);
 }
 
@@ -2206,7 +2276,6 @@ if (array_sum($delData) == 0){
 ============================================================ */
 $pdf->SubTitle("5.4 Insights");
 
-// top solo si hay suma > 0
 $topPrep = (array_sum($prepData) > 0) ? array_key_first($prepData) : null;
 $topReal = (array_sum($realData) > 0) ? array_key_first($realData) : null;
 $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
@@ -2214,20 +2283,21 @@ $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
 $lines = [];
 
 $lines[] = $topPrep
-  ? "- In Preparation, the leading contributor was {$topPrep}, indicating stronger participation in sample setup activities."
+  ? "- In Preparation, the leading contributor was {$topPrep}."
   : "- In Preparation, no workload was recorded for the selected period.";
 
 $lines[] = $topReal
-  ? "- In Realization, the highest execution workload was handled by {$topReal}, reflecting primary involvement in final test execution."
+  ? "- In Realization, the highest execution workload was handled by {$topReal}."
   : "- In Realization, no workload was recorded for the selected period.";
 
 $lines[] = $topDel
-  ? "- Delivery activities were dominated by {$topDel}, suggesting strong documentation and reporting performance."
+  ? "- Delivery activities were dominated by {$topDel}."
   : "- In Delivery, no workload was recorded for the selected period.";
 
-$lines[] = "- The distribution shows whether technicians tend to specialize in specific steps or maintain balanced involvement.";
+$lines[] = "- Any item shown as UNMAPPED means the raw technician value exists in DB but is not in your alias dictionary.";
 
 $pdf->BodyText(implode("\n\n", $lines));
+
 
 
 
