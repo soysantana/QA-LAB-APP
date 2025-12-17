@@ -295,7 +295,33 @@ foreach($byTech as $st){
   $kpi['real']  += (int)$st['real'];
   $kpi['del']   += (int)$st['del'];
   $kpi['total'] += (int)$st['total'];
+
+/* ======================================================
+   5.1) RANKINGS BY PROCESS (REG / PREP / REAL / DEL)
+====================================================== */
+
 }
+function sort_by_key_desc($arr, $key){
+  uasort($arr, function($a,$b) use ($key){
+    return ((int)$b[$key] <=> (int)$a[$key]);
+  });
+  return $arr;
+}
+
+$rankReg  = sort_by_key_desc($byTech, 'reg');
+$rankPrep = sort_by_key_desc($byTech, 'prep');
+$rankReal = sort_by_key_desc($byTech, 'real');
+$rankDel  = sort_by_key_desc($byTech, 'del');
+
+// opcional: top N
+$TOPN = 15;
+$rankRegTop  = array_slice($rankReg,  0, $TOPN, true);
+$rankPrepTop = array_slice($rankPrep, 0, $TOPN, true);
+$rankRealTop = array_slice($rankReal, 0, $TOPN, true);
+$rankDelTop  = array_slice($rankDel,  0, $TOPN, true);
+
+
+
 
 /* ======================================================
    6) RENDER
@@ -454,6 +480,102 @@ foreach($byTech as $st){
 
   <?php else: /* view=list */ ?>
 
+    <!-- RANKINGS POR PROCESO -->
+<div class="card shadow-sm border-0 mb-3">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <strong>Ranking de Técnicos por Proceso</strong>
+      <div class="small text-muted">Top <?= (int)$TOPN ?> por etapa (REG / PREP / REAL / DEL).</div>
+    </div>
+    <span class="badge bg-light text-dark border">
+      Participación por etapa (sin mezclar)
+    </span>
+  </div>
+
+  <div class="card-body">
+    <ul class="nav nav-pills mb-3" id="rankTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-reg" data-bs-toggle="pill" data-bs-target="#pane-reg" type="button" role="tab">Registro</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-prep" data-bs-toggle="pill" data-bs-target="#pane-prep" type="button" role="tab">Preparación</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-real" data-bs-toggle="pill" data-bs-target="#pane-real" type="button" role="tab">Realización</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-del" data-bs-toggle="pill" data-bs-target="#pane-del" type="button" role="tab">Entrega</button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <?php
+        function render_rank_table($list, $field, $from, $to){
+          $max = 0;
+          foreach($list as $st){ $max = max($max, (int)$st[$field]); }
+          if ($max <= 0) $max = 1;
+      ?>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th style="width:60px;" class="text-center">#</th>
+                <th>Técnico</th>
+                <th style="width:110px;" class="text-center">Alias</th>
+                <th style="width:120px;" class="text-center">Conteo</th>
+                <th>Barra</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php $i=1; foreach($list as $alias=>$st): ?>
+                <?php $val = (int)$st[$field]; $pct = ($val/$max)*100; ?>
+                <tr>
+                  <td class="text-center fw-bold"><?= $i ?></td>
+                  <td>
+                    <div class="fw-semibold"><?= h($st['name']) ?></div>
+                    <div class="small text-muted">
+                      <a href="?view=detail&tech=<?=urlencode($alias)?>&from=<?=h($from)?>&to=<?=h($to)?>" class="text-decoration-none">
+                        Ver detalle
+                      </a>
+                    </div>
+                  </td>
+                  <td class="text-center"><code><?= h($st['alias']) ?></code></td>
+                  <td class="text-center fw-bold"><?= $val ?></td>
+                  <td>
+                    <div class="rankbar">
+                      <div class="rankbar-fill" style="width: <?= (float)$pct ?>%;"></div>
+                    </div>
+                  </td>
+                </tr>
+              <?php $i++; endforeach; ?>
+              <?php if($i===1): ?>
+                <tr><td colspan="5" class="text-center text-muted py-3">Sin datos.</td></tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php } ?>
+
+      <div class="tab-pane fade show active" id="pane-reg" role="tabpanel">
+        <?php render_rank_table($rankRegTop, 'reg', $from, $to); ?>
+      </div>
+
+      <div class="tab-pane fade" id="pane-prep" role="tabpanel">
+        <?php render_rank_table($rankPrepTop, 'prep', $from, $to); ?>
+      </div>
+
+      <div class="tab-pane fade" id="pane-real" role="tabpanel">
+        <?php render_rank_table($rankRealTop, 'real', $from, $to); ?>
+      </div>
+
+      <div class="tab-pane fade" id="pane-del" role="tabpanel">
+        <?php render_rank_table($rankDelTop, 'del', $from, $to); ?>
+      </div>
+    </div>
+  </div>
+</div>
+
+
     <?php if(empty($byTech)): ?>
       <div class="alert alert-info">No hay datos en el rango seleccionado.</div>
     <?php else: ?>
@@ -525,6 +647,21 @@ foreach($byTech as $st){
 .tech-card:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(15,23,42,0.10); }
 .tech-alias{ font-weight:900; font-size:1.15rem; color:#0f172a; }
 .tech-name{ color:#64748b; font-size:.9rem; margin-top:2px; }
+
+.rankbar{
+  width:100%;
+  height:10px;
+  border-radius:999px;
+  background:#eef2ff;
+  overflow:hidden;
+  border:1px solid #e5e7eb;
+}
+.rankbar-fill{
+  height:100%;
+  border-radius:999px;
+  background:#2563eb;
+}
+
 </style>
 
 <?php include_once('../components/footer.php'); ?>
