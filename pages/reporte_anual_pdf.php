@@ -186,34 +186,6 @@ $clientStr = implode(" • ", $clientList);
 /* ============================================================
    ALIAS MAP — Technician Name Resolver
 ============================================================ */
-/* ============================================================
-   TECH ALIAS MAP (ROBUST)
-============================================================ */
-
-function tech_norm_token($s){
-    $s = strtolower(trim((string)$s));
-    if ($s === '') return '';
-    // quita puntos y caracteres extraños comunes
-    $s = str_replace(['.', '·', '+', '-', "\t"], '', $s);
-    // normaliza guiones raros a -
-    $s = str_replace(["-","+","—","-"], '-', $s);
-    // colapsa espacios
-    $s = preg_replace('/\s+/', ' ', $s);
-    return $s;
-}
-
-function tech_split_tokens($raw){
-    $raw = tech_norm_token($raw);
-    if ($raw === '') return [];
-    // separa por / - espacio , \ etc.
-    $parts = preg_split('/[\/\-\s\+,\\\\]+/', $raw);
-    $out = [];
-    foreach ((array)$parts as $p){
-        $p = tech_norm_token($p);
-        if ($p !== '') $out[] = $p;
-    }
-    return $out;
-}
 
 /* 1) LOAD ALIAS MAP */
 function loadTechnicianAliasMap() {
@@ -228,68 +200,38 @@ function loadTechnicianAliasMap() {
     $firstLetterCount = [];
     $firstLetterName  = [];
 
-    foreach ((array)$rows as $r){
+    foreach ($rows as $r){
 
-        $name = trim((string)($r['name'] ?? ''));
+        $name = trim((string)$r['name']);
         if ($name === "") continue;
 
-        // =========
-        // A) Alias manuales desde users.alias
-        // =========
-        $aliasRaw = trim((string)($r['alias'] ?? ''));
+        $aliasRaw = trim((string)$r['alias']);
+
+        // MAPEAR ALIAS SEPARADOS POR / - , SPACE
         if ($aliasRaw !== "") {
-            $tokens = tech_split_tokens($aliasRaw);
+            $tokens = preg_split('/[\/\-\s,\\\\]+/', strtolower($aliasRaw));
             foreach ($tokens as $t) {
-                if ($t !== "") $aliasMap[$t] = $name;
+                $t = trim($t);
+                if ($t !== "") {
+                    $aliasMap[$t] = $name;
+                }
             }
         }
 
-        // =========
-        // B) Alias automáticos desde el nombre
-        //    - first name, last name
-        //    - iniciales (LM)
-        // =========
-        $nameClean = tech_norm_token($name);
-        $nameParts = preg_split('/\s+/', $nameClean);
-        $nameParts = array_values(array_filter(array_map('trim',$nameParts)));
-
-        if (!empty($nameParts)){
-            // tokens del nombre (luis, monegro, etc.)
-            foreach ($nameParts as $np){
-                if (strlen($np) >= 2) $aliasMap[$np] = $name;
-            }
-
-            // iniciales (primera letra de cada palabra)
-            $ini = '';
-            foreach ($nameParts as $np){
-                $ini .= substr($np,0,1);
-            }
-            $ini = tech_norm_token($ini); // ej: "lm"
-            if (strlen($ini) >= 2) $aliasMap[$ini] = $name;
-
-            // caso común: primera + apellido (l + monegro)
-            if (count($nameParts) >= 2){
-                $first = substr($nameParts[0],0,1);
-                $last  = $nameParts[count($nameParts)-1];
-                $aliasMap[$first.$last] = $name; // ej: lmonegro
-            }
-        }
-
-        // =========
-        // C) Conteo inicial de la persona (fallback MUY limitado)
-        // =========
+        // CONTAR INICIALES
         $first = strtolower(substr($name,0,1));
         if (!isset($firstLetterCount[$first])) $firstLetterCount[$first] = 0;
         $firstLetterCount[$first]++;
     }
 
     // SI SOLO HAY UNA PERSONA POR ESA INICIAL → ASIGNAR DIRECTO
-    foreach ((array)$rows as $r){
-        $name = trim((string)($r['name'] ?? ''));
+    foreach ($rows as $r){
+        $name = trim((string)$r['name']);
         if ($name === "") continue;
 
         $first = strtolower(substr($name,0,1));
-        if (($firstLetterCount[$first] ?? 0) === 1){
+
+        if ($firstLetterCount[$first] === 1){
             $firstLetterName[$first] = $name;
         }
     }
@@ -297,46 +239,37 @@ function loadTechnicianAliasMap() {
     return [$aliasMap, $firstLetterName];
 }
 
-
 /* 2) RESOLVE TECH BASED ON ALIAS + INITIALS */
 function resolveTechnician($aliasMap, $firstLetterName, $rawTech){
 
     if ($rawTech === null) return null;
 
-    $clean = tech_norm_token($rawTech);
+    $clean = strtolower(trim((string)$rawTech));
     if ($clean === "") return null;
 
-    // tokens: soporta LM, L.M., LM/RRH, LM-RRH, LM RRH, etc.
-    $parts = tech_split_tokens($clean);
-    if (empty($parts)) return null;
-
+    // Soporta A, B, C | A/B | A-B | A B | A,B | A-B-C etc.
+    $parts = preg_split('/[\/\-\s,\\\\]+/', $clean);
     $names = [];
 
     foreach ($parts as $p){
 
         if ($p === "") continue;
 
-        // 1) match directo en aliasMap (siglas, alias manual, alias auto)
+        // Si coincide exactamente con alias conocido
         if (isset($aliasMap[$p])) {
             $names[] = $aliasMap[$p];
             continue;
         }
 
-        // 2) si viene con puntos pegados (ya los quitamos) pero por si acaso:
-        $p2 = str_replace('.', '', $p);
-        if ($p2 !== $p && isset($aliasMap[$p2])) {
-            $names[] = $aliasMap[$p2];
-            continue;
-        }
-
-        // 3) fallback por inicial SOLO si está unívoca
+        // Intentar con la inicial
         $first = strtolower(substr($p,0,1));
+
         if (isset($firstLetterName[$first])) {
             $names[] = $firstLetterName[$first];
         }
     }
 
-    $names = array_values(array_unique(array_filter($names)));
+    $names = array_unique($names);
     if (empty($names)) return null;
 
     return implode(", ", $names);
@@ -1920,7 +1853,6 @@ $summary .= ($cv < 20 ? "a highly stable demand." : ($cv < 40 ? "a moderately co
 $pdf->BodyText($summary);
 $pdf->Ln(3);
 
-
 /* ============================================================
    SECTION 5 — Technician Performance Overview
 ============================================================ */
@@ -1952,6 +1884,11 @@ foreach ((array)$realTechRows as $r){
     if ($nm === '') continue;
     $realTechnicians[] = $nm;
     $realTechSet[strtoupper($nm)] = $nm; // key normalizada -> nombre original
+}
+
+if (empty($realTechnicians)) {
+    $realTechnicians = ["UNKNOWN_TECH"];
+    $realTechSet["UNKNOWN_TECH"] = "UNKNOWN_TECH";
 }
 
 /* ============================================================
@@ -1988,13 +1925,13 @@ if (!is_array($tecRaw)) $tecRaw = [];
 
 /* ============================================================
    5.2 NORMALIZATION → techSummary[name][stage]
-   RULE:
-   - Si resuelve alias → usa nombre completo
-   - Si no está en users pero sí en alias → se queda (NO se pierde)
-   - Si no se puede resolver → UNMAPPED (raw)
-   - NO distribuimos counts inválidos (eso daña los números)
+   RULE UPDATE (YOUR REQUEST):
+   - If 3 technicians appear in one process entry, EACH gets 1 credit per record
+   - Therefore: DO NOT SPLIT counts. Assign full count to each valid technician.
+   - Invalid/unresolved names are distributed later (same as before).
 ============================================================ */
 $techSummary = [];
+$tempDistributed = []; // stage => totalInvalid
 
 function initTech(&$techSummary, $name){
     if (!isset($techSummary[$name])) {
@@ -2006,15 +1943,6 @@ function initTech(&$techSummary, $name){
     }
 }
 
-function normKey($s){
-    return strtoupper(trim((string)$s));
-}
-
-function isKnownRealTech($realTechSet, $name){
-    $k = normKey($name);
-    return isset($realTechSet[$k]);
-}
-
 foreach ($tecRaw as $row){
 
     $rawTech = trim((string)($row["Technician"] ?? ''));
@@ -2023,54 +1951,61 @@ foreach ($tecRaw as $row){
 
     if ($rawTech === '' || $stage === '' || $count <= 0) continue;
 
-    // 1) Resolver alias/iniciales
+    // 1A — Resolver alias (puede devolver null o lista separada por coma)
     $resolved = resolveTechnician($aliasMap, $firstLetterName, $rawTech);
 
-    // Si NO resolvió, lo dejamos como UNMAPPED(raw) (no se pierde)
+    // 1B — No resolvió → distribuir luego
     if ($resolved === null) {
-        $label = "UNMAPPED (" . $rawTech . ")";
-        initTech($techSummary, $label);
-        $techSummary[$label][$stage] += $count;
+        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+        $tempDistributed[$stage] += $count;
         continue;
     }
 
-    // puede venir "Nombre1, Nombre2"
     $names = array_values(array_filter(array_map('trim', explode(',', $resolved))));
-
     if (empty($names)) {
-        $label = "UNMAPPED (" . $rawTech . ")";
-        initTech($techSummary, $label);
-        $techSummary[$label][$stage] += $count;
+        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+        $tempDistributed[$stage] += $count;
         continue;
     }
 
-    // 2) Para cada nombre: si está en users usamos el "oficial"; si no, se queda igual (no se pierde)
-    $finalNames = [];
+    // 1C — Filtra solo técnicos reales (comparación normalizada)
+    $validNames = [];
     foreach ($names as $nm){
-        $k = normKey($nm);
+        $k = strtoupper(trim($nm));
         if (isset($realTechSet[$k])) {
-            $finalNames[] = $realTechSet[$k];
-        } else {
-            // técnico fuera de users, pero resuelto por alias → lo mantenemos
-            $finalNames[] = $nm;
+            $validNames[] = $realTechSet[$k]; // nombre “oficial”
         }
     }
 
-    $finalNames = array_values(array_unique(array_filter($finalNames)));
+    $validNames = array_values(array_unique(array_filter($validNames)));
 
-    if (empty($finalNames)) {
-        $label = "UNMAPPED (" . $rawTech . ")";
-        initTech($techSummary, $label);
-        $techSummary[$label][$stage] += $count;
+    if (empty($validNames)) {
+        if (!isset($tempDistributed[$stage])) $tempDistributed[$stage] = 0;
+        $tempDistributed[$stage] += $count;
         continue;
     }
 
-    // 3) Si hay múltiples técnicos, dividir el count entre ellos
-    $split = $count / count($finalNames);
-
-    foreach ($finalNames as $nm){
+    // ✅ CAMBIO CLAVE:
+    // Antes: $split = $count / count($validNames) y se repartía
+    // Ahora: cada técnico válido recibe el count COMPLETO
+    foreach ($validNames as $nm){
         initTech($techSummary, $nm);
-        $techSummary[$nm][$stage] += $split;
+        $techSummary[$nm][$stage] += $count;
+    }
+}
+
+/* ============================================================
+   5.3 DISTRIBUTE INVALID COUNTS BETWEEN ALL REAL TECHNICIANS
+   (unchanged) - This keeps invalid activity in the totals,
+   but evenly, since we don't know who did it.
+============================================================ */
+foreach ($tempDistributed as $stage => $totalInvalid){
+
+    $perTech = $totalInvalid / max(1, count($realTechnicians));
+
+    foreach ($realTechnicians as $tech){
+        initTech($techSummary, $tech);
+        $techSummary[$tech][$stage] += $perTech;
     }
 }
 
@@ -2101,7 +2036,7 @@ if (empty($techSummaryOrdered)) {
 
 } else {
 
-    $wTech  = 60;
+    $wTech  = 50;
     $wPrep  = 20;
     $wReal  = 30;
     $wDel   = 25;
@@ -2276,6 +2211,7 @@ if (array_sum($delData) == 0){
 ============================================================ */
 $pdf->SubTitle("5.4 Insights");
 
+// top solo si hay suma > 0
 $topPrep = (array_sum($prepData) > 0) ? array_key_first($prepData) : null;
 $topReal = (array_sum($realData) > 0) ? array_key_first($realData) : null;
 $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
@@ -2283,21 +2219,20 @@ $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
 $lines = [];
 
 $lines[] = $topPrep
-  ? "- In Preparation, the leading contributor was {$topPrep}."
+  ? "- In Preparation, the leading contributor was {$topPrep}, indicating stronger participation in sample setup activities."
   : "- In Preparation, no workload was recorded for the selected period.";
 
 $lines[] = $topReal
-  ? "- In Realization, the highest execution workload was handled by {$topReal}."
+  ? "- In Realization, the highest execution workload was handled by {$topReal}, reflecting primary involvement in final test execution."
   : "- In Realization, no workload was recorded for the selected period.";
 
 $lines[] = $topDel
-  ? "- Delivery activities were dominated by {$topDel}."
+  ? "- Delivery activities were dominated by {$topDel}, suggesting strong documentation and reporting performance."
   : "- In Delivery, no workload was recorded for the selected period.";
 
-$lines[] = "- Any item shown as UNMAPPED means the raw technician value exists in DB but is not in your alias dictionary.";
+$lines[] = "- Multi-technician entries grant 1 full credit per technician (participation-based counting).";
 
 $pdf->BodyText(implode("\n\n", $lines));
-
 
 
 
@@ -2596,7 +2531,7 @@ if (!function_exists("str_contains")) {
 
 
 /* ============================================================
-   SECTION 7 — REPEAT TEST ANALYSIS (ONE PAGE EXEC SUMMARY)
+   SECTION 7 — REPEAT TEST ANALYSIS
 ============================================================ */
 
 $pdf->AddPage();
@@ -2623,6 +2558,7 @@ $repeatRaw = $db->query("
 
 $totalRepeat = count($repeatRaw);
 
+/* If no repeat tests */
 if ($totalRepeat == 0) {
     $pdf->BodyText("No repeat tests were registered during the year.");
     $pdf->Ln(8);
@@ -2640,39 +2576,43 @@ $repeatReasons  = [];
 
 foreach ($repeatRaw as $r){
 
-    $test   = trim($r["Test_Type"] ?? "");
-    $client = trim($r["Client"] ?? "");
-    $date   = $r["Registed_Date"] ?? "";
+    $test  = trim($r["Test_Type"]);
+    $client = trim($r["Client"]);
+    $date   = $r["Registed_Date"];
 
     if ($test !== "") {
         if (!isset($repeatByType[$test])) $repeatByType[$test] = 0;
         $repeatByType[$test]++;
     }
 
-    if ($client === "") $client = "UNKNOWN";
-    if (!isset($repeatByClient[$client])) $repeatByClient[$client] = 0;
-    $repeatByClient[$client]++;
+    if ($client !== "") {
+        if (!isset($repeatByClient[$client])) $repeatByClient[$client] = 0;
+        $repeatByClient[$client]++;
+    }
 
+    /* Monthly trend */
     if ($date) {
         $m = (int)substr($date,5,2);
         if ($m>=1 && $m<=12) $repeatByMonth[$m]++;
     }
 
-    $cause = strtolower(trim((string)(($r["Comment"] ?? "")." ".($r["Comments"] ?? ""))));
+    /* Root Cause */
+   $cause = strtolower(trim( ($r["Comment"] ?? "") . " " . ($r["Comments"] ?? "") ));
+
 
     if ($cause !== ""){
 
         if (str_contains($cause,"sample") || str_contains($cause,"insufficient"))
-            $root = "Sample";
+            $root = "Sample Issue";
 
         elseif (str_contains($cause,"tech") || str_contains($cause,"human"))
-            $root = "Tech";
+            $root = "Technician Error";
 
         elseif (str_contains($cause,"equip") || str_contains($cause,"machine"))
-            $root = "Equipment";
+            $root = "Equipment Issue";
 
         elseif (str_contains($cause,"fail") || str_contains($cause,"outlier"))
-            $root = "Fail/Outlier";
+            $root = "Outlier / Fail";
 
         else
             $root = "Other";
@@ -2682,218 +2622,183 @@ foreach ($repeatRaw as $r){
     }
 }
 
-arsort($repeatByType);
-arsort($repeatByClient);
-arsort($repeatReasons);
+/* ============================================================
+   7.3 SUMMARY KPI CARDS
+============================================================ */
 
 $repeatPct = ($totalTests > 0) ? round(($totalRepeat / $totalTests) * 100, 2) : 0;
-
-/* ============================================================
-   7.3 KPI (ONE LINE)
-============================================================ */
 
 $pdf->SetFillColor(240,240,240);
 $pdf->SetFont("Arial","B",10);
 
-$pdf->Cell(95,8,"Total Repeats: $totalRepeat",1,0,'C',true);
-$pdf->Cell(95,8,"Repeat Rate: $repeatPct%",1,1,'C',true);
-$pdf->Ln(2);
+$kW = 60; $kH = 10;
+
+$pdf->Cell($kW,$kH,"Total Repeat Tests: $totalRepeat",1,0,'C',true);
+$pdf->Cell($kW,$kH,"Repeat Rate: $repeatPct%",1,0,'C',true);
+$pdf->Ln(12);
 
 /* ============================================================
-   HELPERS: TOP N + OTHER
-============================================================ */
-function topNPlusOther($arr, $n=8){
-    arsort($arr);
-    $top = array_slice($arr, 0, $n, true);
-    $other = array_sum($arr) - array_sum($top);
-    if ($other > 0) $top["OTHER"] = $other;
-    return $top;
-}
-
-/* ============================================================
-   7.4 TABLES (COMPACT, TWO COLUMNS)
-   LEFT: Repeat by Type (TOP 8)
-   RIGHT: Repeat by Client (TOP 8)
+   7.4 REPEAT TESTS PER TYPE — TABLE
 ============================================================ */
 
-$topTypes   = topNPlusOther($repeatByType, 8);
-$topClients = topNPlusOther($repeatByClient, 8);
+$pdf->SubTitle("7.1 Repeat per Test Type");
 
-$startY = $pdf->GetY();
-$leftX  = 12;
-$rightX = 110;
+arsort($repeatByType);
 
-/* --- LEFT TABLE: TYPES --- */
-$pdf->SetXY($leftX, $startY);
-$pdf->SetFont("Arial","B",9);
-$pdf->Cell(90,5,"Repeat by Test Type (Top 8)",0,1);
-
-$pdf->SetX($leftX);
 $pdf->TableHeader([
-    65=>"Type",
-    10=>"N",
-    15=>"%"
+    60=>"Test Type",
+    20=>"Repeats",
+    30=>"% of Its Type"
 ]);
 
-foreach ($topTypes as $t=>$cnt){
+foreach ($repeatByType as $t=>$cnt){
+
     $typeTotal = $testCountByType[$t] ?? 1;
     $pctType   = round(($cnt/$typeTotal)*100,1);
 
-    $name = ($t==="OTHER") ? "OTHER" : ($testNames[$t] ?? $t);
+    $name = $testNames[$t] ?? $t;
 
-    $pdf->SetX($leftX);
     $pdf->TableRow([
-        65=>safeTextUtf($name),
-        10=>$cnt,
-        15=>$pctType."%"
+        60=>utf8_decode($name),
+        20=>$cnt,
+        30=>$pctType."%"
     ]);
 }
 
-/* --- RIGHT TABLE: CLIENTS --- */
-$pdf->SetXY($rightX, $startY);
-$pdf->SetFont("Arial","B",9);
-$pdf->Cell(90,5,"Repeat by Client (Top 8)",0,1);
-
-$pdf->SetX($rightX);
-$pdf->TableHeader([
-    65=>"Client",
-    10=>"N",
-    15=>"%"
-]);
-
-foreach ($topClients as $cl=>$cnt){
-    $pct = round(($cnt / $totalRepeat)*100,1)."%" ;
-    $label = ($cl==="") ? "UNKNOWN" : $cl;
-
-    $pdf->SetX($rightX);
-    $pdf->TableRow([
-        65=>safeTextUtf($label),
-        10=>$cnt,
-        15=>$pct
-    ]);
-}
-
-/* move Y below the lower table */
-$afterTablesY = max($pdf->GetY(), $startY + 55);
-$pdf->SetY($afterTablesY + 2);
+$pdf->Ln(8);
 
 /* ============================================================
-   7.5 CHARTS (COMPACT)
-   A) Horizontal Bars: Type Top 8 + Other
-   B) Mini Line: Monthly Trend
+   7.5 CHART — REPEAT BY TEST TYPE (Horizontal Bars)
 ============================================================ */
 
-$pdf->SetFont("Arial","B",9);
-$pdf->Cell(0,5,"7.2 Repeat by Test Type (Chart - Top 8)",0,1);
+$pdf->SubTitle("7.2 Repeat by Test Type (Chart)");
+ensureSpace($pdf, 60);
+$chartX = 40;
+$chartY = $pdf->GetY() + 4;
+$barW   = 120;
+$barH   = 6;
 
-ensureSpace($pdf, 40);
-
-$chartX = 60;
-$chartY = $pdf->GetY() + 1;
-$labelW = 45;
-$barW   = 85;
-$barH   = 3.5;
-$rowGap = 5;
-
-$maxR = max($topTypes);
+$maxR = max($repeatByType);
 if ($maxR<=0) $maxR = 1;
 
 $i = 0;
-$pdf->SetFont("Arial","",7);
+foreach ($repeatByType as $t=>$cnt){
 
-foreach ($topTypes as $t=>$cnt){
-
-    $y = $chartY + ($i * $rowGap);
+    $y = $chartY + ($i * 7.5);
     list($r,$g,$b) = pickColor($i);
 
     $bw = ($cnt / $maxR) * $barW;
-    $label = ($t==="OTHER") ? "OTHER" : ($testNames[$t] ?? $t);
 
-    $pdf->SetXY($chartX - $labelW - 2, $y);
-    $pdf->Cell($labelW, $barH, safeTextUtf($label), 0, 0, "R");
+    $label = $testNames[$t] ?? $t;
+
+    $pdf->SetXY($chartX - 38, $y);
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(35,6,utf8_decode($label),0,0,"R");
 
     $pdf->SetFillColor($r,$g,$b);
     $pdf->Rect($chartX, $y, $bw, $barH, "F");
 
-    $pdf->SetXY($chartX + $barW + 3, $y);
-    $pdf->Cell(10, $barH, (string)$cnt, 0, 0);
+    $pdf->SetXY($chartX + $bw + 5, $y);
+    $pdf->Cell(15,6,$cnt);
 
     $i++;
 }
 
-$pdf->SetY($chartY + ($i*$rowGap) + 2);
+$pdf->Ln(($i*8)+5);
 
-/* --- MONTHLY MINI LINE --- */
-$pdf->SetFont("Arial","B",9);
-$pdf->Cell(0,5,"7.4 Monthly Repeat Trend",0,1);
+/* ============================================================
+   7.6 REPEAT PER CLIENT — TABLE
+============================================================ */
 
-ensureSpace($pdf, 38);
+$pdf->SubTitle("7.3 Repeat per Client");
 
-$cx = 25;
-$cy = $pdf->GetY() + 10;
-$w  = 160;
-$h  = 22;
+arsort($repeatByClient);
 
-drawAxis($pdf, $cx, $cy, $w, $h);
+$pdf->TableHeader([
+    60=>"Client",
+    20=>"Repeats",
+    30=>"% of Annual"
+]);
 
-$maxM = max($repeatByMonth);
-if ($maxM <= 0) $maxM = 1;
+foreach ($repeatByClient as $cl=>$cnt){
 
-$months = ["J","F","M","A","M","J","J","A","S","O","N","D"];
-$pdf->SetFont("Arial","",6);
-$pdf->SetTextColor(80,80,80);
+    $pct = round(($cnt / $totalRepeat)*100,1)."%";
 
-for ($m=1; $m<=12; $m++){
-    $x = $cx + ($w/12)*($m-0.5);
-    $pdf->SetXY($x - 2, $cy + $h + 1);
-    $pdf->Cell(4, 3, $months[$m-1], 0, 0, "C");
+    $pdf->TableRow([
+        60=>utf8_decode($cl ?: "UNKNOWN"),
+        20=>$cnt,
+        30=>$pct
+    ]);
 }
 
-$prevX = null; $prevY = null;
+$pdf->Ln(8);
+
+/* ============================================================
+   7.7 MONTHLY TREND — LINE CHART
+============================================================ */
+
+$pdf->SubTitle("7.4 Monthly Repeat Trend");
+ensureSpace($pdf, 60);
+$cx = 25;
+$cy = $pdf->GetY() + 15;
+$w  = 160;
+$h  = 40;
+
+drawAxis($pdf,$cx,$cy,$w,$h);
+
+$maxM = max($repeatByMonth);
+if ($maxM<=0) $maxM = 1;
+
+$prevX = null;
+$prevY = null;
+
 foreach ($repeatByMonth as $m=>$v){
 
     $x = $cx + ($w/12)*($m-0.5);
-    $y = $cy + $h - ($v/$maxM)*($h-3);
+    $y = $cy + $h - ($v/$maxM)*($h-4);
 
-    if ($prevX !== null) $pdf->Line($prevX, $prevY, $x, $y);
+    if ($prevX !== null){
+        $pdf->Line($prevX,$prevY,$x,$y);
+    }
 
+     /* marker */
     $pdf->SetFillColor(0,0,0);
-    $pdf->Rect($x-0.9, $y-0.9, 1.8, 1.8, "F");
+    $pdf->Rect($x-1.5, $y-1.5, 3, 3, "F");
 
-    $prevX=$x; $prevY=$y;
+    $prevX = $x;
+    $prevY = $y;
 }
 
-$pdf->SetY($cy + $h + 6);
+$pdf->Ln(55);
+
 
 /* ============================================================
-   7.6 INSIGHTS (ONE PARAGRAPH)
+   7.9 INSIGHTS
 ============================================================ */
 
-$pdf->SetFont("Arial","B",9);
-$pdf->Cell(0,5,"7.5 Insights & Recommendations",0,1);
+$pdf->SubTitle("7.5 Insights & Recommendations");
 
-$topTypeCode = array_key_first($repeatByType);
-$topTypeName = $testNames[$topTypeCode] ?? $topTypeCode;
-
+$topType = array_key_first($repeatByType);
 $topClient = array_key_first($repeatByClient);
 
-$ins = "- Top repeat test type: {$topTypeName}\n"
-     . "- Top repeat client: {$topClient}\n"
-     . "- Repeat rate: {$repeatPct}%\n"
-     . "- Focus corrective actions on sample handling, technician checks, and equipment verification.";
+$ins = "
+- The highest repeat volume came from test type '$topType'.
+- Client '$topClient' contributed the majority of repeat cases.
+- Repeat rate of {$repeatPct}% indicates ".($repeatPct>5?"a need for targeted improvement.":"good general performance.")."
+- Peak months for repeat activity align with workload seasonality.
+";
 
-$pdf->SetFont("Arial","",8);
-$pdf->MultiCell(0,4.5,$ins);
+$pdf->BodyText($ins);
 
 SkipRepeatSection:
-$pdf->Ln(2);
+$pdf->Ln(5);
 
 
 /* ============================================================
-   SECTION 8 — NCR (NON CONFORMITY REPORTS) — FULL ANALYSIS — OPTIMIZED (CONTROLLED)
+   SECTION 8 — NCR (NON CONFORMITY REPORTS) — FULL ANALYSIS — OPTIMIZED
 ============================================================ */
 
-ini_set("memory_limit","512M");
+ini_set("memory_limit","512M"); 
 gc_enable();
 
 $pdf->AddPage();
@@ -2907,8 +2812,8 @@ $clientCacheRaw = find_by_sql("
     FROM lab_test_requisition_form
 ");
 $clientIndex = [];
-foreach ((array)$clientCacheRaw as $cx){
-    $clientIndex[($cx["Sample_ID"] ?? '')."-".($cx["Sample_Number"] ?? '')] = $cx["Client"] ?? "UNKNOWN";
+foreach ($clientCacheRaw as $cx){
+    $clientIndex[$cx["Sample_ID"]."-".$cx["Sample_Number"]] = $cx["Client"];
 }
 unset($clientCacheRaw);
 gc_collect_cycles();
@@ -2922,6 +2827,7 @@ function getClientFromCache($sid,$snum,$cache){
 /* ============================================================
    1) OFFICIAL NCR FROM ensayos_reporte
 ============================================================ */
+
 $officialNCR = find_by_sql("
     SELECT 
         r.Client,
@@ -2948,6 +2854,7 @@ $officialNCR = find_by_sql("
 /* ============================================================
    2) HIDDEN NCR — FROM ALL TEST TABLES (Comments)
 ============================================================ */
+
 $testTables = [
     'atterberg_limit','moisture_oven','moisture_constant_mass',
     'moisture_microwave','moisture_scale','grain_size_general',
@@ -2979,23 +2886,23 @@ foreach ($testTables as $tb){
         WHERE YEAR(Registed_Date) = '{$year}'
     ");
 
-    foreach ((array)$rows as $r){
+    foreach ($rows as $r){
 
-        $c = strtolower(trim((string)($r["Comments"] ?? "")));
+        $c = strtolower(trim((string)$r["Comments"]));
         if ($c === "") continue;
 
         foreach ($keywords as $kw){
             if (str_contains($c,$kw)){
 
-                $client = getClientFromCache(($r["Sample_ID"] ?? ''),($r["Sample_Number"] ?? ''),$clientIndex);
+                $client = getClientFromCache($r["Sample_ID"],$r["Sample_Number"],$clientIndex);
 
                 $hiddenNCR[] = [
                     "Client"        => $client,
-                    "Sample_ID"     => $r["Sample_ID"] ?? "",
-                    "Sample_Number" => $r["Sample_Number"] ?? "",
-                    "Test_Type"     => $r["Test_Type"] ?? "",
+                    "Sample_ID"     => $r["Sample_ID"],
+                    "Sample_Number" => $r["Sample_Number"],
+                    "Test_Type"     => $r["Test_Type"],
                     "Test_Condition"=> "Fail",
-                    "Noconformidad" => $r["Comments"] ?? "",
+                    "Noconformidad" => $r["Comments"],
                     "Material_Type" => $r["Material_Type"] ?? "UNKNOWN",
                     "Report_Date"   => $r["Registed_Date"] ?? ""
                 ];
@@ -3011,27 +2918,23 @@ foreach ($testTables as $tb){
 /* ============================================================
    3) MERGE SOURCES (MEMORY-SAFE MERGE)
 ============================================================ */
-$allNCR = (array)$officialNCR;
-foreach ((array)$hiddenNCR as $n) $allNCR[] = $n;
+
+$allNCR = $officialNCR;
+foreach ($hiddenNCR as $n) $allNCR[] = $n;
 unset($officialNCR, $hiddenNCR);
 gc_collect_cycles();
 
-/* Si no hay NCR */
-if (empty($allNCR)){
-    $pdf->BodyText("No NCR recorded for this year.");
-    $pdf->Ln(10);
-    goto END_NCR_SECTION;
-}
 
 /* ============================================================
-   8.1 — NCR Summary by Test Type (FULL NAMES + CONTROLLED)
+   8.1 — NCR Summary by Test Type (FULL NAMES)
 ============================================================ */
+
 $pdf->SubTitle("8.1 NCR Summary by Test Type");
 
 /* Normaliza texto */
 function normTest($v){
     $v = (string)$v;
-    $v = str_replace(["\xC2\xA0", "\t", "\r", "\n"], " ", $v);
+    $v = str_replace(["\xC2\xA0", "\t", "\r", "\n"], " ", $v); // NBSP/tabs
     $v = strtoupper(trim($v));
     $v = preg_replace('/\s+/', ' ', $v);
     return $v;
@@ -3042,9 +2945,10 @@ function aliasTest($raw){
     $t = normTest($raw);
     if ($t === '' || $t === 'N/A' || $t === 'NA') return '';
 
+    // limpia puntos, guiones, etc. para comparar
     $flat = str_replace(['.', '-', '_', '/', '\\', ' '], '', $t);
 
-   $map = [
+    $map = [
         // Grain Size
         'GS'     => 'Grain Size',
         'GS_FF'  => 'Grain Size',
@@ -3109,16 +3013,20 @@ function aliasTest($raw){
          'Common'  => 'Common',
     ];
 
-
+    // primero intenta match directo por texto normal
     if (isset($map[$t])) return $map[$t];
+
+    // luego intenta por versión “flat”
     if (isset($map[$flat])) return $map[$flat];
 
-    if (preg_match('/^[A-Z0-9]{1,10}$/', $t)) return $t;
+    // si ya viene corto tipo "GS, AL, MC", lo devolvemos como está (limpio)
+    if (preg_match('/^[A-Z0-9]{1,6}$/', $t)) return $t;
 
+    // fallback: deja el original normalizado (pero esto puede crear “categorías” raras)
     return $t;
 }
 
-/* Conteo por tipo */
+/* Conteo por tipo (ya normalizado a código) */
 $ncrPerType = [];
 foreach ($allNCR as $n){
     $raw = $n["Test_Type"] ?? '';
@@ -3131,148 +3039,135 @@ foreach ($allNCR as $n){
 
 if (empty($ncrPerType)){
     $pdf->BodyText("No NCR recorded for this year.");
-    $pdf->Ln(10);
-    goto END_NCR_SECTION;
-}
+    $pdf->Ln(5);
 
-arsort($ncrPerType);
-$totalNCR = array_sum($ncrPerType);
+} else {
 
-/* --- TABLE TOP 15 + OTHER --- */
-$topNTable = 15;
-$topTable = array_slice($ncrPerType, 0, $topNTable, true);
-$otherCnt = $totalNCR - array_sum($topTable);
-if ($otherCnt > 0) $topTable["OTHER"] = $otherCnt;
+    arsort($ncrPerType);
 
-$pdf->TableHeader([
-    80=>"Test Type",
-    35=>"NCR Count",
-    30=>"% of Total"
-]);
-
-foreach ($topTable as $code=>$cnt){
-    $pct  = $totalNCR > 0 ? round(($cnt/$totalNCR)*100,1) : 0;
-    $fullName = ($code === "OTHER") ? "OTHER" : ($testNames[$code] ?? $code);
-
-    $pdf->TableRow([
-        80=>safeTextUtf($fullName),
-        35=>$cnt,
-        30=>$pct."%"
+    $pdf->TableHeader([
+        80=>"Test Type",
+        35=>"NCR Count",
+        30=>"% of Total"
     ]);
-}
-$pdf->TableRow([80=>"TOTAL",35=>$totalNCR,30=>"100%"]);
-$pdf->Ln(6);
 
-/* --- CHART TOP 12 + OTHER (NO MULTI-PAGE) --- */
-ensureSpace($pdf,55);
+    $totalNCR = array_sum($ncrPerType);
 
-$topNChart = 12;
-$topChart = array_slice($ncrPerType, 0, $topNChart, true);
-$otherCntC = $totalNCR - array_sum($topChart);
-if ($otherCntC > 0) $topChart["OTHER"] = $otherCntC;
+    foreach ($ncrPerType as $code => $cnt){
+        $pct  = $totalNCR > 0 ? round(($cnt/$totalNCR)*100,1) : 0;
 
-$maxV = max($topChart); if ($maxV < 1) $maxV = 1;
+        // Nombre completo desde tu diccionario
+        $fullName = $testNames[$code] ?? $code;
 
-$x0=25; $y0=$pdf->GetY();
-$barH=4; $gap=2;
+        $pdf->TableRow([
+            80=>safeTextUtf($fullName),
+            35=>$cnt,
+            30=>$pct."%"
+        ]);
+    }
 
-$pdf->SetFont("Arial","",8);
-
-foreach ($topChart as $code=>$cnt){
-
-    $label = ($code === "OTHER") ? "OTHER" : ($testNames[$code] ?? $code);
-    $bw = ($cnt/$maxV)*95;
-
-    $pdf->SetXY($x0,$y0);
-    $pdf->Cell(70,$barH,safeTextUtf($label),0,0);
-
-    $pdf->SetFillColor(80,140,210);
-    $pdf->Rect($x0+72,$y0,$bw,$barH,"F");
-
-    $pdf->SetXY($x0+172,$y0);
-    $pdf->Cell(12,$barH,$cnt,0,0,"R");
-
-    $y0 += ($barH+$gap);
+    $pdf->TableRow([80=>"TOTAL",35=>$totalNCR,30=>"100%"]);
+    $pdf->Ln(10);
 }
 
-$pdf->SetY($y0+6);
+
 gc_collect_cycles();
 
 /* ============================================================
-   8.2 — NCR Trend by Month (COMPACT)
+   8.2 — NCR Trend by Month
 ============================================================ */
+
 $pdf->SubTitle("8.2 NCR Trend by Month");
-ensureSpace($pdf,55);
+ensureSpace($pdf,60);
 
 $perMonthNCR = array_fill(1,12,0);
 foreach ($allNCR as $n){
     if (!empty($n["Report_Date"])){
-        $m = (int)substr($n["Report_Date"],5,2);
+        $m = intval(substr($n["Report_Date"],5,2));
         if ($m>=1 && $m<=12) $perMonthNCR[$m]++;
     }
 }
 
-$monthShort=[1=>"Jan",2=>"Feb",3=>"Mar",4=>"Apr",5=>"May",6=>"Jun",
-             7=>"Jul",8=>"Aug",9=>"Sep",10=>"Oct",11=>"Nov",12=>"Dec"];
+$pdf->TableHeader([
+    25=>"Month",
+    30=>"NCR Count"
+]);
 
-$maxMonth = max($perMonthNCR); if ($maxMonth < 1) $maxMonth = 1;
+$monthNames=[1=>"January",2=>"February",3=>"March",4=>"April",5=>"May",6=>"June",
+             7=>"July",8=>"August",9=>"September",10=>"October",11=>"November",12=>"December"];
 
-$x0=25; $y0=$pdf->GetY();
-$barH=4; $gap=1.5;
+foreach ($perMonthNCR as $i=>$val){
+    $pdf->TableRow([25=>$monthNames[$i],30=>$val]);
+}
 
-$pdf->SetFont("Arial","",8);
+$pdf->TableRow([25=>"TOTAL",30=>array_sum($perMonthNCR)]);
+$pdf->Ln(10);
+
+/* Chart */
+ensureSpace($pdf,40);
+$maxMonth = max($perMonthNCR);
+if ($maxMonth<1) $maxMonth=1;
+
+$x0=20; 
+$y0=$pdf->GetY();
+$barH=5; 
+$gap=3;
 
 foreach ($perMonthNCR as $i=>$val){
 
-    $bw = ($val/$maxMonth)*95;
+    $barW = ($val/$maxMonth)*100;
 
     $pdf->SetXY($x0,$y0);
-    $pdf->Cell(12,$barH,$monthShort[$i],0,0);
+    $pdf->SetFont("Arial","",8);
+    $pdf->Cell(20,$barH,$monthNames[$i],0,0);
 
-    $pdf->SetFillColor(70,170,120);
-    $pdf->Rect($x0+14,$y0,$bw,$barH,"F");
+    $pdf->SetFillColor(60,120,200);
+    $pdf->Rect($x0+22,$y0,$barW,$barH,"F");
 
-    $pdf->SetXY($x0+115,$y0);
-    $pdf->Cell(10,$barH,$val,0,0,"R");
+    $pdf->SetXY($x0+125,$y0);
+    $pdf->Cell(10,$barH,$val,0,0);
 
-    $y0 += ($barH+$gap);
+    $y0+=($barH+$gap);
 }
 
-$pdf->SetY($y0+6);
+$pdf->Ln(15);
 gc_collect_cycles();
 
 /* ============================================================
-   8.3 — NCR by Material Type (FULL NAMES + CONTROLLED)
+   8.3 — NCR by Material Type (FULL NAMES)
 ============================================================ */
-$pdf->SubTitle("8.3 NCR by Material Type");
-ensureSpace($pdf,55);
 
-/* Normalización material */
+$pdf->SubTitle("8.3 NCR by Material Type");
+ensureSpace($pdf,60);
+
+/* 1) Normalización del material */
 function normMat($v){
     $v = (string)$v;
-    $v = str_replace(["\xC2\xA0", "\t", "\r", "\n"], " ", $v);
+    $v = str_replace(["\xC2\xA0", "\t", "\r", "\n"], " ", $v); // NBSP, tabs, etc.
     $v = strtoupper(trim($v));
-    $v = preg_replace('/\s+/', ' ', $v);
+    $v = preg_replace('/\s+/', ' ', $v); // espacios múltiples
     return $v;
 }
 
-/* Mapa materiales (tuyo) */
+/* 2) Diccionario (ajústalo a tus códigos reales) */
 $materialMap = [
+    // Fills
     'LPF' => 'Low Permeability Fill',
     'CF'  => 'Coarse Filter',
-    'COARSE FILTER' => 'Coarse Filter',
+    'COARSE FILTER'  => 'Coarse Filter',
     'FF'  => 'Fine Filter',
-    'FINE FILTER' => 'Fine Filter',
+    'FINE FILTER'  => 'Fine Filter',
     'IRF' => 'Intermediate Rock Fill',
     'TRF' => 'Transition Rock Fill',
     'UFF' => 'Upstream Facing Fill',
     'UTF' => 'Upstream Transition Fill',
-    'RF'  => 'Rock Fill',
-    'SOIL'=> 'Soil',
+    'RF' => 'Rock Fill',
+    'SOIL'  => 'Soil',
     'FRF' => 'Fine Rock Fill',
+   
 ];
 
-/* Expandir a nombre completo */
+/* 3) Función para “expandir” a nombre completo */
 function materialFullName($raw, $map){
     $k = normMat($raw);
 
@@ -3280,95 +3175,105 @@ function materialFullName($raw, $map){
         return 'UNKNOWN';
     }
 
+    // match directo
     if (isset($map[$k])) return $map[$k];
 
+    // match por “contiene” (útil si te llegan textos tipo "CF - Borrow Area")
     foreach ($map as $abbr => $full){
         if ($abbr === '') continue;
         if (strpos($k, $abbr) !== false) return $full;
     }
 
+    // fallback: deja el valor original pero limpio
     return $k;
 }
 
-/* Conteo por material */
+/* 4) Conteo por material (ya con nombre completo) */
 $perMaterial = [];
 foreach ($allNCR as $n){
-    $mRaw  = $n["Material_Type"] ?? "";
+    $mRaw = $n["Material_Type"] ?? "";
     $mFull = materialFullName($mRaw, $materialMap);
+
     if (!isset($perMaterial[$mFull])) $perMaterial[$mFull] = 0;
     $perMaterial[$mFull]++;
 }
 
-arsort($perMaterial);
-$totalMT = array_sum($perMaterial);
+if (empty($perMaterial)){
+    $pdf->BodyText("No material information available.");
+    $pdf->Ln(10);
 
-/* --- TABLE TOP 15 + OTHER --- */
-$topNMatTable = 15;
-$matTable = array_slice($perMaterial, 0, $topNMatTable, true);
-$otherMat = $totalMT - array_sum($matTable);
-if ($otherMat > 0) $matTable["OTHER"] = $otherMat;
+} else {
 
-$pdf->TableHeader([
-    80=>"Material Type",
-    35=>"NCR Count",
-    30=>"% of Total"
-]);
+    arsort($perMaterial);
 
-foreach ($matTable as $matFull=>$cnt){
-    $pct = $totalMT>0 ? round(($cnt/$totalMT)*100,1) : 0;
-    $pdf->TableRow([
-        80=>safeTextUtf($matFull),
-        35=>$cnt,
-        30=>$pct."%"
+    $pdf->TableHeader([
+        80=>"Material Type",
+        35=>"NCR Count",
+        30=>"% of Total"
     ]);
+
+    $totalMT = array_sum($perMaterial);
+
+    foreach ($perMaterial as $matFull => $cnt){
+        $pct = $totalMT>0 ? round(($cnt/$totalMT)*100,1) : 0;
+        $pdf->TableRow([
+            80=>safeTextUtf($matFull),
+            35=>$cnt,
+            30=>$pct."%"
+        ]);
+    }
+
+    $pdf->TableRow([80=>"TOTAL",35=>$totalMT,30=>"100%"]);
+    $pdf->Ln(10);
+
+    /* Chart */
+    ensureSpace($pdf,60);
+
+    $maxMat = max($perMaterial);
+    if ($maxMat < 1) $maxMat = 1;
+
+    $x0 = 15;
+    $y0 = $pdf->GetY();
+    $h  = 5;
+
+    foreach ($perMaterial as $matFull => $cnt){
+
+        $bar = ($cnt / $maxMat) * 100;
+
+        $pdf->SetXY($x0, $y0);
+        $pdf->SetFont("Arial","",8);
+
+        // label (más ancho para nombre completo)
+        $pdf->Cell(75, $h, safeTextUtf($matFull), 0, 0);
+
+        $pdf->SetFillColor(200,80,80);
+        $pdf->Rect($x0+77, $y0, $bar, $h, "F");
+
+        $pdf->SetXY($x0+185, $y0);
+        $pdf->Cell(10, $h, $cnt, 0, 0);
+
+        $y0 += ($h + 2);
+
+        // si se va a salir, salta página
+        if ($y0 > 270) {
+            $pdf->AddPage();
+            $y0 = $pdf->GetY();
+        }
+    }
+
+    $pdf->Ln(15);
 }
-$pdf->TableRow([80=>"TOTAL",35=>$totalMT,30=>"100%"]);
-$pdf->Ln(6);
 
-/* --- CHART TOP 12 + OTHER (NO MULTI-PAGE) --- */
-ensureSpace($pdf,55);
-
-$topNMatChart = 12;
-$matChart = array_slice($perMaterial, 0, $topNMatChart, true);
-$otherMatC = $totalMT - array_sum($matChart);
-if ($otherMatC > 0) $matChart["OTHER"] = $otherMatC;
-
-$maxMat = max($matChart); if ($maxMat < 1) $maxMat = 1;
-
-$x0=25; $y0=$pdf->GetY();
-$barH=4; $gap=2;
-
-$pdf->SetFont("Arial","",8);
-
-foreach ($matChart as $matFull=>$cnt){
-
-    $bw = ($cnt/$maxMat)*95;
-
-    $pdf->SetXY($x0,$y0);
-    $pdf->Cell(70,$barH,safeTextUtf($matFull),0,0);
-
-    $pdf->SetFillColor(200,90,90);
-    $pdf->Rect($x0+72,$y0,$bw,$barH,"F");
-
-    $pdf->SetXY($x0+172,$y0);
-    $pdf->Cell(12,$barH,$cnt,0,0,"R");
-
-    $y0 += ($barH+$gap);
-}
-
-$pdf->SetY($y0+6);
 gc_collect_cycles();
 
 /* ============================================================
-   8.4 — NCR Insight (FULL NAMES)
+   BUILD VARIABLES FOR INSIGHT
 ============================================================ */
-$pdf->SubTitle("8.4 NCR Insight");
 
-/* Top test (por código) */
+/* Top test type */
 $topTest = array_key_first($ncrPerType) ?? "N/A";
 $topTestCount = $ncrPerType[$topTest] ?? 0;
 $topPct = $totalNCR>0 ? round(($topTestCount/$totalNCR)*100,1) : 0;
-$topTestName = $testNames[$topTest] ?? $topTest;
 
 /* Top client */
 $perClient=[];
@@ -3383,17 +3288,19 @@ $topClient = array_key_first($perClient) ?? "N/A";
 $topClientCount = $perClient[$topClient] ?? 0;
 $topClientPct = $totalNCR>0 ? round(($topClientCount/$totalNCR)*100,1) : 0;
 
-/* Lowest test types (por tabla ya controlada no tiene sentido buscar -3 de todo si hay pocos) */
-$lowestTests = array_slice(array_keys($ncrPerType), -3);
-$lowNames = [];
-foreach ($lowestTests as $c){
-    $lowNames[] = $testNames[$c] ?? $c;
-}
-$lowTestsStr = implode(", ", $lowNames);
+/* Lowest test types */
+$lowestTests = array_slice(array_keys($ncrPerType),-3,3,true);
+$lowTestsStr = implode(", ",$lowestTests);
 
-$msg = "
+/* ============================================================
+   8.4 — NCR Insight
+============================================================ */
+
+$pdf->SubTitle("8.4 NCR Insight");
+
+$msg="
 The NCR analysis for the period {$year} highlights several important quality performance findings:
-- The test type with the greatest number of non-conformities was {$topTestName}, accounting for approximately {$topPct}% of all NCRs.
+- The test type with the greatest number of non-conformities was {$topTest}, accounting for approximately {$topPct}% of all NCRs.
 - The client with the highest NCR concentration was {$topClient}, responsible for {$topClientPct}% of all recorded cases.
 - Test types with the lowest NCR frequency included {$lowTestsStr}, indicating consistent performance in those categories.
 - NCR behavior shows clustering in specific test types and materials, rather than uniform distribution across operations.
@@ -3405,10 +3312,8 @@ $pdf->SetFont("Arial","",8);
 $pdf->WriteFormatted($msg);
 $pdf->Ln(5);
 
-END_NCR_SECTION:
 unset($allNCR);
 gc_collect_cycles();
-
 
 /* ============================================================
    SECTION 9 — SAMPLE FLOW DIAGNOSTICS (BOTTLENECK FINDER) — OPTIMIZED
