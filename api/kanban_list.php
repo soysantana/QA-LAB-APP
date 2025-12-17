@@ -1,5 +1,14 @@
 <?php
 // /api/kanban_list.php
+<?php
+@ob_clean();
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
+// Si usas sesión y la API no la necesita, evita arrancarla aquí.
+// Si la necesita, OK, pero NO redirecciones a HTML.
+
 declare(strict_types=1);
 require_once('../config/load.php');
 header('Content-Type: application/json; charset=utf-8');

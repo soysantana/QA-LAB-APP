@@ -2,7 +2,8 @@
 declare(strict_types=1);
 require_once('../config/load.php');
 // Ejecutar sincronización automática de repeticiones una sola vez
-@file_get_contents("/api/sync_test_repeat_to_workflow.php");
+require_once __DIR__ . '/../api/sync_test_repeat_to_workflow.php';
+
 
 page_require_level(3);
 include_once('../components/header.php');
@@ -170,17 +171,24 @@ function fetchData() {
   const t = encodeURIComponent($testFilter.value);
   const url = `/api/kanban_list.php?q=${q}&test=${t}`;
 
-  return fetch(url, { credentials:'same-origin' })
-    .then(r => r.text())
-    .then(txt => {
+  return fetch(url, { credentials:'same-origin', cache:'no-store' })
+    .then(async r => {
+      const txt = await r.text();
+
+      // Detecta challenge humans_21909
+      if (txt.includes('humans_') || txt.includes('document.location.reload')) {
+        return { ok:false, error:"WAF_CHALLENGE", raw: txt };
+      }
+
       try { return JSON.parse(txt); }
       catch {
         console.error("BAD JSON", txt);
-        return { ok:false, error:"BAD_JSON", raw:txt };
+        return { ok:false, error:"BAD_JSON", raw: txt };
       }
     })
     .catch(err => ({ ok:false, error:String(err) }));
 }
+
 
 function move(id, toStatus, technicians, note) {
   return fetch('/api/kanban_move.php', {
@@ -225,15 +233,33 @@ function render(data) {
   document.querySelectorAll(".count").forEach(c => c.textContent = "0");
 
   if (!data || !data.ok) {
-    const any = document.querySelector(".dropzone");
-    if (any) {
-      any.innerHTML = `
-        <div style="padding:12px;color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;border-radius:10px;">
-          Error/ vacío: ${escapeHtml(data?.error || "Sin datos")}
-        </div>`;
+  const any = document.querySelector(".dropzone");
+  if (any) {
+
+    let msg = data?.error || "Sin datos";
+
+    if (data?.error === "WAF_CHALLENGE") {
+      msg = `
+        La API está siendo bloqueada por verificación automática (humans).
+        <br><br>
+        👉 Debes excluir <b>/api/*</b> del WAF / Cloudflare.
+      `;
     }
-    return;
+
+    any.innerHTML = `
+      <div style="
+        padding:12px;
+        color:#92400e;
+        background:#fffbeb;
+        border:1px solid #fcd34d;
+        border-radius:10px;
+      ">
+        ${msg}
+      </div>`;
   }
+  return;
+}
+
 
   // cargar test types
   if ($testFilter.options.length === 1) {
