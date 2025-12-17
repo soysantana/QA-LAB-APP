@@ -1879,8 +1879,13 @@ list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
 $technicianNames = [
     // EXAMPLES (edit to your real ones)
      "LM"  => "Luis Monegro",
-     "J.am"  => "Hordany Amparo",
-    // "RRH" => "Rafy Hernández",
+     "j.am"  => "Jordany Amparo",
+     "L.M"  => "Luis Monegro",
+     "JAM"  => "Jordany Amparo",
+     "JA.M"  => "Jordany Amparo",
+    "RL."  => "Rafy Leocadio",
+    "VM"  => "Victor Mercedes",
+    "JL"  => "Joel Ledesma",
     // "VM"  => "Victor Mercedes",
 ];
 
@@ -1932,7 +1937,7 @@ function splitTechRaw($raw){
 
     $tmp = " ".$raw." ";
     $tmp = preg_replace('/\s+(y|e|and)\s+/i', ' | ', $tmp);
-    $tmp = preg_replace('/[\/\\\\\|\+\;\&]+/', ' | ', $tmp);
+    $tmp = preg_replace('/[\/\\\\\|\+\.\;\&]+/', ' | ', $tmp);
     $tmp = str_replace(',', ' | ', $tmp);
     $tmp = preg_replace('/[\r\n\t]+/', ' | ', $tmp);
 
