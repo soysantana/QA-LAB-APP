@@ -1855,35 +1855,33 @@ $pdf->Ln(3);
 
 /* ============================================================
    SECTION 5 — Technician Performance Overview
-   RULES (AS REQUESTED):
-   1) Multi-tech entry => EACH technician gets FULL credit (no split).
-   2) Invalid / not-in-users => DO NOT redistribute.
-      Instead, list them in a separate table with FULL NAME when possible.
-   3) Handle combinations with many separators: / - & y and + ; | , newlines.
+   YOUR RULES:
+   - Multi-tech entry => EACH technician gets FULL credit (no split)
+   - Invalid/not-in-users => DO NOT redistribute
+   - Show everything in ONE table with SAME look
+   - If initials/alias can be resolved => show FULL NAME
+   - If cannot resolve => show RAW as-is (no "UNREGISTERED(...)" labels)
 ============================================================ */
 
 $pdf->AddPage();
 $pdf->SectionTitle("5. Technician Performance Overview");
 
 /* ============================================================
-   5.0 LOAD TECHNICIAN ALIAS MAP (from DB users.alias etc.)
+   5.0 LOAD TECHNICIAN ALIAS MAP (DB-based)
 ============================================================ */
 list($aliasMap, $firstLetterName) = loadTechnicianAliasMap();
 
 /* ============================================================
    5.0B OPTIONAL MANUAL TECH MAP (LIKE $testNames)
-   - Put your aliases/initials here (keys must be UPPER)
-   - Value is the FULL NAME you want to show
-   - Use null to force "unmapped" (ignored as a person)
+   Keys MUST be UPPER. Value is FULL NAME.
+   Put ONLY what you want to force/override.
 ============================================================ */
 $technicianNames = [
     // EXAMPLES (edit to your real ones)
-    "LM"  => "Laura Sánchez",
+     "LM"  => "Luis Monegro",
+     "J.am"  => "Hordany Amparo",
     // "RRH" => "Rafy Hernández",
     // "VM"  => "Victor Mercedes",
-    // "DV"  => "Diana Vázquez",
-    // "QC"  => null,
-    // "N/A" => null,
 ];
 
 /* ============================================================
@@ -1897,23 +1895,18 @@ $realTechRows = find_by_sql("
        OR job LIKE '%Lab Tech%'
 ");
 
-$realTechnicians = [];
 $realTechSet = []; // UPPER(name) => official name
-
 foreach ((array)$realTechRows as $r){
     $nm = trim((string)($r['name'] ?? ''));
     if ($nm === '') continue;
-    $realTechnicians[] = $nm;
     $realTechSet[strtoupper($nm)] = $nm;
 }
-
-if (empty($realTechnicians)) {
-    $realTechnicians = ["UNKNOWN_TECH"];
+if (empty($realTechSet)) {
     $realTechSet["UNKNOWN_TECH"] = "UNKNOWN_TECH";
 }
 
 /* ============================================================
-   5.X HELPERS — robust split + labeling
+   HELPERS
 ============================================================ */
 function initTech(&$arr, $name){
     if (!isset($arr[$name])) {
@@ -1928,8 +1921,8 @@ function initTech(&$arr, $name){
 function cleanTechToken($t){
     $t = trim((string)$t);
     if ($t === '') return '';
-    $t = preg_replace('/\([^)]*\)/', ' ', $t);   // remove "(...)" notes
-    $t = preg_replace('/\s+/', ' ', $t);        // normalize spaces
+    $t = preg_replace('/\([^)]*\)/', ' ', $t); // remove "(...)" notes
+    $t = preg_replace('/\s+/', ' ', $t);
     return trim($t);
 }
 
@@ -1962,48 +1955,27 @@ function splitTechRaw($raw){
 }
 
 /**
- * Try to resolve a token to a FULL NAME.
- * Order:
- *  1) manual $technicianNames (like $testNames)
- *  2) resolveTechnician() from DB alias map
- * Returns:
- *  [ 'status' => 'REAL'|'UNREGISTERED'|'UNMAPPED', 'name' => full_or_raw, 'raw' => original_token ]
+ * Resolve a token to a display name:
+ * 1) manual map ($technicianNames)
+ * 2) DB alias resolver (resolveTechnician)
+ * If resolver returns multiple names, caller will split them again.
+ * Returns null if cannot resolve.
  */
-function resolveOneTechToken($token, $technicianNames, $aliasMap, $firstLetterName, $realTechSet){
+function resolveTokenToText($token, $technicianNames, $aliasMap, $firstLetterName){
     $raw = cleanTechToken($token);
-    if ($raw === '') return ["status"=>"UNMAPPED","name"=>"","raw"=>$token];
+    if ($raw === '') return null;
 
     $key = strtoupper($raw);
 
-    // 1) manual map first
-    if (array_key_exists($key, $technicianNames)) {
-        $full = $technicianNames[$key];
-        if ($full === null || trim((string)$full) === '') {
-            return ["status"=>"UNMAPPED","name"=>$raw,"raw"=>$raw];
-        }
-        $full = trim((string)$full);
-        $kfull = strtoupper($full);
-        if (isset($realTechSet[$kfull])) {
-            return ["status"=>"REAL","name"=>$realTechSet[$kfull],"raw"=>$raw];
-        }
-        return ["status"=>"UNREGISTERED","name"=>$full,"raw"=>$raw];
+    if (isset($technicianNames[$key]) && trim((string)$technicianNames[$key]) !== '') {
+        return trim((string)$technicianNames[$key]);
     }
 
-    // 2) DB alias resolver
     $resolved = resolveTechnician($aliasMap, $firstLetterName, $raw);
-    if ($resolved === null) {
-        return ["status"=>"UNMAPPED","name"=>$raw,"raw"=>$raw];
-    }
+    if ($resolved === null) return null;
 
     $resolved = trim((string)$resolved);
-    if ($resolved === '') {
-        return ["status"=>"UNMAPPED","name"=>$raw,"raw"=>$raw];
-    }
-
-    // If resolver returned a combination, we will split later outside.
-    // Here we return the resolved string; caller will split into names.
-    // Mark as RESOLVED_TEXT for further expansion:
-    return ["status"=>"RESOLVED_TEXT","name"=>$resolved,"raw"=>$raw];
+    return ($resolved === '') ? null : $resolved;
 }
 
 /* ============================================================
@@ -2039,13 +2011,13 @@ $tecRaw = find_by_sql("
 if (!is_array($tecRaw)) $tecRaw = [];
 
 /* ============================================================
-   5.2 BUILD:
-   - $techSummary (REAL techs only)
-   - $issuesSummary (UNREGISTERED/UNMAPPED) shown as list, NOT redistributed
-   CREDIT RULE: full credit to each technician found in the entry.
+   5.2 BUILD ONE SUMMARY TABLE ONLY (ALL NAMES)
+   - Real techs: show official name from users (if matches)
+   - Resolved but not in users: show full resolved name (no labels)
+   - Not resolved: show raw token (no labels)
+   CREDIT RULE: full count to each name found in entry
 ============================================================ */
-$techSummary   = [];
-$issuesSummary = []; // label => stages
+$techSummary = []; // ONE table for everything
 
 foreach ($tecRaw as $row){
 
@@ -2055,93 +2027,65 @@ foreach ($tecRaw as $row){
 
     if ($rawTech === '' || $stage === '' || $count <= 0) continue;
 
-    // A) split raw technician field into tokens
+    // A) split combinations
     $tokens = splitTechRaw($rawTech);
     if (empty($tokens)) $tokens = [cleanTechToken($rawTech)];
 
-    // B) resolve each token
-    $finalPeople = []; // list of ['status'=>..., 'name'=>..., 'raw'=>...]
+    // B) collect final display names for this record (deduped)
+    $namesThis = [];
 
     foreach ($tokens as $tk){
 
-        $res = resolveOneTechToken($tk, $technicianNames, $aliasMap, $firstLetterName, $realTechSet);
+        $resolvedText = resolveTokenToText($tk, $technicianNames, $aliasMap, $firstLetterName);
 
-        if ($res["status"] === "RESOLVED_TEXT") {
-            // expand resolved text into one or more names
-            $expanded = splitTechRaw($res["name"]);
-            if (empty($expanded)) {
-                // fallback comma split
-                $expanded = array_values(array_filter(array_map('trim', explode(',', $res["name"]))));
-            }
-            if (empty($expanded)) {
-                // still nothing -> unmapped raw
-                $finalPeople[] = ["status"=>"UNMAPPED","name"=>$res["raw"],"raw"=>$res["raw"]];
-                continue;
-            }
-
-            foreach ($expanded as $nm){
-                $nm = trim($nm);
-                if ($nm === '') continue;
-
-                $k = strtoupper($nm);
-                if (isset($realTechSet[$k])) {
-                    $finalPeople[] = ["status"=>"REAL","name"=>$realTechSet[$k],"raw"=>$res["raw"]];
-                } else {
-                    $finalPeople[] = ["status"=>"UNREGISTERED","name"=>$nm,"raw"=>$res["raw"]];
-                }
-            }
-        } else {
-            // REAL / UNREGISTERED / UNMAPPED (single)
-            if (trim((string)$res["name"]) !== '') {
-                $finalPeople[] = $res;
-            }
-        }
-    }
-
-    // C) dedupe within this entry to avoid double credit
-    $seen = [];
-    $uniquePeople = [];
-    foreach ($finalPeople as $p){
-        $key = $p["status"]."||".strtoupper(trim((string)$p["name"]))."||".strtoupper(trim((string)$p["raw"]));
-        if (isset($seen[$key])) continue;
-        $seen[$key] = true;
-        $uniquePeople[] = $p;
-    }
-
-    if (empty($uniquePeople)) {
-        // nothing could be interpreted: show raw entry as unmapped
-        $label = "UNMAPPED (" . $rawTech . ")";
-        initTech($issuesSummary, $label);
-        $issuesSummary[$label][$stage] += $count;
-        continue;
-    }
-
-    // D) Participation-based counting: FULL count to each person
-    foreach ($uniquePeople as $p){
-
-        if ($p["status"] === "REAL") {
-            initTech($techSummary, $p["name"]);
-            $techSummary[$p["name"]][$stage] += $count;
+        if ($resolvedText === null) {
+            // can't resolve => use raw token as display
+            $display = cleanTechToken($tk);
+            if ($display !== '') $namesThis[] = $display;
             continue;
         }
 
-        if ($p["status"] === "UNREGISTERED") {
-            // show full name + raw token
-            $label = "UNREGISTERED (" . $p["name"] . ") [raw: " . $p["raw"] . "]";
-            initTech($issuesSummary, $label);
-            $issuesSummary[$label][$stage] += $count;
+        // resolver might return multiple names or combined string
+        $expanded = splitTechRaw($resolvedText);
+        if (empty($expanded)) {
+            $expanded = array_values(array_filter(array_map('trim', explode(',', $resolvedText))));
+        }
+        if (empty($expanded)) {
+            $display = trim($resolvedText);
+            if ($display !== '') $namesThis[] = $display;
             continue;
         }
 
-        // UNMAPPED
-        $label = "UNMAPPED (" . $p["name"] . ")";
-        initTech($issuesSummary, $label);
-        $issuesSummary[$label][$stage] += $count;
+        foreach ($expanded as $nm){
+            $nm = trim($nm);
+            if ($nm === '') continue;
+
+            // If matches a real technician, use the official spelling from users
+            $k = strtoupper($nm);
+            if (isset($realTechSet[$k])) {
+                $namesThis[] = $realTechSet[$k];
+            } else {
+                $namesThis[] = $nm; // resolved full name but not in users
+            }
+        }
+    }
+
+    $namesThis = array_values(array_unique(array_filter($namesThis)));
+
+    // If still empty, fallback to raw full string
+    if (empty($namesThis)) {
+        $namesThis = [$rawTech];
+    }
+
+    // C) FULL credit to each name found
+    foreach ($namesThis as $nm){
+        initTech($techSummary, $nm);
+        $techSummary[$nm][$stage] += $count;
     }
 }
 
 /* ============================================================
-   5.3 SORT REAL TECH TABLE — DESCENDING BY TOTAL
+   5.3 SORT TABLE — DESCENDING BY TOTAL
 ============================================================ */
 $totalsForSort = [];
 foreach ($techSummary as $name => $stages){
@@ -2158,7 +2102,7 @@ foreach ($totalsForSort as $name => $v){
 }
 
 /* ============================================================
-   5.4 TABLE — Technician Summary (REAL TECHS ONLY)
+   5.4 TABLE — ONE TABLE ONLY
 ============================================================ */
 $pdf->SubTitle("5.1 Technician Activity Summary");
 
@@ -2169,7 +2113,7 @@ if (empty($techSummaryOrdered)) {
 
 } else {
 
-    $wTech  = 50;
+    $wTech  = 60;
     $wPrep  = 20;
     $wReal  = 30;
     $wDel   = 25;
@@ -2199,67 +2143,11 @@ if (empty($techSummaryOrdered)) {
         ]);
     }
 
-    $pdf->Ln(6);
-}
-
-/* ============================================================
-   5.5 TABLE — Unregistered / Unmapped Entries (NO REDISTRIBUTION)
-============================================================ */
-$pdf->SubTitle("5.3 Unregistered / Unmapped Technician Entries");
-
-if (empty($issuesSummary)) {
-
-    $pdf->BodyText("No unregistered or unmapped technician values were found.");
-    $pdf->Ln(6);
-
-} else {
-
-    $issueSort = [];
-    foreach ($issuesSummary as $name => $stages){
-        $issueSort[$name] =
-            (float)$stages["Preparation"] +
-            (float)$stages["Realization"] +
-            (float)$stages["Delivery"];
-    }
-    arsort($issueSort);
-
-    $wTech  = 85;
-    $wPrep  = 18;
-    $wReal  = 22;
-    $wDel   = 20;
-    $wTotal = 15;
-
-    $pdf->TableHeader([
-        $wTech  => "Entry",
-        $wPrep  => "Prep",
-        $wReal  => "Real",
-        $wDel   => "Del",
-        $wTotal => "Total"
-    ]);
-
-    foreach ($issueSort as $name => $v){
-
-        $stages = $issuesSummary[$name];
-
-        $prep = round((float)$stages["Preparation"],1);
-        $real = round((float)$stages["Realization"],1);
-        $del  = round((float)$stages["Delivery"],1);
-        $tot  = round($prep + $real + $del,1);
-
-        $pdf->TableRow([
-            $wTech  => utf8_decode($name),
-            $wPrep  => $prep,
-            $wReal  => $real,
-            $wDel   => $del,
-            $wTotal => $tot
-        ]);
-    }
-
     $pdf->Ln(8);
 }
 
 /* ============================================================
-   5.2 PROCESS-SPECIFIC CHARTS (REAL TECHS ONLY)
+   5.2 PROCESS-SPECIFIC CHARTS (SAME TABLE DATA)
 ============================================================ */
 $pdf->SubTitle("5.2 Technician Contribution per Process");
 
@@ -2400,7 +2288,6 @@ if (array_sum($delData) == 0){
 ============================================================ */
 $pdf->SubTitle("5.4 Insights");
 
-// top only if there is data
 $topPrep = (array_sum($prepData) > 0) ? array_key_first($prepData) : null;
 $topReal = (array_sum($realData) > 0) ? array_key_first($realData) : null;
 $topDel  = (array_sum($delData)  > 0) ? array_key_first($delData)  : null;
@@ -2420,9 +2307,10 @@ $lines[] = $topDel
   : "- In Delivery, no workload was recorded for the selected period.";
 
 $lines[] = "- Multi-technician entries grant 1 full credit per technician (participation-based).";
-$lines[] = "- Unregistered/Unmapped technician values are listed in Section 5.3 and are NOT redistributed.";
+$lines[] = "- Any unresolved technician value is displayed as-is (raw), without redistribution.";
 
 $pdf->BodyText(implode("\n\n", $lines));
+
 
 
 
