@@ -146,7 +146,7 @@ include_once('../components/header.php');
                         name="OldSampleName_<?php echo $index; ?>"
                         value="<?php echo $row['Sample_ID']; ?>" />
                       <input
-                        type="text"
+                        type="hidden"
                         name="id_<?php echo $index; ?>"
                         value="<?php echo $row['id']; ?>" />
                     </div>

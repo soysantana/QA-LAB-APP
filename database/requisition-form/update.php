@@ -83,24 +83,6 @@ if (isset($_POST['update-requisition'])) {
                 ";
                 $db->query($query);
                 $totalAffected += $db->affected_rows();
-
-                // --- 2B) Sincronizar también en test_workflow ---
-                // Mantiene los estados (Preparación / Realización / Entrega),
-                // solo actualiza Sample_ID y Sample_Number a los nuevos valores.
-                $qWorkflow = "
-                    UPDATE test_workflow
-                    SET 
-                        Sample_ID     = '{$SampleName}',
-                        Sample_Number = '{$SampleNumber}',
-                        Updated_By    = '{$ModifiedBy}',
-                        Updated_At    = '{$ModifiedDate}'
-                    WHERE Sample_ID     = '{$OldSampleName}'
-                      AND Sample_Number = '{$OldSampleNumber}'
-                ";
-                $db->query($qWorkflow);
-                $totalAffected += $db->affected_rows();
-
-                $i++;
             }
         }
 
