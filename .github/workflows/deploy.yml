@@ -22,19 +22,19 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
           server-dir: ${{ secrets.FTP_REMOTE_DIR }}
-          exclude: |
-            **/.git*
-            **/.github*
-            uploads/reports/**
-            vendor/**
-            assets/vendor/**
-            libs/fpdf/**
-            libs/fpdi/**
-            user/**
-            composer.lock
-            composer.json
-            composer.phar
-            LICENSE
-            README.md
-            SECURITY.md
-            .htaccess
+# exclude: |
+#   **/.git*
+#   **/.github*
+#   uploads/**
+#   vendor/**
+#   assets/vendor/**
+#   libs/fpdf/**
+#   libs/fpdi/**
+#   user/**
+#   composer.lock
+#   composer.json
+#   composer.phar
+#   LICENSE
+#   README.md
+#   SECURITY.md
+#   .htaccess

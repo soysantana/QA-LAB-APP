@@ -1,28 +1,16 @@
-# Ignorar la carpeta 'err'
-err/
-
-# Ignorar la carpeta 'LAB-APP-SYSTEM-PROCESS'
-LAB-APP-SYSTEM-PROCESS/
-
-# Ignorar la carpeta 'proyects'
-proyects/
-
-# Ignorar la carpeta 'app'
-app/
-
 # Ignorar la carpeta '.github'
 
 # Ignorar la carpeta '.vscode'
 .vscode/
 
 # Ignorar archivos JSON
-*.json
+# *.json
 
 # Ignorar archivos LOCK
-*.lock
+#*.lock
 
 # Ignorar el archivo 'composer.phar'
-composer.phar
+#composer.phar
 
 # Ignorar archivos sql
 *.sql
