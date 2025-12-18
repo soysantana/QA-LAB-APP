@@ -524,15 +524,22 @@ document.getElementById("btnReview").addEventListener("click", () => {
      *************************************************/
     const structure = document.getElementById("Structure").value.trim().toUpperCase();
 
-    const specs_LLD = { 11:[100,100],12:[95,100],13:[65,100],14:[50,85],16:[5,30],17:[0,25],18:[0,5.4] };
-    const specs_AGG = { 11:[100,100],12:[95,100],13:[75,100],14:[60,85],16:[10,30],17:[5,25],18:[0,2.4] };
-    const specs_DIO = { 11:[100,100],12:[95,100],13:[75,100],14:[50,85],16:[5,30],17:[0,25],18:[0,2.4] };
+const specs_LLD = { 11:[100,100],12:[95,100],13:[65,100],14:[50,85],16:[5,30],17:[0,25],18:[0,5.4] };
+const specs_AGG = { 11:[100,100],12:[95,100],13:[75,100],14:[60,85],16:[10,30],17:[5,25],18:[0,2.4] };
+const specs_DIO = { 11:[100,100],12:[95,100],13:[75,100],14:[50,85],16:[5,30],17:[0,25],18:[0,2.4] };
 
-    let specs;
+let specs;
 
-    if (["LLD","SD1","SD2","SD3"].includes(structure)) specs = specs_LLD;
-    else if (structure.includes("Diorite")) specs = specs_DIO;
-    else (structure.includes("Stockpiles")) specs = specs_AGG;
+if (["LLD","SD1","SD2","SD3"].some(p => structure.startsWith(p))) {
+  specs = specs_LLD;
+} else if (structure.includes("Diorite")) {
+  specs = specs_DIO;
+} else if (structure.includes("Stockpiles")) {
+  specs = specs_AGG;
+} else {
+  // fallback por si no cae en ninguno
+  specs = specs_AGG;
+}
 
     const sieveNames = {
       11: '3/8"',
