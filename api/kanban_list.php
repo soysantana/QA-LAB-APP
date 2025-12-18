@@ -32,6 +32,7 @@ function split_tests(string $tt): array {
   $tt = str_replace("\xC2\xA0", " ", $tt);
   $tt = trim($tt);
   if ($tt === '') return [];
+  // split por coma
   $parts = array_filter(array_map('trim', explode(',', $tt)));
   $out = [];
   foreach ($parts as $p) {
@@ -52,7 +53,7 @@ try {
   }
   if ($test !== '') {
     $testEsc = $db->escape($test);
-    // Soporta filas con "GS,MC,AL"
+    // soporte filas con "GS,MC,AL"
     $where[] = "FIND_IN_SET(UPPER('{$testEsc}'), REPLACE(UPPER(Test_Type),' ','')) > 0";
   }
 
@@ -78,6 +79,11 @@ try {
   $rs = $db->query($sql);
   if (!$rs) throw new RuntimeException($db->error ?: 'DB_ERROR');
 
+  $rows = [];
+  while ($r = $db->fetch_assoc($rs)) {
+    $rows[] = $r;
+  }
+
   $by = [
     'Registrado'  => [],
     'Preparación' => [],
@@ -89,7 +95,34 @@ try {
 
   $now = new DateTime('now');
 
-  while ($r = $db->fetch_assoc($rs)) {
+  // ==========================================================
+  // 1) Primero detecta qué ensayos YA existen como INDIVIDUALES
+  //    (para no duplicarlos desde una tarjeta "paquete")
+  // ==========================================================
+  $existing = []; // key: SID|NUM|TEST => true
+
+  foreach ($rows as $r) {
+    $sid = (string)($r['Sample_ID'] ?? '');
+    $num = (string)($r['Sample_Number'] ?? '');
+    $tt  = (string)($r['Test_Type'] ?? '');
+
+    // individual = NO contiene coma
+    if (strpos($tt, ',') === false) {
+      $t1 = norm_test($tt);
+      if ($t1 !== '') {
+        $k = strtoupper(trim($sid)).'|'.strtoupper(trim($num)).'|'.$t1;
+        $existing[$k] = true;
+      }
+    }
+  }
+
+  // ==========================================================
+  // 2) Construir salida:
+  //    - Si la fila es individual => la mostramos
+  //    - Si la fila es paquete => la explotamos, PERO
+  //      saltamos ensayos que ya existen como individuales
+  // ==========================================================
+  foreach ($rows as $r) {
 
     $status = trim((string)($r['Status'] ?? 'Registrado'));
     if (!isset($by[$status])) $status = 'Registrado';
@@ -97,26 +130,58 @@ try {
     $started = !empty($r['Process_Started']) ? new DateTime((string)$r['Process_Started']) : clone $now;
     $diffH   = max(0, (int) floor(($now->getTimestamp() - $started->getTimestamp()) / 3600));
 
-    $tests = split_tests((string)($r['Test_Type'] ?? ''));
+    $sid = (string)($r['Sample_ID'] ?? '');
+    $num = (string)($r['Sample_Number'] ?? '');
+    $rawTT = (string)($r['Test_Type'] ?? '');
 
-    // si por alguna razón no hay coma y viene vacío raro
-    if (!$tests) {
-      $single = norm_test((string)($r['Test_Type'] ?? ''));
-      if ($single !== '') $tests = [$single];
-    }
+    // individual
+    if (strpos($rawTT, ',') === false) {
+      $tt = norm_test($rawTT);
+      if ($tt === '') continue;
 
-    foreach ($tests as $tt) {
       $limitH = slaHours($status, $tt, $SLA);
       $alert  = $diffH >= $limitH;
 
-      // ID por tarjeta = "rowId|TEST"
       $cardId = (string)$r['id'] . '|' . $tt;
 
       $by[$status][] = [
         'id'            => $cardId,
         'row_id'        => (string)$r['id'],
-        'Sample_ID'     => (string)$r['Sample_ID'],
-        'Sample_Number' => (string)$r['Sample_Number'],
+        'Sample_ID'     => $sid,
+        'Sample_Number' => $num,
+        'Test_Type'     => $tt,
+        'Status'        => $status,
+        'Sub_Stage'     => $r['sub_stage'],
+        'Since'         => $r['Process_Started'],
+        'Updated_By'    => $r['Updated_By'],
+        'Dwell_Hours'   => $diffH,
+        'SLA_Hours'     => $limitH,
+        'Alert'         => $alert,
+      ];
+
+      continue;
+    }
+
+    // paquete -> split
+    $tests = split_tests($rawTT);
+    if (!$tests) continue;
+
+    foreach ($tests as $tt) {
+      $k = strtoupper(trim($sid)).'|'.strtoupper(trim($num)).'|'.$tt;
+
+      // si ya existe individual, NO lo repitas desde el paquete
+      if (isset($existing[$k])) continue;
+
+      $limitH = slaHours($status, $tt, $SLA);
+      $alert  = $diffH >= $limitH;
+
+      $cardId = (string)$r['id'] . '|' . $tt;
+
+      $by[$status][] = [
+        'id'            => $cardId,
+        'row_id'        => (string)$r['id'],
+        'Sample_ID'     => $sid,
+        'Sample_Number' => $num,
         'Test_Type'     => $tt,
         'Status'        => $status,
         'Sub_Stage'     => $r['sub_stage'],
