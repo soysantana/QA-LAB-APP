@@ -58,8 +58,8 @@ $prep = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_preparation
     WHERE Start_Date IS NOT NULL
-      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
+
 if (!is_array($prep)) $prep = [];
 
 foreach ($prep as $r) {
@@ -74,8 +74,8 @@ $real = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_realization
     WHERE Start_Date IS NOT NULL
-      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
+
 if (!is_array($real)) $real = [];
 
 foreach ($real as $r) {
@@ -90,8 +90,8 @@ $ent = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_delivery
     WHERE Start_Date IS NOT NULL
-      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
+
 if (!is_array($ent)) $ent = [];
 
 foreach ($ent as $r) {
@@ -106,8 +106,8 @@ $rev = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_review
     WHERE Start_Date IS NOT NULL
-      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
+
 if (!is_array($rev)) $rev = [];
 
 foreach ($rev as $r) {
@@ -122,8 +122,8 @@ $rep = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_repeat
     WHERE Start_Date IS NOT NULL
-      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
+
 if (!is_array($rep)) $rep = [];
 
 foreach ($rep as $r) {
@@ -138,8 +138,8 @@ $rev2 = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_reviewed
     WHERE Start_Date IS NOT NULL
-      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
+
 if (!is_array($rev2)) $rev2 = [];
 
 foreach ($rev2 as $r) {
@@ -254,7 +254,7 @@ ksort($summary);
     <?=$s['sin']?>
     <?php if($s['sin']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=SIN"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=SIN&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-dark btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -265,7 +265,7 @@ ksort($summary);
     <?=$s['prep']?>
     <?php if($s['prep']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=PREP"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=PREP&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-primary btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -276,7 +276,7 @@ ksort($summary);
     <?=$s['prep_est']?>
     <?php if($s['prep_est']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=PREP_EST"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=PREP_EST&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-danger btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -287,7 +287,7 @@ ksort($summary);
     <?=$s['real']?>
     <?php if($s['real']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REAL"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REAL&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-info btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -298,7 +298,7 @@ ksort($summary);
     <?=$s['real_est']?>
     <?php if($s['real_est']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REAL_EST"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REAL_EST&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-danger btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -309,7 +309,7 @@ ksort($summary);
     <?=$s['ent']?>
     <?php if($s['ent']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=ENT"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=ENT&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-secondary btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -320,7 +320,7 @@ ksort($summary);
     <?=$s['rev']?>
     <?php if($s['rev']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REV"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REV&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-warning btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -331,7 +331,7 @@ ksort($summary);
     <?=$s['rep']?>
     <?php if($s['rep']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REP"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REP&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-danger btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -342,13 +342,14 @@ ksort($summary);
 
   <td>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=$t?>"
+       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&from=<?=h($from)?>&to=<?=h($to)?>"
        class="btn btn-dark btn-sm">
        <i class="bi bi-printer"></i>
     </a>
   </td>
 </tr>
 <?php endforeach; ?>
+
 
           </tbody>
         </table>
