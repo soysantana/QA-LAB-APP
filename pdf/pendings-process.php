@@ -9,7 +9,31 @@ use setasign\Fpdi\Fpdi;
 /* ============================
    UTIL
 ============================ */
-function N($v){ return strtoupper(trim((string)$v)); }
+/* ============================
+   NORMALIZADORES (OBLIGATORIO)
+============================ */
+function N($v){
+  $s = (string)$v;
+  $s = str_replace("\xC2\xA0", " ", $s); // quita NBSP
+  $s = trim($s);
+  $s = preg_replace('/\s+/', ' ', $s);
+  return strtoupper($s);
+}
+
+function normNum($v){
+  $s = N($v);
+  if ($s !== '' && ctype_digit($s)) {
+    return (string)intval($s); // 0078 -> 78
+  }
+  return $s; // G1 queda igual
+}
+
+function normTest($v){
+  $s = N($v);
+  // elimina guiones, espacios, puntos, slash
+  return preg_replace('/[\s\-\_\.\/]+/', '', $s);
+}
+
 
 function daysSince($date){
   if(!$date) return 0;
@@ -120,8 +144,13 @@ foreach ($req as $row){
     // Si viene type, filtra por ese; si no viene, imprime todos
     if ($type !== '' && $T !== $type) continue;
 
-    $key = N($row['Sample_ID'])."|".N($row['Sample_Number'])."|".$T;
-    $stData = $index[$key] ?? null;
+   $sid = N($row['Sample_ID'] ?? '');
+$num = normNum($row['Sample_Number'] ?? '');
+$T   = normTest($t);
+
+$key = $sid."|".$num."|".$T;
+$stData = $index[$key] ?? null;
+
 
     $ST  = $stData['stage'] ?? 'SIN';
     $SD  = $stData['SD'] ?? $row['Registed_Date'];

@@ -11,7 +11,26 @@ if (!function_exists('h')) {
     }
 }
 
-function N($v){ return strtoupper(trim((string)$v)); }
+function N($v){
+  $s = (string)$v;
+  $s = str_replace("\xC2\xA0", " ", $s); // quita NBSP
+  $s = trim($s);
+  $s = preg_replace('/\s+/', ' ', $s);
+  return strtoupper($s);
+}
+
+function normNum($v){
+  $s = N($v);
+  if ($s !== '' && ctype_digit($s)) return (string)intval($s); // 0078 -> 78
+  return $s; // G1 se queda G1
+}
+
+function normTest($v){
+  $s = N($v);
+  // quita guiones, espacios, puntos, slash
+  return preg_replace('/[\s\-\_\.\/]+/', '', $s);
+}
+
 
 function daysSince($date){
     if(!$date) return 0;
@@ -62,12 +81,22 @@ $prep = find_by_sql("
 
 if (!is_array($prep)) $prep = [];
 
-foreach ($prep as $r) {
-    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-        'stage' => 'PREP',
-        'SD'    => $r['Start_Date'] ?? null
-    ];
+foreach ($prep as $r){
+  $sid = N($r['Sample_ID'] ?? '');
+  $num = normNum($r['Sample_Number'] ?? '');
+  $sd  = $r['Start_Date'] ?? null;
+
+  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
+  foreach($tests as $tt){
+    $T = normTest($tt);
+    if($T === '') continue;
+
+    $key = $sid."|".$num."|".$T;
+    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
+  }
 }
+
+
 
 /* REALIZATION */
 $real = find_by_sql("
@@ -78,12 +107,21 @@ $real = find_by_sql("
 
 if (!is_array($real)) $real = [];
 
-foreach ($real as $r) {
-    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-        'stage' => 'REAL',
-        'SD'    => $r['Start_Date'] ?? null
-    ];
+foreach ($real as $r){
+  $sid = N($r['Sample_ID'] ?? '');
+  $num = normNum($r['Sample_Number'] ?? '');
+  $sd  = $r['Start_Date'] ?? null;
+
+  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
+  foreach($tests as $tt){
+    $T = normTest($tt);
+    if($T === '') continue;
+
+    $key = $sid."|".$num."|".$T;
+    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
+  }
 }
+
 
 /* DELIVERY */
 $ent = find_by_sql("
@@ -94,12 +132,21 @@ $ent = find_by_sql("
 
 if (!is_array($ent)) $ent = [];
 
-foreach ($ent as $r) {
-    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-        'stage' => 'ENT',
-        'SD'    => $r['Start_Date'] ?? null
-    ];
+foreach ($ent as $r){
+  $sid = N($r['Sample_ID'] ?? '');
+  $num = normNum($r['Sample_Number'] ?? '');
+  $sd  = $r['Start_Date'] ?? null;
+
+  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
+  foreach($tests as $tt){
+    $T = normTest($tt);
+    if($T === '') continue;
+
+    $key = $sid."|".$num."|".$T;
+    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
+  }
 }
+
 
 /* REVIEW */
 $rev = find_by_sql("
@@ -110,12 +157,21 @@ $rev = find_by_sql("
 
 if (!is_array($rev)) $rev = [];
 
-foreach ($rev as $r) {
-    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-        'stage' => 'REV',
-        'SD'    => $r['Start_Date'] ?? null
-    ];
+foreach ($rev as $r){
+  $sid = N($r['Sample_ID'] ?? '');
+  $num = normNum($r['Sample_Number'] ?? '');
+  $sd  = $r['Start_Date'] ?? null;
+
+  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
+  foreach($tests as $tt){
+    $T = normTest($tt);
+    if($T === '') continue;
+
+    $key = $sid."|".$num."|".$T;
+    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
+  }
 }
+
 
 /* REPEAT */
 $rep = find_by_sql("
@@ -126,12 +182,21 @@ $rep = find_by_sql("
 
 if (!is_array($rep)) $rep = [];
 
-foreach ($rep as $r) {
-    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-        'stage' => 'REP',
-        'SD'    => $r['Start_Date'] ?? null
-    ];
+foreach ($rep as $r){
+  $sid = N($r['Sample_ID'] ?? '');
+  $num = normNum($r['Sample_Number'] ?? '');
+  $sd  = $r['Start_Date'] ?? null;
+
+  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
+  foreach($tests as $tt){
+    $T = normTest($tt);
+    if($T === '') continue;
+
+    $key = $sid."|".$num."|".$T;
+    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
+  }
 }
+
 
 /* REVIEWED */
 $rev2 = find_by_sql("
@@ -142,12 +207,21 @@ $rev2 = find_by_sql("
 
 if (!is_array($rev2)) $rev2 = [];
 
-foreach ($rev2 as $r) {
-    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-        'stage' => 'REV',
-        'SD'    => $r['Start_Date'] ?? null
-    ];
+foreach ($rev2 as $r){
+  $sid = N($r['Sample_ID'] ?? '');
+  $num = normNum($r['Sample_Number'] ?? '');
+  $sd  = $r['Start_Date'] ?? null;
+
+  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
+  foreach($tests as $tt){
+    $T = normTest($tt);
+    if($T === '') continue;
+
+    $key = $sid."|".$num."|".$T;
+    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
+  }
 }
+
 
 /* =============================
    CONSTRUCCIÓN DE RESUMEN (IGUAL)
@@ -174,8 +248,13 @@ foreach ($req as $row){
             ];
         }
 
-        $key = N($row['Sample_ID'] ?? '')."|".N($row['Sample_Number'] ?? '')."|".$T;
-        $stData = $index[$key] ?? null;
+       $sid = N($row['Sample_ID'] ?? '');
+$num = normNum($row['Sample_Number'] ?? '');
+$T   = normTest($t);
+
+$key = $sid."|".$num."|".$T;
+$stData = $index[$key] ?? null;
+
 
         $stage = $stData['stage'] ?? 'SIN';
         $SD    = $stData['SD'] ?? $row["Registed_Date"];
