@@ -3,7 +3,6 @@ $page_title = 'Edición de Paquete de Muestras';
 $requisition_form = 'show';
 require_once('../config/load.php');
 
-// Recibir parámetros
 $packageId = $_POST['package_id'] ?? '';
 
 if (empty($packageId)) {
@@ -23,13 +22,6 @@ $SearchRows = find_by_sql("
 
 // Datos generales (usamos la primera fila del paquete)
 $Search = $SearchRows[0];
-
-// Manejo de formularios
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['update-requisition'])) {
-    include('../database/requisition-form/update.php');
-  }
-}
 
 page_require_level(3);
 include_once('../components/header.php');
@@ -55,8 +47,8 @@ include_once('../components/header.php');
   <section class="section">
     <div class="row">
 
-      <form class="row" action="requisition-form-edit.php" method="post">
-        <input type="hidden" name="package_id" value="<?php echo htmlspecialchars($packageId); ?>">
+      <form class="row" action="../database/requisition-form/update.php" method="post">
+        <input type="hidden" name="package_id" value="<?php echo remove_junk($packageId); ?>">
 
         <!-- Información general del paquete -->
         <div class="col-md-12">
@@ -96,25 +88,25 @@ include_once('../components/header.php');
                     <?php if (!user_can_access(2)) echo 'readonly'; ?>>
                   <input type="hidden" name="OldPackageID" value="<?php echo $Search['Package_ID']; ?>" />
                 </div>
-               <div class="col-md-3">
-  <label for="Structure" class="form-label">Estructura</label>
-  <select class="form-control" name="Structure" id="Structure" required>
-      <option value="">Seleccione...</option>
+                <div class="col-md-3">
+                  <label for="Structure" class="form-label">Estructura</label>
+                  <select class="form-control" name="Structure" id="Structure" required>
+                    <option value="">Seleccione...</option>
 
-      <option value="LLD"                 <?= ($Search['Structure'] == 'LLD') ? 'selected' : '' ?>>LLD</option>
-      <option value="SD1"                 <?= ($Search['Structure'] == 'SD1') ? 'selected' : '' ?>>SD1</option>
-      <option value="SD2"                 <?= ($Search['Structure'] == 'SD2') ? 'selected' : '' ?>>SD2</option>
-      <option value="SD3"                 <?= ($Search['Structure'] == 'SD3') ? 'selected' : '' ?>>SD3</option>
-      <option value="LBOR"                <?= ($Search['Structure'] == 'LBOR') ? 'selected' : '' ?>>Areas de Banco</option>
-      <option value="Site Investigation"  <?= ($Search['Structure'] == 'Site Investigation') ? 'selected' : '' ?>>Site Investigation</option>
-      <option value="Stockpile"           <?= ($Search['Structure'] == 'Stockpile') ? 'selected' : '' ?>>Acopios</option>
-      <option value="Quarry"              <?= ($Search['Structure'] == 'Quarry') ? 'selected' : '' ?>>Cantera</option>
-      <option value="Diorite"             <?= ($Search['Structure'] == 'Diorite') ? 'selected' : '' ?>>Diorita</option>
-      <option value="Source Investigation"<?= ($Search['Structure'] == 'Source Investigation') ? 'selected' : '' ?>>Investigacion Fuentes</option>
-      <option value="Miscelaneus"         <?= ($Search['Structure'] == 'Miscelaneus') ? 'selected' : '' ?>>Miscelaneos</option>
+                    <option value="LLD" <?= ($Search['Structure'] == 'LLD') ? 'selected' : '' ?>>LLD</option>
+                    <option value="SD1" <?= ($Search['Structure'] == 'SD1') ? 'selected' : '' ?>>SD1</option>
+                    <option value="SD2" <?= ($Search['Structure'] == 'SD2') ? 'selected' : '' ?>>SD2</option>
+                    <option value="SD3" <?= ($Search['Structure'] == 'SD3') ? 'selected' : '' ?>>SD3</option>
+                    <option value="LBOR" <?= ($Search['Structure'] == 'LBOR') ? 'selected' : '' ?>>Areas de Banco</option>
+                    <option value="Site Investigation" <?= ($Search['Structure'] == 'Site Investigation') ? 'selected' : '' ?>>Site Investigation</option>
+                    <option value="Stockpile" <?= ($Search['Structure'] == 'Stockpile') ? 'selected' : '' ?>>Acopios</option>
+                    <option value="Quarry" <?= ($Search['Structure'] == 'Quarry') ? 'selected' : '' ?>>Cantera</option>
+                    <option value="Diorite" <?= ($Search['Structure'] == 'Diorite') ? 'selected' : '' ?>>Diorita</option>
+                    <option value="Source Investigation" <?= ($Search['Structure'] == 'Source Investigation') ? 'selected' : '' ?>>Investigacion Fuentes</option>
+                    <option value="Miscelaneus" <?= ($Search['Structure'] == 'Miscelaneus') ? 'selected' : '' ?>>Miscelaneos</option>
 
-  </select>
-</div>
+                  </select>
+                </div>
 
                 <div class="col-md-3">
                   <label for="CollectionDate" class="form-label">Fecha de colección</label>
@@ -153,6 +145,10 @@ include_once('../components/header.php');
                         type="hidden"
                         name="OldSampleName_<?php echo $index; ?>"
                         value="<?php echo $row['Sample_ID']; ?>" />
+                      <input
+                        type="text"
+                        name="id_<?php echo $index; ?>"
+                        value="<?php echo $row['id']; ?>" />
                     </div>
                     <div class="col-md-2">
                       <label for="SampleNumber_<?php echo $index; ?>" class="form-label">Número</label>

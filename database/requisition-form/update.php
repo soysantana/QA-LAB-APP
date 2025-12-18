@@ -1,4 +1,5 @@
 <?php
+require_once('../../config/load.php');
 $OldPackageID = $_POST['OldPackageID'] ?? '';
 $user = current_user();
 
@@ -41,7 +42,8 @@ if (isset($_POST['update-requisition'])) {
         // === 2) Actualizar muestras individuales + Test_Type ===
         if (!empty($OldPackageID)) {
             $i = 0;
-            while (isset($_POST["SampleNumber_{$i}"])) {
+            while (isset($_POST["id_{$i}"])) {
+                $id               = $db->escape($_POST["id_{$i}"]);
                 $SampleName       = $db->escape($_POST["SampleName_{$i}"]);
                 $SampleNumber     = $db->escape($_POST["SampleNumber_{$i}"]);
                 $OldSampleName    = $db->escape($_POST["OldSampleName_{$i}"]);
@@ -77,9 +79,7 @@ if (isset($_POST['update-requisition'])) {
                         Test_Type     = '{$TestType}',
                         Modified_Date = '{$ModifiedDate}',
                         Modified_By   = '{$ModifiedBy}'
-                    WHERE Package_ID   = '{$db->escape($OldPackageID)}'
-                      AND Sample_ID     = '{$OldSampleName}' 
-                      AND Sample_Number = '{$OldSampleNumber}'
+                    WHERE id   = '{$db->escape($id)}'
                 ";
                 $db->query($query);
                 $totalAffected += $db->affected_rows();
@@ -111,9 +111,9 @@ if (isset($_POST['update-requisition'])) {
             $session->msg('w', 'No se realizaron cambios.');
         }
 
-        redirect('../pages/requisition-form-view.php', false);
+        redirect('../../pages/requisition-form-view.php', false);
     } else {
         $session->msg("d", $errors);
-        redirect('../pages/requisition-form-view.php', false);
+        redirect('../../pages/requisition-form-view.php', false);
     }
 }
