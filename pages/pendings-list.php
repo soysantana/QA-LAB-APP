@@ -11,26 +11,7 @@ if (!function_exists('h')) {
     }
 }
 
-function N($v){
-  $s = (string)$v;
-  $s = str_replace("\xC2\xA0", " ", $s); // quita NBSP
-  $s = trim($s);
-  $s = preg_replace('/\s+/', ' ', $s);
-  return strtoupper($s);
-}
-
-function normNum($v){
-  $s = N($v);
-  if ($s !== '' && ctype_digit($s)) return (string)intval($s); // 0078 -> 78
-  return $s; // G1 se queda G1
-}
-
-function normTest($v){
-  $s = N($v);
-  // quita guiones, espacios, puntos, slash
-  return preg_replace('/[\s\-\_\.\/]+/', '', $s);
-}
-
+function N($v){ return strtoupper(trim((string)$v)); }
 
 function daysSince($date){
     if(!$date) return 0;
@@ -77,151 +58,96 @@ $prep = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_preparation
     WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
-
 if (!is_array($prep)) $prep = [];
 
-foreach ($prep as $r){
-  $sid = N($r['Sample_ID'] ?? '');
-  $num = normNum($r['Sample_Number'] ?? '');
-  $sd  = $r['Start_Date'] ?? null;
-
-  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
-  foreach($tests as $tt){
-    $T = normTest($tt);
-    if($T === '') continue;
-
-    $key = $sid."|".$num."|".$T;
-    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
-  }
+foreach ($prep as $r) {
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
+        'stage' => 'PREP',
+        'SD'    => $r['Start_Date'] ?? null
+    ];
 }
-
-
 
 /* REALIZATION */
 $real = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_realization
     WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
-
 if (!is_array($real)) $real = [];
 
-foreach ($real as $r){
-  $sid = N($r['Sample_ID'] ?? '');
-  $num = normNum($r['Sample_Number'] ?? '');
-  $sd  = $r['Start_Date'] ?? null;
-
-  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
-  foreach($tests as $tt){
-    $T = normTest($tt);
-    if($T === '') continue;
-
-    $key = $sid."|".$num."|".$T;
-    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
-  }
+foreach ($real as $r) {
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
+        'stage' => 'REAL',
+        'SD'    => $r['Start_Date'] ?? null
+    ];
 }
-
 
 /* DELIVERY */
 $ent = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_delivery
     WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
-
 if (!is_array($ent)) $ent = [];
 
-foreach ($ent as $r){
-  $sid = N($r['Sample_ID'] ?? '');
-  $num = normNum($r['Sample_Number'] ?? '');
-  $sd  = $r['Start_Date'] ?? null;
-
-  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
-  foreach($tests as $tt){
-    $T = normTest($tt);
-    if($T === '') continue;
-
-    $key = $sid."|".$num."|".$T;
-    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
-  }
+foreach ($ent as $r) {
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
+        'stage' => 'ENT',
+        'SD'    => $r['Start_Date'] ?? null
+    ];
 }
-
 
 /* REVIEW */
 $rev = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_review
     WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
-
 if (!is_array($rev)) $rev = [];
 
-foreach ($rev as $r){
-  $sid = N($r['Sample_ID'] ?? '');
-  $num = normNum($r['Sample_Number'] ?? '');
-  $sd  = $r['Start_Date'] ?? null;
-
-  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
-  foreach($tests as $tt){
-    $T = normTest($tt);
-    if($T === '') continue;
-
-    $key = $sid."|".$num."|".$T;
-    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
-  }
+foreach ($rev as $r) {
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
+        'stage' => 'REV',
+        'SD'    => $r['Start_Date'] ?? null
+    ];
 }
-
 
 /* REPEAT */
 $rep = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_repeat
     WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
-
 if (!is_array($rep)) $rep = [];
 
-foreach ($rep as $r){
-  $sid = N($r['Sample_ID'] ?? '');
-  $num = normNum($r['Sample_Number'] ?? '');
-  $sd  = $r['Start_Date'] ?? null;
-
-  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
-  foreach($tests as $tt){
-    $T = normTest($tt);
-    if($T === '') continue;
-
-    $key = $sid."|".$num."|".$T;
-    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
-  }
+foreach ($rep as $r) {
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
+        'stage' => 'REP',
+        'SD'    => $r['Start_Date'] ?? null
+    ];
 }
-
 
 /* REVIEWED */
 $rev2 = find_by_sql("
     SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
     FROM test_reviewed
     WHERE Start_Date IS NOT NULL
+      AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
 ");
-
 if (!is_array($rev2)) $rev2 = [];
 
-foreach ($rev2 as $r){
-  $sid = N($r['Sample_ID'] ?? '');
-  $num = normNum($r['Sample_Number'] ?? '');
-  $sd  = $r['Start_Date'] ?? null;
-
-  $tests = array_map('trim', explode(',', (string)($r['Test_Type'] ?? '')));
-  foreach($tests as $tt){
-    $T = normTest($tt);
-    if($T === '') continue;
-
-    $key = $sid."|".$num."|".$T;
-    $index[$key] = ['stage'=>'PREP','SD'=>$sd];
-  }
+foreach ($rev2 as $r) {
+    $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
+        'stage' => 'REV',
+        'SD'    => $r['Start_Date'] ?? null
+    ];
 }
-
 
 /* =============================
    CONSTRUCCIÓN DE RESUMEN (IGUAL)
@@ -248,13 +174,8 @@ foreach ($req as $row){
             ];
         }
 
-       $sid = N($row['Sample_ID'] ?? '');
-$num = normNum($row['Sample_Number'] ?? '');
-$T   = normTest($t);
-
-$key = $sid."|".$num."|".$T;
-$stData = $index[$key] ?? null;
-
+        $key = N($row['Sample_ID'] ?? '')."|".N($row['Sample_Number'] ?? '')."|".$T;
+        $stData = $index[$key] ?? null;
 
         $stage = $stData['stage'] ?? 'SIN';
         $SD    = $stData['SD'] ?? $row["Registed_Date"];
@@ -333,7 +254,7 @@ ksort($summary);
     <?=$s['sin']?>
     <?php if($s['sin']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=SIN&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=SIN"
        class="btn btn-dark btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -344,7 +265,7 @@ ksort($summary);
     <?=$s['prep']?>
     <?php if($s['prep']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=PREP&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=PREP"
        class="btn btn-primary btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -355,7 +276,7 @@ ksort($summary);
     <?=$s['prep_est']?>
     <?php if($s['prep_est']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=PREP_EST&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=PREP_EST"
        class="btn btn-danger btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -366,7 +287,7 @@ ksort($summary);
     <?=$s['real']?>
     <?php if($s['real']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REAL&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REAL"
        class="btn btn-info btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -377,7 +298,7 @@ ksort($summary);
     <?=$s['real_est']?>
     <?php if($s['real_est']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REAL_EST&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REAL_EST"
        class="btn btn-danger btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -388,7 +309,7 @@ ksort($summary);
     <?=$s['ent']?>
     <?php if($s['ent']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=ENT&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=ENT"
        class="btn btn-secondary btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -399,7 +320,7 @@ ksort($summary);
     <?=$s['rev']?>
     <?php if($s['rev']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REV&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REV"
        class="btn btn-warning btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -410,7 +331,7 @@ ksort($summary);
     <?=$s['rep']?>
     <?php if($s['rep']>0): ?>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&stage=REP&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>&stage=REP"
        class="btn btn-danger btn-sm ms-1">
        <i class="bi bi-printer"></i>
     </a>
@@ -421,14 +342,13 @@ ksort($summary);
 
   <td>
     <a target="_blank"
-       href="../pdf/pendings-process.php?type=<?=urlencode($t)?>&from=<?=h($from)?>&to=<?=h($to)?>"
+       href="../pdf/pendings-process.php?type=<?=$t?>"
        class="btn btn-dark btn-sm">
        <i class="bi bi-printer"></i>
     </a>
   </td>
 </tr>
 <?php endforeach; ?>
-
 
           </tbody>
         </table>
