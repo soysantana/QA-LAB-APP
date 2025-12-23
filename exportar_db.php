@@ -6,45 +6,63 @@ define('DB_PASS', 'Dominican$8095');
 define('DB_NAME', 'fmfwfvmy_pvj2_db');
 
 // ================== CONEXIÓN ==================
-$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS);
 if ($mysqli->connect_error) {
     die('Error de conexión: ' . $mysqli->connect_error);
 }
 
 $mysqli->set_charset("utf8");
 
-// Nombre del archivo
-$filename = DB_NAME . '_' . date('Y-m-d_H-i-s') . '.sql';
+// ================== ARCHIVO ==================
+$filename = DB_NAME . '_FULL_' . date('Y-m-d_H-i-s') . '.sql';
 
-// ================== CABECERAS DE DESCARGA ==================
 header('Content-Type: application/sql');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-// ================== EXPORTACIÓN ==================
-echo "-- Exportación de la base de datos `" . DB_NAME . "`\n";
-echo "-- Fecha: " . date('Y-m-d H:i:s') . "\n\n";
-echo "SET FOREIGN_KEY_CHECKS=0;\n\n";
+// ================== CABECERA ==================
+echo "-- ==============================================\n";
+echo "-- Backup COMPLETO de la base de datos\n";
+echo "-- Base de datos: " . DB_NAME . "\n";
+echo "-- Fecha: " . date('Y-m-d H:i:s') . "\n";
+echo "-- ==============================================\n\n";
 
-// Obtener tablas
+echo "SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';\n";
+echo "SET AUTOCOMMIT = 0;\n";
+echo "START TRANSACTION;\n";
+echo "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+
+// ================== DATABASE ==================
+echo "CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "` ";
+echo "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n";
+echo "USE `" . DB_NAME . "`;\n\n";
+
+// ================== TABLAS ==================
 $tables = [];
-$result = $mysqli->query("SHOW TABLES");
-while ($row = $result->fetch_array()) {
-    $tables[] = $row[0];
+$result = $mysqli->query("
+    SELECT TABLE_NAME 
+    FROM INFORMATION_SCHEMA.TABLES 
+    WHERE TABLE_SCHEMA = '" . DB_NAME . "' 
+      AND TABLE_TYPE = 'BASE TABLE'
+");
+
+while ($row = $result->fetch_assoc()) {
+    $tables[] = $row['TABLE_NAME'];
 }
 
-// Recorrer tablas
 foreach ($tables as $table) {
-    echo "\n-- ----------------------------\n";
-    echo "-- Tabla: `$table`\n";
-    echo "-- ----------------------------\n\n";
 
-    // Crear tabla
-    $createTable = $mysqli->query("SHOW CREATE TABLE `$table`")->fetch_assoc();
+    echo "-- ----------------------------------------------\n";
+    echo "-- Tabla `$table`\n";
+    echo "-- ----------------------------------------------\n\n";
+
+    $createTable = $mysqli
+        ->query("SHOW CREATE TABLE `" . DB_NAME . "`.`$table`")
+        ->fetch_assoc();
+
     echo "DROP TABLE IF EXISTS `$table`;\n";
     echo $createTable['Create Table'] . ";\n\n";
 
-    // Datos
-    $rows = $mysqli->query("SELECT * FROM `$table`");
+    $rows = $mysqli->query("SELECT * FROM `" . DB_NAME . "`.`$table`");
     while ($row = $rows->fetch_assoc()) {
         $values = array_map(function ($value) use ($mysqli) {
             return $value === null ? "NULL" : "'" . $mysqli->real_escape_string($value) . "'";
@@ -52,9 +70,36 @@ foreach ($tables as $table) {
 
         echo "INSERT INTO `$table` VALUES (" . implode(", ", $values) . ");\n";
     }
+    echo "\n";
 }
 
-echo "\nSET FOREIGN_KEY_CHECKS=1;\n";
+// ================== TRIGGERS ==================
+echo "-- ==============================================\n";
+echo "-- TRIGGERS\n";
+echo "-- ==============================================\n\n";
+
+$triggers = $mysqli->query("
+    SELECT TRIGGER_NAME 
+    FROM INFORMATION_SCHEMA.TRIGGERS 
+    WHERE TRIGGER_SCHEMA = '" . DB_NAME . "'
+");
+
+while ($trigger = $triggers->fetch_assoc()) {
+
+    $triggerName = $trigger['TRIGGER_NAME'];
+
+    $result = $mysqli->query("SHOW CREATE TRIGGER `" . DB_NAME . "`.`$triggerName`");
+    $row = $result->fetch_assoc();
+
+    echo "DROP TRIGGER IF EXISTS `$triggerName`;\n";
+    echo "DELIMITER $$\n";
+    echo $row['SQL Original Statement'] . " $$\n";
+    echo "DELIMITER ;\n\n";
+}
+
+// ================== FINAL ==================
+echo "COMMIT;\n";
+echo "SET FOREIGN_KEY_CHECKS = 1;\n";
 
 $mysqli->close();
 exit;
