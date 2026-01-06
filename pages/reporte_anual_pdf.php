@@ -3104,7 +3104,7 @@ $pdf->TableRow([25=>"TOTAL",30=>array_sum($perMonthNCR)]);
 $pdf->Ln(10);
 
 /* Chart */
-ensureSpace($pdf,40);
+ensureSpace($pdf,30);
 $maxMonth = max($perMonthNCR);
 if ($maxMonth<1) $maxMonth=1;
 
