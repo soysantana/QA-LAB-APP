@@ -276,13 +276,11 @@ function resolveTechnician($aliasMap, $firstLetterName, $rawTech){
 }
 
 function ensureSpace($pdf, $needed = 50){
-$limit = $pdf->GetPageHeight() - $pdf->bMargin;
-if ($pdf->GetY() + $needed > $limit){
-$pdf->AddPage();
-$pdf->SetY($pdf->tMargin);
+    if ($pdf->GetY() + $needed > 250){ 
+        $pdf->AddPage();
+        $pdf->SetY(20);
+    }
 }
-}
-
 
 function safeTextUtf($v){
     if (is_array($v)) return utf8_decode(implode(", ", $v));
@@ -3080,7 +3078,7 @@ gc_collect_cycles();
 ============================================================ */
 
 $pdf->SubTitle("8.2 NCR Trend by Month");
-ensureSpace($pdf,40);
+ensureSpace($pdf,30);
 
 $perMonthNCR = array_fill(1,12,0);
 foreach ($allNCR as $n){
