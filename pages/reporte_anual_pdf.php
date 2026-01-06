@@ -3078,7 +3078,7 @@ gc_collect_cycles();
 ============================================================ */
 
 $pdf->SubTitle("8.2 NCR Trend by Month");
-ensureSpace($pdf,60);
+ensureSpace($pdf,40);
 
 $perMonthNCR = array_fill(1,12,0);
 foreach ($allNCR as $n){
