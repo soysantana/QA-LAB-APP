@@ -276,11 +276,13 @@ function resolveTechnician($aliasMap, $firstLetterName, $rawTech){
 }
 
 function ensureSpace($pdf, $needed = 50){
-    if ($pdf->GetY() + $needed > 250){ 
-        $pdf->AddPage();
-        $pdf->SetY(20);
-    }
+$limit = $pdf->GetPageHeight() - $pdf->bMargin;
+if ($pdf->GetY() + $needed > $limit){
+$pdf->AddPage();
+$pdf->SetY($pdf->tMargin);
 }
+}
+
 
 function safeTextUtf($v){
     if (is_array($v)) return utf8_decode(implode(", ", $v));
