@@ -302,6 +302,57 @@ function cleanVal($v){
     return utf8_decode(trim($v));
 }
 
+function classifyMaterial($mat, $client) {
+
+$mat0 = (string)$mat;
+$client = strtoupper(trim((string)$client));
+
+// normaliza: lower + quita símbolos comunes
+$mat = strtolower(trim($mat0));
+$mat = str_replace(["_", "-", ".", ",", "/", "\\", " "], " ", $mat);
+$mat = preg_replace('/\s+/', ' ', $mat);
+
+// valores vacíos / basura
+if ($mat === "" || $mat === "n/a" || $mat === "na" || $mat === "none" || $mat === "null" || $mat === "-") {
+return "Unknown";
+}
+
+/* PRIORIDAD 1 — CLIENTE MRM → SIEMPRE ROCK */
+if ($client === "MRM") return "Rock";
+
+/* PRIORIDAD 2 — ROCK (más completo) */
+$rockKeywords = [
+"rock","roca","rockfill","shot rock","riprap","boulder","cobble",
+"rf","trf","irf","uff","pq","lq2","lq3","rom","waste rock","drain rock"
+];
+foreach ($rockKeywords as $k){
+if (preg_match('/\b'.preg_quote($k,'/').'\b/', $mat)) return "Rock";
+}
+
+/* PRIORIDAD 3 — SOIL (más completo) */
+$soilKeywords = [
+"soil","suelo","common fill","common","fill","lpf",
+"clay","arcilla","silt","limo","sand","arena","gravel","grava",
+"subgrade","base course","sub base","subbase","embankment","borrow"
+];
+foreach ($soilKeywords as $k){
+if (strpos($mat, $k) !== false) return "Soil";
+}
+
+/* PRIORIDAD 4 — AGGREGATES (FF/CF/UTF y nombres completos) */
+// detecta FF/CF/UTF como tokens, no como substring suelto
+if (preg_match('/\b(ff|fine filter|fines filter|finefilter)\b/', $mat)) return "Aggregates";
+if (preg_match('/\b(cf|coarse filter|coarsefilter)\b/', $mat)) return "Aggregates";
+if (preg_match('/\b(utf|ultra filter|ultrafilter)\b/', $mat)) return "Aggregates";
+if (strpos($mat, "aggregate") !== false || strpos($mat, "agregado") !== false) return "Aggregates";
+
+/* PRIORIDAD 5 — CONCRETE */
+if (strpos($mat, "concrete") !== false || strpos($mat, "hormigon") !== false) return "Concrete";
+// "agg" SOLO si aparece como token, para evitar falsos positivos
+if (preg_match('/\bagg\b/', $mat)) return "Concrete";
+
+return "Unknown";
+}
 
 /* ============================================================
    PDF START
@@ -1260,159 +1311,130 @@ for ($i=0;$i<4;$i++){
 $pdf->Ln(30);
 
 /* ============================================================
-   2. MATERIAL OVERVIEW — WITH CUSTOM DICTIONARY
+2. MATERIAL OVERVIEW — WITH CUSTOM DICTIONARY
 ============================================================ */
 $pdf->SubTitle("3.2 Material Overview");
 
 /* ======================
-   MATERIAL DICTIONARY
+MATERIAL DICTIONARY
 ====================== */
 function classifyMaterial($mat, $client) {
 
-    $mat = strtolower(trim($mat));
-    $client = strtoupper(trim($client));
+$mat0 = (string)$mat;
+$client = strtoupper(trim((string)$client));
 
-    /* ====================================================
-       PRIORIDAD 1 — CLIENTE MRM → SIEMPRE ROCK
-    ==================================================== */
-    if ($client === "MRM") return "Rock";
+// Normalizar material: lower + limpiar separadores
+$mat = strtolower(trim($mat0));
+$mat = str_replace(["_", "-", ".", ",", "/", "\\", "\t"], " ", $mat);
+$mat = preg_replace('/\s+/', ' ', $mat);
 
-    /* ====================================================
-       PRIORIDAD 2 — DETECCIÓN DE ROCA POR MATERIAL
-    ==================================================== */
-    $rockKeywords = ["rock", "roca", "rockfill", "rf", "trf", "irf", "uff"];
-
-    foreach ($rockKeywords as $k){
-        if (strpos($mat, $k) !== false){
-            return "Rock";
-        }
-    }
-
-    /* ====================================================
-       PRIORIDAD 3 — SOIL
-    ==================================================== */
-    if (strpos($mat, "common") !== false) return "Soil";
-    if (strpos($mat, "lpf") !== false) return "Soil";
-
-    /* ====================================================
-       PRIORIDAD 4 — AGGREGATES
-    ==================================================== */
-    if (strpos($mat, "ff") !== false) return "Aggregates";   // Fine Filter
-    if (strpos($mat, "cf") !== false) return "Aggregates";   // Coarse Filter
-    if (strpos($mat, "utf") !== false) return "Aggregates";  // Ultra Filter
-
-    /* ====================================================
-       PRIORIDAD 5 — CONCRETE
-    ==================================================== */
-    if (strpos($mat, "concrete") !== false) return "Concrete";
-    if (strpos($mat, "agg") !== false) return "Concrete";
-
-    /* ====================================================
-       DEFAULT
-    ==================================================== */
-    return "Unknown";
+// Vacíos / basura
+if ($mat === "" || $mat === "n/a" || $mat === "na" || $mat === "none" || $mat === "null" || $mat === "-") {
+return "Unknown";
 }
 
-/* ======================
-   PROCESS MATERIALS
-====================== */
+/* ====================================================
+PRIORIDAD 1 — CLIENTE MRM → SIEMPRE ROCK
+==================================================== */
+if ($client === "MRM") return "Rock";
 
-$materialCountSamples = [];
-$materialCountTests = [];
-$materialTopClient = [];
+/* ====================================================
+PRIORIDAD 2 — DETECCIÓN DE ROCA POR MATERIAL (ampliado)
+==================================================== */
+$rockKeywords = [
+"rock","roca","rockfill","shot rock","riprap","boulder","cobble",
+"rf","trf","irf","uff","pq","lq2","lq3","rom","waste rock","drain rock"
+];
 
-foreach ($rows as $r){
-
-    $client = trim($r["Client"]);
-    $mat_raw = trim($r["Material_Type"]);
-
-    /* CLASSIFY MATERIAL ACCORDING TO RULES */
-    $mat = classifyMaterial($mat_raw, $client);
-
-    $id = $r["Sample_ID"];
-    $num = $r["Sample_Number"];
-    $types = explode(",", $r["Test_Type"]);
-
-    /* UNIQUE SAMPLES */
-    if (!isset($materialCountSamples[$mat])) $materialCountSamples[$mat] = [];
-    $materialCountSamples[$mat]["{$id}-{$num}"] = true;
-
-    /* TEST COUNTS */
-    foreach ($types as $t){
-        $t = trim($t);
-        if ($t=="") continue;
-
-        if (!isset($materialCountTests[$mat])) $materialCountTests[$mat] = 0;
-        $materialCountTests[$mat]++;
-
-        /* TOP CLIENT PER MATERIAL */
-        if (!isset($materialTopClient[$mat])) $materialTopClient[$mat] = [];
-        if (!isset($materialTopClient[$mat][$client])) $materialTopClient[$mat][$client] = 0;
-        $materialTopClient[$mat][$client]++;
-    }
-}
-
-/* ======================
-   MATERIAL TABLE
-====================== */
-
-$pdf->TableHeader([
+foreach ($rockKeywords as $k){
+// si es código corto (rf/cf/ff/etc), lo buscamos como token
+if (strlen($k) <= 3) { if (preg_match('/\b'.preg_quote($k,'/').'\b/', $mat)) return "Rock" ; } else { if (strpos($mat,
+    $k) !==false) return "Rock" ; } } /*====================================================PRIORIDAD 3 — SOIL
+    (ampliado)====================================================*/ $soilKeywords=[ "soil" ,"suelo","common
+    fill","common","fill","lpf", "clay" ,"arcilla","silt","limo","sand","arena","gravel","grava", "subgrade" ,"base
+    course","sub base","subbase","embankment","borrow" ]; foreach ($soilKeywords as $k){ if (strpos($mat, $k) !==false)
+    return "Soil" ; } /*====================================================PRIORIDAD 4 — AGGREGATES (FF/CF/UTF +
+    nombres completos)====================================================*/ if (preg_match('/\b(ff|fine filter|fines
+    filter|finefilter)\b/', $mat)) return "Aggregates" ; if (preg_match('/\b(cf|coarse filter|coarsefilter)\b/', $mat))
+    return "Aggregates" ; if (preg_match('/\b(utf|ultra filter|ultrafilter)\b/', $mat)) return "Aggregates" ; if
+    (strpos($mat, "aggregate" ) !==false || strpos($mat, "agregado" ) !==false) return "Aggregates" ;
+    /*====================================================PRIORIDAD 5 —
+    CONCRETE====================================================*/ if (strpos($mat, "concrete" ) !==false ||
+    strpos($mat, "hormigon" ) !==false) return "Concrete" ; if (preg_match('/\bagg\b/', $mat)) return "Concrete" ;
+    /*====================================================DEFAULT====================================================*/
+    return "Unknown" ; } /*======================PROCESS MATERIALS======================*/ $materialCountSamples=[];
+    $materialCountTests=[]; $materialTopClient=[]; foreach ($rows as $r){ $client=trim((string)$r["Client"]);
+    $mat_raw=trim((string)$r["Material_Type"]); /* CLASSIFY MATERIAL ACCORDING TO RULES */
+    $mat=classifyMaterial($mat_raw, $client); $id=$r["Sample_ID"]; $num=$r["Sample_Number"]; $types=explode(",",
+    (string)$r["Test_Type"]); /* UNIQUE SAMPLES */ if (!isset($materialCountSamples[$mat]))
+    $materialCountSamples[$mat]=[]; $materialCountSamples[$mat]["{$id}-{$num}"]=true; /* TEST COUNTS */ if
+    (!isset($materialCountTests[$mat])) $materialCountTests[$mat]=0; if (!isset($materialTopClient[$mat]))
+    $materialTopClient[$mat]=[]; foreach ($types as $t){ $t=trim($t); if ($t==="" ) continue;
+    $materialCountTests[$mat]++; /* TOP CLIENT PER MATERIAL */ if (!isset($materialTopClient[$mat][$client]))
+    $materialTopClient[$mat][$client]=0; $materialTopClient[$mat][$client]++; } } /*======================MATERIAL
+    TABLE======================*/ $pdf->TableHeader([
     40=>"Material",
     20=>"Samples",
     25=>"Tests",
     35=>"Top Client"
-]);
+    ]);
 
-foreach ($materialCountTests as $mat=>$cnt){
+    foreach ($materialCountTests as $mat=>$cnt){
 
-    $samples = count($materialCountSamples[$mat]);
+    $samples = isset($materialCountSamples[$mat]) ? count($materialCountSamples[$mat]) : 0;
 
+    $topClient = "Unknown";
+    if (!empty($materialTopClient[$mat])) {
     arsort($materialTopClient[$mat]);
     $topClient = array_key_first($materialTopClient[$mat]);
-    if (trim($topClient)=="") $topClient="Unknown";
+    if (trim((string)$topClient)==="") $topClient="Unknown";
+    }
 
     $pdf->TableRow([
-        40=>$mat,
-        20=>$samples,
-        25=>$cnt,
-        35=>$topClient
+    40=>$mat,
+    20=>$samples,
+    25=>$cnt,
+    35=>$topClient
     ]);
-}
+    }
 
-$pdf->Ln(10);
+    $pdf->Ln(10);
 
-/* ======================
-   MATERIAL HORIZONTAL BAR CHART
-====================== */
+    /* ======================
+    MATERIAL HORIZONTAL BAR CHART
+    ====================== */
 
-$chartX = 28;
-$chartY = $pdf->GetY();
-$barWmax = 110;
-$barH = 6;
+    // (opcional pero recomendado) asegurar espacio para el chart completo
+    $chartRows = count($materialCountTests);
+    $neededH = ($chartRows * 7.2) + 20; // altura aproximada del gráfico + margen
+    ensureSpace($pdf, $neededH);
 
-$maxM = max($materialCountTests);
-if ($maxM<=0) $maxM=1;
+    $chartX = 28;
+    $chartY = $pdf->GetY();
+    $barWmax = 110;
+    $barH = 6;
 
-$i=0;
-foreach ($materialCountTests as $mat=>$cnt){
-    list($r,$g,$b)=pickColor($i);
-    $y = $chartY + ($i*7.2);
+    $maxM = max($materialCountTests);
+    if ($maxM<=0) $maxM=1; $i=0; foreach ($materialCountTests as $mat=>$cnt){
+        list($r,$g,$b)=pickColor($i);
+        $y = $chartY + ($i*7.2);
 
-    $bw = ($cnt/$maxM)*$barWmax;
+        $bw = ($cnt/$maxM)*$barWmax;
 
-    $pdf->SetXY($chartX-20,$y);
-    $pdf->Cell(20,6,$mat,0,0);
+        $pdf->SetXY($chartX-20,$y);
+        $pdf->Cell(20,6,$mat,0,0);
 
-    $pdf->SetFillColor($r,$g,$b);
-    $pdf->Rect($chartX,$y,$bw,$barH,"F");
+        $pdf->SetFillColor($r,$g,$b);
+        $pdf->Rect($chartX,$y,$bw,$barH,"F");
 
-    $pdf->SetXY($chartX+$bw+5,$y);
-    $pdf->Cell(10,6,$cnt);
+        $pdf->SetXY($chartX+$bw+5,$y);
+        $pdf->Cell(10,6,$cnt);
 
-    $i++;
-}
+        $i++;
+        }
 
-$pdf->Ln($i*6 + 15);
+        $pdf->Ln($i*6 + 15);
+
 
 
 /* ============================================================
