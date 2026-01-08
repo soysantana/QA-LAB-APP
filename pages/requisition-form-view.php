@@ -33,7 +33,7 @@ include_once('../components/header.php');
             <h5 class="card-title"></h5>
 
             <?php
-            $twoMonthsAgo = date('Y-m-d', strtotime('-6 months'));
+            $twoMonthsAgo = date('Y-m-d', strtotime('-3 months'));
 
             // Traer requisiciones recientes
             $query = "SELECT id, Package_ID, Sample_ID, Sample_Number, Test_Type, Comment, Sample_By, Sample_Date, Registed_Date 
