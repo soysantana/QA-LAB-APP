@@ -1293,6 +1293,7 @@ function classifyMaterial($mat, $client) {
     ==================================================== */
     if (strpos($mat, "common") !== false) return "Soil";
     if (strpos($mat, "lpf") !== false) return "Soil";
+    if (strpos($mat, "Soil") !== false) return "Soil";
 
     /* ====================================================
        PRIORIDAD 4 — AGGREGATES
@@ -1310,7 +1311,7 @@ function classifyMaterial($mat, $client) {
     /* ====================================================
        DEFAULT
     ==================================================== */
-    return "Unknown";
+    return "Soil";
 }
 
 /* ======================
@@ -3074,64 +3075,61 @@ if (empty($ncrPerType)){
 gc_collect_cycles();
 
 /* ============================================================
-   8.2 — NCR Trend by Month
+8.2 — NCR Trend by Month
 ============================================================ */
 
 $pdf->SubTitle("8.2 NCR Trend by Month");
-ensureSpace($pdf,60);
 
 $perMonthNCR = array_fill(1,12,0);
 foreach ($allNCR as $n){
-    if (!empty($n["Report_Date"])){
-        $m = intval(substr($n["Report_Date"],5,2));
-        if ($m>=1 && $m<=12) $perMonthNCR[$m]++;
-    }
-}
-
-$pdf->TableHeader([
+if (!empty($n["Report_Date"])){
+$m = intval(substr($n["Report_Date"],5,2));
+if ($m>=1 && $m<=12) $perMonthNCR[$m]++; } } $pdf->TableHeader([
     25=>"Month",
     30=>"NCR Count"
-]);
+    ]);
 
-$monthNames=[1=>"January",2=>"February",3=>"March",4=>"April",5=>"May",6=>"June",
-             7=>"July",8=>"August",9=>"September",10=>"October",11=>"November",12=>"December"];
+    $monthNames=[1=>"January",2=>"February",3=>"March",4=>"April",5=>"May",6=>"June",
+    7=>"July",8=>"August",9=>"September",10=>"October",11=>"November",12=>"December"];
 
-foreach ($perMonthNCR as $i=>$val){
+    foreach ($perMonthNCR as $i=>$val){
     $pdf->TableRow([25=>$monthNames[$i],30=>$val]);
-}
+    }
 
-$pdf->TableRow([25=>"TOTAL",30=>array_sum($perMonthNCR)]);
-$pdf->Ln(10);
+    $pdf->TableRow([25=>"TOTAL",30=>array_sum($perMonthNCR)]);
+    $pdf->Ln(10);
 
-/* Chart */
-ensureSpace($pdf,40);
-$maxMonth = max($perMonthNCR);
-if ($maxMonth<1) $maxMonth=1;
+    /* Chart (sin cambiar ensureSpace) */
+    $barH = 5;
+    $gap = 3;
 
-$x0=20; 
-$y0=$pdf->GetY();
-$barH=5; 
-$gap=3;
+    // Alto real del gráfico (12 meses) + colchón
+    $chartH = (count($perMonthNCR) * ($barH + $gap)) + 10; // ~106
+    ensureSpace($pdf, $chartH);
 
-foreach ($perMonthNCR as $i=>$val){
+    $maxMonth = max($perMonthNCR);
+    if ($maxMonth<1) $maxMonth=1; $x0=20; $y0=$pdf->GetY();
 
-    $barW = ($val/$maxMonth)*100;
+        foreach ($perMonthNCR as $i=>$val){
 
-    $pdf->SetXY($x0,$y0);
-    $pdf->SetFont("Arial","",8);
-    $pdf->Cell(20,$barH,$monthNames[$i],0,0);
+        $barW = ($val/$maxMonth)*100;
 
-    $pdf->SetFillColor(60,120,200);
-    $pdf->Rect($x0+22,$y0,$barW,$barH,"F");
+        $pdf->SetXY($x0,$y0);
+        $pdf->SetFont("Arial","",8);
+        $pdf->Cell(20,$barH,$monthNames[$i],0,0);
 
-    $pdf->SetXY($x0+125,$y0);
-    $pdf->Cell(10,$barH,$val,0,0);
+        $pdf->SetFillColor(60,120,200);
+        $pdf->Rect($x0+22,$y0,$barW,$barH,"F");
 
-    $y0+=($barH+$gap);
-}
+        $pdf->SetXY($x0+125,$y0);
+        $pdf->Cell(10,$barH,$val,0,0);
 
-$pdf->Ln(15);
-gc_collect_cycles();
+        $y0+=($barH+$gap);
+        }
+
+        $pdf->Ln(15);
+        gc_collect_cycles();
+
 
 /* ============================================================
    8.3 — NCR by Material Type (FULL NAMES)
