@@ -11,6 +11,23 @@ use setasign\Fpdi\Fpdi;
 ============================ */
 function N($v){ return strtoupper(trim((string)$v)); }
 
+function normNum($v){
+  $s = strtoupper(trim((string)$v));
+  if ($s === '') return '';
+
+  // 0078 -> 78
+  if (preg_match('/^\d+$/', $s)) return (string)intval($s);
+
+  // G001 -> G1
+  if (preg_match('/^G0*\d+$/', $s)) return 'G'.(string)intval(substr($s,1));
+
+  return $s;
+}
+
+function makeKey($sid, $sno, $tt){
+  return N($sid) . "|" . normNum($sno) . "|" . N($tt);
+}
+
 function daysSince($date){
   if(!$date) return 0;
   $t = strtotime($date);
@@ -20,15 +37,12 @@ function daysSince($date){
 
 /* ============================
    PARÁMETROS
-   - type: GS, MC, AL, etc
-   - stage: SIN / PREP / PREP_EST / REAL / REAL_EST / ENT / REV / REP
-   - from/to: YYYY-MM-DD (igual que tu página)
 ============================ */
 $type_raw  = $_GET['type']  ?? '';
 $stage_raw = $_GET['stage'] ?? '';
 
-$type  = N($type_raw);
-$stage = N($stage_raw);
+$type  = N($type_raw);   // GS, MC, AL, etc
+$stage = N($stage_raw);  // SIN / PREP / PREP_EST / REAL / REAL_EST / ENT / REV / REP
 
 $from = $_GET['from'] ?? date('Y-m-d', strtotime('-90 days'));
 $to   = $_GET['to']   ?? date('Y-m-d');
@@ -41,7 +55,7 @@ $fromEsc = $db->escape($from);
 $toEsc   = $db->escape($to);
 
 /* ============================
-   CARGA BASE (MISMA que página)
+   1) REQUISICIONES (MISMO FILTRO QUE PÁGINA)
 ============================ */
 $req = find_by_sql("
   SELECT Sample_ID, Sample_Number, Test_Type, Registed_Date
@@ -51,102 +65,29 @@ $req = find_by_sql("
 if (!is_array($req)) $req = [];
 
 /* ============================
-   INDEX DE ESTADO (MISMA que página)
+   2) WORKFLOW (FUENTE DE VERDAD)
 ============================ */
-$index = [];
-
-/* PREPARATION */
-$prep = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
-  FROM test_preparation
-  WHERE Start_Date IS NOT NULL
-    AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
+$wf = find_by_sql("
+  SELECT Sample_ID, Sample_Number, Test_Type, Status, Updated_At, Process_Started
+  FROM test_workflow
 ");
-if (!is_array($prep)) $prep = [];
-foreach ($prep as $r) {
-  $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-    'stage' => 'PREP',
-    'SD'    => $r['Start_Date'] ?? null
-  ];
-}
+if (!is_array($wf)) $wf = [];
 
-/* REALIZATION */
-$real = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
-  FROM test_realization
-  WHERE Start_Date IS NOT NULL
-    AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
-");
-if (!is_array($real)) $real = [];
-foreach ($real as $r) {
-  $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-    'stage' => 'REAL',
-    'SD'    => $r['Start_Date'] ?? null
-  ];
-}
+$wfIndex = [];
+foreach ($wf as $w) {
+  $k = makeKey($w['Sample_ID'] ?? '', $w['Sample_Number'] ?? '', $w['Test_Type'] ?? '');
+  if ($k === "||") continue;
 
-/* DELIVERY */
-$ent = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
-  FROM test_delivery
-  WHERE Start_Date IS NOT NULL
-    AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
-");
-if (!is_array($ent)) $ent = [];
-foreach ($ent as $r) {
-  $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-    'stage' => 'ENT',
-    'SD'    => $r['Start_Date'] ?? null
-  ];
-}
+  $sd = $w['Updated_At'] ?? $w['Process_Started'] ?? null;
 
-/* REVIEW */
-$rev = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
-  FROM test_review
-  WHERE Start_Date IS NOT NULL
-    AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
-");
-if (!is_array($rev)) $rev = [];
-foreach ($rev as $r) {
-  $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-    'stage' => 'REV',
-    'SD'    => $r['Start_Date'] ?? null
-  ];
-}
-
-/* REPEAT */
-$rep = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
-  FROM test_repeat
-  WHERE Start_Date IS NOT NULL
-    AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
-");
-if (!is_array($rep)) $rep = [];
-foreach ($rep as $r) {
-  $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-    'stage' => 'REP',
-    'SD'    => $r['Start_Date'] ?? null
-  ];
-}
-
-/* REVIEWED */
-$rev2 = find_by_sql("
-  SELECT Sample_ID, Sample_Number, Test_Type, Start_Date
-  FROM test_reviewed
-  WHERE Start_Date IS NOT NULL
-    AND DATE(Start_Date) BETWEEN '{$fromEsc}' AND '{$toEsc}'
-");
-if (!is_array($rev2)) $rev2 = [];
-foreach ($rev2 as $r) {
-  $index[N($r['Sample_ID'] ?? '')."|".N($r['Sample_Number'] ?? '')."|".N($r['Test_Type'] ?? '')] = [
-    'stage' => 'REV',
-    'SD'    => $r['Start_Date'] ?? null
+  $wfIndex[$k] = [
+    'status' => (string)($w['Status'] ?? 'Registrado'),
+    'sd'     => $sd
   ];
 }
 
 /* ============================
-   ARMAR SALIDA (MISMA lógica)
+   3) CONSTRUIR SALIDA (MISMA LÓGICA QUE LISTADO)
 ============================ */
 $out = [];
 
@@ -161,20 +102,31 @@ foreach ($req as $row) {
     $T = N($t);
     if ($T === '') continue;
 
-    // Si viene type, filtra por ese ensayo (igual que tu PDF actual)
+    // filtrar por type si viene en URL
     if ($type !== '' && $T !== $type) continue;
 
-    $key = N($row['Sample_ID'] ?? '')."|".N($row['Sample_Number'] ?? '')."|".$T;
-    $stData = $index[$key] ?? null;
+    $key = makeKey($row['Sample_ID'] ?? '', $row['Sample_Number'] ?? '', $T);
 
-    $ST = $stData['stage'] ?? 'SIN';
-    $SD = $stData['SD'] ?? ($row['Registed_Date'] ?? null);
+    $wfRow = $wfIndex[$key] ?? null;
 
-    // Estancados: igual que página
+    // status y fecha base (para estancados)
+    $status = $wfRow['status'] ?? 'Registrado';
+    $SD     = $wfRow['sd']     ?? ($row['Registed_Date'] ?? null);
+
+    // map status workflow -> stage PDF
+    $ST = 'SIN';
+    if ($status === 'Registrado')   $ST = 'SIN';
+    if ($status === 'Preparación')  $ST = 'PREP';
+    if ($status === 'Realización')  $ST = 'REAL';
+    if ($status === 'Repetición')   $ST = 'REP';
+    if ($status === 'Entrega')      $ST = 'ENT';
+    if ($status === 'Revisado')     $ST = 'REV';
+
+    // Estancados (basado en Updated_At / Process_Started del workflow)
     if ($ST === 'PREP' && daysSince($SD) >= 3) $ST = 'PREP_EST';
     if ($ST === 'REAL' && daysSince($SD) >= 4) $ST = 'REAL_EST';
 
-    // Si viene stage, filtra por stage
+    // filtrar por stage si viene en URL
     if ($stage !== '' && $stage !== $ST) continue;
 
     $out[] = [
@@ -182,7 +134,7 @@ foreach ($req as $row) {
       'num'   => $row['Sample_Number'] ?? '',
       'type'  => $T,
       'reg'   => $row['Registed_Date'] ?? '',
-      'sd'    => $SD ?? '',
+      'sd'    => (string)($SD ?? ''),
       'stage' => $ST
     ];
   }
