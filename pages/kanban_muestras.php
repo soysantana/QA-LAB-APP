@@ -42,7 +42,7 @@ include_once('../components/header.php');
       ];
 
       for ($i=0; $i<count($columns); $i+=2):
-        $name = $columns[$i]; 
+        $name = $columns[$i];
         $color = $columns[$i+1];
     ?>
       <section class="kan-col" data-status="<?php echo htmlspecialchars($name); ?>">
@@ -100,7 +100,6 @@ include_once('../components/header.php');
   .substage-label { font-size:11px; color:#555; }
   .substage-chip { font-size:11px; padding:2px 6px; border-radius:10px; border:1px solid #e5e7eb; background:#f9fafb; }
   .substage-chip.active { background:#111; color:#fff; border-color:#111; }
-
   .substage-select { font-size:11px; border-radius:8px; border:1px solid #ddd; padding:2px 6px; }
 
   .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:9999; }
@@ -165,6 +164,7 @@ function debounce(fn, ms) {
   let t;
   return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
 }
+
 function fetchData() {
   const q = encodeURIComponent($search.value.trim());
   const t = encodeURIComponent($testFilter.value);
@@ -192,27 +192,38 @@ function move(id, toStatus, technicians, note) {
   .then(r => r.text())
   .then(txt => {
     try { return JSON.parse(txt); }
-    catch { 
-      console.error("BAD JSON", txt); 
-      return { ok:false, error:"BAD_JSON", raw:txt }; 
+    catch {
+      console.error("BAD JSON", txt);
+      return { ok:false, error:"BAD_JSON", raw:txt };
     }
   })
   .catch(err => ({ ok:false, error:String(err) }));
 }
 
-function changeSubStage(id, subStage) {
+/* ✅ FIX: ENVÍA LLAVE REAL (Sample_ID, Sample_Number, Test_Type) */
+function changeSubStage(meta, subStage) {
+  const payload = (typeof meta === "string")
+    ? { id: meta, sub_stage: subStage }
+    : {
+        id: meta.id || "",
+        Sample_ID: meta.sid || "",
+        Sample_Number: meta.sno || "",
+        Test_Type: meta.tt || "",
+        sub_stage: subStage
+      };
+
   return fetch('/api/kanban_substage.php', {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
     credentials:'same-origin',
-    body: JSON.stringify({ id, sub_stage: subStage })
+    body: JSON.stringify(payload)
   })
   .then(r => r.text())
   .then(txt => {
     try { return JSON.parse(txt); }
-    catch { 
-      console.error("BAD JSON", txt); 
-      return { ok:false, error:"BAD_JSON", raw:txt }; 
+    catch {
+      console.error("BAD JSON", txt);
+      return { ok:false, error:"BAD_JSON", raw:txt };
     }
   })
   .catch(err => ({ ok:false, error:String(err) }));
@@ -249,14 +260,7 @@ function render(data) {
     });
   }
 
-  // ESTADOS *incluye Repetición*
-  const statuses = [
-    "Registrado",
-    "Preparación",
-    "Realización",
-    "Repetición",
-    "Entrega"
-  ];
+  const statuses = ["Registrado","Preparación","Realización","Repetición","Entrega"];
 
   statuses.forEach(status => {
     const zone = document.querySelector(`.dropzone[data-status="${status}"]`);
@@ -266,7 +270,12 @@ function render(data) {
       const card = document.createElement("article");
       card.className = "card";
       card.draggable = true;
-      card.dataset.id = it.id;
+
+      // ✅ id + LLAVE REAL
+      card.dataset.id  = it.id;
+      card.dataset.sid = it.Sample_ID || "";
+      card.dataset.sno = it.Sample_Number || "";
+      card.dataset.tt  = it.Test_Type || "";
 
       const subList = SUBSTAGES[status] || [];
       const currentSub = it.Sub_Stage || "";
@@ -282,7 +291,7 @@ function render(data) {
               </span>
             `).join("")}
 
-            <select class="substage-select" data-id="${it.id}">
+            <select class="substage-select">
               <option value="">Cambiar…</option>
               ${subList.map(code => `
                 <option value="${code}" ${code === currentSub ? "selected" : ""}>
@@ -325,14 +334,21 @@ function render(data) {
     if ($count) $count.textContent = String(count);
   });
 
-  // cambio de subetapa
+  // ✅ cambio de subetapa (toma la llave desde la card)
   document.querySelectorAll(".substage-select").forEach(sel => {
     sel.addEventListener("change", () => {
-      const id = sel.dataset.id;
       const value = sel.value;
-      if (!id || !value) return;
+      if (!value) return;
 
-      changeSubStage(id, value).then(res => {
+      const card = sel.closest(".card");
+      const meta = {
+        id:  card?.dataset.id  || "",
+        sid: card?.dataset.sid || "",
+        sno: card?.dataset.sno || "",
+        tt:  card?.dataset.tt  || ""
+      };
+
+      changeSubStage(meta, value).then(res => {
         if (!res.ok) {
           alert("No se pudo actualizar sub-etapa: " + (res.error || ""));
         } else {
@@ -362,10 +378,8 @@ document.querySelectorAll(".dropzone").forEach(zone => {
     openMoveModal({ id, to, el });
   });
 });
-/* ============================
-   MODAL DE MOVIMIENTO
-============================ */
 
+/* MODAL DE MOVIMIENTO */
 function openMoveModal(pm) {
   pendingMove = pm;
   $mm_to.value = pm.to;
@@ -409,19 +423,7 @@ $mm_ok.addEventListener("click", () => {
   closeMoveModal();
 });
 
-
-/* ============================
-   BÚSQUEDA Y FILTROS
-============================ */
-
-function debounce(fn, ms) {
-  let t;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), ms);
-  };
-}
-
+/* BÚSQUEDA Y FILTROS */
 $search.addEventListener("input", debounce(() => {
   fetchData().then(render);
 }, 300));
@@ -434,16 +436,10 @@ $refresh.addEventListener("click", () => {
   fetchData().then(render);
 });
 
-
-/* ============================
-   CARGA INICIAL
-============================ */
+/* CARGA INICIAL */
 fetchData().then(render);
 
-
-/* ============================
-   EXPORTAR EXCEL
-============================ */
+/* EXPORTAR EXCEL */
 (function () {
   const $ = id => document.getElementById(id);
 
