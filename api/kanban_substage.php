@@ -7,8 +7,8 @@ require_once('../config/load.php');
 @ob_clean();
 header('Content-Type: application/json; charset=utf-8');
 
-function respond(bool $ok, array $p=[]){
-  echo json_encode(['ok'=>$ok] + $p, JSON_UNESCAPED_UNICODE);
+function respond(bool $ok,array $p=[]){
+  echo json_encode(['ok'=>$ok]+$p,JSON_UNESCAPED_UNICODE);
   exit;
 }
 
@@ -19,149 +19,73 @@ $VALID = [
   'Entrega'     => ['E1']
 ];
 
-function firstRow($db, string $sql): ?array {
-  $q = $db->query($sql);
-  if (!$q) return null;
-  $r = $db->fetch_assoc($q);
-  return $r ?: null;
-}
-
 try {
-  if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+  if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'){
     http_response_code(405);
-    respond(false, ['error' => 'Método no permitido']);
+    respond(false,['error'=>'Método no permitido']);
   }
 
   $payload = json_decode(file_get_contents('php://input'), true);
-  if (!is_array($payload)) respond(false, ['error' => 'Payload inválido']);
+  if (!is_array($payload)) respond(false,['error'=>'Payload inválido']);
 
-  // Tu JS envía { id, sub_stage }
-  $incomingId = trim((string)($payload['id'] ?? ''));
-  $subStage   = trim((string)($payload['sub_stage'] ?? ''));
+  $sub = trim((string)($payload['sub_stage'] ?? ''));
+  if ($sub==='') respond(false,['error'=>'Sub-etapa requerida']);
 
-  if ($incomingId === '' || $subStage === '') {
-    respond(false, ['error' => 'Datos insuficientes']);
-  }
+  // 1) SI VIENE LA LLAVE REAL → USARLA (solución definitiva)
+  $sid = trim((string)($payload['Sample_ID'] ?? ''));
+  $sno = trim((string)($payload['Sample_Number'] ?? ''));
+  $tt  = trim((string)($payload['Test_Type'] ?? ''));
 
-  $idEsc = $db->escape($incomingId);
+  $wf = null;
 
-  // 1) Intento directo: ID real en workflow
-  $wf = firstRow($db, "
-    SELECT id, Sample_ID, Sample_Number, Test_Type, Status
-    FROM test_workflow
-    WHERE id='{$idEsc}'
-    LIMIT 1
-  ");
+  if ($sid !== '' && $sno !== '' && $tt !== '') {
+    $sidEsc = $db->escape($sid);
+    $snoEsc = $db->escape($sno);
+    $ttEsc  = $db->escape($tt);
 
-  // 2) Intento directo: ID real en repeat
-  $tr = null;
-  if (!$wf) {
-    $tr = firstRow($db, "
-      SELECT id, Sample_ID, Sample_Number, Test_Type, Status
-      FROM test_repeat
-      WHERE id='{$idEsc}'
+    $wf = $db->fetch_assoc($db->query("
+      SELECT id, Status
+      FROM test_workflow
+      WHERE Sample_ID='{$sidEsc}'
+        AND Sample_Number='{$snoEsc}'
+        AND Test_Type='{$ttEsc}'
       LIMIT 1
-    ");
+    "));
   }
 
-  // 3) Si NO existe, resolver si el id es un “virtual id”
-  //    (concat / md5 / sha1 de Sample_ID + Sample_Number + Test_Type)
-  if (!$wf && !$tr) {
-
-    // 3A) si viene como "SampleID|SampleNumber|TestType" o "SampleID-SampleNumber-TestType"
-    $parts = null;
-    if (strpos($incomingId, '|') !== false) {
-      $tmp = explode('|', $incomingId);
-      if (count($tmp) >= 3) $parts = $tmp;
-    } elseif (substr_count($incomingId, '-') >= 2) {
-      // ojo: Sample_ID también tiene guiones, por eso tomamos los últimos 2 segmentos como num/test
-      $tmp = explode('-', $incomingId);
-      if (count($tmp) >= 3) {
-        $test = array_pop($tmp);
-        $num  = array_pop($tmp);
-        $sid  = implode('-', $tmp);
-        $parts = [$sid, $num, $test];
-      }
-    }
-
-    if ($parts) {
-      $sidEsc = $db->escape(trim((string)$parts[0]));
-      $numEsc = $db->escape(trim((string)$parts[1]));
-      $ttEsc  = $db->escape(trim((string)$parts[2]));
-
-      $wf = firstRow($db, "
-        SELECT id, Sample_ID, Sample_Number, Test_Type, Status
-        FROM test_workflow
-        WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' AND Test_Type='{$ttEsc}'
-        LIMIT 1
-      ");
-    }
-
-    // 3B) si es un hash (MD5/SHA1) del key
-    if (!$wf) {
-      $wf = firstRow($db, "
-        SELECT id, Sample_ID, Sample_Number, Test_Type, Status
-        FROM test_workflow
-        WHERE MD5(CONCAT(Sample_ID,'|',Sample_Number,'|',Test_Type)) = '{$idEsc}'
-           OR MD5(CONCAT(Sample_ID,Sample_Number,Test_Type))         = '{$idEsc}'
-           OR SHA1(CONCAT(Sample_ID,'|',Sample_Number,'|',Test_Type))= '{$idEsc}'
-           OR SHA1(CONCAT(Sample_ID,Sample_Number,Test_Type))        = '{$idEsc}'
-        LIMIT 1
-      ");
-    }
-
-    // 3C) si el hash corresponde a una fila en test_repeat, mapear al workflow real
-    if (!$wf) {
-      $tr = firstRow($db, "
-        SELECT id, Sample_ID, Sample_Number, Test_Type, Status
-        FROM test_repeat
-        WHERE MD5(CONCAT(Sample_ID,'|',Sample_Number,'|',Test_Type)) = '{$idEsc}'
-           OR MD5(CONCAT(Sample_ID,Sample_Number,Test_Type))         = '{$idEsc}'
-           OR SHA1(CONCAT(Sample_ID,'|',Sample_Number,'|',Test_Type))= '{$idEsc}'
-           OR SHA1(CONCAT(Sample_ID,Sample_Number,Test_Type))        = '{$idEsc}'
-        LIMIT 1
-      ");
-
-      if ($tr) {
-        $sidEsc = $db->escape(trim((string)$tr['Sample_ID']));
-        $numEsc = $db->escape(trim((string)$tr['Sample_Number']));
-        $ttEsc  = $db->escape(trim((string)$tr['Test_Type']));
-
-        $wf = firstRow($db, "
-          SELECT id, Sample_ID, Sample_Number, Test_Type, Status
-          FROM test_workflow
-          WHERE Sample_ID='{$sidEsc}' AND Sample_Number='{$numEsc}' AND Test_Type='{$ttEsc}'
-          LIMIT 1
-        ");
-      }
-    }
-  }
-
+  // 2) BACKUP: si no vino llave, intentar por id (por si hay tarjetas reales)
   if (!$wf) {
-    respond(false, [
-      'error' => 'Tarjeta no encontrada',
-      'received_id' => $incomingId
-    ]);
+    $id = trim((string)($payload['id'] ?? ''));
+    if ($id !== '') {
+      $idEsc = $db->escape($id);
+      $wf = $db->fetch_assoc($db->query("
+        SELECT id, Status
+        FROM test_workflow
+        WHERE id='{$idEsc}'
+        LIMIT 1
+      "));
+    }
   }
+
+  if (!$wf) respond(false,['error'=>'Tarjeta no encontrada']);
 
   $status = (string)$wf['Status'];
-
-  if (!isset($VALID[$status]) || !in_array($subStage, $VALID[$status], true)) {
-    respond(false, ['error' => 'Sub-etapa no válida para este estado']);
+  if (!isset($VALID[$status]) || !in_array($sub, $VALID[$status], true)) {
+    respond(false,['error'=>'Sub-etapa no válida para este estado']);
   }
 
   $user = function_exists('current_user')
     ? (current_user()['name'] ?? current_user()['username'] ?? 'system')
     : 'system';
 
-  $wfIdEsc   = $db->escape((string)$wf['id']);
-  $stageEsc  = $db->escape($subStage);
-  $userEsc   = $db->escape((string)$user);
+  $wfIdEsc = $db->escape((string)$wf['id']);
+  $subEsc  = $db->escape($sub);
+  $usrEsc  = $db->escape((string)$user);
 
   $db->query("
     UPDATE test_workflow
-    SET `Sub_Stage`='{$stageEsc}',
-        Updated_By='{$userEsc}',
+    SET `Sub_Stage`='{$subEsc}',
+        Updated_By='{$usrEsc}',
         Updated_At=NOW()
     WHERE id='{$wfIdEsc}'
     LIMIT 1
@@ -169,7 +93,7 @@ try {
 
   respond(true);
 
-} catch (Throwable $e) {
+} catch(Throwable $e){
   http_response_code(400);
-  respond(false, ['error' => $e->getMessage()]);
+  respond(false,['error'=>$e->getMessage()]);
 }
