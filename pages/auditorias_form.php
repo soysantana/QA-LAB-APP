@@ -10,19 +10,31 @@ global $db;
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $audit = null;
 $hallazgos = [];
+$acciones = []; // ✅ NUEVO
+
 
 if ($id > 0) {
   $rows = find_by_sql("SELECT * FROM auditorias_lab WHERE id = {$id} LIMIT 1");
   if ($rows) {
-    $audit = $rows[0];
-    // Traer hallazgos asociados
-    $hallazgos = find_by_sql("
-      SELECT *
-      FROM auditoria_hallazgos
-      WHERE auditoria_id = {$id}
-      ORDER BY id ASC
-    ");
-  }
+  $audit = $rows[0];
+
+  // Traer hallazgos asociados
+  $hallazgos = find_by_sql("
+    SELECT *
+    FROM auditoria_hallazgos
+    WHERE auditoria_id = {$id}
+    ORDER BY id ASC
+  ");
+
+  // ✅ Traer acciones asociadas (PLAN DE ACCIÓN)
+  $acciones = find_by_sql("
+    SELECT *
+    FROM acciones_auditoria
+    WHERE auditoria_id = {$id}
+    ORDER BY id ASC
+  ");
+}
+
 }
 
 if (!$audit) {
@@ -433,6 +445,8 @@ if (!$audit) {
 
             <td>
               <input type="hidden" name="accion_id[]" value="<?php echo (int)$ac['id']; ?>">
+              <input type="hidden" name="accion_finding_id[]" value="<?php echo (int)($ac['finding_id'] ?? 0); ?>">
+
               <input type="text" name="hallazgo_ref[]" class="form-control form-control-sm"
                      value="<?php echo htmlentities($ac['hallazgo_ref'] ?? ''); ?>"
                      placeholder="NCR #1">
@@ -824,6 +838,37 @@ if (!$audit) {
     return (st === 'Closed') ? 'bg-secondary' : 'bg-primary';
   }
 
+  // ===========================
+// IDs únicos para Accordion (Bootstrap)
+// ===========================
+function uid(){
+  return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function resetAccordionIds(card, key){
+  const heading  = card.querySelector('.accordion-header');
+  const btn      = card.querySelector('.accordion-button');
+  const collapse = card.querySelector('.accordion-collapse');
+
+  const hid = `heading-${key}`;
+  const cid = `collapse-${key}`;
+
+  if (heading) heading.id = hid;
+
+  if (btn) {
+    btn.setAttribute('data-bs-target', `#${cid}`);
+    btn.setAttribute('aria-controls', cid);
+  }
+
+  if (collapse) {
+    collapse.id = cid;
+    collapse.setAttribute('aria-labelledby', hid);
+    // mantener comportamiento accordion
+    collapse.setAttribute('data-bs-parent', '#hallazgosAccordion');
+  }
+}
+
+
   function renumber(){
     const items = document.querySelectorAll('.hallazgo-item');
     items.forEach((item, i) => {
@@ -1086,24 +1131,36 @@ if (!$audit) {
     updateHeaderText(card);
     initHallazgoCard(card); // ✅ cargar plantillas dinámicas
   });
+
+  // ✅ asegurar IDs únicos en hallazgos existentes
+document.querySelectorAll('.hallazgo-item').forEach(card=>{
+  resetAccordionIds(card, uid());
+});
+
   renumber();
   updateSummary();
+
 
   // ===========================
   // Add hallazgo
   // ===========================
   document.getElementById('addHallazgoBtn').addEventListener('click', function(){
-    const acc = document.getElementById('hallazgosAccordion');
-    const count = document.querySelectorAll('.hallazgo-item').length + 1;
-    acc.insertAdjacentHTML('beforeend', newHallazgoHTML(count));
-    const last = acc.lastElementChild;
+  const acc = document.getElementById('hallazgosAccordion');
+  const count = document.querySelectorAll('.hallazgo-item').length + 1;
 
-    applyBadges(last);
-    updateHeaderText(last);
-    initHallazgoCard(last); // ✅
-    renumber();
-    updateSummary();
-  });
+  acc.insertAdjacentHTML('beforeend', newHallazgoHTML(count));
+  const last = acc.lastElementChild;
+
+  // ✅ evitar IDs duplicados
+  resetAccordionIds(last, uid());
+
+  applyBadges(last);
+  updateHeaderText(last);
+  initHallazgoCard(last);
+  renumber();
+  updateSummary();
+});
+
 
   // ===========================
   // Delegación de eventos
@@ -1122,23 +1179,36 @@ if (!$audit) {
     }
 
     if(e.target.closest('.jsDuplicate')){
-      const acc = document.getElementById('hallazgosAccordion');
-      const clone = card.cloneNode(true);
+  const acc = document.getElementById('hallazgosAccordion');
+  const clone = card.cloneNode(true);
 
-      // finding_id -> 0 (nuevo)
-      const hid = clone.querySelector('input[name="finding_id[]"]');
-      if(hid) hid.value = 0;
-      clone.setAttribute('data-finding-id','0');
+  // finding_id -> 0 (nuevo)
+  const hid = clone.querySelector('input[name="finding_id[]"]');
+  if (hid) hid.value = 0;
+  clone.setAttribute('data-finding-id', '0');
 
-      acc.insertBefore(clone, card.nextSibling);
+  // ✅ IDs únicos para no romper Bootstrap
+  resetAccordionIds(clone, uid());
 
-      applyBadges(clone);
-      updateHeaderText(clone);
-      initHallazgoCard(clone); // ✅
-      renumber();
-      updateSummary();
-      return;
-    }
+  // ✅ dejar abierto el nuevo (opcional)
+  const collapse = clone.querySelector('.accordion-collapse');
+  const btn = clone.querySelector('.accordion-button');
+  if (collapse) collapse.classList.add('show');
+  if (btn) {
+    btn.classList.remove('collapsed');
+    btn.setAttribute('aria-expanded','true');
+  }
+
+  acc.insertBefore(clone, card.nextSibling);
+
+  applyBadges(clone);
+  updateHeaderText(clone);
+  initHallazgoCard(clone);
+  renumber();
+  updateSummary();
+  return;
+}
+
 
     if(e.target.closest('.jsMoveUp')){
       const prev = card.previousElementSibling;
@@ -1187,12 +1257,40 @@ if (!$audit) {
       return;
     }
 
-    // Cambia severidad/estado
     if(e.target.classList.contains('jsSeverity') || e.target.classList.contains('jsStatus')){
-      applyBadges(card);
-      updateSummary();
-      return;
+  applyBadges(card);
+  updateSummary();
+
+  // ✅ NUEVO: si cierran el hallazgo, quitar acciones asociadas "NCR #n"
+  if(e.target.classList.contains('jsStatus')){
+    const st = e.target.value || 'Open';
+    if(st === 'Closed'){
+      const badge = card.querySelector('.accordion-button .badge.bg-secondary');
+      const nTxt = (badge?.textContent || '').replace('#','').trim();
+      const n = parseInt(nTxt, 10);
+
+      if(Number.isFinite(n)){
+        const ref = `NCR #${n}`;
+        const body = document.getElementById('accionesBody');
+
+        // borra las acciones de ese hallazgo
+        [...body.querySelectorAll('tr')].forEach(tr => {
+          const inp = tr.querySelector('input[name="hallazgo_ref[]"]');
+          if(inp && (inp.value || '').trim() === ref){
+            tr.remove();
+          }
+        });
+
+        // reenumera tabla acciones
+        [...body.querySelectorAll('tr')].forEach((tr, idx) => {
+          tr.children[0].textContent = idx + 1;
+        });
+      }
     }
+  }
+
+  return;
+}
 
     // Cambia tipo
     if(e.target.classList.contains('jsType')){
@@ -1226,21 +1324,85 @@ if (!$audit) {
 })();
 
 (function(){
-  const body = document.getElementById('accionesBody');
-  document.getElementById('addAccBtn').addEventListener('click', () => {
-    const n = body.querySelectorAll('tr').length + 1;
+  const body   = document.getElementById('accionesBody');
+  const btnAdd = document.getElementById('addAccBtn');
+
+  // ===========================
+  // Helpers Hallazgos
+  // ===========================
+  function getHallazgoCardFromCollapse(collapse){
+    return collapse ? collapse.closest('.hallazgo-item') : null;
+  }
+
+  function getHallazgoNumberFromCard(card){
+    const badge = card?.querySelector('.accordion-button .badge.bg-secondary');
+    if(!badge) return null;
+    const t = (badge.textContent || '').replace('#','').trim();
+    const n = parseInt(t, 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function getHallazgoType(card){
+    return card?.querySelector('.jsType')?.value || '';
+  }
+
+  function isHallazgoOpen(card){
+    const st = card?.querySelector('.jsStatus')?.value || 'Open';
+    return st === 'Open';
+  }
+
+  function canHaveAction(card){
+    const type = getHallazgoType(card);
+    return type !== 'Buena práctica';
+  }
+
+  function getRefPrefix(type){
+    if(type === 'Buena práctica') return 'BP';
+    if(type === 'Observación') return 'OBS';
+    if(type === 'Oportunidad') return 'OPP';
+    return 'NCR';
+  }
+
+  function getActiveHallazgoCard(){
+    // 1) Si hay abierto, usarlo
+    const openCollapse = document.querySelector('#hallazgosAccordion .accordion-collapse.show');
+    if(openCollapse){
+      const card = getHallazgoCardFromCollapse(openCollapse);
+      if(card && isHallazgoOpen(card)) return card;
+    }
+
+    // 2) Si no, buscar el último Open
+    const cards = [...document.querySelectorAll('.hallazgo-item')];
+    for(let i = cards.length - 1; i >= 0; i--){
+      if(isHallazgoOpen(cards[i])) return cards[i];
+    }
+
+    return null;
+  }
+
+  // ===========================
+  // Acciones helpers
+  // ===========================
+  function renumberAccionesTable(){
+    [...body.querySelectorAll('tr')].forEach((tr, idx) => {
+      tr.children[0].textContent = idx + 1;
+    });
+  }
+
+  function makeAccRow(nextIndex, hallazgoRefDefault){
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="text-center">${n}</td>
+      <td class="text-center">${nextIndex}</td>
       <td>
         <input type="hidden" name="accion_id[]" value="0">
-        <input type="text" name="hallazgo_ref[]" class="form-control form-control-sm" placeholder="NCR #1">
+        <input type="text" name="hallazgo_ref[]" class="form-control form-control-sm"
+               value="${hallazgoRefDefault}">
       </td>
       <td>
         <textarea name="accion[]" rows="2" class="form-control form-control-sm" required></textarea>
       </td>
       <td>
-        <input type="text" name="responsable[]" class="form-control form-control-sm" placeholder="Doc Control">
+        <input type="text" name="responsable[]" class="form-control form-control-sm">
       </td>
       <td>
         <input type="date" name="fecha_compromiso[]" class="form-control form-control-sm">
@@ -1256,16 +1418,52 @@ if (!$audit) {
         <button type="button" class="btn btn-sm btn-outline-danger jsRemoveAcc">Quitar</button>
       </td>
     `;
-    body.appendChild(tr);
+    return tr;
+  }
+
+  // ===========================
+  // ADD ACCIÓN (control total)
+  // ===========================
+  btnAdd.addEventListener('click', () => {
+    const card = getActiveHallazgoCard();
+    if(!card){
+      alert('No hay hallazgos Open. Crea o abre un hallazgo primero.');
+      return;
+    }
+
+    if(!canHaveAction(card)){
+      alert('Las Buenas Prácticas no requieren acciones.');
+      return;
+    }
+
+    const n = getHallazgoNumberFromCard(card);
+    if(!n){
+      alert('No se pudo determinar el número del hallazgo.');
+      return;
+    }
+
+    const type   = getHallazgoType(card);
+    const prefix = getRefPrefix(type);
+    const ref    = `${prefix} #${n}`;
+
+    const idx = body.querySelectorAll('tr').length + 1;
+    body.appendChild(makeAccRow(idx, ref));
   });
 
+  // ===========================
+  // REMOVE ACCIÓN
+  // ===========================
   body.addEventListener('click', (e) => {
     if(e.target.classList.contains('jsRemoveAcc')){
       e.target.closest('tr').remove();
-      [...body.querySelectorAll('tr')].forEach((tr, idx) => tr.children[0].textContent = idx+1);
+      renumberAccionesTable();
     }
   });
+
 })();
+
+
+
 </script>
 
 <?php include_once('../components/footer.php'); ?>

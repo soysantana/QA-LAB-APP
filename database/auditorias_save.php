@@ -50,10 +50,32 @@ $Scope             = AUD_PS('Scope');
 $Findings          = AUD_PS('Findings');
 $Severity          = AUD_PS('Severity', 'Minor');
 $Status            = AUD_PS('Status', 'Open');
+
 $Auditor           = AUD_PS('Auditor');
 $Audited           = AUD_PS('Audited');
 $Related_Sample_ID = AUD_PS('Related_Sample_ID');
 $Related_Client    = AUD_PS('Related_Client');
+
+/* =========================================================
+   REGLA: No cerrar auditoría si hay acciones pendientes
+   (se valida con lo que viene del POST)
+========================================================= */
+if ($Status === 'Closed') {
+  $accion_statuses  = $_POST['accion_status'] ?? [];
+  $pending = 0;
+  foreach ($accion_statuses as $stA) {
+    $stA = remove_junk(trim((string)$stA));
+    if ($stA !== 'Closed') $pending++;
+  }
+
+  if ($pending > 0) {
+    AUD_FAIL(
+      "No puedes cerrar la auditoría porque hay {$pending} acción(es) en Open / In Progress.",
+      '../pages/auditorias_form.php' . ($id ? '?id=' . $id : '')
+    );
+  }
+}
+
 
 if ($Audit_Code === '' || $Audit_Date === '' || $Audit_Type === '' || $Area === '' || $Auditor === '') {
   AUD_FAIL(
@@ -217,6 +239,118 @@ if (count($kept_ids) > 0) {
   $db->query("DELETE FROM auditoria_hallazgos WHERE auditoria_id={$id} AND id NOT IN ({$ids})");
 } else {
   $db->query("DELETE FROM auditoria_hallazgos WHERE auditoria_id={$id}");
+}
+
+/* ============================
+   GUARDAR / ACTUALIZAR ACCIONES
+   - Relación real: finding_id
+============================ */
+$accion_ids         = $_POST['accion_id']          ?? [];
+$accion_finding_ids = $_POST['accion_finding_id']  ?? [];
+$hallazgo_refs      = $_POST['hallazgo_ref']       ?? [];
+$acciones_txt       = $_POST['accion']             ?? [];
+$responsables       = $_POST['responsable']        ?? [];
+$fechas             = $_POST['fecha_compromiso']   ?? [];
+$accion_status      = $_POST['accion_status']      ?? [];
+
+$kept_acc_ids = [];
+
+$maxA = max(
+  count($accion_ids),
+  count($accion_finding_ids),
+  count($hallazgo_refs),
+  count($acciones_txt),
+  count($responsables),
+  count($fechas),
+  count($accion_status)
+);
+
+for ($i = 0; $i < $maxA; $i++) {
+
+  $idAcc     = (int)($accion_ids[$i] ?? 0);
+  $findingId = (int)($accion_finding_ids[$i] ?? 0);
+  $href      = remove_junk(trim((string)($hallazgo_refs[$i] ?? '')));
+  $accion    = remove_junk(trim((string)($acciones_txt[$i] ?? '')));
+  $resp      = remove_junk(trim((string)($responsables[$i] ?? '')));
+  $fecha     = remove_junk(trim((string)($fechas[$i] ?? '')));
+  $st        = remove_junk(trim((string)($accion_status[$i] ?? 'Open')));
+
+  // fila completamente vacía => ignorar
+  if ($accion === '' && $href === '' && $resp === '' && $fecha === '' && $findingId <= 0) {
+    continue;
+  }
+
+  // acción requerida (si hay algo en la fila)
+  if ($accion === '') {
+    continue;
+  }
+
+  // status válido
+  $allowed = ['Open','In Progress','Closed'];
+  if (!in_array($st, $allowed, true)) $st = 'Open';
+
+  // fecha nullable
+  $fecha_sql = ($fecha !== '') ? "'".$db->escape($fecha)."'" : "NULL";
+
+  // finding_id nullable (si aún no existe hallazgo guardado)
+  $finding_sql = ($findingId > 0) ? (string)$findingId : "NULL";
+
+  if ($idAcc > 0) {
+
+    $sql = "UPDATE acciones_auditoria SET
+              finding_id={$finding_sql},
+              hallazgo_ref=" . ($href !== '' ? "'".$db->escape($href)."'" : "NULL") . ",
+              accion='".$db->escape($accion)."',
+              responsable=" . ($resp !== '' ? "'".$db->escape($resp)."'" : "NULL") . ",
+              fecha_compromiso={$fecha_sql},
+              status='".$db->escape($st)."',
+              updated_at=NOW()
+            WHERE id={$idAcc} AND auditoria_id={$id}
+            LIMIT 1";
+
+    if ($db->query($sql)) $kept_acc_ids[] = $idAcc;
+
+  } else {
+
+    $sql = "INSERT INTO acciones_auditoria
+            (auditoria_id, finding_id, hallazgo_ref, accion, responsable, fecha_compromiso, status, created_at, updated_at)
+            VALUES
+            (
+              {$id},
+              {$finding_sql},
+              " . ($href !== '' ? "'".$db->escape($href)."'" : "NULL") . ",
+              '".$db->escape($accion)."',
+              " . ($resp !== '' ? "'".$db->escape($resp)."'" : "NULL") . ",
+              {$fecha_sql},
+              '".$db->escape($st)."',
+              NOW(),
+              NOW()
+            )";
+
+    if ($db->query($sql)) {
+      $newId = (int)$db->insert_id();
+      if ($newId > 0) $kept_acc_ids[] = $newId;
+    }
+  }
+}
+
+// borrar acciones quitadas del formulario
+if (count($kept_acc_ids) > 0) {
+  $idsA = implode(',', array_map('intval', $kept_acc_ids));
+  $db->query("DELETE FROM acciones_auditoria WHERE auditoria_id={$id} AND id NOT IN ({$idsA})");
+} else {
+  $db->query("DELETE FROM acciones_auditoria WHERE auditoria_id={$id}");
+}
+
+
+/* =========================================================
+   ELIMINAR ACCIONES BORRADAS (solo de esta auditoría)
+========================================================= */
+if (count($kept_acc_ids) > 0) {
+  $idsA = implode(',', array_map('intval', $kept_acc_ids));
+  $db->query("DELETE FROM acciones_auditoria WHERE auditoria_id={$id} AND id NOT IN ({$idsA})");
+} else {
+  $db->query("DELETE FROM acciones_auditoria WHERE auditoria_id={$id}");
 }
 
 $session->msg('s', 'Auditoría guardada correctamente.');
