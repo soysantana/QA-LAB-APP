@@ -2,7 +2,9 @@
 declare(strict_types=1);
 require_once('../config/load.php');
 // Ejecutar sincronización automática de repeticiones una sola vez
+@file_get_contents("/api/sync_requisition_tests_to_workflow.php");
 @file_get_contents("/api/sync_test_repeat_to_workflow.php");
+
 
 page_require_level(3);
 include_once('../components/header.php');

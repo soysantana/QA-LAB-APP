@@ -1,129 +1,224 @@
 <?php
-require_once "../config/load.php";
+require_once __DIR__ . "/../config/load.php";
 page_require_level(2);
 
 $user = current_user();
-global $db;
+global $db, $session;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-  header("Location: auditorias_list.php");
+  redirect('../pages/auditorias_list.php', false);
   exit;
 }
 
-// Campos obligatorios mínimos de la cabecera
-$req_fields = ['Audit_Code','Audit_Date','Audit_Type','Area','Severity','Status','Auditor'];
-foreach ($req_fields as $f) {
-  if (!isset($_POST[$f]) || trim($_POST[$f]) === '') {
-    die("Missing required field: {$f}");
+/* =========================================================
+   HELPERS (evitar "Cannot redeclare")
+========================================================= */
+if (!function_exists('AUD_P')) {
+  function AUD_P(string $key, $default='') {
+    return $_POST[$key] ?? $default;
+  }
+}
+if (!function_exists('AUD_PS')) {
+  function AUD_PS(string $key, $default=''): string {
+    // remove_junk() viene del core (load.php)
+    return remove_junk(trim((string)AUD_P($key, $default)));
+  }
+}
+if (!function_exists('AUD_PI')) {
+  function AUD_PI(string $key, int $default=0): int {
+    return (int)AUD_P($key, $default);
+  }
+}
+if (!function_exists('AUD_FAIL')) {
+  function AUD_FAIL(string $msg, string $redirectTo): void {
+    global $session;
+    $session->msg('d', $msg);
+    redirect($redirectTo, false);
+    exit;
   }
 }
 
-$id = (int)($_POST['id'] ?? 0);
+/* =========================================================
+   DATOS AUDITORIA (HEADER)
+========================================================= */
+$id                = AUD_PI('id', 0);
+$Audit_Code        = AUD_PS('Audit_Code');
+$Audit_Date        = AUD_PS('Audit_Date');
+$Audit_Type        = AUD_PS('Audit_Type');
+$Area              = AUD_PS('Area');
+$Scope             = AUD_PS('Scope');
+$Findings          = AUD_PS('Findings');
+$Severity          = AUD_PS('Severity', 'Minor');
+$Status            = AUD_PS('Status', 'Open');
+$Auditor           = AUD_PS('Auditor');
+$Audited           = AUD_PS('Audited');
+$Related_Sample_ID = AUD_PS('Related_Sample_ID');
+$Related_Client    = AUD_PS('Related_Client');
 
-// Escapar datos de cabecera
-$Audit_Code        = $db->escape($_POST['Audit_Code']);
-$Audit_Date        = $db->escape($_POST['Audit_Date']);
-$Audit_Type        = $db->escape($_POST['Audit_Type']);
-$Area              = $db->escape($_POST['Area']);
-$Scope             = $db->escape($_POST['Scope'] ?? '');
-$Severity          = $db->escape($_POST['Severity']);
-$Status            = $db->escape($_POST['Status']);
-$Auditor           = $db->escape($_POST['Auditor']);
-$Audited           = $db->escape($_POST['Audited'] ?? '');
-$Related_Sample_ID = $db->escape($_POST['Related_Sample_ID'] ?? '');
-$Related_Client    = $db->escape($_POST['Related_Client'] ?? '');
-$Findings          = $db->escape($_POST['Findings'] ?? ''); // ahora resumen ejecutivo
-$Created_By        = $db->escape($user['name'] ?? 'system');
+if ($Audit_Code === '' || $Audit_Date === '' || $Audit_Type === '' || $Area === '' || $Auditor === '') {
+  AUD_FAIL(
+    'Faltan campos requeridos en la auditoría (Código, Fecha, Tipo, Área, Auditor).',
+    '../pages/auditorias_form.php' . ($id ? '?id=' . $id : '')
+  );
+}
 
+$created_by = $user['name'] ?? 'system';
+
+/* =========================================================
+   GUARDAR AUDITORIA
+========================================================= */
 if ($id > 0) {
-  // UPDATE cabecera
-  $sql = "
-    UPDATE auditorias_lab
-    SET
-      Audit_Code        = '{$Audit_Code}',
-      Audit_Date        = '{$Audit_Date}',
-      Audit_Type        = '{$Audit_Type}',
-      Area              = '{$Area}',
-      Scope             = '{$Scope}',
-      Severity          = '{$Severity}',
-      Status            = '{$Status}',
-      Auditor           = '{$Auditor}',
-      Audited           = '{$Audited}',
-      Related_Sample_ID = '{$Related_Sample_ID}',
-      Related_Client    = '{$Related_Client}',
-      Findings          = '{$Findings}'
-    WHERE id = {$id}
-    LIMIT 1
-  ";
-  $result = $db->query($sql);
-  $audit_id = $id;
+
+  $sql = "UPDATE auditorias_lab SET
+            Audit_Code='{$db->escape($Audit_Code)}',
+            Audit_Date='{$db->escape($Audit_Date)}',
+            Audit_Type='{$db->escape($Audit_Type)}',
+            Area='{$db->escape($Area)}',
+            Scope=" . ($Scope !== '' ? "'{$db->escape($Scope)}'" : "NULL") . ",
+            Findings='{$db->escape($Findings)}',
+            Severity=" . ($Severity !== '' ? "'{$db->escape($Severity)}'" : "NULL") . ",
+            Status=" . ($Status !== '' ? "'{$db->escape($Status)}'" : "NULL") . ",
+            Auditor='{$db->escape($Auditor)}',
+            Audited=" . ($Audited !== '' ? "'{$db->escape($Audited)}'" : "NULL") . ",
+            Related_Sample_ID=" . ($Related_Sample_ID !== '' ? "'{$db->escape($Related_Sample_ID)}'" : "NULL") . ",
+            Related_Client=" . ($Related_Client !== '' ? "'{$db->escape($Related_Client)}'" : "NULL") . ",
+            Updated_At=NOW()
+          WHERE id={$id}
+          LIMIT 1";
+
+  if (!$db->query($sql)) {
+    // Si tu clase $db tiene método de error, úsalo. Si no, deja el mensaje simple.
+    AUD_FAIL('Error actualizando la auditoría.', '../pages/auditorias_form.php?id=' . $id);
+  }
+
 } else {
-  // INSERT cabecera
-  $sql = "
-    INSERT INTO auditorias_lab (
-      Audit_Code, Audit_Date, Audit_Type, Area, Scope,
-      Findings, Severity, Status, Auditor, Audited,
-      Related_Sample_ID, Related_Client, Created_By
-    ) VALUES (
-      '{$Audit_Code}', '{$Audit_Date}', '{$Audit_Type}', '{$Area}', '{$Scope}',
-      '{$Findings}', '{$Severity}', '{$Status}', '{$Auditor}', '{$Audited}',
-      '{$Related_Sample_ID}', '{$Related_Client}', '{$Created_By}'
-    )
-  ";
-  $result = $db->query($sql);
-  $audit_id = $db->insert_id;
+
+  $sql = "INSERT INTO auditorias_lab
+          (Audit_Code, Audit_Date, Audit_Type, Area, Scope, Findings, Severity, Status, Auditor, Audited, Related_Sample_ID, Related_Client, Created_By, Created_At, Updated_At)
+          VALUES
+          (
+            '{$db->escape($Audit_Code)}',
+            '{$db->escape($Audit_Date)}',
+            '{$db->escape($Audit_Type)}',
+            '{$db->escape($Area)}',
+            " . ($Scope !== '' ? "'{$db->escape($Scope)}'" : "NULL") . ",
+            '{$db->escape($Findings)}',
+            " . ($Severity !== '' ? "'{$db->escape($Severity)}'" : "NULL") . ",
+            " . ($Status !== '' ? "'{$db->escape($Status)}'" : "NULL") . ",
+            '{$db->escape($Auditor)}',
+            " . ($Audited !== '' ? "'{$db->escape($Audited)}'" : "NULL") . ",
+            " . ($Related_Sample_ID !== '' ? "'{$db->escape($Related_Sample_ID)}'" : "NULL") . ",
+            " . ($Related_Client !== '' ? "'{$db->escape($Related_Client)}'" : "NULL") . ",
+            '{$db->escape($created_by)}',
+            NOW(),
+            NOW()
+          )";
+
+  if (!$db->query($sql)) {
+    AUD_FAIL('No se pudo crear la auditoría.', '../pages/auditorias_form.php');
+  }
+
+  $id = (int)$db->insert_id();
+  if ($id <= 0) {
+    AUD_FAIL('No se pudo obtener el ID insertado.', '../pages/auditorias_form.php');
+  }
 }
 
-if (!$result) {
-  die("Error al guardar la auditoría: ".$db->error);
-}
+/* =========================================================
+   HALLAZGOS (ARRAYS)
+========================================================= */
+$finding_ids   = $_POST['finding_id'] ?? [];
+$finding_types = $_POST['finding_type'] ?? [];
+$categories    = $_POST['category'] ?? [];
+$severities    = $_POST['severity_item'] ?? [];
+$statuses      = $_POST['status_item'] ?? [];
+$descriptions  = $_POST['description'] ?? [];
 
-/* =========================
-   GUARDAR HALLAZGOS
-========================= */
+$max = max(
+  count($finding_ids),
+  count($finding_types),
+  count($categories),
+  count($severities),
+  count($statuses),
+  count($descriptions)
+);
 
-// Limpiamos hallazgos existentes y reinsertamos (más simple para ti)
-$db->query("DELETE FROM auditoria_hallazgos WHERE auditoria_id = {$audit_id}");
+$kept_ids = [];
 
-if (!empty($_POST['finding_type']) && is_array($_POST['finding_type'])) {
+for ($i = 0; $i < $max; $i++) {
 
-  $finding_type_arr = $_POST['finding_type'];
-  $category_arr     = $_POST['category']        ?? [];
-  $severity_arr     = $_POST['severity_item']   ?? [];
-  $status_arr       = $_POST['status_item']     ?? [];
-  $desc_arr         = $_POST['description']     ?? [];
+  $fid  = isset($finding_ids[$i]) ? (int)$finding_ids[$i] : 0;
+  $ft   = isset($finding_types[$i]) ? remove_junk(trim((string)$finding_types[$i])) : 'NCR';
+  $cat  = isset($categories[$i]) ? remove_junk(trim((string)$categories[$i])) : '';
+  $sev  = isset($severities[$i]) ? remove_junk(trim((string)$severities[$i])) : 'Minor';
+  $st   = isset($statuses[$i]) ? remove_junk(trim((string)$statuses[$i])) : 'Open';
+  $desc = isset($descriptions[$i]) ? remove_junk(trim((string)$descriptions[$i])) : '';
 
-  $total = count($finding_type_arr);
+  // Si está totalmente vacío, saltar
+  if ($desc === '' && $cat === '' && $ft === '') continue;
 
-  for ($i = 0; $i < $total; $i++) {
-    $ftype = trim((string)$finding_type_arr[$i] ?? '');
-    $desc  = trim((string)$desc_arr[$i] ?? '');
+  // Normalización
+  $allowedTypes = ['NCR','Observación','Oportunidad','Buena práctica'];
+  if (!in_array($ft, $allowedTypes, true)) $ft = 'NCR';
 
-    if ($ftype === '' || $desc === '') {
-      // ignorar hallazgos vacíos
-      continue;
+  $allowedSev = ['Minor','Major','Critical'];
+  if (!in_array($sev, $allowedSev, true)) $sev = 'Minor';
+
+  $allowedSt = ['Open','Closed'];
+  if (!in_array($st, $allowedSt, true)) $st = 'Open';
+
+  if ($fid > 0) {
+
+    $sql = "UPDATE auditoria_hallazgos SET
+              finding_type='{$db->escape($ft)}',
+              category=" . ($cat !== '' ? "'{$db->escape($cat)}'" : "NULL") . ",
+              severity='{$db->escape($sev)}',
+              status='{$db->escape($st)}',
+              description='{$db->escape($desc)}',
+              updated_at=NOW()
+            WHERE id={$fid} AND auditoria_id={$id}
+            LIMIT 1";
+
+    if ($db->query($sql)) {
+      $kept_ids[] = $fid;
     }
 
-    $cat   = trim((string)($category_arr[$i]   ?? ''));
-    $sev   = trim((string)($severity_arr[$i]   ?? 'Minor'));
-    $stat  = trim((string)($status_arr[$i]     ?? 'Open'));
+  } else {
 
-    $ftype_esc = $db->escape($ftype);
-    $cat_esc   = $db->escape($cat);
-    $sev_esc   = $db->escape($sev);
-    $stat_esc  = $db->escape($stat);
-    $desc_esc  = $db->escape($desc);
+    // Evitar insertar basura
+    if ($desc === '') continue;
 
-    $sqlH = "
-      INSERT INTO auditoria_hallazgos (
-        auditoria_id, finding_type, category, severity, status, description
-      ) VALUES (
-        {$audit_id}, '{$ftype_esc}', '{$cat_esc}', '{$sev_esc}', '{$stat_esc}', '{$desc_esc}'
-      )
-    ";
-    $db->query($sqlH);
+    $sql = "INSERT INTO auditoria_hallazgos
+            (auditoria_id, finding_type, category, severity, status, description, created_at, updated_at)
+            VALUES
+            (
+              {$id},
+              '{$db->escape($ft)}',
+              " . ($cat !== '' ? "'{$db->escape($cat)}'" : "NULL") . ",
+              '{$db->escape($sev)}',
+              '{$db->escape($st)}',
+              '{$db->escape($desc)}',
+              NOW(),
+              NOW()
+            )";
+
+    if ($db->query($sql)) {
+      $newFindingId = (int)$db->insert_id();
+      if ($newFindingId > 0) $kept_ids[] = $newFindingId;
+    }
   }
 }
 
-header("Location: auditorias_list.php");
+/* =========================================================
+   ELIMINAR HALLAZGOS BORRADOS (solo los de esta auditoría)
+========================================================= */
+if (count($kept_ids) > 0) {
+  $ids = implode(',', array_map('intval', $kept_ids));
+  $db->query("DELETE FROM auditoria_hallazgos WHERE auditoria_id={$id} AND id NOT IN ({$ids})");
+} else {
+  $db->query("DELETE FROM auditoria_hallazgos WHERE auditoria_id={$id}");
+}
+
+$session->msg('s', 'Auditoría guardada correctamente.');
+redirect('../pages/auditorias_form.php?id=' . $id, false);
 exit;

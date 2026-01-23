@@ -177,18 +177,27 @@ $user = current_user();
                 ?>
               </td>
               <td>
-                <div class="btn-group btn-group-sm" role="group">
-                  <a href="auditorias_form.php?id=<?php echo $a['id']; ?>"
-                     class="btn btn-primary" title="Editar">
-                    <i class="bi bi-pencil-square"></i>
-                  </a>
-                  <a href="auditorias_delete.php?id=<?php echo $a['id']; ?>"
-                     class="btn btn-outline-danger"
-                     title="Eliminar"
-                     onclick="return confirm('¿Seguro que deseas eliminar esta auditoría? Esta acción no se puede deshacer.');">
-                    <i class="bi bi-trash"></i>
-                  </a>
-                </div>
+          <div class="btn-group btn-group-sm" role="group">
+  <a href="auditorias_form.php?id=<?php echo $a['id']; ?>" class="btn btn-primary" title="Editar">
+    <i class="bi bi-pencil-square"></i>
+  </a>
+
+  <a href="../pdf/auditoria_pdf.php?id=<?php echo (int)$a['id']; ?>"
+   class="btn btn-outline-dark"
+   title="Generar PDF"
+   target="_blank">
+  <i class="bi bi-filetype-pdf"></i>
+</a>
+
+
+  <a href="auditorias_delete.php?id=<?php echo $a['id']; ?>" class="btn btn-outline-danger"
+     title="Eliminar"
+     onclick="return confirm('¿Seguro que deseas eliminar esta auditoría?');">
+    <i class="bi bi-trash"></i>
+  </a>
+</div>
+
+
               </td>
             </tr>
           <?php
