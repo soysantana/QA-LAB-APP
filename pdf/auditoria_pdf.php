@@ -332,7 +332,7 @@ if(!$hallazgos){
       (string)$n,
       (string)($h['finding_type'] ?? ''),
       (string)($h['category'] ?? ''),
-      (string)($h['severity'] ?? ''),
+      (string)($h['severity'] ?? ''),°C
       (string)($h['status'] ?? ''),
       (string)($h['description'] ?? ''),
     ], 5);
