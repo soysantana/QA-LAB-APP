@@ -58,14 +58,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-6">
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
-                    <option selected>Choose...</option>
+                    <option value="" disabled selected>Choose...</option>
                     <option <?php if ($Search['Standard'] == 'ASTM-D698') echo 'selected'; ?>>ASTM-D698</option>
+                    <option <?php if ($Search['Standard'] == 'ASTM-D1557') echo 'selected'; ?>>ASTM-D1557</option>
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label for="PMethods" class="form-label">Preparation Methods</label>
                   <select id="PMethods" class="form-select" name="PMethods">
-                    <option selected>Choose...</option>
+                    <option value="" disabled selected>Choose...</option>
                     <option <?php if ($Search['Preparation_Method'] == 'Oven Dried') echo 'selected'; ?>>Oven Dried</option>
                     <option <?php if ($Search['Preparation_Method'] == 'Air Dried') echo 'selected'; ?>>Air Dried</option>
                     <option <?php if ($Search['Preparation_Method'] == 'Microwave Dried') echo 'selected'; ?>>Microwave Dried</option>
@@ -75,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-6">
                   <label for="SMethods" class="form-label">Split Methods</label>
                   <select id="SMethods" class="form-select" name="SMethods">
-                    <option selected>Choose...</option>
+                    <option value="" disabled selected>Choose...</option>
                     <option <?php if ($Search['Split_Method'] == 'Manual') echo 'selected'; ?>>Manual</option>
                     <option <?php if ($Search['Split_Method'] == 'Mechanical') echo 'selected'; ?>>Mechanical</option>
                   </select>

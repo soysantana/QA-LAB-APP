@@ -50,8 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-6">
                   <label for="Standard" class="form-label">Standard</label>
                   <select id="Standard" class="form-select" name="Standard">
-                    <option selected>Choose...</option>
+                    <option value="" disabled selected>Choose...</option>
                     <option value="ASTM-D698">ASTM-D698</option>
+                    <option value="ASTM-D1557">ASTM-D1557</option>
                   </select>
                 </div>
                 <div class="col-md-6">
