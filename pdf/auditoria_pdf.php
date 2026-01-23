@@ -287,21 +287,19 @@ if ($rel){
 // ==========================
 $pdf->Ln(2);
 $pdf->SectionTitle("RESUMEN EJECUTIVO");
-
 $pdf->SetFont('Arial','',10);
 
-// 2) TEXTO DIGITADO EN EL SISTEMA (Findings)
+// AUTO (siempre primero, sin salto extra)
+$auto = build_exec_summary($audit, $hallazgos);
+$pdf->MultiCell(0,5, u($auto), 0);
+
+// TEXTO DIGITADO (opcional)
 $findings = trim((string)($audit['Findings'] ?? ''));
 if($findings !== ''){
   $pdf->Ln(1);
   $pdf->MultiCell(0,5, u($findings), 0);
-
-// 1) AUTO (con datos del sistema)
-$auto = build_exec_summary($audit, $hallazgos);
-$pdf->MultiCell(0,5, u("".$auto), 0);
-
-
 }
+
 
 // ==========================
 // HALLAZGOS
@@ -319,7 +317,7 @@ $pdf->SetAligns(['C','L','L','C','C','L']);
 $pdf->Cell(10,7,'#',1,0,'C',true);
 $pdf->Cell(24,7,u('Tipo'),1,0,'C',true);
 $pdf->Cell(32,7,u('Categoría'),1,0,'C',true);
-$pdf->Cell(20,7,u('Sev.'),1,0,'C',true);
+$pdf->Cell(20,7,u('Severidad'),1,0,'C',true);
 $pdf->Cell(16,7,u('Estado'),1,0,'C',true);
 $pdf->Cell(94,7,u('Descripción'),1,1,'C',true);
 
@@ -358,7 +356,7 @@ $acciones = find_by_sql("
     a.responsable,
     a.fecha_compromiso,
     a.status
-  FROM auditoria_acciones a
+  FROM acciones_auditoria a
   WHERE a.auditoria_id = {$id}
   ORDER BY a.id ASC
 ");
@@ -393,19 +391,19 @@ $pdf->SectionTitle("5. Plan de acción y seguimiento");
 
 // HEADER (azul tipo ISO)
 $pdf->SetFont('Arial','B',9);
-$pdf->SetFillColor(30,90,180);
-$pdf->SetTextColor(255);
+$pdf->SetFillColor(220,220,220);
+$pdf->SetTextColor(0);
 
 // Ancho total Letter útil ~190mm
 // # | Hallazgo | Acción | Responsable | Fecha compromiso | Status
-$pdf->SetWidths([8, 22, 78, 32, 28, 22]);
+$pdf->SetWidths([8, 20, 78, 30, 35, 22]);
 $pdf->SetAligns(['C','L','L','L','C','C']);
 
 $pdf->Cell(8,7,'#',1,0,'C',true);
-$pdf->Cell(22,7,utf8_decode('Hallazgo'),1,0,'C',true);
+$pdf->Cell(20,7,utf8_decode('Hallazgo'),1,0,'C',true);
 $pdf->Cell(78,7,utf8_decode('Acción correctiva / preventiva'),1,0,'C',true);
-$pdf->Cell(32,7,utf8_decode('Responsable'),1,0,'C',true);
-$pdf->Cell(28,7,utf8_decode('Fecha compromiso'),1,0,'C',true);
+$pdf->Cell(30,7,utf8_decode('Responsable'),1,0,'C',true);
+$pdf->Cell(35,7,utf8_decode('Fecha compromiso'),1,0,'C',true);
 $pdf->Cell(22,7,utf8_decode('Status'),1,1,'C',true);
 
 // BODY
@@ -444,6 +442,48 @@ if (!$acciones) {
     $i++;
   }
 }
+
+// ==========================
+// CIERRE DE AUDITORÍA (FIRMAS / RESPONSABLES)
+// ==========================
+$pdf->Ln(6);
+$pdf->SectionTitle("FIRMAS");
+
+$colW = 95;   // 2 columnas
+$lineH = 7;
+
+$prepBy = trim((string)($audit['Auditor'] ?? ''));
+$doneTo = trim((string)($audit['Audited'] ?? ''));
+
+// TÍTULOS
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell($colW, $lineH, u("Auditoría preparada por"), 0, 0, 'L');
+$pdf->Cell($colW, $lineH, u("Auditoría realizada a"), 0, 1, 'L');
+
+// ESPACIO PARA FIRMA
+$pdf->Ln(1);
+
+// LÍNEAS DE FIRMA
+$y = $pdf->GetY();
+$x = $pdf->GetX();
+
+// Izquierda
+$pdf->Line($x, $y, $x + $colW - 10, $y);
+// Derecha
+$pdf->Line($x + $colW, $y, $x + 2*$colW - 10, $y);
+
+$pdf->Ln(2);
+
+// NOMBRES
+$pdf->SetFont('Arial','',10);
+$pdf->Cell($colW, 6, u($prepBy !== '' ? $prepBy : '—'), 0, 0, 'L');
+$pdf->Cell($colW, 6, u($doneTo !== '' ? $doneTo : '—'), 0, 1, 'L');
+
+// FECHA DE EMISIÓN
+$pdf->Ln(4);
+$pdf->SetFont('Arial','I',9);
+$pdf->Cell(0,6, u("Fecha de emisión del reporte: ".date('Y-m-d')), 0, 1, 'R');
+
 
 
 // Output
