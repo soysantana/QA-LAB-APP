@@ -332,13 +332,14 @@ if(!$hallazgos){
       (string)$n,
       (string)($h['finding_type'] ?? ''),
       (string)($h['category'] ?? ''),
-      (string)($h['severity'] ?? ''),°C
+      (string)($h['severity'] ?? ''),   // ✅ aquí SIN °C
       (string)($h['status'] ?? ''),
       (string)($h['description'] ?? ''),
     ], 5);
     $n++;
   }
 }
+
 
 /* ==========================================================
    5. PLAN DE ACCIÓN Y SEGUIMIENTO
