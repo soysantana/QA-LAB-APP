@@ -125,12 +125,12 @@ include_once('../components/header.php');
       </div>
 
       <div class="col-12 col-md-6 col-lg-4">
-        <a href="/pages/standard-proctor.php" class="text-decoration-none">
+        <a href="/pages/sp-menu.php" class="text-decoration-none">
           <div class="card h-100 shadow-sm border-0 hover-elevate">
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
                 <i class="bi bi-graph-up me-2"></i>
-                <h5 class="card-title mb-0">Standard Proctor</h5>
+                <h5 class="card-title mb-0">Standard Proctor & Vibratorio</h5>
               </div>
               <p class="card-text small text-muted mb-0">
                 Curvas de compactación y parámetros óptimos de humedad/densidad.
@@ -305,21 +305,21 @@ include_once('../components/header.php');
         </a>
       </div>
 
-<div class="col-12 col-md-6 col-lg-4">
-  <a href="/components/menu_conductividad.php" class="text-decoration-none">
-    <div class="card h-100 shadow-sm border-0 hover-elevate">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-2">
-          <i class="bi bi-droplet-fill text-primary fs-4 me-2"></i>
-          <h5 class="card-title mb-0">Conductividad Hidráulica</h5>
-        </div>
-        <p class="card-text small text-muted mb-0">
-          Ensayos de conductividad hidráulica en suelos finos y agregados.
-        </p>
+      <div class="col-12 col-md-6 col-lg-4">
+        <a href="/components/menu_conductividad.php" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 hover-elevate">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-droplet-fill text-primary fs-4 me-2"></i>
+                <h5 class="card-title mb-0">Conductividad Hidráulica</h5>
+              </div>
+              <p class="card-text small text-muted mb-0">
+                Ensayos de conductividad hidráulica en suelos finos y agregados.
+              </p>
+            </div>
+          </div>
+        </a>
       </div>
-    </div>
-  </a>
-</div>
 
 
 
@@ -335,13 +335,16 @@ include_once('../components/header.php');
   .hover-elevate {
     transition: transform .15s ease, box-shadow .15s ease;
   }
+
   .hover-elevate:hover {
     transform: translateY(-2px);
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08);
   }
+
   .card-title {
     font-size: 0.98rem;
   }
+
   .card-text {
     font-size: 0.8rem;
   }
