@@ -1,5 +1,5 @@
 <?php
-$page_title = 'D2434 - Digitación (Hoja de trabajo)';
+$page_title = 'Conductividad Hidraulica - Digitación (Hoja de trabajo)';
 require_once('../config/load.php');
 
 page_require_level(2);
@@ -8,12 +8,12 @@ include_once('../components/header.php');
 
 <main id="main" class="main">
   <div class="pagetitle">
-    <h1>D2434 - Digitar valores de hoja de trabajo</h1>
+    <h1>Conductividad Hidraulica - Digitar valores de hoja de trabajo</h1>
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="home.php">Home</a></li>
         <li class="breadcrumb-item">Forms</li>
-        <li class="breadcrumb-item active">D2434 Entry</li>
+        <li class="breadcrumb-item active">Datos de Entrada</li>
       </ol>
     </nav>
   </div>
