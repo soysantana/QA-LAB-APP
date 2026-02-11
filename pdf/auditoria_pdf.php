@@ -480,8 +480,8 @@ if (empty($acciones_print)) {
       // continue;
 
       // B) Si prefieres que salga como incompleto:
-      $accionTxt = 'PLAN DE ACCIÓN NO DEFINIDO (Requerido)';
-      $stTxt = 'Open';
+      $accionTxt = 'Plan de accion no requerido';
+      $stTxt = 'Closed';
     }
 
     if ($respTxt === '')  $respTxt = 'No asignado';
