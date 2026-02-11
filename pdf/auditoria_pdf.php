@@ -411,33 +411,73 @@ $pdf->Cell(22,7,utf8_decode('Status'),1,1,'C',true);
 $pdf->SetFont('Arial','',9);
 $pdf->SetTextColor(0);
 
-if (!$acciones) {
-  $pdf->Cell(0,8, utf8_decode("No hay acciones registradas para esta auditoría."), 1, 1, 'C');
+// Helpers (ajusta si tus nombres son distintos)
+function norm_status($st) {
+  $allowed = ['Open','In Progress','Closed'];
+  return in_array($st, $allowed, true) ? $st : 'Open';
+}
+
+function is_good_practice($tipo) {
+  $t = mb_strtolower(trim((string)$tipo));
+  return in_array($t, [
+    'buena practica',
+    'buena práctica',
+    'good practice',
+    'positive finding',
+    'fortaleza'
+  ], true);
+}
+
+// Filtrar: NO imprimir acciones asociadas a Buenas Prácticas
+$acciones_print = [];
+if (!empty($acciones)) {
+  foreach ($acciones as $ac) {
+    $tipo = $ac['tipo_hallazgo'] ?? '';
+    if (is_good_practice($tipo)) {
+      continue; // ✅ Buenas prácticas NO van en Plan de Acción
+    }
+    $acciones_print[] = $ac;
+  }
+}
+
+if (empty($acciones_print)) {
+  $pdf->Cell(0,8, utf8_decode("No hay acciones correctivas / de mejora registradas para esta auditoría."), 1, 1, 'C');
 } else {
+
   $i = 1;
 
-  foreach ($acciones as $ac) {
+  foreach ($acciones_print as $ac) {
 
+    // Si estás usando hallazgo_id en vez de hallazgo_ref, ajusta aquí
     $hallazgoRef = trim((string)($ac['hallazgo_ref'] ?? ''));
+    if ($hallazgoRef === '') {
+      // ✅ No uses $i como si fuera el hallazgo real
+      $hallazgoRef = 'Sin referencia de hallazgo';
+    }
+
     $accionTxt   = trim((string)($ac['accion'] ?? ''));
     $respTxt     = trim((string)($ac['responsable'] ?? ''));
     $fechaTxt    = trim((string)($ac['fecha_compromiso'] ?? ''));
-    $stTxt       = trim((string)($ac['status'] ?? 'Open'));
+    $stTxt       = norm_status(trim((string)($ac['status'] ?? 'Open')));
 
-    // Normaliza status para que sea consistente
-    $allowed = ['Open','In Progress','Closed'];
-    if (!in_array($stTxt, $allowed, true)) $stTxt = 'Open';
+    // ✅ Si la acción está vacía, NO pongas “pendiente de definir evidencia”
+    //    (evidencia es otro campo). Marca como requerido.
+    if ($accionTxt === '') {
+      $accionTxt = 'PLAN DE ACCIÓN NO DEFINIDO (Requerido)';
+      $stTxt = 'Open';
+    }
 
-    // Si no hay acción aún, muestra “Pendiente de definir”
-    if ($accionTxt === '') $accionTxt = 'Pendiente de definir acción / evidencia.';
+    // (Opcional) defaults elegantes, sin inventar información
+    if ($respTxt === '')  $respTxt = 'No asignado';
+    if ($fechaTxt === '') $fechaTxt = 'Sin fecha';
 
     $pdf->Row([
       (string)$i,
-      $hallazgoRef !== '' ? $hallazgoRef : ('Hallazgo #'.$i),
-      $accionTxt,
-      $respTxt,
-      $fechaTxt,
-      $stTxt
+      utf8_decode($hallazgoRef),
+      utf8_decode($accionTxt),
+      utf8_decode($respTxt),
+      utf8_decode($fechaTxt),
+      utf8_decode($stTxt)
     ], 5);
 
     $i++;
