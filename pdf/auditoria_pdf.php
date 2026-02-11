@@ -411,7 +411,6 @@ $pdf->Cell(22,7,utf8_decode('Status'),1,1,'C',true);
 $pdf->SetFont('Arial','',9);
 $pdf->SetTextColor(0);
 
-// Helpers (ajusta si tus nombres son distintos)
 function norm_status($st) {
   $allowed = ['Open','In Progress','Closed'];
   return in_array($st, $allowed, true) ? $st : 'Open';
@@ -428,46 +427,63 @@ function is_good_practice($tipo) {
   ], true);
 }
 
-// Filtrar: NO imprimir acciones asociadas a Buenas Prácticas
+/**
+ * Filtra acciones:
+ * - NO incluir acciones ligadas a Buena Práctica
+ * - (opcional) también puedes excluir acciones "vacías" si quieres que no aparezcan
+ */
 $acciones_print = [];
 if (!empty($acciones)) {
   foreach ($acciones as $ac) {
+
+    // Si es Buena Práctica => NO IMPRIMIR NADA
     $tipo = $ac['tipo_hallazgo'] ?? '';
     if (is_good_practice($tipo)) {
-      continue; // ✅ Buenas prácticas NO van en Plan de Acción
+      continue;
     }
+
+    // Si quieres, también puedes excluir acciones completamente vacías:
+    // $accionTxtTmp = trim((string)($ac['accion'] ?? ''));
+    // if ($accionTxtTmp === '') continue;
+
     $acciones_print[] = $ac;
   }
 }
 
+/**
+ * ✅ CLAVE:
+ * Si NO hay acciones para imprimir (porque todo era Buena Práctica o no había acciones),
+ * entonces NO imprimimos absolutamente nada.
+ */
 if (empty($acciones_print)) {
-  $pdf->Cell(0,8, utf8_decode("No hay acciones correctivas / de mejora registradas para esta auditoría."), 1, 1, 'C');
+  // NO IMPRIMIR NADA
 } else {
 
+  // Aquí sí imprimes la tabla de acciones (porque hay acciones reales)
   $i = 1;
 
   foreach ($acciones_print as $ac) {
 
-    // Si estás usando hallazgo_id en vez de hallazgo_ref, ajusta aquí
     $hallazgoRef = trim((string)($ac['hallazgo_ref'] ?? ''));
-    if ($hallazgoRef === '') {
-      // ✅ No uses $i como si fuera el hallazgo real
-      $hallazgoRef = 'Sin referencia de hallazgo';
-    }
+    if ($hallazgoRef === '') $hallazgoRef = 'Sin referencia de hallazgo';
 
-    $accionTxt   = trim((string)($ac['accion'] ?? ''));
-    $respTxt     = trim((string)($ac['responsable'] ?? ''));
-    $fechaTxt    = trim((string)($ac['fecha_compromiso'] ?? ''));
-    $stTxt       = norm_status(trim((string)($ac['status'] ?? 'Open')));
+    $accionTxt = trim((string)($ac['accion'] ?? ''));
+    $respTxt   = trim((string)($ac['responsable'] ?? ''));
+    $fechaTxt  = trim((string)($ac['fecha_compromiso'] ?? ''));
+    $stTxt     = norm_status(trim((string)($ac['status'] ?? 'Open')));
 
-    // ✅ Si la acción está vacía, NO pongas “pendiente de definir evidencia”
-    //    (evidencia es otro campo). Marca como requerido.
+    // Si la acción está vacía, tú tienes 2 caminos:
+    // A) No imprimirla (mejor): continue;
+    // B) Imprimirla marcada como requerida (si quieres evidenciar incompleto):
     if ($accionTxt === '') {
+      // A) Mejor práctica: no imprimir acciones vacías
+      // continue;
+
+      // B) Si prefieres que salga como incompleto:
       $accionTxt = 'PLAN DE ACCIÓN NO DEFINIDO (Requerido)';
       $stTxt = 'Open';
     }
 
-    // (Opcional) defaults elegantes, sin inventar información
     if ($respTxt === '')  $respTxt = 'No asignado';
     if ($fechaTxt === '') $fechaTxt = 'Sin fecha';
 
