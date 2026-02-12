@@ -61,7 +61,7 @@ function calcularParametrosGranulometricos(datos) {
   const D30 = DxMap.D30;
   const D60 = DxMap.D60;
 
-  let Cu = 0, Cc = 0;
+  let Cu = "", Cc = "";
 
   if (
     !isNaN(D10) && D10 > 0 &&
