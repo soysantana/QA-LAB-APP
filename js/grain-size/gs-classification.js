@@ -35,10 +35,10 @@ function clasificarSuelo(gravel, sand, fines, Cu, Cc, LL = null, IP = null) {
     } else if (fines < 50 && gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
         code = "GP-GM";
         description = "Poorly Graded Gravel with silt";
-    } else if (fines < 50 && gravel > sand && fines >= 5 && fines <= 12 && (Cu < 4 || Cc < 1 || Cc > 3) && sand >= 15) {
+    } else if (fines < 50 && fines >= 5 && fines <= 12 && (Cu < 4 || Cc < 1 || Cc > 3) && sand >= 15) {
         code = "GP-GM";
         description = "Poorly Graded Gravel with silt and sand";
-    } else if (fines < 50 && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
+    } else if (fines < 50 && gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand < 15) {
         code = "GP-GC";
         description = "Poorly Graded Gravel with clay";
     } else if (fines < 50 && gravel > sand && fines >= 5 && fines <= 12 && Cu < 4 && Cc < 1 && Cc > 3 && sand >= 15) {
