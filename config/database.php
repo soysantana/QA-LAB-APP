@@ -27,6 +27,28 @@ public function db_connect()
              }
          }
 }
+
+
+/*--------------------------------------------------------------*/
+/* Get mysqli connection (needed for prepared statements)
+--------------------------------------------------------------*/
+public function getConnection(): mysqli
+{
+  return $this->con;
+}
+
+/*--------------------------------------------------------------*/
+/* Prepare helper (optional, but convenient)
+--------------------------------------------------------------*/
+public function prepare($sql): mysqli_stmt
+{
+  $stmt = $this->con->prepare($sql);
+  if (!$stmt) {
+    die("Prepare error: " . $this->con->error);
+  }
+  return $stmt;
+}
+
 /*--------------------------------------------------------------*/
 /* Function for Close database connection
 /*--------------------------------------------------------------*/
