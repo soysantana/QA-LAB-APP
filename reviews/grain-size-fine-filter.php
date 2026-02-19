@@ -412,8 +412,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <li><a class="dropdown-item" data-exportar="GS-FF-Build">Contruccion</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-FF-Naranjo">Naranjo</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-FF-Diorite">Diorita</a></li>
-                    <li><a class="dropdown-item" data-exportar="GS-FF-Acopio">Agregado Investigacion</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-FF-Acopio">Acopio</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-FF-Test-Fill">Test Fill</a></li>
                   </ul>
                 </div>
 

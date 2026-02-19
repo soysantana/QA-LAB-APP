@@ -102,12 +102,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <label for="ProductionDate" class="form-label">Production Date</label>
               <input type="date" class="form-control" name="ProductionDate" id="ProductionDate"
                   value="<?= isset($Search['ProductionDate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $Search['ProductionDate']) ? $Search['ProductionDate'] : '' ?>">
-
+                </div>
                 <div class="col-md-6">
                   <label for="DateTesting" class="form-label">Date of Testing</label>
                  <input type="date" class="form-control" name="DateTesting" id="DateTesting"
                    value="<?= isset($Search['Test_Start_Date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $Search['Test_Start_Date']) ? $Search['Test_Start_Date'] : '' ?>">
-
                 </div>
                 <div class="col-12">
                   <label for="Comments" class="form-label">Comments</label>
@@ -419,6 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <li><a class="dropdown-item" data-exportar="GS-CF-Naranjo">Naranjo</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-CF-Diorite">Diorita</a></li>
                     <li><a class="dropdown-item" data-exportar="GS-CF-Acopio">Acopio</a></li>
+                    <li><a class="dropdown-item" data-exportar="GS-CF-Test-Fill">Test Fill</a></li>
                   </ul>
                 </div>
 
