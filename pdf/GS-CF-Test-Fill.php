@@ -37,7 +37,7 @@ $passn20 = $Search['Pass15'];
 $passn200 = $Search['Pass18'];
 
 $pdf->SetFont('Arial', '', 11);
-/*
+
 $values = [
     ['value' => $pass1p5,  'min' => 100,   'max' => 100,  'x' => 362, 'y' => 196],
     ['value' => $pass1,     'min' => 87,  'max' => 100,  'x' => 362, 'y' => 202],
@@ -68,7 +68,7 @@ $resultado = array_reduce($values, function ($carry, $item) {
 $pdf->SetXY(323, 394);
 $pdf->SetTextColor($resultado === 'Accepted' ? 0 : 255, 0, 0);
 $pdf->Cell(152, 4, $resultado, 0, 1, 'C');
-*/
+
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->SetTextColor(0, 0, 0);
 
