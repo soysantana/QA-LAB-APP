@@ -48,14 +48,14 @@ $values = [
     ['value' => $passn20,   'min' => 0,     'max' => 7,    'x' => 362, 'y' => 239],
     ['value' => $passn200,  'min' => 0,     'max' => 5.4,  'x' => 362, 'y' => 257],
 ];
-/*
+
 function printColoredValue($pdf, $value, $inRange, $x, $y, $width = 43, $height = 4)
 {
     $pdf->SetXY($x, $y);
     $pdf->SetTextColor($inRange ? 0 : 255, 0, 0);
     $pdf->Cell($width, $height, $value, 0, 1, 'C');
 }
-*/
+
 foreach ($values as $v) {
     $inRange = $v['value'] >= $v['min'] && $v['value'] <= $v['max'];
     printColoredValue($pdf, $v['value'], $inRange, $v['x'], $v['y']);
@@ -64,11 +64,11 @@ foreach ($values as $v) {
 $resultado = array_reduce($values, function ($carry, $item) {
     return $carry && ($item['value'] >= $item['min'] && $item['value'] <= $item['max']);
 }, true) ? 'Accepted' : 'Rejected';
-/*
+
 $pdf->SetXY(323, 394);
 $pdf->SetTextColor($resultado === 'Accepted' ? 0 : 255, 0, 0);
 $pdf->Cell(152, 4, $resultado, 0, 1, 'C');
-*/
+
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->SetTextColor(0, 0, 0);
 
